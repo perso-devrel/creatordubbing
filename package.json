@@ -5,21 +5,49 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "analyze": "node -e \"process.env.ANALYZE='true';require('child_process').execSync('next build --webpack',{stdio:'inherit',env:process.env})\"",
     "start": "next start",
-    "lint": "eslint"
+    "start:test": "next start -p 3100",
+    "start:test2": "next start -p 3101",
+    "test:lighthouse:prod": "lighthouse http://localhost:3100/ --quiet --chrome-flags=\"--headless=new\" --output=json --output=html --output-path=./tests/snapshots/lighthouse-prod --only-categories=performance,accessibility,best-practices,seo",
+    "test:lighthouse:prod2": "lighthouse http://localhost:3101/ --quiet --chrome-flags=\"--headless=new\" --output=json --output=html --output-path=./tests/snapshots/lighthouse-prod2 --only-categories=performance,accessibility,best-practices,seo",
+    "lint": "eslint",
+    "test:e2e": "playwright test",
+    "test:install": "playwright install chromium",
+    "test:lighthouse": "lighthouse http://localhost:3000/ --quiet --chrome-flags=\"--headless=new\" --output=json --output=html --output-path=./tests/snapshots/lighthouse --only-categories=performance,accessibility,best-practices,seo",
+    "test:lighthouse:parse": "node tests/parse-lighthouse.mjs",
+    "test:lighthouse:issues": "node tests/parse-lighthouse-issues.mjs",
+    "test:lighthouse:prod:parse": "node tests/parse-lighthouse-prod.mjs",
+    "test:lighthouse:a11y": "node tests/parse-a11y-details.mjs",
+    "test:lighthouse:prod2:parse": "node tests/parse-lighthouse-prod2.mjs",
+    "test:cleanup": "node tests/kill-ports.mjs"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.2",
+    "@tanstack/react-query": "^5.97.0",
+    "axios": "^1.15.0",
+    "clsx": "^2.1.1",
+    "firebase": "^12.12.0",
+    "lucide-react": "^1.8.0",
     "next": "16.2.3",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "recharts": "^3.8.1",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.2.3",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "lighthouse": "^13.1.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

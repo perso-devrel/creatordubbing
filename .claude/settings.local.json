@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -l \"export\" /c/Users/EST/Desktop/creatordub-next/src/**/*.tsx /c/Users/EST/Desktop/creatordub-next/src/**/*.ts)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -rn \"zod\\\\|z\\\\\\\\.object\\\\|safeParse\\\\|parse\" /c/Users/EST/Desktop/creatordub-next/src/app/api --include=\"*.ts\")",
+      "Bash(ls -la /c/Users/EST/Desktop/creatordub-next/tests/*.mjs)",
+      "Bash(xargs wc:*)",
+      "Read(//c/Users/EST/Desktop/**)",
+      "Bash(chmod +x c:/Users/EST/Desktop/creatordub-next/.ralph/run.sh c:/Users/EST/Desktop/creatordub-next/.ralph/watchdog.sh c:/Users/EST/Desktop/creatordub-next/.ralph/summary.sh)",
+      "Read(//c/Users/EST/.claude/projects/c--Users-EST-Desktop-creatordub-next/**)",
+      "Read(//c/Users/EST/.claude/projects/c--Users-EST-Desktop-creatordub-next/memory/**)",
+      "Read(//c/Users/EST/.claude/projects/**)",
+      "Bash(where gh:*)",
+      "Bash(winget --version)",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
+      "Bash(gh --version)",
+      "Bash(gh auth:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\EST\\.claude\\projects\\c--Users-EST-Desktop-creatordub-next\\memory"
+    ]
+  }
+}

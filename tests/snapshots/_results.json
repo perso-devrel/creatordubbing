@@ -1,0 +1,62 @@
+[
+  {
+    "name": "landing",
+    "route": "/",
+    "project": "mobile-light",
+    "viteBytes": 2893732,
+    "nextBytes": 2862146,
+    "consoleErrors": 0,
+    "viteStatus": 200,
+    "nextStatus": 200
+  },
+  {
+    "name": "dashboard",
+    "route": "/dashboard",
+    "project": "mobile-light",
+    "viteBytes": 358465,
+    "nextBytes": 365055,
+    "consoleErrors": 13,
+    "viteStatus": 200,
+    "nextStatus": 200
+  },
+  {
+    "name": "dubbing",
+    "route": "/dubbing",
+    "project": "mobile-light",
+    "viteBytes": 165837,
+    "nextBytes": 175314,
+    "consoleErrors": 1,
+    "viteStatus": 200,
+    "nextStatus": 200
+  },
+  {
+    "name": "batch",
+    "route": "/batch",
+    "project": "mobile-light",
+    "viteBytes": 178745,
+    "nextBytes": 187543,
+    "consoleErrors": 1,
+    "viteStatus": 200,
+    "nextStatus": 200
+  },
+  {
+    "name": "youtube",
+    "route": "/youtube",
+    "project": "mobile-light",
+    "viteBytes": 344188,
+    "nextBytes": 362850,
+    "consoleErrors": 1,
+    "viteStatus": 200,
+    "nextStatus": 200
+  },
+  {
+    "name": "billing",
+    "route": "/billing",
+    "project": "mobile-light",
+    "viteBytes": 375235,
+    "nextBytes": 397346,
+    "consoleErrors": 1,
+    "viteStatus": 200,
+    "nextStatus": 200
+  }
+]

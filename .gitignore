@@ -32,10 +32,29 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.local.example
 
 # vercel
 .vercel
 
+# creatordub migration workspace (agent reports, scratch)
+_workspace/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ralph loop
+.ralph/logs/
+.ralph/heartbeat
+.ralph/watchdog.pid
+
+# local test assets (binary, not for commit)
+testvideo/
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+

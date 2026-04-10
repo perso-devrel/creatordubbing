@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+**/secrets/**
+**/*.pem
+**/*.key
+~/.ssh/
+~/.aws/
+testvideo/

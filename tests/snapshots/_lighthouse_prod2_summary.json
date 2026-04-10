@@ -1,0 +1,13 @@
+{
+  "url": "http://localhost:3101/",
+  "performance": 89,
+  "accessibility": 96,
+  "bestPractices": 100,
+  "seo": 100,
+  "fcp": "1.1 s",
+  "lcp": "3.6 s",
+  "tbt": "30 ms",
+  "cls": "0",
+  "tti": "3.6 s",
+  "speedIndex": "3.8 s"
+}
