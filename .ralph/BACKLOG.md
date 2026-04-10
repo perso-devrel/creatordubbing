@@ -3,6 +3,15 @@
 > 우선순위: P0(즉시) > P1(다음) > P2(그 다음). 완료는 `[x]`, 차단은 `[blocked]`.
 > 각 항목은 하나의 iteration으로 끝낼 수 있도록 쪼갤 것.
 
+## P0 — 사람 전용 (Ralph 루프가 건드리지 않는다)
+
+### P0-0. Vercel 자동 배포 연동 [사람이 아침에 수동]
+- [ ] https://vercel.com/new → `perso-devrel/creatordubbing` import
+- [ ] env 변수 입력: `PERSO_API_KEY`, `PERSO_API_BASE_URL`, `NEXT_PUBLIC_PERSO_FILE_BASE_URL`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TURSO_URL`, `TURSO_AUTH_TOKEN`
+- [ ] Production = `main`, Preview = `develop`
+- [ ] 첫 배포 성공 확인 후 production URL을 STATE.md에 기록
+- [ ] 루프는 이 항목을 읽기만 하고 체크하지 않는다 (사람 확인 필요).
+
 ## P0 — 보안 & Next 16 기본기
 
 ### P0-1. `/api/dashboard/*` 서버 세션 기반 인가 + zod 검증
