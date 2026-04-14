@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import fs from 'fs'
 import path from 'path'
+import { signTestSessionCookie } from './helpers/signed-cookie'
 
 /**
  * Visual regression test: captures screenshots from both the
@@ -31,6 +32,10 @@ const SNAPSHOT_DIR = path.join(process.cwd(), 'tests', 'snapshots')
 fs.mkdirSync(SNAPSHOT_DIR, { recursive: true })
 
 async function injectMockAuth(page: Page) {
+  await page.context().addCookies([
+    { name: 'creatordub_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
+    { name: 'google_access_token', value: 'mock-token', domain: 'localhost', path: '/' },
+  ])
   await page.addInitScript(() => {
     try {
       localStorage.setItem(
@@ -42,7 +47,6 @@ async function injectMockAuth(page: Page) {
           photoURL: null,
         })
       )
-      localStorage.setItem('google_access_token', 'mock-token')
       // also vite store if exists
       localStorage.setItem(
         'auth-storage',

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { signTestSessionCookie } from './helpers/signed-cookie'
 
 /**
  * Walks the 6 main routes on the Next.js app and counts
@@ -15,6 +16,10 @@ const ROUTES = [
 ]
 
 async function injectMockAuth(page: Page) {
+  await page.context().addCookies([
+    { name: 'creatordub_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
+    { name: 'google_access_token', value: 'mock-token', domain: 'localhost', path: '/' },
+  ])
   await page.addInitScript(() => {
     try {
       localStorage.setItem(
@@ -26,7 +31,6 @@ async function injectMockAuth(page: Page) {
           photoURL: null,
         })
       )
-      localStorage.setItem('google_access_token', 'mock-token')
     } catch {
       /* noop */
     }
