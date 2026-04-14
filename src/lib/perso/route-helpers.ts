@@ -1,39 +1,33 @@
 import 'server-only'
 
-import { NextResponse } from 'next/server'
-import { mapPersoError } from '@/lib/perso/errors'
+import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
+import { mapPersoError, PersoError } from '@/lib/perso/errors'
+import { logger } from '@/lib/logger'
 
-/** Success response envelope. */
-export function ok<T>(data: T, init?: ResponseInit) {
-  return NextResponse.json({ ok: true as const, data }, init)
-}
+export { apiOk as ok }
 
-/** Error response envelope with mapped HTTP status. */
 export function fail(err: unknown) {
-  const { status, code, message, details } = mapPersoError(err)
-  return NextResponse.json(
-    { ok: false as const, error: { code, message, details } },
-    { status },
-  )
+  if (err instanceof PersoError) {
+    const mapped = mapPersoError(err)
+    if (mapped.status >= 500) {
+      logger.error('perso api error', { status: mapped.status, code: mapped.code, message: mapped.message })
+    }
+    return apiFail(mapped.code, mapped.message, mapped.status, mapped.details)
+  }
+  return apiFailFromError(err)
 }
 
-/** Wraps a route handler body, funneling thrown errors through `fail`. */
 export async function handle<T>(
   fn: () => Promise<T>,
   init?: ResponseInit,
 ): Promise<Response> {
   try {
-    const data = await fn()
-    return ok(data, init)
+    return apiOk(await fn(), init)
   } catch (err) {
     return fail(err)
   }
 }
 
-/**
- * Read and parse JSON body. Throws a 400 PersoError-like error when the
- * body is malformed or missing required fields.
- */
 export async function readJson<T = unknown>(req: Request): Promise<T> {
   try {
     return (await req.json()) as T
@@ -46,11 +40,24 @@ export async function readJson<T = unknown>(req: Request): Promise<T> {
   }
 }
 
-/** Require a numeric query param, throw 400 if missing. */
-export function requireIntParam(
-  url: URL,
-  name: string,
-): number {
+import type { ZodSchema, ZodError } from 'zod'
+
+export async function parseBody<T>(req: Request, schema: ZodSchema<T>): Promise<T> {
+  const raw = await readJson(req)
+  const result = schema.safeParse(raw)
+  if (!result.success) {
+    const zodErr = result.error as ZodError
+    const details = zodErr.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
+    throw Object.assign(new Error(`Invalid body: ${details}`), {
+      name: 'PersoError',
+      code: 'INVALID_BODY',
+      status: 400,
+    })
+  }
+  return result.data
+}
+
+export function requireIntParam(url: URL, name: string): number {
   const raw = url.searchParams.get(name)
   if (raw === null || raw === '') {
     const err = new Error(`Missing required query param: ${name}`)
@@ -68,7 +75,6 @@ export function requireIntParam(
   return n
 }
 
-/** Require a string query param, throw 400 if missing. */
 export function requireStringParam(url: URL, name: string): string {
   const raw = url.searchParams.get(name)
   if (raw === null || raw === '') {

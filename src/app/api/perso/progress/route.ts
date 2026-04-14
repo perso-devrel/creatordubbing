@@ -1,20 +1,20 @@
-import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
+import { requireSession } from '@/lib/auth/session'
 import { persoFetch } from '@/lib/perso/client'
-import { mapPersoError } from '@/lib/perso/errors'
-import { requireIntParam } from '@/lib/perso/route-helpers'
+import { ok, fail, requireIntParam } from '@/lib/perso/route-helpers'
 import type { ProgressResponse } from '@/lib/perso/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-/**
- * GET /api/perso/progress?projectSeq={p}&spaceSeq={s}
- *   → GET /video-translator/api/v1/projects/{projectSeq}/space/{spaceSeq}/progress
- *
- * Cache-Control: no-store to prevent Next.js/CDN caching of polling responses.
- * Client polling interval: minimum 5 seconds (enforce in consumer).
- */
-export async function GET(req: Request) {
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate',
+}
+
+export async function GET(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
+
   try {
     const url = new URL(req.url)
     const projectSeq = requireIntParam(url, 'projectSeq')
@@ -25,22 +25,8 @@ export async function GET(req: Request) {
       { baseURL: 'api' },
     )
 
-    return NextResponse.json(
-      { ok: true as const, data },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-        },
-      },
-    )
+    return ok(data, { headers: NO_CACHE_HEADERS })
   } catch (err) {
-    const { status, code, message, details } = mapPersoError(err)
-    return NextResponse.json(
-      { ok: false as const, error: { code, message, details } },
-      {
-        status,
-        headers: { 'Cache-Control': 'no-store' },
-      },
-    )
+    return fail(err)
   }
 }

@@ -20,9 +20,8 @@ export function LandingNavBar() {
   const handleGoogleLogin = async () => {
     setLoading(true)
     try {
-      const { user, accessToken } = await signInWithGoogle()
+      const { user } = await signInWithGoogle()
       useAuthStore.getState().setUser(user)
-      useAuthStore.getState().setAccessToken(accessToken)
       router.push('/dashboard')
     } catch (err) {
       addToast({ type: 'error', title: '로그인 실패', message: err instanceof Error ? err.message : '' })

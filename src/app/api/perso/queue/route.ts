@@ -1,16 +1,15 @@
+import { NextRequest } from 'next/server'
+import { requireSession } from '@/lib/auth/session'
 import { persoFetch } from '@/lib/perso/client'
 import { handle, requireIntParam } from '@/lib/perso/route-helpers'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-/**
- * PUT /api/perso/queue?spaceSeq={n}
- *   → PUT /video-translator/api/v1/projects/spaces/{spaceSeq}/queue
- *
- * Idempotent: re-calling on an already-initialized queue is safe.
- */
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
+
   return handle(async () => {
     const url = new URL(req.url)
     const spaceSeq = requireIntParam(url, 'spaceSeq')

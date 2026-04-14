@@ -1,25 +1,19 @@
+import { NextRequest } from 'next/server'
+import { requireSession } from '@/lib/auth/session'
 import { persoFetch } from '@/lib/perso/client'
-import { handle, readJson } from '@/lib/perso/route-helpers'
+import { handle, parseBody } from '@/lib/perso/route-helpers'
+import { externalMetadataBodySchema } from '@/lib/validators/perso'
 import type { ExternalMetadataResponse } from '@/lib/perso/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-interface Body {
-  spaceSeq: number
-  url: string
-  lang?: string
-}
+export async function POST(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
 
-/**
- * POST /api/perso/external/metadata
- *  → POST /file/api/v1/video-translator/external/metadata
- *
- * NOTE: Perso expects snake_case body: { space_seq, url, lang }
- */
-export async function POST(req: Request) {
   return handle(async () => {
-    const { spaceSeq, url, lang = 'ko' } = await readJson<Body>(req)
+    const { spaceSeq, url, lang = 'ko' } = await parseBody(req, externalMetadataBodySchema)
     return persoFetch<ExternalMetadataResponse>(
       '/file/api/v1/video-translator/external/metadata',
       {
