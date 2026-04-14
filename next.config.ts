@@ -13,7 +13,7 @@ const cspDirectives = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' blob: data: https://*.googleusercontent.com https://perso.ai https://*.perso.ai https://i.ytimg.com",
   "font-src 'self'",
-  "connect-src 'self' https://*.blob.core.windows.net",
+  "connect-src 'self' https://*.blob.core.windows.net https://*.perso.ai https://www.googleapis.com https://accounts.google.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://accounts.google.com",
