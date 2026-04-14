@@ -6,7 +6,7 @@ import { queryClient } from '@/services/queryClient'
 import { ToastContainer } from '@/components/feedback/Toast'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
-import { restoreSession } from '@/lib/firebase'
+import { restoreSession } from '@/lib/google-auth'
 
 function ThemeHydrator() {
   useEffect(() => {

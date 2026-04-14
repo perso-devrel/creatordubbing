@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatDuration, formatCredits, formatCurrency, formatNumber } from './formatters'
+import { formatDuration, formatCurrency, formatNumber } from './formatters'
 
 describe('formatDuration', () => {
   it('formats seconds only', () => {
@@ -26,15 +26,6 @@ describe('formatDuration', () => {
   })
 })
 
-describe('formatCredits', () => {
-  it('formats with locale separators', () => {
-    expect(formatCredits(1000)).toMatch(/1.000|1,000/)
-  })
-
-  it('handles zero', () => {
-    expect(formatCredits(0)).toBe('0')
-  })
-})
 
 describe('formatCurrency', () => {
   it('formats as USD', () => {

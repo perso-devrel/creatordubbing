@@ -131,4 +131,3 @@ export function restoreSession(): { user: GoogleUser | null } {
   return { user: getStoredUser() }
 }
 
-export type User = GoogleUser

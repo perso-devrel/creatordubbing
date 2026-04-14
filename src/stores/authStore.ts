@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import type { GoogleUser } from '@/lib/firebase'
+import type { GoogleUser } from '@/lib/google-auth'
 
 interface AuthState {
   user: GoogleUser | null
