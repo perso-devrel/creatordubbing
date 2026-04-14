@@ -1,8 +1,23 @@
 const YOUTUBE_URL_REGEX =
   /^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
 
+const DIRECT_VIDEO_EXTENSIONS = ['mp4', 'mov', 'webm']
+
 export function isValidYouTubeUrl(url: string): boolean {
   return YOUTUBE_URL_REGEX.test(url)
+}
+
+export function isValidVideoUrl(url: string): boolean {
+  if (!url) return false
+  try {
+    const parsed = new URL(url)
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false
+  } catch {
+    return false
+  }
+  if (isValidYouTubeUrl(url)) return true
+  const pathname = url.split('?')[0].toLowerCase()
+  return DIRECT_VIDEO_EXTENSIONS.some((ext) => pathname.endsWith(`.${ext}`))
 }
 
 export function extractVideoId(url: string): string | null {
