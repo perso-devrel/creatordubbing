@@ -19,7 +19,9 @@ import type { DownloadTarget } from '@/lib/perso/types'
 import type { LanguageProgress } from '../types/dubbing.types'
 import { dbMutation } from '@/lib/api/dbMutation'
 
-const POLL_INTERVAL = 5000
+const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
+const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
+const POLL_BACKOFF = 1.5          // 매 폴링마다 1.5배씩 증가
 
 function mapProgressReasonToStatus(reason: string) {
   switch (reason) {
@@ -88,9 +90,9 @@ async function pollLanguage(
   langCode: string,
   projectSeq: number,
   spaceSeq: number,
-  pollTimers: Record<string, ReturnType<typeof setInterval>>,
+  pollTimers: Record<string, ReturnType<typeof setTimeout>>,
   addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
-) {
+): Promise<boolean> { // returns true when terminal (done polling)
   const progress = await getProjectProgress(projectSeq, spaceSeq)
   const status = mapProgressReasonToStatus(progress.progressReason)
   store.getState().updateLanguageProgress(langCode, {
@@ -108,9 +110,9 @@ async function pollLanguage(
   }
 
   const isTerminal = progress.progressReason === 'COMPLETED' || progress.progressReason === 'FAILED' || progress.progressReason === 'CANCELED'
-  if (!isTerminal) return
+  if (!isTerminal) return false
 
-  clearInterval(pollTimers[langCode])
+  clearTimeout(pollTimers[langCode])
   delete pollTimers[langCode]
 
   if (progress.progressReason === 'COMPLETED') {
@@ -144,7 +146,7 @@ async function pollLanguage(
   const allDone = allProgress.every(
     (lp) => lp.progressReason === 'COMPLETED' || lp.progressReason === 'FAILED' || lp.progressReason === 'CANCELED',
   )
-  if (!allDone) return
+  if (!allDone) return true
 
   const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED')
   store.getState().setJobStatus(anyFailed ? 'failed' : 'completed')
@@ -155,6 +157,7 @@ async function pollLanguage(
     type: anyFailed ? 'warning' : 'success',
     title: anyFailed ? 'Dubbing completed with errors' : 'All dubbing complete!',
   })
+  return true
 }
 
 export function usePersoFlow() {
@@ -301,22 +304,31 @@ export function usePersoFlow() {
     const { spaceSeq, projectMap } = store.getState()
     if (!spaceSeq) return
 
-    Object.values(pollTimers.current).forEach(clearInterval)
+    Object.values(pollTimers.current).forEach(clearTimeout)
     pollTimers.current = {}
 
-    Object.entries(projectMap).forEach(([langCode, projectSeq]) => {
-      pollTimers.current[langCode] = setInterval(async () => {
+    function scheduleNext(langCode: string, projectSeq: number, interval: number) {
+      pollTimers.current[langCode] = setTimeout(async () => {
         try {
-          await pollLanguage(langCode, projectSeq, spaceSeq, pollTimers.current, addToast)
+          const done = await pollLanguage(langCode, projectSeq, spaceSeq!, pollTimers.current, addToast)
+          if (!done) {
+            const next = Math.min(interval * POLL_BACKOFF, POLL_INTERVAL_MAX)
+            scheduleNext(langCode, projectSeq, next)
+          }
         } catch {
-          // Network hiccup — retry on next interval
+          // Network hiccup — retry with same interval
+          scheduleNext(langCode, projectSeq, interval)
         }
-      }, POLL_INTERVAL)
+      }, interval)
+    }
+
+    Object.entries(projectMap).forEach(([langCode, projectSeq]) => {
+      scheduleNext(langCode, projectSeq, POLL_INTERVAL_MIN)
     })
   }, [addToast])
 
   const stopPolling = useCallback(() => {
-    Object.values(pollTimers.current).forEach(clearInterval)
+    Object.values(pollTimers.current).forEach(clearTimeout)
     pollTimers.current = {}
   }, [])
 
