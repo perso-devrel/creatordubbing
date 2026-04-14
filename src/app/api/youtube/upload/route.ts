@@ -12,7 +12,7 @@ import { uploadFormSchema } from '@/lib/validators/youtube'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 600
+export const maxDuration = 300
 
 export async function POST(req: NextRequest) {
   const auth = await requireSession(req)
