@@ -85,3 +85,32 @@ export async function getUserYouTubeUploads(userId: string): Promise<YouTubeUplo
   })
   return result.rows as unknown as YouTubeUploadRow[]
 }
+
+export interface CompletedJobLanguage {
+  job_id: number
+  video_title: string
+  video_thumbnail: string
+  video_duration_ms: number
+  language_code: string
+  dubbed_video_url: string | null
+  audio_url: string | null
+  srt_url: string | null
+  youtube_video_id: string | null
+  created_at: string
+}
+
+export async function getCompletedJobLanguages(userId: string): Promise<CompletedJobLanguage[]> {
+  const db = getDb()
+  const result = await db.execute({
+    sql: `SELECT dj.id as job_id, dj.video_title, dj.video_thumbnail, dj.video_duration_ms,
+          jl.language_code, jl.dubbed_video_url, jl.audio_url, jl.srt_url, jl.youtube_video_id,
+          dj.created_at
+          FROM dubbing_jobs dj
+          JOIN job_languages jl ON jl.job_id = dj.id
+          WHERE dj.user_id = ? AND jl.status = 'completed' AND jl.dubbed_video_url IS NOT NULL
+          ORDER BY dj.created_at DESC
+          LIMIT 50`,
+    args: [userId],
+  })
+  return result.rows as unknown as CompletedJobLanguage[]
+}
