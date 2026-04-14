@@ -27,4 +27,5 @@ export {
   getCreditUsageByMonth,
   getLanguagePerformance,
   getUserYouTubeUploads,
+  getCompletedJobLanguages,
 } from './dashboard'
