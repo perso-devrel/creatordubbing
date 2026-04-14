@@ -9,12 +9,12 @@ import { formatDuration } from '@/utils/formatters'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
-import { ytUploadVideo, ytUploadCaption } from '@/lib/api-client'
+import { ytUploadVideo, ytUploadCaption, getDownloadLinks } from '@/lib/api-client'
 import { dbMutation } from '@/lib/api/dbMutation'
 import { getLanguageByCode } from '@/utils/languages'
 import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
 
-type UploadState = 'idle' | 'uploading' | 'done' | 'error'
+type UploadState = 'idle' | 'fetching' | 'uploading' | 'done' | 'error'
 
 async function fetchCompletedLanguages(uid: string): Promise<CompletedJobLanguage[]> {
   const res = await fetch(`/api/dashboard/completed-languages?uid=${encodeURIComponent(uid)}`, { cache: 'no-store' })
@@ -36,11 +36,24 @@ function UploadRow({ item, userId }: UploadRowProps) {
   const lang = getLanguageByCode(item.language_code)
 
   const handleUpload = useCallback(async () => {
-    if (!item.dubbed_video_url) return
-    setState('uploading')
+    setState('fetching')
     try {
+      // Use stored URL or fetch from Perso on-demand (for jobs interrupted mid-poll)
+      let videoUrl = item.dubbed_video_url
+      let srtUrl = item.srt_url
+
+      if (!videoUrl && item.project_seq && item.space_seq) {
+        const downloads = await getDownloadLinks(item.project_seq, item.space_seq, 'all')
+        videoUrl = downloads.videoFile?.videoDownloadLink ?? null
+        srtUrl = srtUrl ?? downloads.srtFile?.translatedSubtitleDownloadLink ?? null
+        if (!videoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
+      }
+
+      if (!videoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
+
+      setState('uploading')
       const result = await ytUploadVideo({
-        videoUrl: item.dubbed_video_url,
+        videoUrl,
         title: `[${lang?.name}] ${item.video_title}`,
         description: `${item.video_title} - ${lang?.name} 더빙 by CreatorDub AI`,
         tags: ['CreatorDub', 'AI더빙', lang?.name || item.language_code, 'dubbed'],
@@ -49,9 +62,9 @@ function UploadRow({ item, userId }: UploadRowProps) {
       })
 
       // Try uploading SRT if available
-      if (item.srt_url) {
+      if (srtUrl) {
         try {
-          const srtRes = await fetch(item.srt_url)
+          const srtRes = await fetch(srtUrl)
           const srtText = await srtRes.text()
           await ytUploadCaption({
             videoId: result.videoId,
@@ -68,7 +81,6 @@ function UploadRow({ item, userId }: UploadRowProps) {
       setState('done')
       addToast({ type: 'success', title: `${lang?.name} 업로드 완료`, message: '비공개로 업로드됨' })
 
-      // Update DB
       await dbMutation({
         type: 'createYouTubeUpload',
         payload: {
@@ -86,6 +98,9 @@ function UploadRow({ item, userId }: UploadRowProps) {
       addToast({ type: 'error', title: '업로드 실패', message: err instanceof Error ? err.message : '알 수 없는 오류' })
     }
   }, [item, lang, userId, addToast, queryClient])
+
+  const isLoading = state === 'fetching' || state === 'uploading'
+  const loadingLabel = state === 'fetching' ? '링크 확인 중...' : '업로드 중...'
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
@@ -117,10 +132,10 @@ function UploadRow({ item, userId }: UploadRowProps) {
             <CheckCircle2 className="h-3 w-3" />
             업로드됨
           </Badge>
-        ) : state === 'uploading' ? (
+        ) : isLoading ? (
           <div className="flex items-center gap-1.5 text-xs text-surface-500">
             <Loader2 className="h-4 w-4 animate-spin" />
-            업로드 중...
+            {loadingLabel}
           </div>
         ) : (
           <Button size="sm" onClick={handleUpload} disabled={state === 'error'}>

@@ -92,6 +92,8 @@ export interface CompletedJobLanguage {
   video_thumbnail: string
   video_duration_ms: number
   language_code: string
+  project_seq: number
+  space_seq: number
   dubbed_video_url: string | null
   audio_url: string | null
   srt_url: string | null
@@ -103,11 +105,12 @@ export async function getCompletedJobLanguages(userId: string): Promise<Complete
   const db = getDb()
   const result = await db.execute({
     sql: `SELECT dj.id as job_id, dj.video_title, dj.video_thumbnail, dj.video_duration_ms,
-          jl.language_code, jl.dubbed_video_url, jl.audio_url, jl.srt_url, jl.youtube_video_id,
+          dj.space_seq, jl.language_code, jl.project_seq,
+          jl.dubbed_video_url, jl.audio_url, jl.srt_url, jl.youtube_video_id,
           dj.created_at
           FROM dubbing_jobs dj
           JOIN job_languages jl ON jl.job_id = dj.id
-          WHERE dj.user_id = ? AND jl.status = 'completed' AND jl.dubbed_video_url IS NOT NULL
+          WHERE dj.user_id = ? AND dj.status = 'completed'
           ORDER BY dj.created_at DESC
           LIMIT 50`,
     args: [userId],
