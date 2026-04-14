@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, GripVertical, Layers, Loader2 } from 'lucide-react'
 import { Card, CardTitle, Button, Badge, Progress } from '@/components/ui'
@@ -7,6 +8,9 @@ import { LanguageBadge } from '@/components/shared/LanguageBadge'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { formatDuration } from '@/utils/formatters'
 import { useRecentJobs } from '@/hooks/useDashboardData'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/stores/authStore'
+import { dbMutation } from '@/lib/api/dbMutation'
 
 const statusConfig = {
   processing: { label: '처리 중', variant: 'brand' as const },
@@ -17,8 +21,29 @@ const statusConfig = {
 
 export default function BatchPage() {
   const { data: jobs = [], isLoading } = useRecentJobs()
+  const queryClient = useQueryClient()
+  const user = useAuthStore((s) => s.user)
 
-  const activeJobs = jobs.filter((j) => j.status === 'processing' || j.status === 'queued')
+  // Auto-complete stale jobs where avg_progress hit 100 but DB still shows 'processing'
+  useEffect(() => {
+    if (!user || jobs.length === 0) return
+    const stale = jobs.filter(
+      (j) => j.status === 'processing' && Number(j.avg_progress) >= 100,
+    )
+    if (stale.length === 0) return
+
+    Promise.all(
+      stale.map((j) =>
+        dbMutation({ type: 'updateJobStatus', payload: { jobId: j.id, status: 'completed' } }),
+      ),
+    ).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['recent-jobs'] })
+    })
+  }, [jobs, user, queryClient])
+
+  const activeJobs = jobs.filter(
+    (j) => (j.status === 'processing' || j.status === 'queued') && Number(j.avg_progress) < 100,
+  )
   const processing = activeJobs.filter((j) => j.status === 'processing').length
   const queued = activeJobs.filter((j) => j.status === 'queued').length
 
