@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       displayName: info.name ?? null,
       photoURL: info.picture ?? null,
     })
-    res.cookies.set(SESSION_COOKIE, signSessionCookie(info.sub), cookieOpts)
+    res.cookies.set(SESSION_COOKIE, await signSessionCookie(info.sub), cookieOpts)
     res.cookies.set('google_access_token', tokens.access_token, {
       ...cookieOpts,
       maxAge: tokens.expires_in,

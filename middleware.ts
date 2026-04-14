@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { SESSION_COOKIE, verifySessionCookie } from '@/lib/auth/session-cookie'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const raw = request.cookies.get(SESSION_COOKIE)?.value
-  if (!raw || !verifySessionCookie(raw)) {
+  if (!raw || !(await verifySessionCookie(raw))) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
