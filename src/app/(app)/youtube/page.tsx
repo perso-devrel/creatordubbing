@@ -4,25 +4,8 @@ import { useState } from 'react'
 import { Video, ExternalLink, Unlink, AlertTriangle, Settings, Globe } from 'lucide-react'
 import { Card, CardTitle, CardDescription, Button, Badge, Select, Toggle } from '@/components/ui'
 
-const mockChannel = {
-  name: 'Tech Creator',
-  handle: '@techcreator',
-  subscribers: '245K',
-  videos: 312,
-  avatar: 'TC',
-  connected: true,
-}
-
-const mockVideos = [
-  { id: '1', title: 'How I Built a $1M SaaS in 6 Months', views: '1.2M', published: '2 days ago' },
-  { id: '2', title: 'React 20 New Features Explained', views: '890K', published: '1 week ago' },
-  { id: '3', title: 'Day in the Life of a Software Engineer', views: '560K', published: '2 weeks ago' },
-  { id: '4', title: 'Ultimate Productivity Setup 2026', views: '340K', published: '3 weeks ago' },
-  { id: '5', title: 'I Quit My Job at Google — Here is Why', views: '2.1M', published: '1 month ago' },
-]
-
 export default function YouTubeSettingsPage() {
-  const [isConnected, setIsConnected] = useState(true)
+  const [isConnected, setIsConnected] = useState(false)
   const [defaultVisibility, setDefaultVisibility] = useState('public')
   const [autoSubtitles, setAutoSubtitles] = useState(true)
 
@@ -40,11 +23,11 @@ export default function YouTubeSettingsPage() {
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-lg font-bold text-white">
-                {mockChannel.avatar}
+                YT
               </div>
               <div>
-                <p className="font-semibold text-surface-900 dark:text-white">{mockChannel.name}</p>
-                <p className="text-sm text-surface-500">{mockChannel.handle} · {mockChannel.subscribers} subscribers</p>
+                <p className="font-semibold text-surface-900 dark:text-white">내 채널</p>
+                <p className="text-sm text-surface-500">YouTube 채널 연결됨</p>
               </div>
               <Badge variant="success">연결됨</Badge>
             </div>
@@ -116,24 +99,10 @@ export default function YouTubeSettingsPage() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <CardTitle>내 영상</CardTitle>
-            <CardDescription>{mockChannel.videos}개 영상</CardDescription>
+            <CardDescription>채널 영상</CardDescription>
           </div>
-
-          <div className="space-y-2">
-            {mockVideos.map((video) => (
-              <div
-                key={video.id}
-                className="flex items-center justify-between rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
-                  <p className="text-xs text-surface-500">{video.views} 조회 · {video.published}</p>
-                </div>
-                <Button variant="outline" size="sm">
-                  이 영상 더빙
-                </Button>
-              </div>
-            ))}
+          <div className="py-8 text-center text-sm text-surface-400">
+            영상 목록을 불러올 수 없습니다
           </div>
         </Card>
       )}

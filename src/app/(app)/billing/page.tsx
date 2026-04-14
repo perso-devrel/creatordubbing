@@ -7,14 +7,6 @@ import { cn } from '@/utils/cn'
 import { CREDIT_PACKS } from '@/features/billing/constants/plans'
 import { formatCurrency } from '@/utils/formatters'
 
-// TODO: replace with real user credits from API
-const mockCreditsRemaining = 0
-
-const mockInvoices = [
-  { id: 'INV-001', date: 'Apr 1, 2026', amount: 30, status: 'paid' },
-  { id: 'INV-002', date: 'Mar 1, 2026', amount: 60, status: 'paid' },
-]
-
 export default function BillingPage() {
   const [selectedPack, setSelectedPack] = useState<number | null>(null)
 
@@ -34,7 +26,7 @@ export default function BillingPage() {
             </div>
             <div>
               <p className="text-sm text-surface-500">남은 크레딧</p>
-              <p className="text-3xl font-bold text-surface-900 dark:text-white">{mockCreditsRemaining}분</p>
+              <p className="text-3xl font-bold text-surface-900 dark:text-white">0분</p>
             </div>
           </div>
           <Badge variant="default">1분 = $1</Badge>
@@ -84,35 +76,8 @@ export default function BillingPage() {
       {/* Invoices */}
       <Card>
         <CardTitle>인보이스</CardTitle>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-200 dark:border-surface-800">
-                <th className="pb-2 text-left font-medium text-surface-500">인보이스</th>
-                <th className="pb-2 text-left font-medium text-surface-500">날짜</th>
-                <th className="pb-2 text-left font-medium text-surface-500">금액</th>
-                <th className="pb-2 text-left font-medium text-surface-500">상태</th>
-                <th className="pb-2 text-right font-medium text-surface-500"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockInvoices.map((inv) => (
-                <tr key={inv.id} className="border-b border-surface-100 dark:border-surface-800">
-                  <td className="py-3 font-medium text-surface-900 dark:text-white">{inv.id}</td>
-                  <td className="py-3 text-surface-500">{inv.date}</td>
-                  <td className="py-3 text-surface-900 dark:text-white">{formatCurrency(inv.amount)}</td>
-                  <td className="py-3">
-                    <Badge variant="success">결제 완료</Badge>
-                  </td>
-                  <td className="py-3 text-right">
-                    <button className="text-surface-400 hover:text-surface-600">
-                      <Download className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mt-4 py-8 text-center text-sm text-surface-400">
+          결제 내역이 없습니다
         </div>
       </Card>
     </div>
