@@ -11,6 +11,7 @@ import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useAuthStore } from '@/stores/authStore'
 import { ytUploadVideo, ytUploadCaption } from '@/lib/api-client'
 import { dbMutation } from '@/lib/api/dbMutation'
+import { ScriptEditor } from '../ScriptEditor'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -22,7 +23,7 @@ interface LangUploadState {
 }
 
 export function UploadStep() {
-  const { selectedLanguages, videoMeta, languageProgress, isShort, dbJobId, reset } = useDubbingStore()
+  const { selectedLanguages, videoMeta, languageProgress, isShort, dbJobId, spaceSeq, projectMap, reset } = useDubbingStore()
   const { fetchDownloads } = usePersoFlow()
   const addToast = useNotificationStore((s) => s.addToast)
   const userId = useAuthStore((s) => s.user?.uid)
@@ -363,6 +364,26 @@ export function UploadStep() {
           <p className="mt-2 text-xs text-surface-500">
             이 언어들은 처리에 실패했습니다. 새 더빙 작업으로 다시 시도할 수 있습니다.
           </p>
+        </Card>
+      )}
+
+      {/* Script editor — fix translation mistakes */}
+      {completedLangs.length > 0 && spaceSeq && (
+        <Card>
+          <CardTitle>스크립트 수정</CardTitle>
+          <p className="mb-4 mt-1 text-xs text-surface-500">
+            번역이 잘못된 경우 문장별로 수정하고 오디오를 재생성할 수 있습니다.
+          </p>
+          <div className="space-y-2">
+            {completedLangs.map((code) => (
+              <ScriptEditor
+                key={code}
+                langCode={code}
+                projectSeq={projectMap[code] || 0}
+                spaceSeq={spaceSeq}
+              />
+            ))}
+          </div>
         </Card>
       )}
 

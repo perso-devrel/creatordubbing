@@ -18,7 +18,7 @@ export default function BillingPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-surface-900 dark:text-white">결제</h1>
-        <p className="text-surface-500 dark:text-surface-400">크레딧을 구매하고 사용 내역을 확인하세요</p>
+        <p className="text-surface-500 dark:text-surface-400">시간을 충전하고 사용 내역을 확인하세요</p>
       </div>
 
       {/* Remaining time */}

@@ -4,6 +4,7 @@ export {
   getUserTokens,
   updateUserTokens,
   updateUserCredits,
+  deductUserMinutes,
 } from './users'
 
 export {

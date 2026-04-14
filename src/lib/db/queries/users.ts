@@ -78,3 +78,11 @@ export async function updateUserCredits(userId: string, credits: number) {
     args: [credits, userId],
   })
 }
+
+export async function deductUserMinutes(userId: string, minutes: number) {
+  const db = getDb()
+  await db.execute({
+    sql: `UPDATE users SET credits_remaining = MAX(0, credits_remaining - ?), updated_at = datetime('now') WHERE id = ?`,
+    args: [minutes, userId],
+  })
+}
