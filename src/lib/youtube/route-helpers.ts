@@ -65,7 +65,7 @@ export async function requireAccessToken(req: Request): Promise<string> {
   if (!cookieToken) {
     const sessionCookie = cookieStore.get('creatordub_session')?.value
     if (sessionCookie) {
-      const uid = verifySessionCookie(sessionCookie)
+      const uid = await verifySessionCookie(sessionCookie)
       if (uid) {
         const refreshed = await getOrRefreshAccessToken(uid)
         if (refreshed) return refreshed

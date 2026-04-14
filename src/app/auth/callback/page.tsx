@@ -1,14 +1,14 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 
-// Google OAuth popup callback page.
-// Google redirects here with ?code=... — we pass it to the opener via postMessage then close.
+// Google OAuth popup callback.
+// Google redirects here with ?code=... — pass to opener via postMessage then close.
 export default function AuthCallbackPage() {
-  const params = useSearchParams()
-
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
     const error = params.get('error')
 
@@ -19,7 +19,7 @@ export default function AuthCallbackPage() {
       )
     }
     window.close()
-  }, [params])
+  }, [])
 
   return null
 }

@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       maxAge: 60 * 60 * 24 * 7,
     }
     const res = apiOk({ id: uid })
-    res.cookies.set(SESSION_COOKIE, signSessionCookie(uid), cookieOpts)
+    res.cookies.set(SESSION_COOKIE, await signSessionCookie(uid), cookieOpts)
     if (accessToken) {
       res.cookies.set('google_access_token', accessToken, cookieOpts)
     }
