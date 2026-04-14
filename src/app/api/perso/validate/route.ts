@@ -1,22 +1,18 @@
+import { NextRequest } from 'next/server'
+import { requireSession } from '@/lib/auth/session'
 import { persoFetch } from '@/lib/perso/client'
-import { handle, readJson } from '@/lib/perso/route-helpers'
-import type { MediaValidateRequest } from '@/lib/perso/types'
+import { handle, parseBody } from '@/lib/perso/route-helpers'
+import { mediaValidateBodySchema } from '@/lib/validators/perso'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-/**
- * POST /api/perso/validate → POST /file/api/v1/media/validate
- *
- * Body (camelCase):
- *   { spaceSeq, durationMs, originalName, mediaType, extension, size, width, height }
- *
- * Known failure codes mapped via errors.ts:
- *   F4004 (size), F4008 (length), F4009 (too short), F40010 (resolution), F4005 (plan).
- */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
+
   return handle(async () => {
-    const body = await readJson<MediaValidateRequest>(req)
+    const body = await parseBody(req, mediaValidateBodySchema)
     return persoFetch<{ valid?: boolean } | null>(
       '/file/api/v1/media/validate',
       {

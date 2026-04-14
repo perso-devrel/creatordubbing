@@ -1,16 +1,33 @@
 import { NextRequest } from 'next/server'
 import { getLanguagePerformance, getUserYouTubeUploads, updateYouTubeStats } from '@/lib/db/queries'
 import { fetchVideoStatistics } from '@/lib/youtube/server'
+import { requireSession, forbiddenUidMismatch } from '@/lib/auth/session'
+import { languagePerformanceQuerySchema } from '@/lib/validators/dashboard'
+import { apiOk, apiFail } from '@/lib/api/response'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+type YouTubeUploadRow = Record<string, unknown> & {
+  youtube_video_id?: string | null
+}
+
 export async function GET(req: NextRequest) {
-  const uid = req.nextUrl.searchParams.get('uid')
-  const accessToken = req.headers.get('x-google-access-token')
-  if (!uid) {
-    return Response.json({ ok: false, error: { code: 'BAD_REQUEST', message: 'uid required' } }, { status: 400 })
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
+
+  const parsed = languagePerformanceQuerySchema.safeParse({
+    uid: req.nextUrl.searchParams.get('uid'),
+  })
+  if (!parsed.success) {
+    return apiFail('BAD_REQUEST', 'uid required', 400)
   }
+
+  if (parsed.data.uid !== auth.session.uid) return forbiddenUidMismatch()
+
+  const uid = auth.session.uid
+  const accessToken = req.cookies.get('google_access_token')?.value || req.headers.get('x-google-access-token')
+
   try {
     const dbData = await getLanguagePerformance(uid)
 
@@ -18,8 +35,8 @@ export async function GET(req: NextRequest) {
       try {
         const uploads = await getUserYouTubeUploads(uid)
         const videoIds = uploads
-          .map((u) => (u as Record<string, unknown>).youtube_video_id as string)
-          .filter(Boolean)
+          .map((u) => (u as YouTubeUploadRow).youtube_video_id)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0)
 
         if (videoIds.length > 0) {
           const stats = await fetchVideoStatistics(accessToken, videoIds)
@@ -31,16 +48,16 @@ export async function GET(req: NextRequest) {
             })
           }
           const refreshed = await getLanguagePerformance(uid)
-          return Response.json({ ok: true, data: refreshed })
+          return apiOk(refreshed)
         }
       } catch {
         // YouTube refresh failed — return DB data
       }
     }
 
-    return Response.json({ ok: true, data: dbData })
+    return apiOk(dbData)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return Response.json({ ok: false, error: { code: 'DB_ERROR', message } }, { status: 500 })
+    return apiFail('DB_ERROR', message, 500)
   }
 }
