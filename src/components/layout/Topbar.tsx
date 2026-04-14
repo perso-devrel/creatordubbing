@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { Moon, Sun, Bell, LogOut } from 'lucide-react'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
-import { signOut } from '@/lib/firebase'
+import { signOut } from '@/lib/google-auth'
 import { Button } from '@/components/ui'
 import { useRouter } from 'next/navigation'
 

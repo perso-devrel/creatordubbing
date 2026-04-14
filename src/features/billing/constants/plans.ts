@@ -1,6 +1,3 @@
-// 1 credit = 1 minute of dubbing = $1
-export const CREDIT_RATE_PER_MINUTE = 1 // USD
-
 export interface CreditPack {
   minutes: number
   price: number

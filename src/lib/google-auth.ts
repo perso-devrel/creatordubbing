@@ -34,7 +34,7 @@ export async function signInWithGoogle(): Promise<{
   if (!clientId) throw new Error('NEXT_PUBLIC_GOOGLE_CLIENT_ID를 .env.local에 설정해주세요')
 
   return new Promise((resolve, reject) => {
-    const redirectUri = window.location.origin
+    const redirectUri = `${window.location.origin}/auth/callback`
     const scope = [
       'openid',
       'email',
@@ -61,63 +61,62 @@ export async function signInWithGoogle(): Promise<{
       return
     }
 
-    const timer = setInterval(async () => {
+    // Use postMessage instead of polling popup.location (avoids COOP issues)
+    const onMessage = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      if (event.data?.type !== 'google_oauth_callback') return
+
+      window.removeEventListener('message', onMessage)
+      clearInterval(closedTimer)
+
+      const { code, error } = event.data
+
+      if (error) {
+        reject(new Error(`Google 인증 오류: ${error}`))
+        return
+      }
+      if (!code) {
+        reject(new Error('인증 코드를 받지 못했습니다.'))
+        return
+      }
+
       try {
-        if (popup.closed) {
-          clearInterval(timer)
-          reject(new Error('로그인이 취소되었습니다.'))
-          return
+        const res = await fetch('/api/auth/callback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, redirectUri }),
+        })
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => null)
+          throw new Error(body?.error?.message || '인증에 실패했습니다.')
         }
 
-        const url = popup.location.href
-        if (url.startsWith(redirectUri)) {
-          clearInterval(timer)
-          popup.close()
+        const body = await res.json()
+        const data = body.data
 
-          const parsedUrl = new URL(url)
-          const code = parsedUrl.searchParams.get('code')
-          const error = parsedUrl.searchParams.get('error')
-
-          if (error) {
-            reject(new Error(`Google 인증 오류: ${error}`))
-            return
-          }
-
-          if (!code) {
-            reject(new Error('인증 코드를 받지 못했습니다.'))
-            return
-          }
-
-          const res = await fetch('/api/auth/callback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, redirectUri }),
-          })
-
-          if (!res.ok) {
-            const body = await res.json().catch(() => null)
-            throw new Error(body?.error?.message || '인증에 실패했습니다.')
-          }
-
-          const body = await res.json()
-          const data = body.data
-
-          const user: GoogleUser = {
-            uid: data.id,
-            email: data.email,
-            displayName: data.displayName || null,
-            photoURL: data.photoURL || null,
-          }
-
-          storeUser(user)
-
-          resolve({ user })
+        const user: GoogleUser = {
+          uid: data.id,
+          email: data.email,
+          displayName: data.displayName || null,
+          photoURL: data.photoURL || null,
         }
+
+        storeUser(user)
+        resolve({ user })
       } catch (err) {
-        if (err instanceof Error && err.message !== '로그인이 취소되었습니다.') {
-          clearInterval(timer)
-          reject(err)
-        }
+        reject(err)
+      }
+    }
+
+    window.addEventListener('message', onMessage)
+
+    // Detect manual close without completing auth
+    const closedTimer = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(closedTimer)
+        window.removeEventListener('message', onMessage)
+        reject(new Error('로그인이 취소되었습니다.'))
       }
     }, 500)
   })
@@ -132,4 +131,3 @@ export function restoreSession(): { user: GoogleUser | null } {
   return { user: getStoredUser() }
 }
 
-export type User = GoogleUser

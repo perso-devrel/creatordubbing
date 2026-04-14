@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Languages, Moon, Sun } from 'lucide-react'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
-import { signInWithGoogle } from '@/lib/firebase'
+import { signInWithGoogle } from '@/lib/google-auth'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { Button } from '@/components/ui'
 
