@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Moon, Sun, Bell, LogOut } from 'lucide-react'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -12,9 +13,10 @@ export function Topbar() {
   const { user, clear } = useAuthStore()
   const router = useRouter()
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     signOut()
     clear()
+    await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {})
     router.push('/')
   }
 
@@ -39,10 +41,12 @@ export function Topbar() {
               <p className="text-xs text-surface-400 leading-tight">{user.email}</p>
             </div>
             {user.photoURL ? (
-              <img
+              <Image
                 src={user.photoURL}
                 alt={user.displayName || ''}
-                className="h-8 w-8 rounded-full object-cover"
+                width={32}
+                height={32}
+                className="rounded-full object-cover"
                 referrerPolicy="no-referrer"
               />
             ) : (
