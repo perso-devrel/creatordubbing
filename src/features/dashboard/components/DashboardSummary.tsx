@@ -3,9 +3,14 @@
 import { Film, Clock, Coins, Zap } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { useDashboardSummary } from '@/hooks/useDashboardData'
+import type { DashboardSummary as DashboardSummaryType } from './types'
 
-export function DashboardSummary() {
-  const { data } = useDashboardSummary()
+interface DashboardSummaryProps {
+  initialData?: DashboardSummaryType | null
+}
+
+export function DashboardSummary({ initialData }: DashboardSummaryProps) {
+  const { data } = useDashboardSummary(initialData ?? undefined)
 
   const cards = [
     {

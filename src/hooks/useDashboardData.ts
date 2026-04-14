@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
-import { getStoredAccessToken } from '@/lib/firebase'
+import type { DashboardSummary, DubbingJob, CreditUsageRow, LanguagePerformanceRow } from '@/features/dashboard/components/types'
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init)
@@ -11,33 +11,45 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   return json.data as T
 }
 
-export function useDashboardSummary() {
+export function useDashboardSummary(initialData?: DashboardSummary | null) {
   const user = useAuthStore((s) => s.user)
   return useQuery({
     queryKey: ['dashboard-summary', user?.uid],
-    queryFn: () => fetchJson<Record<string, unknown>>(`/api/dashboard/summary?uid=${user!.uid}`),
+    queryFn: async () => {
+      if (!user) return null
+      return fetchJson<DashboardSummary>(`/api/dashboard/summary?uid=${user.uid}`)
+    },
     enabled: !!user,
     staleTime: 30_000,
+    initialData: initialData ?? undefined,
   })
 }
 
-export function useRecentJobs() {
+export function useRecentJobs(initialData?: DubbingJob[]) {
   const user = useAuthStore((s) => s.user)
   return useQuery({
     queryKey: ['recent-jobs', user?.uid],
-    queryFn: () => fetchJson<Record<string, unknown>[]>(`/api/dashboard/jobs?uid=${user!.uid}&limit=10`),
+    queryFn: async () => {
+      if (!user) return []
+      return fetchJson<DubbingJob[]>(`/api/dashboard/jobs?uid=${user.uid}&limit=10`)
+    },
     enabled: !!user,
     staleTime: 30_000,
+    initialData,
   })
 }
 
-export function useCreditUsage() {
+export function useCreditUsage(initialData?: CreditUsageRow[]) {
   const user = useAuthStore((s) => s.user)
   return useQuery({
     queryKey: ['credit-usage', user?.uid],
-    queryFn: () => fetchJson<Record<string, unknown>[]>(`/api/dashboard/credit-usage?uid=${user!.uid}`),
+    queryFn: async () => {
+      if (!user) return []
+      return fetchJson<CreditUsageRow[]>(`/api/dashboard/credit-usage?uid=${user.uid}`)
+    },
     enabled: !!user,
     staleTime: 60_000,
+    initialData,
   })
 }
 
@@ -47,10 +59,7 @@ export function useLanguagePerformance() {
     queryKey: ['language-performance', user?.uid],
     queryFn: async () => {
       if (!user) return []
-      const token = getStoredAccessToken()
-      const headers: Record<string, string> = {}
-      if (token) headers['x-google-access-token'] = token
-      return fetchJson<Record<string, unknown>[]>(`/api/dashboard/language-performance?uid=${user.uid}`, { headers })
+      return fetchJson<LanguagePerformanceRow[]>(`/api/dashboard/language-performance?uid=${user.uid}`)
     },
     enabled: !!user,
     staleTime: 5 * 60_000,
@@ -58,16 +67,14 @@ export function useLanguagePerformance() {
 }
 
 export function useChannelStats() {
+  const user = useAuthStore((s) => s.user)
   return useQuery({
-    queryKey: ['channel-stats'],
-    queryFn: async () => {
-      const token = getStoredAccessToken()
-      if (!token) return null
-      return fetchJson<{ subscriberCount: number; viewCount: number; videoCount: number; channelId: string; title: string; thumbnail: string } | null>(
+    queryKey: ['channel-stats', user?.uid],
+    queryFn: () =>
+      fetchJson<{ subscriberCount: number; viewCount: number; videoCount: number; channelId: string; title: string; thumbnail: string } | null>(
         `/api/youtube/stats?channel=true`,
-        { headers: { 'x-google-access-token': token } },
-      )
-    },
+      ),
+    enabled: !!user,
     staleTime: 5 * 60_000,
   })
 }

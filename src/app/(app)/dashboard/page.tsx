@@ -1,28 +1,36 @@
-'use client'
+import { cookies } from 'next/headers'
+import { getUserSummary, getUserDubbingJobs, getCreditUsageByMonth, getUserYouTubeUploads } from '@/lib/db/queries'
+import { DashboardContent } from '@/features/dashboard/components/DashboardContent'
+import { verifySessionCookie } from '@/lib/auth/session-cookie'
 
-import { DashboardSummary } from '@/features/dashboard/components/DashboardSummary'
-import { QuickStart } from '@/features/dashboard/components/QuickStart'
-import { RecentJobs } from '@/features/dashboard/components/RecentJobs'
-import { CreditChart } from '@/features/dashboard/components/CreditChart'
-import { LanguagePerformance } from '@/features/dashboard/components/LanguagePerformance'
+export default async function DashboardPage() {
+  const cookieStore = await cookies()
+  const raw = cookieStore.get('creatordub_session')?.value
+  const uid = raw ? verifySessionCookie(raw) : null
 
-export default function DashboardPage() {
+  if (!uid) {
+    return null
+  }
+
+  const [summary, jobs, creditUsage, ytUploads] = await Promise.all([
+    getUserSummary(uid),
+    getUserDubbingJobs(uid, 10),
+    getCreditUsageByMonth(uid),
+    getUserYouTubeUploads(uid),
+  ])
+
+  const ytVideoIds = ytUploads
+    .map((u) => u.youtube_video_id)
+    .filter(Boolean)
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">대시보드</h1>
-        <p className="text-surface-500 dark:text-surface-400">돌아오신 것을 환영합니다! 더빙 현황을 확인하세요.</p>
-      </div>
-
-      <DashboardSummary />
-      <QuickStart />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <CreditChart />
-        <LanguagePerformance />
-      </div>
-
-      <RecentJobs />
-    </div>
+    <DashboardContent
+      initial={{
+        summary,
+        jobs,
+        creditUsage,
+        ytVideoIds,
+      }}
+    />
   )
 }

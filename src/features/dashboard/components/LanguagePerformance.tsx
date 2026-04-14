@@ -12,9 +12,9 @@ export function LanguagePerformance() {
   const { data: rawData } = useLanguagePerformance()
 
   const chartData = (rawData || []).map((r) => {
-    const lang = getLanguageByCode(r.language_code as string)
+    const lang = getLanguageByCode(r.language_code)
     return {
-      language: lang?.name || (r.language_code as string),
+      language: lang?.name || r.language_code,
       views: Number(r.total_views) || 0,
       flag: lang?.flag || '',
     }
