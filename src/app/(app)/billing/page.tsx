@@ -1,14 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { CreditCard, Download, Coins, ArrowRight } from 'lucide-react'
-import { Card, CardTitle, Button, Badge } from '@/components/ui'
+import { CreditCard, Download, Coins, ArrowRight, Loader2 } from 'lucide-react'
+import { Card, CardTitle, Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { CREDIT_PACKS } from '@/features/billing/constants/plans'
 import { formatCurrency } from '@/utils/formatters'
+import { useDashboardSummary } from '@/hooks/useDashboardData'
 
 export default function BillingPage() {
   const [selectedPack, setSelectedPack] = useState<number | null>(null)
+  const { data: summary, isLoading } = useDashboardSummary()
+
+  const minutesRemaining = summary ? Number(summary.credits_remaining) : null
 
   return (
     <div className="space-y-6">
@@ -17,7 +21,7 @@ export default function BillingPage() {
         <p className="text-surface-500 dark:text-surface-400">크레딧을 구매하고 사용 내역을 확인하세요</p>
       </div>
 
-      {/* Current credits */}
+      {/* Remaining time */}
       <Card className="border-brand-200 dark:border-brand-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -25,11 +29,17 @@ export default function BillingPage() {
               <Coins className="h-6 w-6 text-amber-500" />
             </div>
             <div>
-              <p className="text-sm text-surface-500">남은 크레딧</p>
-              <p className="text-3xl font-bold text-surface-900 dark:text-white">0분</p>
+              <p className="text-sm text-surface-500">남은 시간</p>
+              {isLoading ? (
+                <Loader2 className="mt-1 h-6 w-6 animate-spin text-surface-300" />
+              ) : (
+                <p className="text-3xl font-bold text-surface-900 dark:text-white">
+                  {minutesRemaining ?? 0}분
+                </p>
+              )}
             </div>
           </div>
-          <Badge variant="default">1분 = $1</Badge>
+          <p className="text-sm text-surface-400">1분 = $1</p>
         </div>
       </Card>
 
@@ -37,10 +47,10 @@ export default function BillingPage() {
       <Card>
         <div className="flex items-center gap-2 mb-4">
           <Coins className="h-5 w-5 text-amber-500" />
-          <CardTitle>크레딧 구매</CardTitle>
+          <CardTitle>시간 충전</CardTitle>
         </div>
         <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">
-          1분 더빙 = 1크레딧 = $1. 만료 없음.
+          1분 더빙 = $1. 만료 없음.
         </p>
 
         <div className="grid gap-3 sm:grid-cols-4">
@@ -67,7 +77,7 @@ export default function BillingPage() {
         {selectedPack && (
           <Button className="mt-4">
             <CreditCard className="h-4 w-4" />
-            {selectedPack}분 크레딧 구매 ({formatCurrency(selectedPack)})
+            {selectedPack}분 충전 ({formatCurrency(selectedPack)})
             <ArrowRight className="h-4 w-4" />
           </Button>
         )}
@@ -75,7 +85,7 @@ export default function BillingPage() {
 
       {/* Invoices */}
       <Card>
-        <CardTitle>인보이스</CardTitle>
+        <CardTitle>결제 내역</CardTitle>
         <div className="mt-4 py-8 text-center text-sm text-surface-400">
           결제 내역이 없습니다
         </div>

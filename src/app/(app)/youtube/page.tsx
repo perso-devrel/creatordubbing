@@ -1,13 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { Video, ExternalLink, Unlink, AlertTriangle, Settings, Globe } from 'lucide-react'
+import Image from 'next/image'
+import { Video, ExternalLink, Unlink, AlertTriangle, Settings, Globe, Loader2 } from 'lucide-react'
 import { Card, CardTitle, CardDescription, Button, Badge, Select, Toggle } from '@/components/ui'
+import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
+import { formatNumber } from '@/utils/formatters'
 
 export default function YouTubeSettingsPage() {
-  const [isConnected, setIsConnected] = useState(false)
   const [defaultVisibility, setDefaultVisibility] = useState('public')
   const [autoSubtitles, setAutoSubtitles] = useState(true)
+
+  const { data: channel, isLoading: channelLoading } = useChannelStats()
+  const isConnected = !!channel
+  const { data: videos = [], isLoading: videosLoading } = useMyVideos(10)
 
   return (
     <div className="space-y-6">
@@ -19,19 +25,39 @@ export default function YouTubeSettingsPage() {
       {/* Channel Connection */}
       <Card>
         <CardTitle>연결된 채널</CardTitle>
-        {isConnected ? (
+        {channelLoading ? (
+          <div className="mt-4 flex items-center gap-2 text-surface-400">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">채널 정보 불러오는 중...</span>
+          </div>
+        ) : isConnected ? (
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-lg font-bold text-white">
-                YT
-              </div>
+              {channel.thumbnail ? (
+                <Image
+                  src={channel.thumbnail}
+                  alt={channel.title}
+                  width={48}
+                  height={48}
+                  className="rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-lg font-bold text-white">
+                  {channel.title[0]?.toUpperCase() || 'Y'}
+                </div>
+              )}
               <div>
-                <p className="font-semibold text-surface-900 dark:text-white">내 채널</p>
-                <p className="text-sm text-surface-500">YouTube 채널 연결됨</p>
+                <p className="font-semibold text-surface-900 dark:text-white">{channel.title}</p>
+                <p className="text-sm text-surface-500">
+                  구독자 {formatNumber(channel.subscriberCount)} · 영상 {formatNumber(channel.videoCount)}개
+                </p>
               </div>
               <Badge variant="success">연결됨</Badge>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsConnected(false)}>
+            <Button variant="outline" size="sm" onClick={() => {
+              fetch('/api/auth/signout', { method: 'POST' }).then(() => window.location.reload())
+            }}>
               <Unlink className="h-4 w-4" />
               연결 해제
             </Button>
@@ -40,9 +66,10 @@ export default function YouTubeSettingsPage() {
           <div className="mt-4 flex flex-col items-center gap-4 py-8">
             <Video className="h-12 w-12 text-surface-300" />
             <p className="text-surface-500">연결된 YouTube 채널이 없습니다</p>
-            <Button onClick={() => setIsConnected(true)}>
+            <p className="text-xs text-surface-400">Google 로그인 시 YouTube 권한이 함께 연결됩니다</p>
+            <Button onClick={() => window.location.href = '/'}>
               <Globe className="h-4 w-4" />
-              YouTube 채널 연결
+              Google 계정으로 연결
             </Button>
           </div>
         )}
@@ -57,10 +84,20 @@ export default function YouTubeSettingsPage() {
             <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
               YouTube Multi-Audio Track 업로드는 구독자 수, 커뮤니티 가이드라인 준수 등 채널 자격 요건을 충족해야 합니다. YouTube Studio에서 자격 여부를 확인하세요.
             </p>
-            <Button variant="outline" size="sm" className="mt-3">
-              <ExternalLink className="h-3.5 w-3.5" />
-              자격 확인
-            </Button>
+            <a
+              href={
+                channel?.channelId
+                  ? `https://studio.youtube.com/channel/${channel.channelId}/editing/details`
+                  : 'https://studio.youtube.com'
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="outline" size="sm" className="mt-3">
+                <ExternalLink className="h-3.5 w-3.5" />
+                YouTube Studio에서 확인
+              </Button>
+            </a>
           </div>
         </div>
       </Card>
@@ -99,11 +136,47 @@ export default function YouTubeSettingsPage() {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <CardTitle>내 영상</CardTitle>
-            <CardDescription>채널 영상</CardDescription>
+            <CardDescription>{formatNumber(channel.videoCount)}개 영상</CardDescription>
           </div>
-          <div className="py-8 text-center text-sm text-surface-400">
-            영상 목록을 불러올 수 없습니다
-          </div>
+
+          {videosLoading ? (
+            <div className="flex items-center gap-2 py-4 text-surface-400">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">영상 목록 불러오는 중...</span>
+            </div>
+          ) : videos.length === 0 ? (
+            <p className="py-4 text-center text-sm text-surface-400">영상이 없습니다</p>
+          ) : (
+            <div className="space-y-2">
+              {videos.map((video) => (
+                <div
+                  key={video.videoId}
+                  className="flex items-center justify-between rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {video.thumbnail && (
+                      <Image
+                        src={video.thumbnail}
+                        alt={video.title}
+                        width={64}
+                        height={36}
+                        className="rounded object-cover shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
+                      <p className="text-xs text-surface-500">
+                        {new Date(video.publishedAt).toLocaleDateString('ko-KR')}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" className="shrink-0 ml-3">
+                    이 영상 더빙
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       )}
     </div>
