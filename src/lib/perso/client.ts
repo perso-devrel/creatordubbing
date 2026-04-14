@@ -136,9 +136,3 @@ export async function persoFetch<T = unknown>(
   return payload as T
 }
 
-/** Build a full download URL from a Perso relative file path. */
-export function resolvePersoFileUrl(path: string): string {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
-  return `${FILE_BASE}${path.startsWith('/') ? '' : '/'}${path}`
-}

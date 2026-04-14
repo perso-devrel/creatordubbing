@@ -21,10 +21,17 @@ export function Tooltip({ content, children, position = 'top', className }: Tool
   const [show, setShow] = useState(false)
 
   return (
-    <div className="relative inline-flex" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+    <div
+      className="relative inline-flex"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+      onFocus={() => setShow(true)}
+      onBlur={() => setShow(false)}
+    >
       {children}
       {show && (
         <div
+          role="tooltip"
           className={cn(
             'absolute z-50 whitespace-nowrap rounded-md bg-surface-900 px-2.5 py-1.5 text-xs text-white shadow-lg animate-fade-in dark:bg-surface-100 dark:text-surface-900',
             positions[position],

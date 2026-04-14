@@ -33,7 +33,7 @@ export function Tabs({ defaultValue, children, className, onChange }: TabsProps)
 
 export function TabsList({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('flex gap-1 rounded-lg bg-surface-100 p-1 dark:bg-surface-800', className)}>
+    <div role="tablist" className={cn('flex gap-1 rounded-lg bg-surface-100 p-1 dark:bg-surface-800', className)}>
       {children}
     </div>
   )
@@ -45,9 +45,11 @@ export function TabsTrigger({ value, children, className }: { value: string; chi
 
   return (
     <button
+      role="tab"
+      aria-selected={isActive}
       onClick={() => setActive(value)}
       className={cn(
-        'rounded-md px-3 py-1.5 text-sm font-medium transition-all cursor-pointer',
+        'rounded-md px-3 py-1.5 text-sm font-medium transition-all cursor-pointer focus-ring',
         isActive
           ? 'bg-white text-surface-900 shadow-sm dark:bg-surface-700 dark:text-surface-100'
           : 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200',
@@ -62,5 +64,5 @@ export function TabsTrigger({ value, children, className }: { value: string; chi
 export function TabsContent({ value, children, className }: { value: string; children: ReactNode; className?: string }) {
   const { active } = useContext(TabsContext)
   if (active !== value) return null
-  return <div className={cn('animate-fade-in', className)}>{children}</div>
+  return <div role="tabpanel" className={cn('animate-fade-in', className)}>{children}</div>
 }
