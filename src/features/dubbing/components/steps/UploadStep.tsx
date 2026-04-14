@@ -11,6 +11,7 @@ import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useAuthStore } from '@/stores/authStore'
 import { ytUploadVideo, ytUploadCaption } from '@/lib/api-client'
 import { dbMutation } from '@/lib/api/dbMutation'
+import { ScriptEditor } from '../ScriptEditor'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -22,7 +23,7 @@ interface LangUploadState {
 }
 
 export function UploadStep() {
-  const { selectedLanguages, videoMeta, languageProgress, isShort, dbJobId, reset } = useDubbingStore()
+  const { selectedLanguages, videoMeta, languageProgress, isShort, dbJobId, spaceSeq, projectMap, reset } = useDubbingStore()
   const { fetchDownloads } = usePersoFlow()
   const addToast = useNotificationStore((s) => s.addToast)
   const userId = useAuthStore((s) => s.user?.uid)
@@ -80,18 +81,12 @@ export function UploadStep() {
       const videoUrl = downloads?.videoFile?.videoDownloadLink
       if (!videoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
 
-      // 2. Fetch the video file as blob
-      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 10 } }))
-      const videoResponse = await fetch(videoUrl)
-      if (!videoResponse.ok) throw new Error('영상 다운로드 실패')
-      const videoBlob = await videoResponse.blob()
-
-      // 3. Upload to YouTube
-      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 30 } }))
+      // 2. Upload to YouTube — server fetches video from Perso CDN directly (avoids browser CORS)
+      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 20 } }))
       const titlePrefix = uploadAsShort ? '#Shorts ' : ''
       const ytTitle = `${titlePrefix}[${lang.name}] ${videoMeta?.title || 'Dubbed Video'}`
       const result = await ytUploadVideo({
-        video: videoBlob,
+        videoUrl,
         title: ytTitle,
         description: `${videoMeta?.title || 'Video'} - ${lang.name} 더빙 by CreatorDub AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`,
         tags: ['CreatorDub', 'AI더빙', lang.name, 'dubbed', ...(uploadAsShort ? ['Shorts'] : [])],
@@ -369,6 +364,26 @@ export function UploadStep() {
           <p className="mt-2 text-xs text-surface-500">
             이 언어들은 처리에 실패했습니다. 새 더빙 작업으로 다시 시도할 수 있습니다.
           </p>
+        </Card>
+      )}
+
+      {/* Script editor — fix translation mistakes */}
+      {completedLangs.length > 0 && spaceSeq && (
+        <Card>
+          <CardTitle>스크립트 수정</CardTitle>
+          <p className="mb-4 mt-1 text-xs text-surface-500">
+            번역이 잘못된 경우 문장별로 수정하고 오디오를 재생성할 수 있습니다.
+          </p>
+          <div className="space-y-2">
+            {completedLangs.map((code) => (
+              <ScriptEditor
+                key={code}
+                langCode={code}
+                projectSeq={projectMap[code] || 0}
+                spaceSeq={spaceSeq}
+              />
+            ))}
+          </div>
         </Card>
       )}
 

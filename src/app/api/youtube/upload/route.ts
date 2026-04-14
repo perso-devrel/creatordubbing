@@ -22,11 +22,6 @@ export async function POST(req: NextRequest) {
     const accessToken = await requireAccessToken(req)
     const form = await req.formData()
 
-    const video = form.get('video')
-    if (!(video instanceof Blob)) {
-      throw new YouTubeError(400, 'Missing video file', 'MISSING_VIDEO')
-    }
-
     const rawFields = {
       title: String(form.get('title') || ''),
       description: String(form.get('description') || ''),
@@ -35,12 +30,26 @@ export async function POST(req: NextRequest) {
       privacyStatus: (form.get('privacyStatus') as string) || undefined,
       language: (form.get('language') as string) || undefined,
     }
-
     const fields = uploadFormSchema.parse(rawFields)
+
+    // Support videoUrl (server fetches directly, avoids client CORS) OR direct file upload
+    let videoBlob: Blob
+    const videoUrl = form.get('videoUrl')
+    if (typeof videoUrl === 'string' && videoUrl.startsWith('http')) {
+      const res = await fetch(videoUrl)
+      if (!res.ok) throw new YouTubeError(502, 'Failed to fetch video from source URL', 'VIDEO_FETCH_FAILED')
+      videoBlob = await res.blob()
+    } else {
+      const video = form.get('video')
+      if (!(video instanceof Blob)) {
+        throw new YouTubeError(400, 'Missing video file or videoUrl', 'MISSING_VIDEO')
+      }
+      videoBlob = video
+    }
 
     return uploadVideoToYouTube({
       accessToken,
-      videoBlob: video,
+      videoBlob,
       title: fields.title,
       description: fields.description,
       tags: fields.tags,

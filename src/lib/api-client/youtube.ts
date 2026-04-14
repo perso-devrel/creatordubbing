@@ -10,7 +10,8 @@ import { json } from './shared'
 const YT = '/api/youtube'
 
 export async function ytUploadVideo(params: {
-  video: File | Blob
+  video?: File | Blob
+  videoUrl?: string
   title: string
   description: string
   tags: string[]
@@ -19,7 +20,11 @@ export async function ytUploadVideo(params: {
   language?: string
 }): Promise<YouTubeUploadResult> {
   const form = new FormData()
-  form.append('video', params.video)
+  if (params.videoUrl) {
+    form.append('videoUrl', params.videoUrl)
+  } else if (params.video) {
+    form.append('video', params.video)
+  }
   form.append('title', params.title)
   form.append('description', params.description)
   form.append('tags', params.tags.join(','))

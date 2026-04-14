@@ -150,6 +150,13 @@ async function pollLanguage(
 
   const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED')
   store.getState().setJobStatus(anyFailed ? 'failed' : 'completed')
+
+  const userId = useAuthStore.getState().user?.uid
+  const durationMs = store.getState().videoMeta?.durationMs || 0
+  const minutesUsed = Math.max(1, Math.ceil(durationMs / 60_000))
+  if (userId) {
+    dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed } })
+  }
   if (dbJobId) {
     dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: anyFailed ? 'failed' : 'completed' } })
   }

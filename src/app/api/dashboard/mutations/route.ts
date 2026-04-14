@@ -7,6 +7,7 @@ import {
   updateJobStatus,
   createYouTubeUpload,
   updateJobLanguageYouTube,
+  deductUserMinutes,
 } from '@/lib/db/queries'
 import { requireSession } from '@/lib/auth/session'
 import { mutationActionSchema, getUserIdFromAction } from '@/lib/validators/dashboard'
@@ -70,6 +71,11 @@ export async function POST(req: NextRequest) {
         const { jobId, langCode, youtubeVideoId } = action.payload
         await updateJobLanguageYouTube(jobId, langCode, youtubeVideoId)
         return apiOk({ jobId, langCode })
+      }
+      case 'deductUserMinutes': {
+        const { userId, minutes } = action.payload
+        await deductUserMinutes(userId, minutes)
+        return apiOk({ userId, minutes })
       }
       default: {
         return apiFail('BAD_REQUEST', 'Unknown action type', 400)

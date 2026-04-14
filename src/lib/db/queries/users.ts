@@ -19,7 +19,7 @@ export async function upsertUser(user: {
             email = excluded.email,
             display_name = excluded.display_name,
             photo_url = excluded.photo_url,
-            google_access_token = excluded.google_access_token,
+            google_access_token = COALESCE(excluded.google_access_token, users.google_access_token),
             google_refresh_token = COALESCE(excluded.google_refresh_token, users.google_refresh_token),
             token_expires_at = COALESCE(excluded.token_expires_at, users.token_expires_at),
             updated_at = datetime('now')`,
@@ -76,5 +76,13 @@ export async function updateUserCredits(userId: string, credits: number) {
   await db.execute({
     sql: `UPDATE users SET credits_remaining = ?, updated_at = datetime('now') WHERE id = ?`,
     args: [credits, userId],
+  })
+}
+
+export async function deductUserMinutes(userId: string, minutes: number) {
+  const db = getDb()
+  await db.execute({
+    sql: `UPDATE users SET credits_remaining = MAX(0, credits_remaining - ?), updated_at = datetime('now') WHERE id = ?`,
+    args: [minutes, userId],
   })
 }
