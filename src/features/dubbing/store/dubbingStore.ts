@@ -18,6 +18,10 @@ interface DubbingState {
   nextStep: () => void
   prevStep: () => void
 
+  // Submission guard — persists across component remounts
+  isSubmitted: boolean
+  setIsSubmitted: (v: boolean) => void
+
   // Perso context
   spaceSeq: number | null
   mediaSeq: number | null
@@ -70,6 +74,7 @@ interface DubbingState {
 
 const initialState = {
   currentStep: 1 as DubbingStep,
+  isSubmitted: false,
   spaceSeq: null as number | null,
   mediaSeq: null as number | null,
   videoSource: null as VideoSource | null,
@@ -89,6 +94,7 @@ export const useDubbingStore = create<DubbingState>((set) => ({
   ...initialState,
 
   setStep: (step) => set({ currentStep: step }),
+  setIsSubmitted: (v) => set({ isSubmitted: v }),
   nextStep: () => set((s) => ({ currentStep: Math.min(5, s.currentStep + 1) as DubbingStep })),
   prevStep: () => set((s) => ({ currentStep: Math.max(1, s.currentStep - 1) as DubbingStep })),
 

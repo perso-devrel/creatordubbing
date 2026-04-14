@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Card, Progress, Badge } from '@/components/ui'
 import { cn } from '@/utils/cn'
@@ -33,14 +33,13 @@ const reasonLabels: Record<string, string> = {
 }
 
 export function ProcessingStep() {
-  const { languageProgress, jobStatus, setStep } = useDubbingStore()
+  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted } = useDubbingStore()
   const { submitDubbing, startPolling, stopPolling } = usePersoFlow()
-  const didSubmit = useRef(false)
 
   // Submit dubbing and start polling on mount
   useEffect(() => {
-    if (didSubmit.current) return
-    didSubmit.current = true
+    if (isSubmitted) return
+    setIsSubmitted(true)
 
     const run = async () => {
       try {
@@ -53,7 +52,7 @@ export function ProcessingStep() {
     run()
 
     return () => stopPolling()
-  }, [submitDubbing, startPolling, stopPolling])
+  }, [isSubmitted, setIsSubmitted, submitDubbing, startPolling, stopPolling])
 
   // Auto-advance when all complete
   const allCompleted = languageProgress.length > 0 && languageProgress.every(

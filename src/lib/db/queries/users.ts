@@ -19,7 +19,7 @@ export async function upsertUser(user: {
             email = excluded.email,
             display_name = excluded.display_name,
             photo_url = excluded.photo_url,
-            google_access_token = excluded.google_access_token,
+            google_access_token = COALESCE(excluded.google_access_token, users.google_access_token),
             google_refresh_token = COALESCE(excluded.google_refresh_token, users.google_refresh_token),
             token_expires_at = COALESCE(excluded.token_expires_at, users.token_expires_at),
             updated_at = datetime('now')`,

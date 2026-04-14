@@ -80,18 +80,12 @@ export function UploadStep() {
       const videoUrl = downloads?.videoFile?.videoDownloadLink
       if (!videoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
 
-      // 2. Fetch the video file as blob
-      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 10 } }))
-      const videoResponse = await fetch(videoUrl)
-      if (!videoResponse.ok) throw new Error('영상 다운로드 실패')
-      const videoBlob = await videoResponse.blob()
-
-      // 3. Upload to YouTube
-      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 30 } }))
+      // 2. Upload to YouTube — server fetches video from Perso CDN directly (avoids browser CORS)
+      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 20 } }))
       const titlePrefix = uploadAsShort ? '#Shorts ' : ''
       const ytTitle = `${titlePrefix}[${lang.name}] ${videoMeta?.title || 'Dubbed Video'}`
       const result = await ytUploadVideo({
-        video: videoBlob,
+        videoUrl,
         title: ytTitle,
         description: `${videoMeta?.title || 'Video'} - ${lang.name} 더빙 by CreatorDub AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`,
         tags: ['CreatorDub', 'AI더빙', lang.name, 'dubbed', ...(uploadAsShort ? ['Shorts'] : [])],
