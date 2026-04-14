@@ -7,12 +7,12 @@ import { PersoError } from '@/lib/perso/errors'
  * Base URL strategy:
  * - 'api'  → https://api.perso.ai (PERSO_API_BASE_URL)
  *   Used for /portal/*, /video-translator/*
- * - 'file' → https://perso.ai
+ * - 'file' → https://api.perso.ai
  *   Used for /file/* endpoints (metadata, upload, external, SAS, validate)
  */
 export type PersoBase = 'api' | 'file'
 
-const FILE_BASE = 'https://perso.ai'
+const FILE_BASE = 'https://api.perso.ai'
 
 export interface PersoFetchOptions extends Omit<RequestInit, 'body'> {
   baseURL?: PersoBase
