@@ -11,7 +11,6 @@ export interface GoogleUser {
   photoURL: string | null
 }
 
-const STORAGE_KEY_TOKEN = 'google_access_token'
 const STORAGE_KEY_USER = 'google_user'
 
 export function getStoredUser(): GoogleUser | null {
@@ -24,18 +23,12 @@ export function getStoredUser(): GoogleUser | null {
   }
 }
 
-export function getStoredAccessToken(): string | null {
-  if (typeof window === 'undefined') return null
-  return localStorage.getItem(STORAGE_KEY_TOKEN)
-}
-
 function storeUser(user: GoogleUser) {
   localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user))
 }
 
 export async function signInWithGoogle(): Promise<{
   user: GoogleUser
-  accessToken: string
 }> {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
   if (!clientId) throw new Error('NEXT_PUBLIC_GOOGLE_CLIENT_ID를 .env.local에 설정해주세요')
@@ -49,14 +42,16 @@ export async function signInWithGoogle(): Promise<{
       'https://www.googleapis.com/auth/youtube.upload',
       'https://www.googleapis.com/auth/youtube.readonly',
       'https://www.googleapis.com/auth/youtube.force-ssl',
+      'https://www.googleapis.com/auth/yt-analytics.readonly',
     ].join(' ')
 
     const authUrl =
       `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${encodeURIComponent(clientId)}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=token` +
+      `&response_type=code` +
       `&scope=${encodeURIComponent(scope)}` +
+      `&access_type=offline` +
       `&include_granted_scopes=true` +
       `&prompt=consent`
 
@@ -79,35 +74,50 @@ export async function signInWithGoogle(): Promise<{
           clearInterval(timer)
           popup.close()
 
-          const hash = new URL(url).hash.substring(1)
-          const params = new URLSearchParams(hash)
-          const accessToken = params.get('access_token')
+          const parsedUrl = new URL(url)
+          const code = parsedUrl.searchParams.get('code')
+          const error = parsedUrl.searchParams.get('error')
 
-          if (!accessToken) {
-            reject(new Error('인증 토큰을 받지 못했습니다.'))
+          if (error) {
+            reject(new Error(`Google 인증 오류: ${error}`))
             return
           }
 
-          const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          })
-          if (!res.ok) throw new Error('유저 정보를 가져올 수 없습니다.')
-          const info = await res.json()
-
-          const user: GoogleUser = {
-            uid: info.sub,
-            email: info.email,
-            displayName: info.name || null,
-            photoURL: info.picture || null,
+          if (!code) {
+            reject(new Error('인증 코드를 받지 못했습니다.'))
+            return
           }
 
-          localStorage.setItem(STORAGE_KEY_TOKEN, accessToken)
+          const res = await fetch('/api/auth/callback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, redirectUri }),
+          })
+
+          if (!res.ok) {
+            const body = await res.json().catch(() => null)
+            throw new Error(body?.error?.message || '인증에 실패했습니다.')
+          }
+
+          const body = await res.json()
+          const data = body.data
+
+          const user: GoogleUser = {
+            uid: data.id,
+            email: data.email,
+            displayName: data.displayName || null,
+            photoURL: data.photoURL || null,
+          }
+
           storeUser(user)
 
-          resolve({ user, accessToken })
+          resolve({ user })
         }
-      } catch {
-        // Cross-origin — popup still on Google's domain, keep waiting
+      } catch (err) {
+        if (err instanceof Error && err.message !== '로그인이 취소되었습니다.') {
+          clearInterval(timer)
+          reject(err)
+        }
       }
     }, 500)
   })
@@ -115,14 +125,11 @@ export async function signInWithGoogle(): Promise<{
 
 export function signOut(): void {
   if (typeof window === 'undefined') return
-  localStorage.removeItem(STORAGE_KEY_TOKEN)
   localStorage.removeItem(STORAGE_KEY_USER)
 }
 
-export function restoreSession(): { user: GoogleUser | null; accessToken: string | null } {
-  const user = getStoredUser()
-  const accessToken = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY_TOKEN) : null
-  return { user, accessToken }
+export function restoreSession(): { user: GoogleUser | null } {
+  return { user: getStoredUser() }
 }
 
 export type User = GoogleUser

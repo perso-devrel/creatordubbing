@@ -7,6 +7,7 @@ import { formatDuration } from '@/utils/formatters'
 import { useRecentJobs } from '@/hooks/useDashboardData'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { Languages } from 'lucide-react'
+import type { DubbingJob } from './types'
 
 const statusConfig: Record<string, { label: string; variant: 'success' | 'brand' | 'default' | 'error' }> = {
   completed: { label: '완료', variant: 'success' },
@@ -15,14 +16,18 @@ const statusConfig: Record<string, { label: string; variant: 'success' | 'brand'
   failed: { label: '실패', variant: 'error' },
 }
 
-export function RecentJobs() {
-  const { data: jobs } = useRecentJobs()
+interface RecentJobsProps {
+  initialData?: DubbingJob[]
+}
+
+export function RecentJobs({ initialData }: RecentJobsProps) {
+  const { data: jobs } = useRecentJobs(initialData)
 
   return (
     <Card>
       <div className="mb-4 flex items-center justify-between">
         <CardTitle>최근 작업</CardTitle>
-        <Link href="/batch" className="text-sm text-brand-500 hover:text-brand-600">전체 보기</Link>
+        <Link href="/batch" aria-label="최근 작업 전체 보기" className="text-sm text-brand-500 hover:text-brand-600">전체 보기</Link>
       </div>
 
       {!jobs || jobs.length === 0 ? (
@@ -34,21 +39,21 @@ export function RecentJobs() {
       ) : (
         <div className="space-y-3">
           {jobs.map((job) => {
-            const status = statusConfig[job.status as string] || statusConfig.pending
-            const languages = ((job.languages as string) || '').split(',').filter(Boolean)
+            const status = statusConfig[job.status] || statusConfig.pending
+            const languages = (job.languages || '').split(',').filter(Boolean)
             const avgProgress = Number(job.avg_progress) || 0
 
             return (
               <div
-                key={job.id as number}
+                key={job.id}
                 className="flex items-center gap-4 rounded-lg border border-surface-100 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
               >
                 <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-400 dark:bg-surface-800">
-                  {formatDuration(Number(job.video_duration_ms) / 1000)}
+                  {formatDuration(job.video_duration_ms / 1000)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-surface-900 dark:text-white">
-                    {job.video_title as string}
+                    {job.video_title}
                   </p>
                   <div className="mt-1 flex flex-wrap gap-1">
                     {languages.slice(0, 4).map((lang) => (

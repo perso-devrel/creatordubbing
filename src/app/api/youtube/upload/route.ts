@@ -1,3 +1,5 @@
+import { NextRequest } from 'next/server'
+import { requireSession } from '@/lib/auth/session'
 import {
   uploadVideoToYouTube,
   YouTubeError,
@@ -6,28 +8,18 @@ import {
   requireAccessToken,
   ytHandle,
 } from '@/lib/youtube/route-helpers'
+import { uploadFormSchema } from '@/lib/validators/youtube'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 600 // long uploads
+export const maxDuration = 600
 
-/**
- * POST /api/youtube/upload
- *
- * Accepts multipart/form-data with:
- *   - video: File (required)
- *   - title: string
- *   - description: string
- *   - tags: string (comma-separated)
- *   - categoryId?: string
- *   - privacyStatus?: 'public' | 'unlisted' | 'private'
- *   - language?: string
- *
- * Auth: `Authorization: Bearer <google_access_token>` header required.
- */
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
+
   return ytHandle(async () => {
-    const accessToken = requireAccessToken(req)
+    const accessToken = await requireAccessToken(req)
     const form = await req.formData()
 
     const video = form.get('video')
@@ -35,30 +27,26 @@ export async function POST(req: Request) {
       throw new YouTubeError(400, 'Missing video file', 'MISSING_VIDEO')
     }
 
-    const title = String(form.get('title') || '')
-    const description = String(form.get('description') || '')
-    const tagsRaw = String(form.get('tags') || '')
-    const tags = tagsRaw
-      ? tagsRaw.split(',').map((t) => t.trim()).filter(Boolean)
-      : []
+    const rawFields = {
+      title: String(form.get('title') || ''),
+      description: String(form.get('description') || ''),
+      tags: String(form.get('tags') || ''),
+      categoryId: (form.get('categoryId') as string) || undefined,
+      privacyStatus: (form.get('privacyStatus') as string) || undefined,
+      language: (form.get('language') as string) || undefined,
+    }
 
-    const categoryId = (form.get('categoryId') as string) || undefined
-    const privacyStatus = (form.get('privacyStatus') as
-      | 'public'
-      | 'unlisted'
-      | 'private'
-      | null) || undefined
-    const language = (form.get('language') as string) || undefined
+    const fields = uploadFormSchema.parse(rawFields)
 
     return uploadVideoToYouTube({
       accessToken,
       videoBlob: video,
-      title,
-      description,
-      tags,
-      categoryId,
-      privacyStatus: privacyStatus ?? undefined,
-      language,
+      title: fields.title,
+      description: fields.description,
+      tags: fields.tags,
+      categoryId: fields.categoryId,
+      privacyStatus: fields.privacyStatus,
+      language: fields.language,
     })
   })
 }

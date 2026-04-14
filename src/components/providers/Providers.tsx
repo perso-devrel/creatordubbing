@@ -11,22 +11,16 @@ import { restoreSession } from '@/lib/firebase'
 function ThemeHydrator() {
   useEffect(() => {
     useThemeStore.persist.rehydrate()
-    const mode = useThemeStore.getState().mode
-    const root = document.documentElement
-    if (mode === 'dark') root.classList.add('dark')
-    else root.classList.remove('dark')
   }, [])
   return null
 }
 
 function AuthHydrator() {
   useEffect(() => {
-    const { user, accessToken } = restoreSession()
+    const { user } = restoreSession()
     const auth = useAuthStore.getState()
     if (user) {
       auth.setUser(user)
-      if (accessToken) auth.setAccessToken(accessToken)
-      // Sync to DB (best-effort)
       fetch('/api/auth/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -35,7 +29,6 @@ function AuthHydrator() {
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-          accessToken,
         }),
       }).catch(() => {})
     } else {

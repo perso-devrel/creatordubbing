@@ -3,6 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardTitle } from '@/components/ui'
 import { useCreditUsage } from '@/hooks/useDashboardData'
+import type { CreditUsageRow } from './types'
 
 // Fallback data when DB has no data yet
 const fallbackData = [
@@ -12,12 +13,16 @@ const fallbackData = [
   { month: '2026-04', used: 0 },
 ]
 
-export function CreditChart() {
-  const { data: rawData } = useCreditUsage()
+interface CreditChartProps {
+  initialData?: CreditUsageRow[]
+}
+
+export function CreditChart({ initialData }: CreditChartProps) {
+  const { data: rawData } = useCreditUsage(initialData)
 
   const chartData = rawData && rawData.length > 0
     ? rawData.map((r) => ({
-        month: (r.month as string).slice(5), // "2026-04" → "04"
+        month: r.month.slice(5),
         used: Number(r.minutes_used) || 0,
       })).reverse()
     : fallbackData.map((d) => ({ month: d.month.slice(5), used: d.used }))

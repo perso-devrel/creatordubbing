@@ -1,15 +1,17 @@
+import { NextRequest } from 'next/server'
+import { requireSession } from '@/lib/auth/session'
 import { persoFetch } from '@/lib/perso/client'
-import { handle, readJson, requireIntParam } from '@/lib/perso/route-helpers'
+import { handle, parseBody, requireIntParam } from '@/lib/perso/route-helpers'
+import { scriptPatchBodySchema } from '@/lib/validators/perso'
 import type { ScriptSentence } from '@/lib/perso/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-/**
- * GET /api/perso/script?projectSeq={p}&spaceSeq={s}
- *   → GET /video-translator/api/v1/projects/{projectSeq}/spaces/{spaceSeq}/script
- */
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
+
   return handle(async () => {
     const url = new URL(req.url)
     const projectSeq = requireIntParam(url, 'projectSeq')
@@ -21,19 +23,15 @@ export async function GET(req: Request) {
   })
 }
 
-/**
- * PATCH /api/perso/script?projectSeq={p}&sentenceSeq={s}
- *   → PATCH /video-translator/api/v1/project/{projectSeq}/audio-sentence/{sentenceSeq}
- *
- * Body: { translatedText: string }
- * Used for inline script editing in the review UI.
- */
-export async function PATCH(req: Request) {
+export async function PATCH(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
+
   return handle(async () => {
     const url = new URL(req.url)
     const projectSeq = requireIntParam(url, 'projectSeq')
     const sentenceSeq = requireIntParam(url, 'sentenceSeq')
-    const body = await readJson<{ translatedText: string }>(req)
+    const body = await parseBody(req, scriptPatchBodySchema)
     return persoFetch<unknown>(
       `/video-translator/api/v1/project/${projectSeq}/audio-sentence/${sentenceSeq}`,
       { method: 'PATCH', baseURL: 'api', body },

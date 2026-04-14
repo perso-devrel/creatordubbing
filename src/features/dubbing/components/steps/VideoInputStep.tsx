@@ -1,17 +1,18 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import { Link2, Upload, Film, ArrowRight, Play, FileVideo, Zap } from 'lucide-react'
 import { Card, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Progress } from '@/components/ui'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
-import { isValidYouTubeUrl } from '@/utils/validators'
+import { isValidVideoUrl, isValidYouTubeUrl } from '@/utils/validators'
 import { formatDuration } from '@/utils/formatters'
 import { getPersoFileUrl } from '@/lib/api-client'
 
 export function VideoInputStep() {
-  const { videoMeta, setVideoSource, setIsShort, isShort, nextStep } = useDubbingStore()
-  const { uploadLocalVideo, importYouTubeVideo } = usePersoFlow()
+  const { videoMeta, setVideoSource, setIsShort, nextStep } = useDubbingStore()
+  const { uploadLocalVideo, importVideoByUrl } = usePersoFlow()
 
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,12 +21,12 @@ export function VideoInputStep() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleUrlSubmit = async () => {
-    if (!isValidYouTubeUrl(url)) return
+    if (!isValidVideoUrl(url)) return
     setLoading(true)
     setError(null)
     try {
       setVideoSource({ type: 'url', url })
-      await importYouTubeVideo(url)
+      await importVideoByUrl(url)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import video')
     } finally {
@@ -69,7 +70,7 @@ export function VideoInputStep() {
     }
   }, [videoMeta, setIsShort])
 
-  const isValid = url.length > 0 && isValidYouTubeUrl(url)
+  const isValid = url.length > 0 && isValidVideoUrl(url)
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -81,7 +82,7 @@ export function VideoInputStep() {
       <Tabs defaultValue="upload">
         <TabsList className="mx-auto w-fit">
           <TabsTrigger value="url">
-            <span className="flex items-center gap-1.5"><Link2 className="h-4 w-4" /> YouTube URL</span>
+            <span className="flex items-center gap-1.5"><Link2 className="h-4 w-4" /> 영상 URL</span>
           </TabsTrigger>
           <TabsTrigger value="upload">
             <span className="flex items-center gap-1.5"><Upload className="h-4 w-4" /> 업로드</span>
@@ -95,7 +96,7 @@ export function VideoInputStep() {
           <Card>
             <div className="flex gap-2">
               <Input
-                placeholder="https://youtube.com/watch?v=..."
+                placeholder="YouTube URL 또는 영상 직접 링크 (.mp4, .mov, .webm)"
                 value={url}
                 onChange={(e) => { setUrl(e.target.value); setError(null) }}
                 icon={<Play className="h-4 w-4" />}
@@ -108,7 +109,7 @@ export function VideoInputStep() {
             </div>
             {loading && (
               <p className="mt-2 text-xs text-surface-400">
-                YouTube에서 다운로드 중... 긴 영상은 몇 분 걸릴 수 있습니다.
+                {isValidYouTubeUrl(url) ? 'YouTube에서' : '원격 서버에서'} 다운로드 중... 긴 영상은 몇 분 걸릴 수 있습니다.
               </p>
             )}
           </Card>
@@ -123,10 +124,14 @@ export function VideoInputStep() {
             onChange={handleFileInputChange}
           />
           <Card
-            className="cursor-pointer border-2 border-dashed border-surface-300 text-center transition-colors hover:border-brand-400 dark:border-surface-700"
+            role="button"
+            tabIndex={0}
+            aria-label="영상 파일 선택"
+            className="cursor-pointer border-2 border-dashed border-surface-300 text-center transition-colors hover:border-brand-400 focus-ring dark:border-surface-700"
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleFileDrop}
             onClick={() => !loading && fileInputRef.current?.click()}
+            onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !loading) { e.preventDefault(); fileInputRef.current?.click() } }}
           >
             <div className="py-8">
               {loading ? (
@@ -167,10 +172,13 @@ export function VideoInputStep() {
         <Card className="animate-slide-up">
           <div className="flex gap-4">
             {videoMeta.thumbnail ? (
-              <img
+              <Image
                 src={videoMeta.thumbnail.startsWith('http') ? videoMeta.thumbnail : getPersoFileUrl(videoMeta.thumbnail)}
                 alt={videoMeta.title}
-                className="h-20 w-32 shrink-0 rounded-lg object-cover bg-surface-200"
+                width={128}
+                height={80}
+                className="shrink-0 rounded-lg object-cover bg-surface-200"
+                unoptimized={!videoMeta.thumbnail.startsWith('http')}
               />
             ) : (
               <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg bg-surface-200 text-sm text-surface-400 dark:bg-surface-800">

@@ -1,24 +1,23 @@
+import { NextRequest } from 'next/server'
+import { requireSession } from '@/lib/auth/session'
 import { uploadCaptionToYouTube } from '@/lib/youtube/server'
 import {
   requireAccessToken,
+  parseYtBody,
   ytHandle,
 } from '@/lib/youtube/route-helpers'
+import { captionBodySchema } from '@/lib/validators/youtube'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-interface Body {
-  videoId: string
-  language: string
-  name: string
-  srtContent: string
-}
+export async function POST(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
 
-/** POST /api/youtube/caption — upload SRT to existing video */
-export async function POST(req: Request) {
   return ytHandle(async () => {
-    const accessToken = requireAccessToken(req)
-    const body = (await req.json()) as Body
+    const accessToken = await requireAccessToken(req)
+    const body = await parseYtBody(req, captionBodySchema)
     await uploadCaptionToYouTube({ accessToken, ...body })
     return { uploaded: true }
   })

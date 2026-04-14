@@ -1,32 +1,32 @@
+import { NextRequest } from 'next/server'
+import { requireSession } from '@/lib/auth/session'
 import {
   fetchChannelStatistics,
   fetchVideoStatistics,
 } from '@/lib/youtube/server'
 import {
   requireAccessToken,
+  parseQuery,
   ytHandle,
 } from '@/lib/youtube/route-helpers'
+import { statsQuerySchema } from '@/lib/validators/youtube'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-/**
- * GET /api/youtube/stats?videoIds=a,b,c    → video statistics
- * GET /api/youtube/stats?channel=true      → authenticated user's channel stats
- */
-export async function GET(req: Request) {
-  return ytHandle(async () => {
-    const accessToken = requireAccessToken(req)
-    const url = new URL(req.url)
+export async function GET(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
 
-    if (url.searchParams.get('channel') === 'true') {
+  return ytHandle(async () => {
+    const accessToken = await requireAccessToken(req)
+    const url = new URL(req.url)
+    const query = parseQuery(url, statsQuerySchema)
+
+    if (query.channel === 'true') {
       return fetchChannelStatistics(accessToken)
     }
 
-    const videoIds = (url.searchParams.get('videoIds') || '')
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean)
-    return fetchVideoStatistics(accessToken, videoIds)
+    return fetchVideoStatistics(accessToken, query.videoIds)
   })
 }

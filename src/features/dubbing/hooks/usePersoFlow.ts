@@ -1,9 +1,5 @@
 'use client'
 
-/**
- * Hook that orchestrates the full Perso.ai dubbing workflow:
- * 1. Init space → 2. Upload video → 3. Submit translation → 4. Poll progress → 5. Get downloads
- */
 import { useCallback, useRef } from 'react'
 import { useDubbingStore } from '../store/dubbingStore'
 import { useNotificationStore } from '@/stores/notificationStore'
@@ -17,69 +13,13 @@ import {
   submitTranslation,
   getProjectProgress,
   getDownloadLinks,
-  getProjectScript,
   getPersoFileUrl,
 } from '@/lib/api-client'
-import type { DownloadTarget, ScriptSentence } from '@/lib/perso/types'
+import type { DownloadTarget } from '@/lib/perso/types'
 import type { LanguageProgress } from '../types/dubbing.types'
+import { dbMutation } from '@/lib/api/dbMutation'
 
-const POLL_INTERVAL = 5000 // Perso recommends 5s
-
-// ─── Internal: best-effort fetch to /api/dashboard/mutations ──────
-type DbAction =
-  | {
-      type: 'createDubbingJob'
-      payload: {
-        userId: string
-        videoTitle: string
-        videoDurationMs: number
-        videoThumbnail: string
-        sourceLanguage: string
-        mediaSeq: number
-        spaceSeq: number
-        lipSyncEnabled: boolean
-        isShort: boolean
-      }
-    }
-  | {
-      type: 'createJobLanguages'
-      payload: { jobId: number; languages: { code: string; projectSeq: number }[] }
-    }
-  | {
-      type: 'updateJobLanguageProgress'
-      payload: {
-        jobId: number
-        langCode: string
-        status: string
-        progress: number
-        progressReason: string
-      }
-    }
-  | {
-      type: 'updateJobLanguageCompleted'
-      payload: {
-        jobId: number
-        langCode: string
-        urls: { dubbedVideoUrl?: string; audioUrl?: string; srtUrl?: string }
-      }
-    }
-  | { type: 'updateJobStatus'; payload: { jobId: number; status: string } }
-
-async function dbMutation<T = unknown>(action: DbAction): Promise<T | null> {
-  try {
-    const res = await fetch('/api/dashboard/mutations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(action),
-      cache: 'no-store',
-    })
-    const body = await res.json().catch(() => null)
-    if (!body || !body.ok) return null
-    return body.data as T
-  } catch {
-    return null
-  }
-}
+const POLL_INTERVAL = 5000
 
 function mapProgressReasonToStatus(reason: string) {
   switch (reason) {
@@ -103,17 +43,129 @@ function mapProgressReasonToStatus(reason: string) {
   }
 }
 
+const store = useDubbingStore
+
+async function saveJobToDb(
+  mediaSeq: number,
+  spaceSeq: number,
+  selectedLanguages: string[],
+  projectMap: Record<string, number>,
+  lipSyncEnabled: boolean,
+): Promise<number | null> {
+  const userId = useAuthStore.getState().user?.uid
+  const videoMeta = store.getState().videoMeta
+  const isShort = store.getState().isShort
+  if (!userId) return null
+
+  const result = await dbMutation<{ jobId: number }>({
+    type: 'createDubbingJob',
+    payload: {
+      userId,
+      videoTitle: videoMeta?.title || '',
+      videoDurationMs: videoMeta?.durationMs || 0,
+      videoThumbnail: videoMeta?.thumbnail || '',
+      sourceLanguage: 'ko',
+      mediaSeq,
+      spaceSeq,
+      lipSyncEnabled,
+      isShort,
+    },
+  })
+  if (!result?.jobId) return null
+
+  store.getState().setDbJobId(result.jobId)
+  await dbMutation({
+    type: 'createJobLanguages',
+    payload: {
+      jobId: result.jobId,
+      languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
+    },
+  })
+  return result.jobId
+}
+
+async function pollLanguage(
+  langCode: string,
+  projectSeq: number,
+  spaceSeq: number,
+  pollTimers: Record<string, ReturnType<typeof setInterval>>,
+  addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
+) {
+  const progress = await getProjectProgress(projectSeq, spaceSeq)
+  const status = mapProgressReasonToStatus(progress.progressReason)
+  store.getState().updateLanguageProgress(langCode, {
+    status,
+    progress: progress.progress,
+    progressReason: progress.progressReason,
+  })
+
+  const dbJobId = store.getState().dbJobId
+  if (dbJobId) {
+    dbMutation({
+      type: 'updateJobLanguageProgress',
+      payload: { jobId: dbJobId, langCode, status, progress: progress.progress, progressReason: progress.progressReason },
+    })
+  }
+
+  const isTerminal = progress.progressReason === 'COMPLETED' || progress.progressReason === 'FAILED' || progress.progressReason === 'CANCELED'
+  if (!isTerminal) return
+
+  clearInterval(pollTimers[langCode])
+  delete pollTimers[langCode]
+
+  if (progress.progressReason === 'COMPLETED') {
+    try {
+      const downloads = await getDownloadLinks(projectSeq, spaceSeq, 'all')
+      store.getState().updateLanguageProgress(langCode, {
+        audioUrl: downloads.audioFile?.voiceAudioDownloadLink,
+        srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
+        dubbingVideoUrl: downloads.videoFile?.videoDownloadLink,
+      })
+      if (dbJobId) {
+        dbMutation({
+          type: 'updateJobLanguageCompleted',
+          payload: {
+            jobId: dbJobId,
+            langCode,
+            urls: {
+              dubbedVideoUrl: downloads.videoFile?.videoDownloadLink,
+              audioUrl: downloads.audioFile?.voiceAudioDownloadLink,
+              srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
+            },
+          },
+        })
+      }
+    } catch {
+      // Download links will be fetched later if needed
+    }
+  }
+
+  const allProgress = store.getState().languageProgress
+  const allDone = allProgress.every(
+    (lp) => lp.progressReason === 'COMPLETED' || lp.progressReason === 'FAILED' || lp.progressReason === 'CANCELED',
+  )
+  if (!allDone) return
+
+  const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED')
+  store.getState().setJobStatus(anyFailed ? 'failed' : 'completed')
+  if (dbJobId) {
+    dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: anyFailed ? 'failed' : 'completed' } })
+  }
+  addToast({
+    type: anyFailed ? 'warning' : 'success',
+    title: anyFailed ? 'Dubbing completed with errors' : 'All dubbing complete!',
+  })
+}
+
 export function usePersoFlow() {
-  const store = useDubbingStore
   const addToast = useNotificationStore((s) => s.addToast)
   const pollTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({})
 
-  /** Step 0: Load space info (get spaceSeq) */
   const initSpace = useCallback(async () => {
     try {
       const spaces = await getSpaces()
       if (spaces.length > 0) {
-        const space = spaces[0] // Use first space
+        const space = spaces[0]
         store.getState().setSpaceSeq(space.spaceSeq)
         return space.spaceSeq
       }
@@ -125,7 +177,6 @@ export function usePersoFlow() {
     }
   }, [addToast])
 
-  /** Step 1a: Upload local video file */
   const uploadLocalVideo = useCallback(async (file: File) => {
     let spaceSeq = store.getState().spaceSeq
     if (!spaceSeq) spaceSeq = await initSpace()
@@ -152,41 +203,42 @@ export function usePersoFlow() {
     }
   }, [initSpace, addToast])
 
-  /** Step 1b: Fetch YouTube video metadata and import */
-  const importYouTubeVideo = useCallback(async (url: string) => {
+  const importVideoByUrl = useCallback(async (url: string) => {
     let spaceSeq = store.getState().spaceSeq
     if (!spaceSeq) spaceSeq = await initSpace()
 
-    addToast({ type: 'info', title: 'Importing from YouTube...', duration: 8000 })
+    const isYouTube = /(?:youtube\.com|youtu\.be)/.test(url)
+    addToast({
+      type: 'info',
+      title: isYouTube ? 'YouTube에서 가져오는 중...' : '영상 URL 가져오는 중...',
+      duration: 8000,
+    })
 
     try {
-      // Get metadata first
       const meta = await getExternalMetadata(spaceSeq!, url, 'ko')
       store.getState().setVideoMeta({
         id: url,
-        title: meta.originalName || 'YouTube Video',
+        title: meta.originalName || (isYouTube ? 'YouTube Video' : 'External Video'),
         thumbnail: meta.thumbnailFilePath ? getPersoFileUrl(meta.thumbnailFilePath) : '',
         duration: Math.round(meta.durationMs / 1000),
         durationMs: meta.durationMs,
-        channelTitle: 'YouTube',
+        channelTitle: isYouTube ? 'YouTube' : 'External',
         width: meta.width,
         height: meta.height,
       })
 
-      // Import the video
       const result = await uploadExternalVideo(spaceSeq!, url, 'ko')
       store.getState().setMediaSeq(result.seq)
 
-      addToast({ type: 'success', title: 'YouTube video imported' })
+      addToast({ type: 'success', title: '영상 가져오기 완료' })
       return result
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'YouTube import failed'
+      const msg = err instanceof Error ? err.message : '영상 가져오기 실패'
       addToast({ type: 'error', title: 'Import Error', message: msg })
       throw err
     }
   }, [initSpace, addToast])
 
-  /** Step 2: Submit translation job */
   const submitDubbing = useCallback(async () => {
     const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled } = store.getState()
     if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
@@ -194,25 +246,22 @@ export function usePersoFlow() {
     addToast({ type: 'info', title: 'Submitting dubbing job...', message: `${selectedLanguages.length} languages` })
 
     try {
-      // Initialize queue first (translate route also auto-inits — this is a safety net)
       try {
         await initializeQueue(spaceSeq)
       } catch {
-        // Already initialized — ignore
+        // Already initialized
       }
 
-      // Submit translation — Perso creates one project per target language
       const result = await submitTranslation(spaceSeq, {
         mediaSeq,
         isVideoProject: true,
-        sourceLanguageCode: 'ko', // test_video.mp4 is Korean
+        sourceLanguageCode: 'ko',
         targetLanguageCodes: selectedLanguages,
         numberOfSpeakers: 1,
         withLipSync: lipSyncEnabled,
         preferredSpeedType: 'GREEN',
       })
 
-      // Map projectSeqs to language codes
       const projectIds = result.startGenerateProjectIdList || []
       const projectMap: Record<string, number> = {}
       selectedLanguages.forEach((lang, i) => {
@@ -222,7 +271,6 @@ export function usePersoFlow() {
       })
       store.getState().setProjectMap(projectMap)
 
-      // Initialize language progress
       const initialProgress: LanguageProgress[] = selectedLanguages.map((code) => ({
         langCode: code,
         projectSeq: projectMap[code] || 0,
@@ -233,37 +281,8 @@ export function usePersoFlow() {
       store.getState().setLanguageProgress(initialProgress)
       store.getState().setJobStatus('transcribing')
 
-      // Save to DB (best-effort)
       try {
-        const userId = useAuthStore.getState().user?.uid
-        const videoMeta = store.getState().videoMeta
-        const isShort = store.getState().isShort
-        if (userId) {
-          const createResult = await dbMutation<{ jobId: number }>({
-            type: 'createDubbingJob',
-            payload: {
-              userId,
-              videoTitle: videoMeta?.title || '',
-              videoDurationMs: videoMeta?.durationMs || 0,
-              videoThumbnail: videoMeta?.thumbnail || '',
-              sourceLanguage: 'ko',
-              mediaSeq,
-              spaceSeq,
-              lipSyncEnabled,
-              isShort,
-            },
-          })
-          if (createResult?.jobId) {
-            store.getState().setDbJobId(createResult.jobId)
-            await dbMutation({
-              type: 'createJobLanguages',
-              payload: {
-                jobId: createResult.jobId,
-                languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
-              },
-            })
-          }
-        }
+        await saveJobToDb(mediaSeq, spaceSeq, selectedLanguages, projectMap, lipSyncEnabled)
       } catch {
         // DB save is best-effort
       }
@@ -278,111 +297,29 @@ export function usePersoFlow() {
     }
   }, [addToast])
 
-  /** Step 3: Start polling progress for all projects */
   const startPolling = useCallback(() => {
     const { spaceSeq, projectMap } = store.getState()
     if (!spaceSeq) return
 
-    // Clear any existing timers
     Object.values(pollTimers.current).forEach(clearInterval)
     pollTimers.current = {}
 
     Object.entries(projectMap).forEach(([langCode, projectSeq]) => {
       pollTimers.current[langCode] = setInterval(async () => {
         try {
-          const progress = await getProjectProgress(projectSeq, spaceSeq)
-
-          const status = mapProgressReasonToStatus(progress.progressReason)
-          store.getState().updateLanguageProgress(langCode, {
-            status,
-            progress: progress.progress,
-            progressReason: progress.progressReason,
-          })
-
-          // DB progress update (best-effort)
-          const dbJobId = store.getState().dbJobId
-          if (dbJobId) {
-            dbMutation({
-              type: 'updateJobLanguageProgress',
-              payload: {
-                jobId: dbJobId,
-                langCode,
-                status,
-                progress: progress.progress,
-                progressReason: progress.progressReason,
-              },
-            })
-          }
-
-          // If completed or failed, stop polling this language
-          if (progress.progressReason === 'COMPLETED' || progress.progressReason === 'FAILED' || progress.progressReason === 'CANCELED') {
-            clearInterval(pollTimers.current[langCode])
-            delete pollTimers.current[langCode]
-
-            if (progress.progressReason === 'COMPLETED') {
-              // Fetch download links
-              try {
-                const downloads = await getDownloadLinks(projectSeq, spaceSeq, 'all')
-                store.getState().updateLanguageProgress(langCode, {
-                  audioUrl: downloads.audioFile?.voiceAudioDownloadLink,
-                  srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
-                  dubbingVideoUrl: downloads.videoFile?.videoDownloadLink,
-                })
-                // Save URLs to DB
-                if (dbJobId) {
-                  dbMutation({
-                    type: 'updateJobLanguageCompleted',
-                    payload: {
-                      jobId: dbJobId,
-                      langCode,
-                      urls: {
-                        dubbedVideoUrl: downloads.videoFile?.videoDownloadLink,
-                        audioUrl: downloads.audioFile?.voiceAudioDownloadLink,
-                        srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
-                      },
-                    },
-                  })
-                }
-              } catch {
-                // Download links will be fetched later if needed
-              }
-            }
-
-            // Check if all languages are done
-            const allProgress = store.getState().languageProgress
-            const allDone = allProgress.every(
-              (lp) => lp.progressReason === 'COMPLETED' || lp.progressReason === 'FAILED' || lp.progressReason === 'CANCELED',
-            )
-            if (allDone) {
-              const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED')
-              store.getState().setJobStatus(anyFailed ? 'failed' : 'completed')
-              // Update job status in DB
-              if (dbJobId) {
-                dbMutation({
-                  type: 'updateJobStatus',
-                  payload: { jobId: dbJobId, status: anyFailed ? 'failed' : 'completed' },
-                })
-              }
-              addToast({
-                type: anyFailed ? 'warning' : 'success',
-                title: anyFailed ? 'Dubbing completed with errors' : 'All dubbing complete!',
-              })
-            }
-          }
+          await pollLanguage(langCode, projectSeq, spaceSeq, pollTimers.current, addToast)
         } catch {
-          // Network hiccup — just retry on next interval
+          // Network hiccup — retry on next interval
         }
       }, POLL_INTERVAL)
     })
   }, [addToast])
 
-  /** Stop all polling */
   const stopPolling = useCallback(() => {
     Object.values(pollTimers.current).forEach(clearInterval)
     pollTimers.current = {}
   }, [])
 
-  /** Fetch download links for a specific project */
   const fetchDownloads = useCallback(async (langCode: string, target: DownloadTarget = 'all') => {
     const { spaceSeq, projectMap } = store.getState()
     const projectSeq = projectMap[langCode]
@@ -397,27 +334,12 @@ export function usePersoFlow() {
     }
   }, [addToast])
 
-  /** Fetch script/sentences for a completed project */
-  const fetchScript = useCallback(async (langCode: string): Promise<ScriptSentence[]> => {
-    const { spaceSeq, projectMap } = store.getState()
-    const projectSeq = projectMap[langCode]
-    if (!spaceSeq || !projectSeq) return []
-
-    try {
-      return await getProjectScript(projectSeq, spaceSeq)
-    } catch {
-      return []
-    }
-  }, [])
-
   return {
-    initSpace,
     uploadLocalVideo,
-    importYouTubeVideo,
+    importVideoByUrl,
     submitDubbing,
     startPolling,
     stopPolling,
     fetchDownloads,
-    fetchScript,
   }
 }

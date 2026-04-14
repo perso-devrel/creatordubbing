@@ -19,7 +19,10 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://creatordub.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "CreatorDub",
+  title: {
+    default: "CreatorDub",
+    template: "%s | CreatorDub",
+  },
   description:
     "Perso.ai + YouTube API 기반 크리에이터 전용 10개 언어 자동 더빙 SaaS",
 };

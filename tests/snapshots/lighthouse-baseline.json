@@ -1,0 +1,10 @@
+{
+  "created": "2026-04-10",
+  "source": "lighthouse-prod.report.json",
+  "scores": {
+    "performance": 83,
+    "accessibility": 90,
+    "best-practices": 100,
+    "seo": 91
+  }
+}
