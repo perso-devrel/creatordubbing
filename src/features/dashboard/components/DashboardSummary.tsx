@@ -27,7 +27,7 @@ export function DashboardSummary({ initialData }: DashboardSummaryProps) {
     },
     {
       label: '남은 크레딧',
-      value: data ? Number(data.credits_remaining) : 100,
+      value: data ? Number(data.credits_remaining) : 0,
       icon: Coins,
       color: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
     },
