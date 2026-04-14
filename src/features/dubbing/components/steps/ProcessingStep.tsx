@@ -32,6 +32,13 @@ const reasonLabels: Record<string, string> = {
   CANCELED: '취소됨',
 }
 
+function getProgressLabel(lp: { progressReason: string; progress: number }) {
+  if (lp.progress >= 100 && lp.progressReason !== 'COMPLETED' && lp.progressReason !== 'FAILED' && lp.progressReason !== 'CANCELED') {
+    return '마무리 중...'
+  }
+  return reasonLabels[lp.progressReason] || lp.progressReason
+}
+
 export function ProcessingStep() {
   const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted } = useDubbingStore()
   const { submitDubbing, startPolling, stopPolling } = usePersoFlow()
@@ -117,7 +124,7 @@ export function ProcessingStep() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-surface-900 dark:text-white">{lang.name}</p>
                   <p className="text-xs text-surface-500">
-                    {reasonLabels[lp.progressReason] || lp.progressReason}
+                    {getProgressLabel(lp)}
                   </p>
                 </div>
                 {isCompleted ? (

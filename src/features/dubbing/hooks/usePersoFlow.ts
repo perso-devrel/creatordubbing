@@ -22,6 +22,7 @@ import { dbMutation } from '@/lib/api/dbMutation'
 const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
 const POLL_BACKOFF = 1.5          // 매 폴링마다 1.5배씩 증가
+const POLL_FINALIZING = 2_000     // 100%인데 COMPLETED 아직 안 온 경우 빠르게 재확인
 
 function mapProgressReasonToStatus(reason: string) {
   switch (reason) {
@@ -92,7 +93,7 @@ async function pollLanguage(
   spaceSeq: number,
   pollTimers: Record<string, ReturnType<typeof setTimeout>>,
   addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
-): Promise<boolean> { // returns true when terminal (done polling)
+): Promise<boolean | 'finalizing'> { // true = terminal, 'finalizing' = 100% but not COMPLETED yet
   const progress = await getProjectProgress(projectSeq, spaceSeq)
   const status = mapProgressReasonToStatus(progress.progressReason)
   store.getState().updateLanguageProgress(langCode, {
@@ -110,7 +111,11 @@ async function pollLanguage(
   }
 
   const isTerminal = progress.progressReason === 'COMPLETED' || progress.progressReason === 'FAILED' || progress.progressReason === 'CANCELED'
-  if (!isTerminal) return false
+  if (!isTerminal) {
+    // progress hit 100 but backend hasn't confirmed COMPLETED yet — poll fast
+    if (progress.progress >= 100) return 'finalizing'
+    return false
+  }
 
   clearTimeout(pollTimers[langCode])
   delete pollTimers[langCode]
@@ -321,6 +326,8 @@ export function usePersoFlow() {
           if (!done) {
             const next = Math.min(interval * POLL_BACKOFF, POLL_INTERVAL_MAX)
             scheduleNext(langCode, projectSeq, next)
+          } else if (done === 'finalizing') {
+            scheduleNext(langCode, projectSeq, POLL_FINALIZING)
           }
         } catch {
           // Network hiccup — retry with same interval

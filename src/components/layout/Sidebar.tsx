@@ -10,12 +10,14 @@ import {
   CreditCard,
   Layers,
   Settings,
+  Upload,
 } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
   { to: '/dubbing', label: '새 더빙', icon: Languages },
   { to: '/batch', label: '배치 큐', icon: Layers },
+  { to: '/uploads', label: 'YouTube 업로드', icon: Upload },
   { to: '/youtube', label: 'YouTube', icon: Video },
   { to: '/billing', label: '결제', icon: CreditCard },
 ]
