@@ -1,4 +1,5 @@
 import { test, expect, type Request } from '@playwright/test'
+import { signTestSessionCookie } from './helpers/signed-cookie'
 
 /**
  * E2E dubbing flow verification.
@@ -77,6 +78,10 @@ test('dubbing page renders and captures network sequence', async ({ page }) => {
   const requests: Array<{ method: string; url: string; status?: number }> = []
   const consoleErrors: string[] = []
 
+  await page.context().addCookies([
+    { name: 'creatordub_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
+    { name: 'google_access_token', value: 'mock-token', domain: 'localhost', path: '/' },
+  ])
   await page.addInitScript(() => {
     localStorage.setItem(
       'google_user',
@@ -87,7 +92,6 @@ test('dubbing page renders and captures network sequence', async ({ page }) => {
         photoURL: null,
       })
     )
-    localStorage.setItem('google_access_token', 'mock-token')
   })
 
   page.on('request', (req: Request) => {

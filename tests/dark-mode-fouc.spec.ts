@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { signTestSessionCookie } from './helpers/signed-cookie'
 
 /**
  * Dark mode FOUC: when the user has previously chosen dark mode,
@@ -25,13 +26,16 @@ test('dark mode has no FOUC on landing', async ({ page }) => {
 })
 
 test('dark mode has no FOUC on dashboard', async ({ page }) => {
+  await page.context().addCookies([
+    { name: 'creatordub_session', value: signTestSessionCookie('x'), domain: 'localhost', path: '/' },
+    { name: 'google_access_token', value: 'mock', domain: 'localhost', path: '/' },
+  ])
   await page.addInitScript(() => {
     localStorage.setItem('creatordub-theme', 'dark')
     localStorage.setItem(
       'google_user',
       JSON.stringify({ uid: 'x', email: 'x@x.x', displayName: 'X', photoURL: null })
     )
-    localStorage.setItem('google_access_token', 'mock')
   })
 
   await page.goto('http://localhost:3000/dashboard', { waitUntil: 'domcontentloaded' })
