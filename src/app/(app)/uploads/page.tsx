@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Upload, Loader2, CheckCircle2, ExternalLink, Youtube } from 'lucide-react'
+import { Upload, Loader2, CheckCircle2, ExternalLink, Video } from 'lucide-react'
 import { Card, CardTitle, Button, Badge } from '@/components/ui'
 import { LanguageBadge } from '@/components/shared/LanguageBadge'
 import { EmptyState } from '@/components/feedback/EmptyState'
@@ -170,7 +170,7 @@ export default function UploadsPage() {
         </div>
       ) : items.length === 0 ? (
         <EmptyState
-          icon={<Youtube className="h-12 w-12" />}
+          icon={<Video className="h-12 w-12" />}
           title="업로드할 영상이 없습니다"
           description="더빙이 완료된 영상이 여기에 표시됩니다."
         />
