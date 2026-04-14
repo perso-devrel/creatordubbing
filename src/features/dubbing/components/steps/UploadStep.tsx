@@ -10,6 +10,7 @@ import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useAuthStore } from '@/stores/authStore'
 import { ytUploadVideo, ytUploadCaption } from '@/lib/api-client'
+import { dbMutation } from '@/lib/api/dbMutation'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -18,30 +19,6 @@ interface LangUploadState {
   progress: number
   videoId?: string
   error?: string
-}
-
-function getStoredAccessToken(): string | null {
-  if (typeof window === 'undefined') return null
-  return window.localStorage.getItem('google_access_token')
-}
-
-async function dbMutationUpload(action: {
-  type: 'createYouTubeUpload' | 'updateJobLanguageYouTube'
-  payload: Record<string, unknown>
-}): Promise<unknown> {
-  try {
-    const res = await fetch('/api/dashboard/mutations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(action),
-      cache: 'no-store',
-    })
-    const body = await res.json().catch(() => null)
-    if (!body || !body.ok) return null
-    return body.data
-  } catch {
-    return null
-  }
 }
 
 export function UploadStep() {
@@ -55,7 +32,7 @@ export function UploadStep() {
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
   const [uploadAsShort, setUploadAsShort] = useState(isShort)
-  const ytAuthed = !!getStoredAccessToken()
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const handleCopy = (langCode: string, text: string) => {
     navigator.clipboard.writeText(text)
@@ -87,8 +64,7 @@ export function UploadStep() {
 
   // Upload dubbed video to YouTube
   const handleYouTubeUpload = useCallback(async (langCode: string) => {
-    const token = getStoredAccessToken()
-    if (!token) {
+    if (!isAuthenticated) {
       addToast({ type: 'error', title: 'YouTube에 먼저 로그인해주세요' })
       return
     }
@@ -115,7 +91,6 @@ export function UploadStep() {
       const titlePrefix = uploadAsShort ? '#Shorts ' : ''
       const ytTitle = `${titlePrefix}[${lang.name}] ${videoMeta?.title || 'Dubbed Video'}`
       const result = await ytUploadVideo({
-        accessToken: token,
         video: videoBlob,
         title: ytTitle,
         description: `${videoMeta?.title || 'Video'} - ${lang.name} 더빙 by CreatorDub AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`,
@@ -137,7 +112,6 @@ export function UploadStep() {
           const srtResponse = await fetch(srtUrl)
           const srtText = await srtResponse.text()
           await ytUploadCaption({
-            accessToken: token,
             videoId: result.videoId,
             language: langCode,
             name: `${lang.name} subtitles`,
@@ -156,7 +130,7 @@ export function UploadStep() {
       // Save to DB
       try {
         if (userId) {
-          await dbMutationUpload({
+          await dbMutation({
             type: 'createYouTubeUpload',
             payload: {
               userId,
@@ -168,7 +142,7 @@ export function UploadStep() {
             },
           })
           if (dbJobId) {
-            await dbMutationUpload({
+            await dbMutation({
               type: 'updateJobLanguageYouTube',
               payload: { jobId: dbJobId, langCode, youtubeVideoId: result.videoId },
             })
@@ -191,7 +165,7 @@ export function UploadStep() {
       }))
       addToast({ type: 'error', title: `${lang?.name} 업로드 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated])
 
   // Upload ALL completed languages to YouTube
   const handleUploadAll = async () => {
@@ -232,14 +206,14 @@ export function UploadStep() {
       <Card className="border-brand-200 dark:border-brand-800">
         <div className="flex items-center justify-between mb-4">
           <CardTitle>YouTube 자동 업로드</CardTitle>
-          {ytAuthed ? (
+          {isAuthenticated ? (
             <Badge variant="success">인증됨</Badge>
           ) : (
             <Badge variant="warning">Google 로그인 시 자동 인증</Badge>
           )}
         </div>
 
-        {ytAuthed ? (
+        {isAuthenticated ? (
           <>
             <p className="text-sm text-surface-500 mb-4">
               더빙된 영상을 YouTube에 새 영상으로 업로드합니다. 안전을 위해 비공개로 업로드되며, 이후 YouTube Studio에서 공개 설정을 변경할 수 있습니다.

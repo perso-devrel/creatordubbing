@@ -30,3 +30,27 @@ export interface MyVideoItem {
   thumbnail: string
   publishedAt: string
 }
+
+export interface AnalyticsDailyRow {
+  date: string
+  views: number
+  estimatedMinutesWatched: number
+  averageViewDuration: number
+}
+
+export interface AnalyticsCountryRow {
+  country: string
+  views: number
+  estimatedMinutesWatched: number
+}
+
+export interface VideoAnalytics {
+  videoId: string
+  daily: AnalyticsDailyRow[]
+  countries: AnalyticsCountryRow[]
+  totals: {
+    views: number
+    estimatedMinutesWatched: number
+    averageViewDuration: number
+  }
+}
