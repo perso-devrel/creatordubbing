@@ -62,10 +62,10 @@ export function VideoInputStep() {
     if (file) handleFileSelect(file)
   }
 
-  // Auto-detect shorts: ≤60s and/or vertical video
+  // Auto-detect shorts: ≤3min (YouTube Shorts 최대 길이)
   useEffect(() => {
     if (videoMeta) {
-      const isShortCandidate = videoMeta.durationMs <= 60000
+      const isShortCandidate = videoMeta.durationMs <= 180000
       setIsShort(isShortCandidate)
     }
   }, [videoMeta, setIsShort])
@@ -188,7 +188,7 @@ export function VideoInputStep() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-surface-900 dark:text-white truncate">{videoMeta.title}</h3>
-                {videoMeta.durationMs <= 60000 && (
+                {videoMeta.durationMs <= 180000 && (
                   <Badge variant="brand" className="shrink-0">
                     <Zap className="h-3 w-3" /> Shorts
                   </Badge>
