@@ -32,9 +32,12 @@ export async function POST(req: NextRequest) {
       return apiFail('BAD_REQUEST', 'uid and email required', 400)
     }
 
-    const { uid, email, displayName, photoURL, accessToken } = parsed.data
+    const { uid, email, displayName, photoURL, accessToken: bodyToken } = parsed.data
 
-    // accessToken is required — verify it with Google to prevent auth bypass
+    // Resolve access token: body → httpOnly cookie (set by /api/auth/callback)
+    const cookieToken = req.cookies.get('google_access_token')?.value
+    const accessToken = bodyToken || cookieToken
+
     if (!accessToken) {
       return apiFail('UNAUTHORIZED', 'Google access token is required', 401)
     }
