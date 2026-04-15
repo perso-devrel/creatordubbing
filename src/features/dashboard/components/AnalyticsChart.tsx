@@ -5,7 +5,7 @@ import { Card, CardTitle } from '@/components/ui'
 import { useQuery } from '@tanstack/react-query'
 import { ytFetchAnalytics } from '@/lib/api-client'
 import { useAuthStore } from '@/stores/authStore'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
   const user = useAuthStore((s) => s.user)
@@ -39,36 +39,40 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
     )
   }
 
-  const allDaily = (data || []).flatMap((v) => v.daily)
-  const mergedDaily = Object.values(
-    allDaily.reduce<Record<string, { date: string; views: number; minutes: number }>>(
-      (acc, row) => {
-        const existing = acc[row.date] || { date: row.date, views: 0, minutes: 0 }
-        existing.views += row.views
-        existing.minutes += row.estimatedMinutesWatched
-        acc[row.date] = existing
-        return acc
-      },
-      {},
-    ),
-  ).sort((a, b) => a.date.localeCompare(b.date))
-
-  const mergedCountries = Object.values(
-    (data || [])
-      .flatMap((v) => v.countries)
-      .reduce<Record<string, { country: string; views: number; minutes: number }>>(
+  const mergedDaily = useMemo(() => {
+    const allDaily = (data || []).flatMap((v) => v.daily)
+    return Object.values(
+      allDaily.reduce<Record<string, { date: string; views: number; minutes: number }>>(
         (acc, row) => {
-          const existing = acc[row.country] || { country: row.country, views: 0, minutes: 0 }
+          const existing = acc[row.date] || { date: row.date, views: 0, minutes: 0 }
           existing.views += row.views
           existing.minutes += row.estimatedMinutesWatched
-          acc[row.country] = existing
+          acc[row.date] = existing
           return acc
         },
         {},
       ),
-  )
-    .sort((a, b) => b.views - a.views)
-    .slice(0, 10)
+    ).sort((a, b) => a.date.localeCompare(b.date))
+  }, [data])
+
+  const mergedCountries = useMemo(() => {
+    return Object.values(
+      (data || [])
+        .flatMap((v) => v.countries)
+        .reduce<Record<string, { country: string; views: number; minutes: number }>>(
+          (acc, row) => {
+            const existing = acc[row.country] || { country: row.country, views: 0, minutes: 0 }
+            existing.views += row.views
+            existing.minutes += row.estimatedMinutesWatched
+            acc[row.country] = existing
+            return acc
+          },
+          {},
+        ),
+    )
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10)
+  }, [data])
 
   return (
     <Card>

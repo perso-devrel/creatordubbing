@@ -9,9 +9,13 @@ export async function dbMutation<T = unknown>(
       cache: 'no-store',
     })
     const body = await res.json().catch(() => null)
-    if (!body || !body.ok) return null
+    if (!body || !body.ok) {
+      console.error(`[dbMutation] ${action.type} failed:`, body?.error ?? res.status)
+      return null
+    }
     return body.data as T
-  } catch {
+  } catch (err) {
+    console.error(`[dbMutation] ${action.type} error:`, err)
     return null
   }
 }
