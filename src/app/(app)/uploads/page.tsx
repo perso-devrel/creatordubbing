@@ -9,7 +9,7 @@ import { formatDuration } from '@/utils/formatters'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
-import { ytUploadVideo, ytUploadCaption, getDownloadLinks } from '@/lib/api-client'
+import { ytUploadVideo, ytUploadCaption, getDownloadLinks, getPersoFileUrl } from '@/lib/api-client'
 import { dbMutation } from '@/lib/api/dbMutation'
 import { getLanguageByCode } from '@/utils/languages'
 import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
@@ -43,13 +43,28 @@ function UploadRow({ item, userId }: UploadRowProps) {
       let srtUrl = item.srt_url
 
       if (!videoUrl && item.project_seq && item.space_seq) {
-        const downloads = await getDownloadLinks(item.project_seq, item.space_seq, 'all')
-        videoUrl = downloads.videoFile?.videoDownloadLink ?? null
-        srtUrl = srtUrl ?? downloads.srtFile?.translatedSubtitleDownloadLink ?? null
-        if (!videoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
+        // Fetch dubbingVideo + all in parallel
+        const [dubDl, allDl] = await Promise.all([
+          getDownloadLinks(item.project_seq, item.space_seq, 'dubbingVideo'),
+          getDownloadLinks(item.project_seq, item.space_seq, 'all'),
+        ])
+        videoUrl = dubDl.videoFile?.videoDownloadLink
+          ?? allDl.videoFile?.videoDownloadLink
+          ?? allDl.zippedFileDownloadLink
+          ?? null
+        srtUrl = srtUrl ?? allDl.srtFile?.translatedSubtitleDownloadLink ?? null
+
+        // Perso returns relative paths (/perso-storage/...) — resolve to full URL
+        if (videoUrl && !videoUrl.startsWith('http')) {
+          videoUrl = getPersoFileUrl(videoUrl)
+        }
+        if (srtUrl && !srtUrl.startsWith('http')) {
+          srtUrl = getPersoFileUrl(srtUrl)
+        }
+        if (!videoUrl) throw new Error('No dubbed video download link available')
       }
 
-      if (!videoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
+      if (!videoUrl) throw new Error('No dubbed video download link available')
 
       setState('uploading')
       const result = await ytUploadVideo({
