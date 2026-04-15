@@ -19,5 +19,6 @@ export const config = {
     '/youtube/:path*',
     '/billing/:path*',
     '/settings/:path*',
+    '/uploads/:path*',
   ],
 }

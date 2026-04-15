@@ -115,6 +115,11 @@ export const mutationActionSchema = z.discriminatedUnion('type', [
 
 export type MutationAction = z.infer<typeof mutationActionSchema>
 
+/**
+ * Extract userId from actions that carry it directly.
+ * For job-based actions (no userId in payload), the caller must verify ownership
+ * by querying the DB — see mutations/route.ts verifyJobOwnership().
+ */
 export function getUserIdFromAction(action: MutationAction): string | null {
   switch (action.type) {
     case 'createDubbingJob':
@@ -123,6 +128,24 @@ export function getUserIdFromAction(action: MutationAction): string | null {
       return action.payload.userId
     case 'deductUserMinutes':
       return action.payload.userId
+    default:
+      return null
+  }
+}
+
+/** Actions that operate on a jobId and need ownership verification. */
+export function getJobIdFromAction(action: MutationAction): number | null {
+  switch (action.type) {
+    case 'createJobLanguages':
+      return action.payload.jobId
+    case 'updateJobLanguageProgress':
+      return action.payload.jobId
+    case 'updateJobLanguageCompleted':
+      return action.payload.jobId
+    case 'updateJobStatus':
+      return action.payload.jobId
+    case 'updateJobLanguageYouTube':
+      return action.payload.jobId
     default:
       return null
   }

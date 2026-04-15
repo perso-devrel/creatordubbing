@@ -1,4 +1,3 @@
-export { json, getJson, sendJson } from './shared'
 export {
   getSpaces,
   getLanguages,

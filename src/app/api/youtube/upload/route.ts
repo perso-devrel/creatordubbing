@@ -36,6 +36,13 @@ export async function POST(req: NextRequest) {
     let videoBlob: Blob
     const videoUrl = form.get('videoUrl')
     if (typeof videoUrl === 'string' && videoUrl.startsWith('http')) {
+      // SSRF prevention: only allow known video source domains
+      const allowed = ['.blob.core.windows.net', '.perso.ai', 'perso.ai']
+      const urlHost = new URL(videoUrl).hostname
+      const isAllowed = allowed.some((d) => urlHost === d || urlHost.endsWith(d))
+      if (!isAllowed) {
+        throw new YouTubeError(400, 'Video URL domain not allowed', 'INVALID_VIDEO_URL')
+      }
       const res = await fetch(videoUrl)
       if (!res.ok) throw new YouTubeError(502, 'Failed to fetch video from source URL', 'VIDEO_FETCH_FAILED')
       videoBlob = await res.blob()

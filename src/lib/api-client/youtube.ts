@@ -75,13 +75,11 @@ export async function ytFetchMyVideos(
 
 export async function ytFetchAnalytics(
   videoIds: string[],
-  userId: string,
   startDate?: string,
   endDate?: string,
 ): Promise<VideoAnalytics[]> {
   const params = new URLSearchParams({
     videoIds: videoIds.join(','),
-    userId,
   })
   if (startDate) params.set('startDate', startDate)
   if (endDate) params.set('endDate', endDate)
