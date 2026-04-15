@@ -69,6 +69,12 @@ export interface TranslateResponse {
   startGenerateProjectIdList: number[]
 }
 
+/**
+ * Progress reason values from Perso API.
+ * Internal values (PENDING, PROCESSING, etc.) are used by our polling logic.
+ * Perso API spec also documents human-readable forms (Enqueue Pending, Transcribing, etc.)
+ * — both forms are accepted to handle API version differences.
+ */
 export type ProgressReason =
   | 'PENDING'
   | 'CREATED'
@@ -79,6 +85,15 @@ export type ProgressReason =
   | 'COMPLETED'
   | 'FAILED'
   | 'CANCELED'
+  // Perso API spec forms (human-readable)
+  | 'Enqueue Pending'
+  | 'Slow Mode Pending'
+  | 'Uploading'
+  | 'Transcribing'
+  | 'Translating'
+  | 'Generating Voice'
+  | 'Analyzing Lip Sync'
+  | 'Applying Lip Sync'
 
 export interface ProgressResponse {
   projectSeq: number

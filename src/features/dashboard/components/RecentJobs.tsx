@@ -13,6 +13,7 @@ const statusConfig: Record<string, { label: string; variant: 'success' | 'brand'
   completed: { label: '완료', variant: 'success' },
   processing: { label: '처리 중', variant: 'brand' },
   pending: { label: '대기 중', variant: 'default' },
+  queued: { label: '대기 중', variant: 'default' },
   failed: { label: '실패', variant: 'error' },
 }
 
