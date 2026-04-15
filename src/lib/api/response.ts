@@ -54,11 +54,13 @@ interface NormalizedError {
 function normalizeError(err: unknown): NormalizedError {
   if (err instanceof Error) {
     const e = err as Error & { code?: string; status?: number; details?: unknown }
+    const status = typeof e.status === 'number' ? e.status : 500
     return {
-      status: typeof e.status === 'number' ? e.status : 500,
+      status,
       code: typeof e.code === 'string' ? e.code : 'INTERNAL_ERROR',
-      message: e.message,
-      details: e.details ?? null,
+      // Hide internal error details from clients on 500+ errors (may contain SQL/table names)
+      message: status >= 500 ? 'Internal Server Error' : e.message,
+      details: status >= 500 ? null : (e.details ?? null),
     }
   }
   return { status: 500, code: 'UNKNOWN', message: 'Internal Server Error', details: null }

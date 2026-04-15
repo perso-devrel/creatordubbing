@@ -10,8 +10,9 @@ import {
   deductUserMinutes,
 } from '@/lib/db/queries'
 import { requireSession } from '@/lib/auth/session'
-import { mutationActionSchema, getUserIdFromAction } from '@/lib/validators/dashboard'
-import { apiOk, apiFail } from '@/lib/api/response'
+import { mutationActionSchema, getUserIdFromAction, getJobIdFromAction } from '@/lib/validators/dashboard'
+import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
+import { getDb } from '@/lib/db/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -36,6 +37,22 @@ export async function POST(req: NextRequest) {
   const actionUserId = getUserIdFromAction(action)
   if (actionUserId && actionUserId !== auth.session.uid) {
     return apiFail('FORBIDDEN', 'UID mismatch: you can only mutate your own data', 403)
+  }
+
+  // Verify job ownership for job-based actions (IDOR prevention)
+  const jobId = getJobIdFromAction(action)
+  if (jobId !== null) {
+    const db = getDb()
+    const row = await db.execute({
+      sql: 'SELECT user_id FROM dubbing_jobs WHERE id = ?',
+      args: [jobId],
+    })
+    if (!row.rows[0]) {
+      return apiFail('NOT_FOUND', 'Job not found', 404)
+    }
+    if (row.rows[0].user_id !== auth.session.uid) {
+      return apiFail('FORBIDDEN', 'You do not own this job', 403)
+    }
   }
 
   try {
@@ -82,7 +99,6 @@ export async function POST(req: NextRequest) {
       }
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return apiFail('DB_ERROR', message, 500)
+    return apiFailFromError(err)
   }
 }
