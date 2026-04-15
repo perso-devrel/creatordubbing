@@ -41,6 +41,11 @@ yarn-error.log*
 # creatordub migration workspace (agent reports, scratch)
 _workspace/
 
+# claude code (local settings, harness agents/skills)
+.claude/settings.local.json
+.claude/agents/
+.claude/skills/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
