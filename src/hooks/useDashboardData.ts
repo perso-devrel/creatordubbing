@@ -66,15 +66,4 @@ export function useLanguagePerformance() {
   })
 }
 
-export function useChannelStats() {
-  const user = useAuthStore((s) => s.user)
-  return useQuery({
-    queryKey: ['channel-stats', user?.uid],
-    queryFn: () =>
-      fetchJson<{ subscriberCount: number; viewCount: number; videoCount: number; channelId: string; title: string; thumbnail: string } | null>(
-        `/api/youtube/stats?channel=true`,
-      ),
-    enabled: !!user,
-    staleTime: 5 * 60_000,
-  })
-}
+// useChannelStats is defined in useYouTubeData.ts — use that one instead

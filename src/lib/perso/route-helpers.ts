@@ -57,20 +57,18 @@ export async function parseBody<T>(req: Request, schema: ZodSchema<T>): Promise<
   return result.data
 }
 
+function paramError(message: string, code: string): never {
+  throw Object.assign(new Error(message), { code, status: 400 })
+}
+
 export function requireIntParam(url: URL, name: string): number {
   const raw = url.searchParams.get(name)
   if (raw === null || raw === '') {
-    const err = new Error(`Missing required query param: ${name}`)
-    ;(err as Error & { code?: string; status?: number }).code = 'MISSING_PARAM'
-    ;(err as Error & { code?: string; status?: number }).status = 400
-    throw err
+    paramError(`Missing required query param: ${name}`, 'MISSING_PARAM')
   }
   const n = Number(raw)
   if (!Number.isFinite(n)) {
-    const err = new Error(`Invalid numeric query param: ${name}`)
-    ;(err as Error & { code?: string; status?: number }).code = 'INVALID_PARAM'
-    ;(err as Error & { code?: string; status?: number }).status = 400
-    throw err
+    paramError(`Invalid numeric query param: ${name}`, 'INVALID_PARAM')
   }
   return n
 }
@@ -78,10 +76,7 @@ export function requireIntParam(url: URL, name: string): number {
 export function requireStringParam(url: URL, name: string): string {
   const raw = url.searchParams.get(name)
   if (raw === null || raw === '') {
-    const err = new Error(`Missing required query param: ${name}`)
-    ;(err as Error & { code?: string; status?: number }).code = 'MISSING_PARAM'
-    ;(err as Error & { code?: string; status?: number }).status = 400
-    throw err
+    paramError(`Missing required query param: ${name}`, 'MISSING_PARAM')
   }
   return raw
 }

@@ -13,7 +13,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
 
   const { data, isLoading } = useQuery({
     queryKey: ['youtube-analytics', videoIds],
-    queryFn: () => ytFetchAnalytics(videoIds ?? [], user?.uid ?? ''),
+    queryFn: () => ytFetchAnalytics(videoIds ?? []),
     enabled: !!user && !!videoIds && videoIds.length > 0,
     staleTime: 1000 * 60 * 60,
     gcTime: 1000 * 60 * 60,
