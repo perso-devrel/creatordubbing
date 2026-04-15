@@ -79,21 +79,32 @@ export async function GET(req: NextRequest) {
 
     const userId = auth.session.uid
 
+    // Split into cached and uncached
     const results: VideoAnalytics[] = []
+    const uncachedIds: string[] = []
     for (const videoId of videoIds) {
       const cached = await getCached(userId, videoId)
       if (cached) {
         results.push(cached)
-        continue
+      } else {
+        uncachedIds.push(videoId)
       }
-      const fresh = await fetchVideoAnalytics(
-        accessToken,
-        videoId,
-        startDate,
-        endDate,
-      )
-      await setCache(userId, videoId, fresh)
-      results.push(fresh)
+    }
+
+    // Fetch uncached in parallel (max 5 concurrent)
+    if (uncachedIds.length > 0) {
+      const CONCURRENCY = 5
+      for (let i = 0; i < uncachedIds.length; i += CONCURRENCY) {
+        const batch = uncachedIds.slice(i, i + CONCURRENCY)
+        const fetched = await Promise.all(
+          batch.map(async (videoId) => {
+            const fresh = await fetchVideoAnalytics(accessToken, videoId, startDate, endDate)
+            await setCache(userId, videoId, fresh)
+            return fresh
+          }),
+        )
+        results.push(...fetched)
+      }
     }
 
     return results

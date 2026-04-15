@@ -162,12 +162,13 @@ export function UploadStep() {
     }
   }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated])
 
-  // Upload ALL completed languages to YouTube
+  // Upload ALL completed languages to YouTube (2 concurrent)
   const handleUploadAll = async () => {
-    for (const code of completedLangs) {
-      const state = ytUploads[code]
-      if (state?.status === 'done') continue // skip already uploaded
-      await handleYouTubeUpload(code)
+    const pending = completedLangs.filter((code) => ytUploads[code]?.status !== 'done')
+    const CONCURRENCY = 2
+    for (let i = 0; i < pending.length; i += CONCURRENCY) {
+      const batch = pending.slice(i, i + CONCURRENCY)
+      await Promise.all(batch.map((code) => handleYouTubeUpload(code)))
     }
   }
 

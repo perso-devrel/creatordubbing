@@ -37,12 +37,12 @@ export async function createJobLanguages(
   languages: { code: string; projectSeq: number }[],
 ) {
   const db = getDb()
-  for (const lang of languages) {
-    await db.execute({
+  await db.batch(
+    languages.map((lang) => ({
       sql: 'INSERT INTO job_languages (job_id, language_code, project_seq) VALUES (?, ?, ?)',
       args: [jobId, lang.code, lang.projectSeq],
-    })
-  }
+    })),
+  )
 }
 
 export async function updateJobLanguageProgress(

@@ -28,18 +28,28 @@ function mapProgressReasonToStatus(reason: string) {
   switch (reason) {
     case 'PENDING':
     case 'CREATED':
+    case 'Enqueue Pending':
+    case 'Slow Mode Pending':
       return 'transcribing' as const
     case 'READY':
     case 'READY_TARGET_LANGUAGES':
+    case 'Transcribing':
+    case 'Translating':
       return 'translating' as const
     case 'ENQUEUED':
+    case 'Uploading':
+    case 'Generating Voice':
       return 'synthesizing' as const
     case 'PROCESSING':
+    case 'Analyzing Lip Sync':
+    case 'Applying Lip Sync':
       return 'merging' as const
     case 'COMPLETED':
+    case 'Completed':
       return 'completed' as const
     case 'FAILED':
     case 'CANCELED':
+    case 'Failed':
       return 'failed' as const
     default:
       return 'translating' as const
@@ -107,7 +117,7 @@ async function pollLanguage(
     dbMutation({
       type: 'updateJobLanguageProgress',
       payload: { jobId: dbJobId, langCode, status, progress: progress.progress, progressReason: progress.progressReason },
-    })
+    }).catch(() => { /* progress update is best-effort */ })
   }
 
   const isTerminal = progress.progressReason === 'COMPLETED' || progress.progressReason === 'FAILED' || progress.progressReason === 'CANCELED'
@@ -140,7 +150,7 @@ async function pollLanguage(
               srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
             },
           },
-        })
+        }).catch(() => { /* completion update is best-effort */ })
       }
     } catch {
       // Download links will be fetched later if needed
@@ -160,10 +170,10 @@ async function pollLanguage(
   const durationMs = store.getState().videoMeta?.durationMs || 0
   const minutesUsed = Math.max(1, Math.ceil(durationMs / 60_000))
   if (userId) {
-    dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed } })
+    await dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed } })
   }
   if (dbJobId) {
-    dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: anyFailed ? 'failed' : 'completed' } })
+    await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: anyFailed ? 'failed' : 'completed' } })
   }
   addToast({
     type: anyFailed ? 'warning' : 'success',
