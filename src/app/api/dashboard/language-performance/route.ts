@@ -3,7 +3,7 @@ import { getLanguagePerformance, getUserYouTubeUploads, updateYouTubeStats } fro
 import { fetchVideoStatistics } from '@/lib/youtube/server'
 import { requireSession, forbiddenUidMismatch } from '@/lib/auth/session'
 import { languagePerformanceQuerySchema } from '@/lib/validators/dashboard'
-import { apiOk, apiFail } from '@/lib/api/response'
+import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -40,13 +40,15 @@ export async function GET(req: NextRequest) {
 
         if (videoIds.length > 0) {
           const stats = await fetchVideoStatistics(accessToken, videoIds)
-          for (const s of stats) {
-            await updateYouTubeStats(s.videoId, {
-              viewCount: s.viewCount,
-              likeCount: s.likeCount,
-              commentCount: s.commentCount,
-            })
-          }
+          await Promise.all(
+            stats.map((s) =>
+              updateYouTubeStats(s.videoId, {
+                viewCount: s.viewCount,
+                likeCount: s.likeCount,
+                commentCount: s.commentCount,
+              }),
+            ),
+          )
           const refreshed = await getLanguagePerformance(uid)
           return apiOk(refreshed)
         }
@@ -57,7 +59,6 @@ export async function GET(req: NextRequest) {
 
     return apiOk(dbData)
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return apiFail('DB_ERROR', message, 500)
+    return apiFailFromError(err)
   }
 }

@@ -7,6 +7,24 @@ import { syncBodySchema } from '@/lib/validators/auth'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+/**
+ * Verify a Google access token and return the user info.
+ * Returns null if the token is invalid or expired.
+ */
+async function verifyGoogleToken(accessToken: string): Promise<{ sub: string; email: string } | null> {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    if (!res.ok) return null
+    const info = await res.json() as { sub?: string; email?: string }
+    if (!info.sub || !info.email) return null
+    return { sub: info.sub, email: info.email }
+  } catch {
+    return null
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const parsed = syncBodySchema.safeParse(await req.json().catch(() => null))
@@ -15,12 +33,25 @@ export async function POST(req: NextRequest) {
     }
 
     const { uid, email, displayName, photoURL, accessToken } = parsed.data
+
+    // accessToken is required — verify it with Google to prevent auth bypass
+    if (!accessToken) {
+      return apiFail('UNAUTHORIZED', 'Google access token is required', 401)
+    }
+    const googleUser = await verifyGoogleToken(accessToken)
+    if (!googleUser) {
+      return apiFail('UNAUTHORIZED', 'Invalid or expired Google access token', 401)
+    }
+    if (googleUser.sub !== uid) {
+      return apiFail('FORBIDDEN', 'Token subject does not match uid', 403)
+    }
+
     await upsertUser({
       id: uid,
       email,
       displayName: displayName ?? null,
       photoURL: photoURL ?? null,
-      accessToken: accessToken ?? null,
+      accessToken,
     })
 
     const cookieOpts = {
@@ -32,9 +63,7 @@ export async function POST(req: NextRequest) {
     }
     const res = apiOk({ id: uid })
     res.cookies.set(SESSION_COOKIE, await signSessionCookie(uid), cookieOpts)
-    if (accessToken) {
-      res.cookies.set('google_access_token', accessToken, cookieOpts)
-    }
+    res.cookies.set('google_access_token', accessToken, cookieOpts)
     return res
   } catch (err) {
     return apiFailFromError(err)
