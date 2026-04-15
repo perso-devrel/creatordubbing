@@ -111,6 +111,7 @@ export async function getCompletedJobLanguages(userId: string): Promise<Complete
           FROM dubbing_jobs dj
           JOIN job_languages jl ON jl.job_id = dj.id
           WHERE dj.user_id = ? AND dj.status = 'completed'
+            AND jl.youtube_video_id IS NULL
           ORDER BY dj.created_at DESC
           LIMIT 50`,
     args: [userId],
