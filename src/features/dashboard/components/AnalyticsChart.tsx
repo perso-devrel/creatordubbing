@@ -19,26 +19,6 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
     gcTime: 1000 * 60 * 60,
   })
 
-  if (!videoIds || videoIds.length === 0) {
-    return (
-      <Card>
-        <CardTitle>시청 분석</CardTitle>
-        <p className="text-sm text-surface-500 dark:text-surface-400">
-          YouTube에 업로드된 영상이 없습니다.
-        </p>
-      </Card>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardTitle>시청 분석</CardTitle>
-        <div className="mt-4 h-64 animate-pulse rounded bg-surface-100 dark:bg-surface-800" />
-      </Card>
-    )
-  }
-
   const mergedDaily = useMemo(() => {
     const allDaily = (data || []).flatMap((v) => v.daily)
     return Object.values(
@@ -73,6 +53,26 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
       .sort((a, b) => b.views - a.views)
       .slice(0, 10)
   }, [data])
+
+  if (!videoIds || videoIds.length === 0) {
+    return (
+      <Card>
+        <CardTitle>시청 분석</CardTitle>
+        <p className="text-sm text-surface-500 dark:text-surface-400">
+          YouTube에 업로드된 영상이 없습니다.
+        </p>
+      </Card>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardTitle>시청 분석</CardTitle>
+        <div className="mt-4 h-64 animate-pulse rounded bg-surface-100 dark:bg-surface-800" />
+      </Card>
+    )
+  }
 
   return (
     <Card>

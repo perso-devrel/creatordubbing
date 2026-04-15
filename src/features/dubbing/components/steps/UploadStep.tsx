@@ -220,7 +220,7 @@ export function UploadStep() {
                 <div className="flex items-center gap-2">
                   <Badge variant="brand">Shorts 감지됨</Badge>
                   <span className="text-sm text-surface-600 dark:text-surface-400">
-                    60초 이하 영상 — #Shorts 태그 자동 추가
+                    3분 이하 영상 — #Shorts 태그 자동 추가
                   </span>
                 </div>
                 <button
