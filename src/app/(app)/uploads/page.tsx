@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Upload, Loader2, CheckCircle2, ExternalLink, Video } from 'lucide-react'
-import { Card, CardTitle, Button, Badge } from '@/components/ui'
+import { Upload, Loader2, CheckCircle2, ExternalLink, Video, Settings2 } from 'lucide-react'
+import { Card, CardTitle, Button, Badge, Input, Select } from '@/components/ui'
+import { Modal } from '@/components/ui/Modal'
 import { LanguageBadge } from '@/components/shared/LanguageBadge'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { formatDuration } from '@/utils/formatters'
@@ -15,12 +16,111 @@ import { getLanguageByCode } from '@/utils/languages'
 import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
 
 type UploadState = 'idle' | 'fetching' | 'uploading' | 'done' | 'error'
+type PrivacyStatus = 'public' | 'unlisted' | 'private'
+
+interface UploadSettings {
+  title: string
+  description: string
+  tags: string
+  privacyStatus: PrivacyStatus
+}
+
+const PRIVACY_OPTIONS = [
+  { value: 'private', label: '비공개' },
+  { value: 'unlisted', label: '일부 공개' },
+  { value: 'public', label: '공개' },
+]
 
 async function fetchCompletedLanguages(uid: string): Promise<CompletedJobLanguage[]> {
   const res = await fetch(`/api/dashboard/completed-languages?uid=${encodeURIComponent(uid)}`, { cache: 'no-store' })
   const json = await res.json()
   if (!json.ok) throw new Error(json.error?.message || 'Failed to load')
   return json.data
+}
+
+function buildDefaultSettings(item: CompletedJobLanguage, langName: string): UploadSettings {
+  return {
+    title: `[${langName}] ${item.video_title}`,
+    description: `${item.video_title} - ${langName} dubbed by CreatorDub AI`,
+    tags: `CreatorDub, AI dubbing, ${langName}, dubbed`,
+    privacyStatus: 'private',
+  }
+}
+
+interface UploadSettingsModalProps {
+  open: boolean
+  onClose: () => void
+  settings: UploadSettings
+  onChange: (settings: UploadSettings) => void
+  onConfirm: () => void
+  isLoading: boolean
+  langName: string
+}
+
+function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isLoading, langName }: UploadSettingsModalProps) {
+  return (
+    <Modal open={open} onClose={onClose} title="YouTube upload settings" size="lg">
+      <div className="space-y-4">
+        <Input
+          label="Title"
+          value={settings.title}
+          onChange={(e) => onChange({ ...settings, title: e.target.value })}
+          placeholder="Video title"
+        />
+
+        <div className="w-full">
+          <label htmlFor="yt-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
+            Description
+          </label>
+          <textarea
+            id="yt-description"
+            rows={4}
+            value={settings.description}
+            onChange={(e) => onChange({ ...settings, description: e.target.value })}
+            placeholder="Video description"
+            className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
+          />
+        </div>
+
+        <Input
+          label="Tags (comma separated)"
+          value={settings.tags}
+          onChange={(e) => onChange({ ...settings, tags: e.target.value })}
+          placeholder="tag1, tag2, tag3"
+        />
+
+        <Select
+          label="Privacy"
+          value={settings.privacyStatus}
+          onChange={(e) => onChange({ ...settings, privacyStatus: e.target.value as PrivacyStatus })}
+          options={PRIVACY_OPTIONS}
+        />
+
+        <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
+          <span className="text-xs text-surface-500">Language: {langName}</span>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button size="sm" onClick={onClose} className="bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700">
+            Cancel
+          </Button>
+          <Button size="sm" onClick={onConfirm} disabled={isLoading || !settings.title.trim()}>
+            {isLoading ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="h-3.5 w-3.5" />
+                Upload
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
 }
 
 interface UploadRowProps {
@@ -34,16 +134,24 @@ function UploadRow({ item, userId }: UploadRowProps) {
   const [state, setState] = useState<UploadState>(item.youtube_video_id ? 'done' : 'idle')
   const [videoId, setVideoId] = useState<string | null>(item.youtube_video_id)
   const lang = getLanguageByCode(item.language_code)
+  const langName = lang?.name || item.language_code
+
+  const [modalOpen, setModalOpen] = useState(false)
+  const [settings, setSettings] = useState<UploadSettings>(() => buildDefaultSettings(item, langName))
+
+  const handleOpenModal = useCallback(() => {
+    setSettings(buildDefaultSettings(item, langName))
+    setModalOpen(true)
+  }, [item, langName])
 
   const handleUpload = useCallback(async () => {
+    setModalOpen(false)
     setState('fetching')
     try {
-      // Use stored URL or fetch from Perso on-demand (for jobs interrupted mid-poll)
       let videoUrl = item.dubbed_video_url
       let srtUrl = item.srt_url
 
       if (!videoUrl && item.project_seq && item.space_seq) {
-        // Fetch dubbingVideo + all in parallel
         const [dubDl, allDl] = await Promise.all([
           getDownloadLinks(item.project_seq, item.space_seq, 'dubbingVideo'),
           getDownloadLinks(item.project_seq, item.space_seq, 'all'),
@@ -54,7 +162,6 @@ function UploadRow({ item, userId }: UploadRowProps) {
           ?? null
         srtUrl = srtUrl ?? allDl.srtFile?.translatedSubtitleDownloadLink ?? null
 
-        // Perso returns relative paths (/perso-storage/...) — resolve to full URL
         if (videoUrl && !videoUrl.startsWith('http')) {
           videoUrl = getPersoFileUrl(videoUrl)
         }
@@ -67,16 +174,16 @@ function UploadRow({ item, userId }: UploadRowProps) {
       if (!videoUrl) throw new Error('No dubbed video download link available')
 
       setState('uploading')
+      const tagsArray = settings.tags.split(',').map((t) => t.trim()).filter(Boolean)
       const result = await ytUploadVideo({
         videoUrl,
-        title: `[${lang?.name}] ${item.video_title}`,
-        description: `${item.video_title} - ${lang?.name} 더빙 by CreatorDub AI`,
-        tags: ['CreatorDub', 'AI더빙', lang?.name || item.language_code, 'dubbed'],
-        privacyStatus: 'private',
+        title: settings.title,
+        description: settings.description,
+        tags: tagsArray,
+        privacyStatus: settings.privacyStatus,
         language: item.language_code,
       })
 
-      // Try uploading SRT if available
       if (srtUrl) {
         try {
           const srtRes = await fetch(srtUrl)
@@ -84,7 +191,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
           await ytUploadCaption({
             videoId: result.videoId,
             language: item.language_code,
-            name: `${lang?.name} subtitles`,
+            name: `${langName} subtitles`,
             srtContent: srtText,
           })
         } catch {
@@ -94,7 +201,9 @@ function UploadRow({ item, userId }: UploadRowProps) {
 
       setVideoId(result.videoId)
       setState('done')
-      addToast({ type: 'success', title: `${lang?.name} 업로드 완료`, message: '비공개로 업로드됨' })
+
+      const privacyLabel = PRIVACY_OPTIONS.find((o) => o.value === settings.privacyStatus)?.label || settings.privacyStatus
+      addToast({ type: 'success', title: `${langName} upload complete`, message: `Uploaded as ${privacyLabel}` })
 
       await Promise.all([
         dbMutation({
@@ -102,9 +211,9 @@ function UploadRow({ item, userId }: UploadRowProps) {
           payload: {
             userId,
             youtubeVideoId: result.videoId,
-            title: `[${lang?.name}] ${item.video_title}`,
+            title: settings.title,
             languageCode: item.language_code,
-            privacyStatus: 'private',
+            privacyStatus: settings.privacyStatus,
             isShort: false,
           },
         }),
@@ -120,56 +229,68 @@ function UploadRow({ item, userId }: UploadRowProps) {
       queryClient.invalidateQueries({ queryKey: ['completed-languages'] })
     } catch (err) {
       setState('error')
-      addToast({ type: 'error', title: '업로드 실패', message: err instanceof Error ? err.message : '알 수 없는 오류' })
+      addToast({ type: 'error', title: 'Upload failed', message: err instanceof Error ? err.message : 'Unknown error' })
     }
-  }, [item, lang, userId, addToast, queryClient])
+  }, [item, langName, settings, userId, addToast, queryClient])
 
   const isLoading = state === 'fetching' || state === 'uploading'
-  const loadingLabel = state === 'fetching' ? '링크 확인 중...' : '업로드 중...'
+  const loadingLabel = state === 'fetching' ? 'Resolving link...' : 'Uploading...'
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-      <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-surface-100 text-xs text-surface-400 dark:bg-surface-800">
-        {formatDuration(Math.round(item.video_duration_ms / 1000))}
-      </div>
+    <>
+      <div className="flex items-center gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+        <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-surface-100 text-xs text-surface-400 dark:bg-surface-800">
+          {formatDuration(Math.round(item.video_duration_ms / 1000))}
+        </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{item.video_title}</p>
-        <div className="mt-1 flex items-center gap-1.5">
-          {lang && <LanguageBadge code={item.language_code} />}
-          {videoId && (
-            <a
-              href={`https://youtube.com/watch?v=${videoId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-brand-500 hover:underline"
-            >
-              <ExternalLink className="h-3 w-3" />
-              영상 보기
-            </a>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{item.video_title}</p>
+          <div className="mt-1 flex items-center gap-1.5">
+            {lang && <LanguageBadge code={item.language_code} />}
+            {videoId && (
+              <a
+                href={`https://youtube.com/watch?v=${videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-brand-500 hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" />
+                Watch
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div className="shrink-0">
+          {state === 'done' ? (
+            <Badge variant="success">
+              <CheckCircle2 className="h-3 w-3" />
+              Uploaded
+            </Badge>
+          ) : isLoading ? (
+            <div className="flex items-center gap-1.5 text-xs text-surface-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {loadingLabel}
+            </div>
+          ) : (
+            <Button size="sm" onClick={handleOpenModal} disabled={state === 'error'}>
+              <Settings2 className="h-3.5 w-3.5" />
+              YouTube Upload
+            </Button>
           )}
         </div>
       </div>
 
-      <div className="shrink-0">
-        {state === 'done' ? (
-          <Badge variant="success">
-            <CheckCircle2 className="h-3 w-3" />
-            업로드됨
-          </Badge>
-        ) : isLoading ? (
-          <div className="flex items-center gap-1.5 text-xs text-surface-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            {loadingLabel}
-          </div>
-        ) : (
-          <Button size="sm" onClick={handleUpload} disabled={state === 'error'}>
-            <Upload className="h-3.5 w-3.5" />
-            YouTube 업로드
-          </Button>
-        )}
-      </div>
-    </div>
+      <UploadSettingsModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        settings={settings}
+        onChange={setSettings}
+        onConfirm={handleUpload}
+        isLoading={isLoading}
+        langName={langName}
+      />
+    </>
   )
 }
 
@@ -182,7 +303,6 @@ export default function UploadsPage() {
     staleTime: 60_000,
   })
 
-  // Group by job
   const jobs = items.reduce<Record<number, { title: string; durationMs: number; createdAt: string; langs: CompletedJobLanguage[] }>>((acc, item) => {
     if (!acc[item.job_id]) {
       acc[item.job_id] = {
@@ -199,20 +319,20 @@ export default function UploadsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">YouTube 업로드</h1>
-        <p className="text-surface-500 dark:text-surface-400">완료된 더빙 영상을 YouTube에 업로드하세요</p>
+        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">YouTube Upload</h1>
+        <p className="text-surface-500 dark:text-surface-400">Upload completed dubbed videos to YouTube</p>
       </div>
 
       {isLoading ? (
         <div className="flex items-center gap-2 text-surface-400">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">불러오는 중...</span>
+          <span className="text-sm">Loading...</span>
         </div>
       ) : items.length === 0 ? (
         <EmptyState
           icon={<Video className="h-12 w-12" />}
-          title="업로드할 영상이 없습니다"
-          description="더빙이 완료된 영상이 여기에 표시됩니다."
+          title="No videos to upload"
+          description="Completed dubbed videos will appear here."
         />
       ) : (
         <div className="space-y-4">
@@ -225,7 +345,7 @@ export default function UploadsPage() {
                     {formatDuration(Math.round(job.durationMs / 1000))} · {new Date(job.createdAt).toLocaleDateString('ko-KR')}
                   </p>
                 </div>
-                <Badge variant="success">{job.langs.length}개 언어</Badge>
+                <Badge variant="success">{job.langs.length} languages</Badge>
               </div>
               <div className="space-y-2">
                 {job.langs.map((item) => (
