@@ -47,7 +47,7 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
             return (
               <div
                 key={job.id}
-                className="flex items-center gap-4 rounded-lg border border-surface-100 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
+                className="flex items-center gap-4 rounded-lg border border-surface-100 p-3 dark:border-surface-800"
               >
                 <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-400 dark:bg-surface-800">
                   {formatDuration(job.video_duration_ms / 1000)}

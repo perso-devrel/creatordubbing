@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, GripVertical, Layers, Loader2 } from 'lucide-react'
+import { Plus, GripVertical, Layers, Loader2, Trash2 } from 'lucide-react'
 import { Card, CardTitle, Button, Badge, Progress } from '@/components/ui'
 import { LanguageBadge } from '@/components/shared/LanguageBadge'
 import { EmptyState } from '@/components/feedback/EmptyState'
@@ -23,6 +23,18 @@ export default function BatchPage() {
   const { data: jobs = [], isLoading } = useRecentJobs()
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+
+  const handleDeleteJob = async (jobId: number) => {
+    if (confirmDeleteId === jobId) {
+      await dbMutation({ type: 'deleteDubbingJob', payload: { jobId } })
+      queryClient.invalidateQueries({ queryKey: ['recent-jobs'] })
+      setConfirmDeleteId(null)
+    } else {
+      setConfirmDeleteId(jobId)
+      setTimeout(() => setConfirmDeleteId((prev) => (prev === jobId ? null : prev)), 3000)
+    }
+  }
 
   // Auto-complete stale jobs where avg_progress hit 100 but DB still shows 'processing'
   useEffect(() => {
@@ -141,6 +153,18 @@ export default function BatchPage() {
                     <Progress value={progress} size="sm" className="w-24" />
                   )}
                 </div>
+
+                <button
+                  onClick={() => handleDeleteJob(job.id)}
+                  className={`shrink-0 rounded-md p-1.5 transition-colors ${
+                    confirmDeleteId === job.id
+                      ? 'bg-red-50 text-red-500 dark:bg-red-900/20'
+                      : 'text-surface-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20'
+                  }`}
+                  title={confirmDeleteId === job.id ? '한번 더 클릭하면 삭제됩니다' : '작업 삭제'}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             )
           })}

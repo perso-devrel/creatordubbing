@@ -5,6 +5,7 @@ export {
   updateUserTokens,
   updateUserCredits,
   deductUserMinutes,
+  addUserCredits,
 } from './users'
 
 export {
@@ -13,6 +14,7 @@ export {
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
+  deleteDubbingJob,
 } from './jobs'
 
 export {

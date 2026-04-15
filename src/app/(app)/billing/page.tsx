@@ -1,16 +1,39 @@
 'use client'
 
 import { useState } from 'react'
-import { CreditCard, Download, Coins, ArrowRight, Loader2 } from 'lucide-react'
+import { CreditCard, Coins, ArrowRight, Loader2, Check } from 'lucide-react'
 import { Card, CardTitle, Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { CREDIT_PACKS } from '@/features/billing/constants/plans'
 import { formatCurrency } from '@/utils/formatters'
 import { useDashboardSummary } from '@/hooks/useDashboardData'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/stores/authStore'
+import { dbMutation } from '@/lib/api/dbMutation'
 
 export default function BillingPage() {
   const [selectedPack, setSelectedPack] = useState<number | null>(null)
+  const [isCharging, setIsCharging] = useState(false)
+  const [charged, setCharged] = useState(false)
   const { data: summary, isLoading } = useDashboardSummary()
+  const queryClient = useQueryClient()
+  const user = useAuthStore((s) => s.user)
+
+  const handleCharge = async () => {
+    if (!selectedPack || !user) return
+    setIsCharging(true)
+    try {
+      await dbMutation({ type: 'addCredits', payload: { userId: user.uid, minutes: selectedPack } })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+      setCharged(true)
+      setTimeout(() => {
+        setCharged(false)
+        setSelectedPack(null)
+      }, 2000)
+    } finally {
+      setIsCharging(false)
+    }
+  }
 
   const minutesRemaining = summary ? Number(summary.credits_remaining) : null
 
@@ -75,10 +98,16 @@ export default function BillingPage() {
         </div>
 
         {selectedPack && (
-          <Button className="mt-4">
-            <CreditCard className="h-4 w-4" />
-            {selectedPack}분 충전 ({formatCurrency(selectedPack)})
-            <ArrowRight className="h-4 w-4" />
+          <Button className="mt-4" onClick={handleCharge} disabled={isCharging || charged}>
+            {isCharging ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : charged ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <CreditCard className="h-4 w-4" />
+            )}
+            {charged ? '충전 완료!' : `${selectedPack}분 충전 (${formatCurrency(selectedPack)})`}
+            {!isCharging && !charged && <ArrowRight className="h-4 w-4" />}
           </Button>
         )}
       </Card>

@@ -268,6 +268,26 @@ export function usePersoFlow() {
     const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled } = store.getState()
     if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
 
+    // Credit check before starting
+    const currentUser = useAuthStore.getState().user
+    if (currentUser) {
+      const res = await fetch(`/api/dashboard/summary?uid=${currentUser.uid}`)
+      const json = await res.json()
+      if (json.ok) {
+        const creditsRemaining = Number(json.data.credits_remaining) || 0
+        const durationMs = store.getState().videoMeta?.durationMs || 0
+        const estimatedMinutes = Math.max(1, Math.ceil(durationMs / 60_000))
+        if (estimatedMinutes > creditsRemaining) {
+          addToast({
+            type: 'error',
+            title: '크레딧 부족',
+            message: `필요: ${estimatedMinutes}분, 잔여: ${creditsRemaining}분. 충전 후 다시 시도하세요.`,
+          })
+          throw new Error('Insufficient credits')
+        }
+      }
+    }
+
     addToast({ type: 'info', title: 'Submitting dubbing job...', message: `${selectedLanguages.length} languages` })
 
     try {
