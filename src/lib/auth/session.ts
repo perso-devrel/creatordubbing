@@ -2,6 +2,10 @@ import 'server-only'
 
 import { NextRequest } from 'next/server'
 import { apiFail } from '@/lib/api/response'
+import { verifySessionCookie } from '@/lib/auth/session-cookie'
+import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
+import { getUser } from '@/lib/db/queries'
+import { logger } from '@/lib/logger'
 
 export interface Session {
   uid: string
@@ -25,43 +29,61 @@ function getAccessToken(req: NextRequest): string | null {
   )
 }
 
+async function verifyTokenWithGoogle(
+  token: string,
+): Promise<{ uid: string; email: string } | null> {
+  try {
+    const res = await fetch(
+      `${GOOGLE_TOKENINFO_URL}?access_token=${encodeURIComponent(token)}`,
+    )
+    if (!res.ok) return null
+    const info = (await res.json()) as GoogleTokenInfo
+    if (!info.sub || !info.email) return null
+    return { uid: info.sub, email: info.email }
+  } catch {
+    return null
+  }
+}
+
 export async function requireSession(
   req: NextRequest,
 ): Promise<
   | { ok: true; session: Session }
   | { ok: false; response: Response }
 > {
-  const token = getAccessToken(req)
-  if (!token) {
-    return {
-      ok: false,
-      response: apiFail('UNAUTHORIZED', 'Missing access token', 401),
+  // 1) Try the access token cookie / header (fast path)
+  const cookieToken = getAccessToken(req)
+  if (cookieToken) {
+    const info = await verifyTokenWithGoogle(cookieToken)
+    if (info) return { ok: true, session: info }
+  }
+
+  // 2) Cookie expired or invalid — try refreshing via session cookie
+  const sessionCookie = req.cookies.get('creatordub_session')?.value
+  if (sessionCookie) {
+    const uid = await verifySessionCookie(sessionCookie)
+    if (uid) {
+      const refreshedToken = await getOrRefreshAccessToken(uid)
+      if (refreshedToken) {
+        const info = await verifyTokenWithGoogle(refreshedToken)
+        if (info) {
+          logger.info('session restored via token refresh', { uid })
+          return { ok: true, session: info }
+        }
+      }
+
+      // Token refresh failed but session cookie is valid — use DB email as fallback
+      const user = await getUser(uid)
+      if (user?.email) {
+        logger.info('session restored from DB (token refresh failed)', { uid })
+        return { ok: true, session: { uid, email: user.email as string } }
+      }
     }
   }
 
-  try {
-    const res = await fetch(`${GOOGLE_TOKENINFO_URL}?access_token=${encodeURIComponent(token)}`)
-    if (!res.ok) {
-      return {
-        ok: false,
-        response: apiFail('UNAUTHORIZED', 'Invalid or expired access token', 401),
-      }
-    }
-
-    const info = (await res.json()) as GoogleTokenInfo
-    if (!info.sub || !info.email) {
-      return {
-        ok: false,
-        response: apiFail('UNAUTHORIZED', 'Token missing required claims', 401),
-      }
-    }
-
-    return { ok: true, session: { uid: info.sub, email: info.email } }
-  } catch {
-    return {
-      ok: false,
-      response: apiFail('AUTH_ERROR', 'Failed to verify access token', 500),
-    }
+  return {
+    ok: false,
+    response: apiFail('UNAUTHORIZED', 'Missing or expired access token', 401),
   }
 }
 
