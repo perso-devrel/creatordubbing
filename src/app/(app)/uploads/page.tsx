@@ -81,17 +81,27 @@ function UploadRow({ item, userId }: UploadRowProps) {
       setState('done')
       addToast({ type: 'success', title: `${lang?.name} 업로드 완료`, message: '비공개로 업로드됨' })
 
-      await dbMutation({
-        type: 'createYouTubeUpload',
-        payload: {
-          userId,
-          youtubeVideoId: result.videoId,
-          title: `[${lang?.name}] ${item.video_title}`,
-          languageCode: item.language_code,
-          privacyStatus: 'private',
-          isShort: false,
-        },
-      })
+      await Promise.all([
+        dbMutation({
+          type: 'createYouTubeUpload',
+          payload: {
+            userId,
+            youtubeVideoId: result.videoId,
+            title: `[${lang?.name}] ${item.video_title}`,
+            languageCode: item.language_code,
+            privacyStatus: 'private',
+            isShort: false,
+          },
+        }),
+        dbMutation({
+          type: 'updateJobLanguageYouTube',
+          payload: {
+            jobId: item.job_id,
+            langCode: item.language_code,
+            youtubeVideoId: result.videoId,
+          },
+        }),
+      ])
       queryClient.invalidateQueries({ queryKey: ['completed-languages'] })
     } catch (err) {
       setState('error')
