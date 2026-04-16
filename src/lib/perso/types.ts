@@ -94,6 +94,8 @@ export type ProgressReason =
   | 'Generating Voice'
   | 'Analyzing Lip Sync'
   | 'Applying Lip Sync'
+  | 'Completed'
+  | 'Failed'
 
 export interface ProgressResponse {
   projectSeq: number

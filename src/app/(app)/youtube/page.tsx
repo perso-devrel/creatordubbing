@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Video, ExternalLink, Unlink, AlertTriangle, Settings, Globe, Loader2 } from 'lucide-react'
 import { Card, CardTitle, CardDescription, Button, Badge, Select, Toggle } from '@/components/ui'
@@ -8,6 +9,7 @@ import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { formatNumber } from '@/utils/formatters'
 
 export default function YouTubeSettingsPage() {
+  const router = useRouter()
   const [defaultVisibility, setDefaultVisibility] = useState('public')
   const [autoSubtitles, setAutoSubtitles] = useState(true)
 
@@ -170,7 +172,7 @@ export default function YouTubeSettingsPage() {
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="shrink-0 ml-3">
+                  <Button variant="outline" size="sm" className="shrink-0 ml-3" onClick={() => router.push(`/dubbing?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${video.videoId}`)}`)}>
                     이 영상 더빙
                   </Button>
                 </div>

@@ -12,7 +12,7 @@ export function QuickStart() {
   const isValid = url.length > 0 && isValidYouTubeUrl(url)
 
   const handleStart = () => {
-    if (isValid) router.push('/dubbing')
+    if (isValid) router.push(`/dubbing?url=${encodeURIComponent(url)}`)
   }
 
   return (
