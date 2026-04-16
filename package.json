@@ -55,7 +55,7 @@
     "jsdom": "^29.0.2",
     "lighthouse": "^13.1.0",
     "tailwindcss": "^4",
-    "typescript": "^5",
+    "typescript": "^6",
     "vitest": "^4.1.4"
   }
 }
