@@ -86,3 +86,11 @@ export async function updateJobStatus(jobId: number, status: string) {
     args: [status, jobId],
   })
 }
+
+export async function deleteDubbingJob(jobId: number) {
+  const db = getDb()
+  await db.batch([
+    { sql: 'DELETE FROM job_languages WHERE job_id = ?', args: [jobId] },
+    { sql: 'DELETE FROM dubbing_jobs WHERE id = ?', args: [jobId] },
+  ])
+}

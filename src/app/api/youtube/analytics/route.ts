@@ -96,14 +96,16 @@ export async function GET(req: NextRequest) {
       const CONCURRENCY = 5
       for (let i = 0; i < uncachedIds.length; i += CONCURRENCY) {
         const batch = uncachedIds.slice(i, i + CONCURRENCY)
-        const fetched = await Promise.all(
+        const settled = await Promise.allSettled(
           batch.map(async (videoId) => {
             const fresh = await fetchVideoAnalytics(accessToken, videoId, startDate, endDate)
             await setCache(userId, videoId, fresh)
             return fresh
           }),
         )
-        results.push(...fetched)
+        for (const r of settled) {
+          if (r.status === 'fulfilled') results.push(r.value)
+        }
       }
     }
 
