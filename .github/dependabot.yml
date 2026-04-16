@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # Application dependencies (npm)
+  # npm dependencies — single entry (dependabot rejects overlapping ecosystem+directory+target-branch)
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -17,43 +17,19 @@ updates:
       prefix-development: "chore(deps-dev)"
       include: "scope"
     groups:
+      # Group minor+patch version updates together; major updates ship as individual PRs
       npm-minor-and-patch:
         applies-to: version-updates
         update-types:
           - "minor"
           - "patch"
+      # Security updates are grouped across all severities for faster rollout
       npm-security:
         applies-to: security-updates
         update-types:
           - "minor"
           - "patch"
           - "major"
-    ignore:
-      # Major updates handled as individual PRs, never grouped
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
-
-  # Major-version updates (npm) — opened as separate, non-grouped PRs
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "daily"
-      time: "06:00"
-      timezone: "Asia/Seoul"
-    target-branch: "develop"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "security"
-      - "major-update"
-    commit-message:
-      prefix: "chore(deps-major)"
-      include: "scope"
-    allow:
-      - dependency-type: "direct"
-    # Only major updates here; grouped config above ignores majors
-    versioning-strategy: "increase"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
