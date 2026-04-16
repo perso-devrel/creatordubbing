@@ -111,7 +111,14 @@ export function ScriptEditor({ langCode, projectSeq, spaceSeq }: ScriptEditorPro
     setOpen(true)
     try {
       const data = await getProjectScript(projectSeq, spaceSeq)
-      setSentences(data)
+      // Perso may return [] directly, or wrap sentences in an object envelope —
+      // normalize so `.map` below can never crash.
+      const list: ScriptSentence[] = Array.isArray(data)
+        ? data
+        : Array.isArray((data as { sentences?: ScriptSentence[] } | null)?.sentences)
+          ? (data as { sentences: ScriptSentence[] }).sentences
+          : []
+      setSentences(list)
     } catch {
       addToast({ type: 'error', title: '스크립트 로드 실패' })
       setOpen(false)
@@ -149,6 +156,11 @@ export function ScriptEditor({ langCode, projectSeq, spaceSeq }: ScriptEditorPro
             번역 텍스트를 수정하고 저장한 뒤 "오디오 재생성"을 클릭하면 해당 문장의 더빙 오디오가 다시 생성됩니다.
             재생성 후에는 영상을 다시 다운로드하거나 YouTube에 다시 업로드하세요.
           </p>
+          {sentences.length === 0 && (
+            <p className="text-sm text-surface-500 py-4 text-center">
+              표시할 스크립트가 없습니다.
+            </p>
+          )}
           {sentences.map((s) => (
             <SentenceRow
               key={s.sentenceSeq}

@@ -7,7 +7,16 @@ import { SUPPORTED_LANGUAGES } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 
 export function LanguageSelectStep() {
-  const { selectedLanguages, toggleLanguage, lipSyncEnabled, setLipSync, prevStep, nextStep } = useDubbingStore()
+  const {
+    sourceLanguage,
+    setSourceLanguage,
+    selectedLanguages,
+    toggleLanguage,
+    lipSyncEnabled,
+    setLipSync,
+    prevStep,
+    nextStep,
+  } = useDubbingStore()
 
   const estimatedCredits = selectedLanguages.length * 15 + (lipSyncEnabled ? selectedLanguages.length * 8 : 0)
 
@@ -20,9 +29,30 @@ export function LanguageSelectStep() {
         </p>
       </div>
 
-      {/* Language grid — exclude source language (ko for test video) */}
+      {/* Source language selector */}
+      <Card>
+        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+          원본 영상 언어
+        </label>
+        <select
+          value={sourceLanguage}
+          onChange={(e) => setSourceLanguage(e.target.value)}
+          className="w-full rounded-md border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-surface-700 dark:bg-surface-900 dark:text-white"
+        >
+          {SUPPORTED_LANGUAGES.map((lang) => (
+            <option key={lang.code} value={lang.code}>
+              {lang.flag} {lang.name} ({lang.nativeName})
+            </option>
+          ))}
+        </select>
+        <p className="mt-2 text-xs text-surface-500">
+          영상 속 음성의 언어입니다. 잘못 설정하면 전사가 실패할 수 있습니다.
+        </p>
+      </Card>
+
+      {/* Language grid — exclude the current source language */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-        {SUPPORTED_LANGUAGES.filter((l) => l.code !== 'ko').map((lang) => {
+        {SUPPORTED_LANGUAGES.filter((l) => l.code !== sourceLanguage).map((lang) => {
           const isSelected = selectedLanguages.includes(lang.code)
           return (
             <button
