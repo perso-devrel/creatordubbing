@@ -98,15 +98,18 @@ const deductUserMinutesSchema = z.object({
   type: z.literal('deductUserMinutes'),
   payload: z.object({
     userId: z.string().min(1),
+    jobId: z.number().int(),
     minutes: z.number().int().positive(),
   }),
 })
+
+const CREDIT_PACK_MAX = 120 // must match max value in CREDIT_PACKS
 
 const addCreditsSchema = z.object({
   type: z.literal('addCredits'),
   payload: z.object({
     userId: z.string().min(1),
-    minutes: z.number().int().positive(),
+    minutes: z.number().int().positive().max(CREDIT_PACK_MAX),
   }),
 })
 
@@ -166,6 +169,8 @@ export function getJobIdFromAction(action: MutationAction): number | null {
     case 'updateJobLanguageYouTube':
       return action.payload.jobId
     case 'deleteDubbingJob':
+      return action.payload.jobId
+    case 'deductUserMinutes':
       return action.payload.jobId
     default:
       return null

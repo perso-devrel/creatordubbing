@@ -11,10 +11,11 @@ export default function AuthCallbackPage() {
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
     const error = params.get('error')
+    const state = params.get('state')
 
     if (window.opener) {
       window.opener.postMessage(
-        { type: 'google_oauth_callback', code, error },
+        { type: 'google_oauth_callback', code, error, state },
         window.location.origin,
       )
     }

@@ -45,6 +45,9 @@ export async function signInWithGoogle(): Promise<{
       'https://www.googleapis.com/auth/yt-analytics.readonly',
     ].join(' ')
 
+    const stateNonce = crypto.randomUUID()
+    sessionStorage.setItem('oauth_state', stateNonce)
+
     const authUrl =
       `https://accounts.google.com/o/oauth2/v2/auth?` +
       `client_id=${encodeURIComponent(clientId)}` +
@@ -53,7 +56,8 @@ export async function signInWithGoogle(): Promise<{
       `&scope=${encodeURIComponent(scope)}` +
       `&access_type=offline` +
       `&include_granted_scopes=true` +
-      `&prompt=consent`
+      `&prompt=consent` +
+      `&state=${encodeURIComponent(stateNonce)}`
 
     const popup = window.open(authUrl, 'google_auth', 'width=500,height=600')
     if (!popup) {
@@ -69,7 +73,7 @@ export async function signInWithGoogle(): Promise<{
       window.removeEventListener('message', onMessage)
       clearInterval(closedTimer)
 
-      const { code, error } = event.data
+      const { code, error, state: returnedState } = event.data
 
       if (error) {
         reject(new Error(`Google 인증 오류: ${error}`))
@@ -77,6 +81,13 @@ export async function signInWithGoogle(): Promise<{
       }
       if (!code) {
         reject(new Error('인증 코드를 받지 못했습니다.'))
+        return
+      }
+
+      const expectedState = sessionStorage.getItem('oauth_state')
+      sessionStorage.removeItem('oauth_state')
+      if (!expectedState || returnedState !== expectedState) {
+        reject(new Error('OAuth state 불일치 — CSRF 방지를 위해 요청이 거부되었습니다.'))
         return
       }
 

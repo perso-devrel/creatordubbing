@@ -170,8 +170,8 @@ async function pollLanguage(
   const userId = useAuthStore.getState().user?.uid
   const durationMs = store.getState().videoMeta?.durationMs || 0
   const minutesUsed = Math.max(1, Math.ceil(durationMs / 60_000))
-  if (userId) {
-    await dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed } })
+  if (userId && dbJobId) {
+    await dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed, jobId: dbJobId } })
   }
   if (dbJobId) {
     await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: anyFailed ? 'failed' : 'completed' } })

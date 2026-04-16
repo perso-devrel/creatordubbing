@@ -53,10 +53,10 @@ export async function getOrRefreshAccessToken(
     return tokens.accessToken
   }
 
-  if (!tokens.refreshToken) return tokens.accessToken
+  if (!tokens.refreshToken) return null
 
   const refreshed = await refreshGoogleToken(tokens.refreshToken)
-  if (!refreshed) return tokens.accessToken
+  if (!refreshed) return null
 
   const expiresAt = new Date(
     Date.now() + refreshed.expiresIn * 1000,
