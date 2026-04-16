@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, ExternalLink, Copy, Check, RotateCcw, Upload, Loader2, Volume2, Link2 } from 'lucide-react'
+import { Download, ExternalLink, Copy, Check, RotateCcw, Upload, Loader2, Volume2 } from 'lucide-react'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Card, CardTitle, Badge, Progress } from '@/components/ui'
@@ -10,7 +10,7 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useAuthStore } from '@/stores/authStore'
-import { ytUploadVideo, ytUploadCaption } from '@/lib/api-client'
+import { ytUploadVideo, ytUploadCaption, getPersoFileUrl } from '@/lib/api-client'
 import { dbMutation } from '@/lib/api/dbMutation'
 import { ScriptEditor } from '../ScriptEditor'
 
@@ -24,7 +24,7 @@ interface LangUploadState {
 }
 
 export function UploadStep() {
-  const { selectedLanguages, videoMeta, videoSource, languageProgress, isShort, dbJobId, spaceSeq, projectMap, reset } = useDubbingStore()
+  const { selectedLanguages, videoMeta, videoSource, languageProgress, dbJobId, spaceSeq, projectMap, uploadSettings, reset } = useDubbingStore()
   const { fetchDownloads } = usePersoFlow()
   const addToast = useNotificationStore((s) => s.addToast)
   const userId = useAuthStore((s) => s.user?.uid)
@@ -37,27 +37,26 @@ export function UploadStep() {
     ? `https://www.youtube.com/watch?v=${originalYouTubeId}`
     : null
 
+  const { autoUpload, uploadAsShort, attachOriginalLink, title: settingsTitle, description: settingsDescription, tags: settingsTags, privacyStatus } = uploadSettings
+
   const [copiedLang, setCopiedLang] = useState<string | null>(null)
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
-  const [uploadAsShort, setUploadAsShort] = useState(isShort)
-  const [autoUpload, setAutoUpload] = useState(false)
-  // 원본 링크 첨부 — YouTube URL일 때 기본 ON
-  const [attachOriginalLink, setAttachOriginalLink] = useState(!!originalYouTubeUrl)
   const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
   const autoUploadTriggered = useRef(false)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
-  // Build description with optional original link
   const buildDescription = useCallback(
     (langName: string) => {
-      const base = `${videoMeta?.title || 'Video'} - ${langName} 더빙 by CreatorDub AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
+      const base = settingsDescription?.trim()
+        ? settingsDescription
+        : `${videoMeta?.title || 'Video'} - ${langName} 더빙 by CreatorDub AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
       if (attachOriginalLink && originalYouTubeUrl) {
         return `${base}\n\n원본 영상: ${originalYouTubeUrl}`
       }
       return base
     },
-    [videoMeta?.title, attachOriginalLink, originalYouTubeUrl],
+    [settingsDescription, videoMeta?.title, attachOriginalLink, originalYouTubeUrl],
   )
 
   const handleCopy = (langCode: string, text: string) => {
@@ -139,21 +138,28 @@ export function UploadStep() {
     setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 0 } }))
 
     try {
-      // 1. Get dubbed video download link from Perso
+      // 1. Get dubbed video download link from Perso (always fresh — avoids stale DB link)
       const downloads = await fetchDownloads(langCode, 'dubbingVideo')
-      const videoUrl = downloads?.videoFile?.videoDownloadLink
-      if (!videoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
+      const rawVideoUrl = downloads?.videoFile?.videoDownloadLink
+      if (!rawVideoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
+      const videoUrl = rawVideoUrl.startsWith('http') ? rawVideoUrl : getPersoFileUrl(rawVideoUrl)
 
       // 2. Upload to YouTube — server fetches video from Perso CDN directly (avoids browser CORS)
       setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 20 } }))
       const titlePrefix = uploadAsShort ? '#Shorts ' : ''
-      const ytTitle = `${titlePrefix}[${lang.name}] ${videoMeta?.title || 'Dubbed Video'}`
+      const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
+      const ytTitle = `${titlePrefix}[${lang.name}] ${baseTitle}`
+      const langTags = Array.from(new Set([
+        ...settingsTags,
+        lang.name,
+        ...(uploadAsShort ? ['Shorts'] : []),
+      ]))
       const result = await ytUploadVideo({
         videoUrl,
         title: ytTitle,
         description: buildDescription(lang.name),
-        tags: ['CreatorDub', 'AI더빙', lang.name, 'dubbed', ...(uploadAsShort ? ['Shorts'] : [])],
-        privacyStatus: 'private',
+        tags: langTags,
+        privacyStatus,
         language: langCode,
       })
       setYtUploads((prev) => ({
@@ -195,7 +201,7 @@ export function UploadStep() {
               youtubeVideoId: result.videoId,
               title: ytTitle,
               languageCode: langCode,
-              privacyStatus: 'private',
+              privacyStatus,
               isShort: uploadAsShort,
             },
           })
@@ -210,10 +216,11 @@ export function UploadStep() {
         // DB save best-effort
       }
 
+      const privacyLabel = privacyStatus === 'public' ? '공개' : privacyStatus === 'unlisted' ? '일부 공개' : '비공개'
       addToast({
         type: 'success',
         title: `${lang.name} YouTube 업로드 완료`,
-        message: `영상 ID: ${result.videoId} (비공개)`,
+        message: `영상 ID: ${result.videoId} (${privacyLabel})`,
       })
     } catch (err) {
       const msg = err instanceof Error ? err.message : '업로드 실패'
@@ -223,7 +230,7 @@ export function UploadStep() {
       }))
       addToast({ type: 'error', title: `${lang?.name} 업로드 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsTags, privacyStatus, buildDescription])
 
   // Upload ALL completed languages to YouTube (2 concurrent)
   const handleUploadAll = async () => {
@@ -286,68 +293,17 @@ export function UploadStep() {
               더빙된 영상을 YouTube에 새 영상으로 업로드합니다. 안전을 위해 비공개로 업로드되며, 이후 YouTube Studio에서 공개 설정을 변경할 수 있습니다.
             </p>
 
-            {/* Upload options */}
-            <div className="mb-4 space-y-2">
-              {/* Shorts toggle — always visible */}
-              <div className="flex items-center justify-between rounded-lg bg-brand-50 p-3 dark:bg-brand-900/20">
-                <div className="flex items-center gap-2">
-                  {isShort && <Badge variant="brand">Shorts 감지됨</Badge>}
-                  <span className="text-sm text-surface-600 dark:text-surface-400">
-                    {isShort ? '3분 이하 영상 — #Shorts 태그 자동 추가' : 'Shorts로 업로드 (#Shorts 태그 추가)'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setUploadAsShort(!uploadAsShort)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
-                    uploadAsShort
-                      ? 'bg-brand-500 text-white'
-                      : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
-                  }`}
-                >
-                  {uploadAsShort ? 'Shorts ON' : 'Shorts OFF'}
-                </button>
-              </div>
-
-              {/* Auto upload toggle */}
-              <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
-                <span className="text-sm text-surface-600 dark:text-surface-400">
-                  완료 즉시 자동 업로드
-                </span>
-                <button
-                  onClick={() => { setAutoUpload(!autoUpload); autoUploadTriggered.current = false }}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
-                    autoUpload
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
-                  }`}
-                >
-                  {autoUpload ? 'ON' : 'OFF'}
-                </button>
-              </div>
-
-              {/* 원본 링크 첨부 — YouTube URL 감지 시만 표시 */}
-              {originalYouTubeUrl && (
-                <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Link2 className="h-4 w-4 flex-shrink-0 text-surface-400" />
-                    <div className="min-w-0">
-                      <p className="text-sm text-surface-600 dark:text-surface-400">
-                        설명란에 원본 YouTube 링크 첨부
-                      </p>
-                      <p className="truncate text-xs text-surface-400">{originalYouTubeUrl}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setAttachOriginalLink(!attachOriginalLink)}
-                    className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
-                      attachOriginalLink
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
-                    }`}
-                  >
-                    {attachOriginalLink ? '첨부 ON' : '첨부 OFF'}
-                  </button>
-                </div>
+            {/* Upload options summary — read-only, set in Step 3 */}
+            <div className="mb-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 text-xs text-surface-500 space-y-1">
+              <p>
+                자동 업로드: <span className="font-medium text-surface-700 dark:text-surface-300">{autoUpload ? 'ON' : 'OFF'}</span>
+                {' · '}
+                Shorts: <span className="font-medium text-surface-700 dark:text-surface-300">{uploadAsShort ? 'ON' : 'OFF'}</span>
+                {' · '}
+                공개: <span className="font-medium text-surface-700 dark:text-surface-300">{privacyStatus === 'public' ? '공개' : privacyStatus === 'unlisted' ? '일부 공개' : '비공개'}</span>
+              </p>
+              {attachOriginalLink && originalYouTubeUrl && (
+                <p className="truncate">원본 링크 첨부: {originalYouTubeUrl}</p>
               )}
             </div>
 
@@ -589,7 +545,8 @@ export function UploadStep() {
           {completedLangs.map((code) => {
             const lang = getLanguageByCode(code)
             if (!lang) return null
-            const title = `[${lang.name}] ${videoMeta?.title || 'Video Title'}`
+            const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Video Title'
+            const title = `${uploadAsShort ? '#Shorts ' : ''}[${lang.name}] ${baseTitle}`
             const desc = buildDescription(lang.name)
             return (
               <div key={code} className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">

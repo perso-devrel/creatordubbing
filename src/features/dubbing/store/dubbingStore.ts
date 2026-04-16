@@ -9,7 +9,18 @@ import type {
   LanguageProgress,
   GlossaryEntry,
   JobStatus,
+  UploadSettings,
 } from '../types/dubbing.types'
+
+const DEFAULT_UPLOAD_SETTINGS: UploadSettings = {
+  autoUpload: true,
+  uploadAsShort: false,
+  attachOriginalLink: true,
+  title: '',
+  description: '',
+  tags: ['CreatorDub', 'AI더빙', 'dubbed'],
+  privacyStatus: 'private',
+}
 
 interface DubbingState {
   // Wizard navigation
@@ -63,6 +74,10 @@ interface DubbingState {
   isShort: boolean
   setIsShort: (v: boolean) => void
 
+  // Upload settings (chosen before dubbing starts)
+  uploadSettings: UploadSettings
+  setUploadSettings: (patch: Partial<UploadSettings>) => void
+
   // Glossary
   glossary: GlossaryEntry[]
   addGlossaryEntry: (entry: GlossaryEntry) => void
@@ -88,6 +103,7 @@ const initialState = {
   jobStatus: 'idle' as JobStatus,
   languageProgress: [] as LanguageProgress[],
   glossary: [] as GlossaryEntry[],
+  uploadSettings: { ...DEFAULT_UPLOAD_SETTINGS } as UploadSettings,
 }
 
 export const useDubbingStore = create<DubbingState>((set) => ({
@@ -95,7 +111,7 @@ export const useDubbingStore = create<DubbingState>((set) => ({
 
   setStep: (step) => set({ currentStep: step }),
   setIsSubmitted: (v) => set({ isSubmitted: v }),
-  nextStep: () => set((s) => ({ currentStep: Math.min(5, s.currentStep + 1) as DubbingStep })),
+  nextStep: () => set((s) => ({ currentStep: Math.min(6, s.currentStep + 1) as DubbingStep })),
   prevStep: () => set((s) => ({ currentStep: Math.max(1, s.currentStep - 1) as DubbingStep })),
 
   setSpaceSeq: (seq) => set({ spaceSeq: seq }),
@@ -144,7 +160,14 @@ export const useDubbingStore = create<DubbingState>((set) => ({
     })),
 
   setDbJobId: (id) => set({ dbJobId: id }),
-  setIsShort: (v) => set({ isShort: v }),
+  setIsShort: (v) => set((s) => ({
+    isShort: v,
+    uploadSettings: { ...s.uploadSettings, uploadAsShort: v },
+  })),
+
+  setUploadSettings: (patch) => set((s) => ({
+    uploadSettings: { ...s.uploadSettings, ...patch },
+  })),
 
   addGlossaryEntry: (entry) => set((s) => ({ glossary: [...s.glossary, entry] })),
   removeGlossaryEntry: (id) => set((s) => ({ glossary: s.glossary.filter((e) => e.id !== id) })),

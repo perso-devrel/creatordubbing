@@ -148,41 +148,64 @@ function UploadRow({ item, userId }: UploadRowProps) {
     setModalOpen(false)
     setState('fetching')
     try {
-      let videoUrl = item.dubbed_video_url
-      let srtUrl = item.srt_url
+      const toAbs = (u: string | null | undefined): string | null => {
+        if (!u) return null
+        return u.startsWith('http') ? u : getPersoFileUrl(u)
+      }
 
-      if (!videoUrl && item.project_seq && item.space_seq) {
+      const refetchFromPerso = async (): Promise<{ video: string | null; srt: string | null }> => {
+        if (!item.project_seq || !item.space_seq) return { video: null, srt: null }
         const [dubDl, allDl] = await Promise.all([
           getDownloadLinks(item.project_seq, item.space_seq, 'dubbingVideo'),
           getDownloadLinks(item.project_seq, item.space_seq, 'all'),
         ])
-        videoUrl = dubDl.videoFile?.videoDownloadLink
+        const raw = dubDl.videoFile?.videoDownloadLink
           ?? allDl.videoFile?.videoDownloadLink
           ?? allDl.zippedFileDownloadLink
           ?? null
-        srtUrl = srtUrl ?? allDl.srtFile?.translatedSubtitleDownloadLink ?? null
-
-        if (videoUrl && !videoUrl.startsWith('http')) {
-          videoUrl = getPersoFileUrl(videoUrl)
-        }
-        if (srtUrl && !srtUrl.startsWith('http')) {
-          srtUrl = getPersoFileUrl(srtUrl)
-        }
-        if (!videoUrl) throw new Error('No dubbed video download link available')
+        const rawSrt = allDl.srtFile?.translatedSubtitleDownloadLink ?? null
+        return { video: toAbs(raw), srt: toAbs(rawSrt) }
       }
 
+      // Start from DB URL (normalized). Refetch if missing or later if fetch fails (expired CDN link).
+      let videoUrl = toAbs(item.dubbed_video_url)
+      let srtUrl = toAbs(item.srt_url)
+
+      if (!videoUrl) {
+        const fresh = await refetchFromPerso()
+        videoUrl = fresh.video
+        srtUrl = srtUrl ?? fresh.srt
+      }
       if (!videoUrl) throw new Error('No dubbed video download link available')
 
       setState('uploading')
       const tagsArray = settings.tags.split(',').map((t) => t.trim()).filter(Boolean)
-      const result = await ytUploadVideo({
-        videoUrl,
+
+      const doUpload = (url: string) => ytUploadVideo({
+        videoUrl: url,
         title: settings.title,
         description: settings.description,
         tags: tagsArray,
         privacyStatus: settings.privacyStatus,
         language: item.language_code,
       })
+
+      let result
+      try {
+        result = await doUpload(videoUrl)
+      } catch (err) {
+        // Retry once with a fresh Perso link — handles expired CDN URLs stored in DB.
+        const msg = err instanceof Error ? err.message : ''
+        const isFetchFailure = /VIDEO_FETCH_FAILED|fetch/i.test(msg)
+        if (!isFetchFailure || !item.project_seq || !item.space_seq) throw err
+        setState('fetching')
+        const fresh = await refetchFromPerso()
+        if (!fresh.video) throw err
+        videoUrl = fresh.video
+        srtUrl = srtUrl ?? fresh.srt
+        setState('uploading')
+        result = await doUpload(videoUrl)
+      }
 
       if (srtUrl) {
         try {
