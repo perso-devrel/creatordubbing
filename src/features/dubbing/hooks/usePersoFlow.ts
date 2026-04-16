@@ -120,7 +120,8 @@ async function pollLanguage(
     }).catch(() => { /* progress update is best-effort */ })
   }
 
-  const isTerminal = progress.progressReason === 'COMPLETED' || progress.progressReason === 'FAILED' || progress.progressReason === 'CANCELED'
+  const reason = progress.progressReason
+  const isTerminal = reason === 'COMPLETED' || reason === 'Completed' || reason === 'FAILED' || reason === 'Failed' || reason === 'CANCELED'
   if (!isTerminal) {
     // progress hit 100 but backend hasn't confirmed COMPLETED yet — poll fast
     if (progress.progress >= 100) return 'finalizing'
@@ -130,7 +131,7 @@ async function pollLanguage(
   clearTimeout(pollTimers[langCode])
   delete pollTimers[langCode]
 
-  if (progress.progressReason === 'COMPLETED') {
+  if (reason === 'COMPLETED' || reason === 'Completed') {
     try {
       const downloads = await getDownloadLinks(projectSeq, spaceSeq, 'all')
       store.getState().updateLanguageProgress(langCode, {
@@ -159,11 +160,11 @@ async function pollLanguage(
 
   const allProgress = store.getState().languageProgress
   const allDone = allProgress.every(
-    (lp) => lp.progressReason === 'COMPLETED' || lp.progressReason === 'FAILED' || lp.progressReason === 'CANCELED',
+    (lp) => lp.progressReason === 'COMPLETED' || lp.progressReason === 'Completed' || lp.progressReason === 'FAILED' || lp.progressReason === 'Failed' || lp.progressReason === 'CANCELED',
   )
   if (!allDone) return true
 
-  const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED')
+  const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED' || lp.progressReason === 'Failed')
   store.getState().setJobStatus(anyFailed ? 'failed' : 'completed')
 
   const userId = useAuthStore.getState().user?.uid

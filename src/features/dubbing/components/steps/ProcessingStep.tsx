@@ -28,12 +28,14 @@ const reasonLabels: Record<string, string> = {
   ENQUEUED: '합성 대기 중...',
   PROCESSING: '더빙 오디오 생성 중...',
   COMPLETED: '완료!',
+  Completed: '완료!',
   FAILED: '처리 실패',
+  Failed: '처리 실패',
   CANCELED: '취소됨',
 }
 
 function getProgressLabel(lp: { progressReason: string; progress: number }) {
-  if (lp.progress >= 100 && lp.progressReason !== 'COMPLETED' && lp.progressReason !== 'FAILED' && lp.progressReason !== 'CANCELED') {
+  if (lp.progress >= 100 && lp.progressReason !== 'COMPLETED' && lp.progressReason !== 'Completed' && lp.progressReason !== 'FAILED' && lp.progressReason !== 'Failed' && lp.progressReason !== 'CANCELED') {
     return '마무리 중...'
   }
   return reasonLabels[lp.progressReason] || lp.progressReason
@@ -63,7 +65,7 @@ export function ProcessingStep() {
 
   // Auto-advance when all complete
   const allCompleted = languageProgress.length > 0 && languageProgress.every(
-    (p) => p.progressReason === 'COMPLETED' || p.progressReason === 'FAILED' || p.progressReason === 'CANCELED',
+    (p) => p.progressReason === 'COMPLETED' || p.progressReason === 'Completed' || p.progressReason === 'FAILED' || p.progressReason === 'Failed' || p.progressReason === 'CANCELED',
   )
 
   useEffect(() => {
@@ -107,8 +109,8 @@ export function ProcessingStep() {
           const lang = getLanguageByCode(lp.langCode)
           if (!lang) return null
 
-          const isCompleted = lp.progressReason === 'COMPLETED'
-          const isFailed = lp.progressReason === 'FAILED' || lp.progressReason === 'CANCELED'
+          const isCompleted = lp.progressReason === 'COMPLETED' || lp.progressReason === 'Completed'
+          const isFailed = lp.progressReason === 'FAILED' || lp.progressReason === 'Failed' || lp.progressReason === 'CANCELED'
 
           return (
             <Card

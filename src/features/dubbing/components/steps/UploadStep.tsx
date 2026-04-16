@@ -1,10 +1,11 @@
 'use client'
 
-import { Download, ExternalLink, Copy, Check, RotateCcw, Upload, Loader2 } from 'lucide-react'
-import { useState, useCallback } from 'react'
+import { Download, ExternalLink, Copy, Check, RotateCcw, Upload, Loader2, Volume2, Link2 } from 'lucide-react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Card, CardTitle, Badge, Progress } from '@/components/ui'
 import { getLanguageByCode } from '@/utils/languages'
+import { extractVideoId } from '@/utils/validators'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
@@ -23,17 +24,41 @@ interface LangUploadState {
 }
 
 export function UploadStep() {
-  const { selectedLanguages, videoMeta, languageProgress, isShort, dbJobId, spaceSeq, projectMap, reset } = useDubbingStore()
+  const { selectedLanguages, videoMeta, videoSource, languageProgress, isShort, dbJobId, spaceSeq, projectMap, reset } = useDubbingStore()
   const { fetchDownloads } = usePersoFlow()
   const addToast = useNotificationStore((s) => s.addToast)
   const userId = useAuthStore((s) => s.user?.uid)
   const router = useRouter()
 
+  // Original YouTube link detection (for auto-attach)
+  const originalYouTubeId =
+    videoSource?.type === 'url' && videoSource.url ? extractVideoId(videoSource.url) : null
+  const originalYouTubeUrl = originalYouTubeId
+    ? `https://www.youtube.com/watch?v=${originalYouTubeId}`
+    : null
+
   const [copiedLang, setCopiedLang] = useState<string | null>(null)
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
   const [uploadAsShort, setUploadAsShort] = useState(isShort)
+  const [autoUpload, setAutoUpload] = useState(false)
+  // 원본 링크 첨부 — YouTube URL일 때 기본 ON
+  const [attachOriginalLink, setAttachOriginalLink] = useState(!!originalYouTubeUrl)
+  const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
+  const autoUploadTriggered = useRef(false)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  // Build description with optional original link
+  const buildDescription = useCallback(
+    (langName: string) => {
+      const base = `${videoMeta?.title || 'Video'} - ${langName} 더빙 by CreatorDub AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
+      if (attachOriginalLink && originalYouTubeUrl) {
+        return `${base}\n\n원본 영상: ${originalYouTubeUrl}`
+      }
+      return base
+    },
+    [videoMeta?.title, attachOriginalLink, originalYouTubeUrl],
+  )
 
   const handleCopy = (langCode: string, text: string) => {
     navigator.clipboard.writeText(text)
@@ -43,6 +68,44 @@ export function UploadStep() {
 
   const handleNewDubbing = () => reset()
   const handleGoToDashboard = () => { reset(); router.push('/dashboard') }
+
+  // Audio + Studio helper — downloads audio and opens Studio in popup
+  // (iframe embed is blocked by YouTube's X-Frame-Options: DENY, so we use a popup)
+  const handleAudioToStudio = useCallback(async (langCode: string) => {
+    const lang = getLanguageByCode(langCode)
+    if (!lang) return
+    setStudioOpenedLang(langCode)
+    try {
+      // 1. Fetch audio download link
+      const data = await fetchDownloads(langCode, 'voiceAudio')
+      const audioUrl = data?.audioFile?.voiceAudioDownloadLink
+      if (audioUrl) {
+        // Trigger download in new tab
+        window.open(audioUrl, '_blank')
+      }
+
+      // 2. Copy language code to clipboard (Studio audio track needs it)
+      try {
+        await navigator.clipboard.writeText(langCode)
+      } catch {
+        // Clipboard may fail on insecure contexts — ignore
+      }
+
+      // 3. Open Studio in popup — deep-link to original video's audio page if available
+      const studioUrl = originalYouTubeId
+        ? `https://studio.youtube.com/video/${originalYouTubeId}/translations/audio`
+        : 'https://studio.youtube.com'
+      window.open(studioUrl, 'yt-studio', 'width=1400,height=900,noopener')
+
+      addToast({
+        type: 'info',
+        title: `${lang.name} 오디오 준비 완료`,
+        message: '오디오 다운로드 + Studio 팝업 열림. 언어 코드가 클립보드에 복사됐습니다.',
+      })
+    } finally {
+      setTimeout(() => setStudioOpenedLang(null), 1500)
+    }
+  }, [fetchDownloads, originalYouTubeId, addToast])
 
   const handleDownload = useCallback(async (langCode: string, type: 'video' | 'voiceAudio' | 'translatedSubtitle') => {
     setLoadingDownload(`${langCode}-${type}`)
@@ -88,7 +151,7 @@ export function UploadStep() {
       const result = await ytUploadVideo({
         videoUrl,
         title: ytTitle,
-        description: `${videoMeta?.title || 'Video'} - ${lang.name} 더빙 by CreatorDub AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`,
+        description: buildDescription(lang.name),
         tags: ['CreatorDub', 'AI더빙', lang.name, 'dubbed', ...(uploadAsShort ? ['Shorts'] : [])],
         privacyStatus: 'private',
         language: langCode,
@@ -174,15 +237,23 @@ export function UploadStep() {
 
   const completedLangs = selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)
-    return lp?.progressReason === 'COMPLETED'
+    return lp?.progressReason === 'COMPLETED' || lp?.progressReason === 'Completed'
   })
 
   const failedLangs = selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)
-    return lp?.progressReason === 'FAILED' || lp?.progressReason === 'CANCELED'
+    return lp?.progressReason === 'FAILED' || lp?.progressReason === 'Failed' || lp?.progressReason === 'CANCELED'
   })
 
   const anyUploading = Object.values(ytUploads).some((s) => s.status === 'uploading')
+
+  // Auto-upload on mount if enabled
+  useEffect(() => {
+    if (autoUpload && isAuthenticated && completedLangs.length > 0 && !autoUploadTriggered.current && !anyUploading) {
+      autoUploadTriggered.current = true
+      handleUploadAll()
+    }
+  }, [autoUpload, isAuthenticated, completedLangs.length, anyUploading, handleUploadAll])
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -215,12 +286,14 @@ export function UploadStep() {
               더빙된 영상을 YouTube에 새 영상으로 업로드합니다. 안전을 위해 비공개로 업로드되며, 이후 YouTube Studio에서 공개 설정을 변경할 수 있습니다.
             </p>
 
-            {isShort && (
-              <div className="mb-4 flex items-center justify-between rounded-lg bg-brand-50 p-3 dark:bg-brand-900/20">
+            {/* Upload options */}
+            <div className="mb-4 space-y-2">
+              {/* Shorts toggle — always visible */}
+              <div className="flex items-center justify-between rounded-lg bg-brand-50 p-3 dark:bg-brand-900/20">
                 <div className="flex items-center gap-2">
-                  <Badge variant="brand">Shorts 감지됨</Badge>
+                  {isShort && <Badge variant="brand">Shorts 감지됨</Badge>}
                   <span className="text-sm text-surface-600 dark:text-surface-400">
-                    3분 이하 영상 — #Shorts 태그 자동 추가
+                    {isShort ? '3분 이하 영상 — #Shorts 태그 자동 추가' : 'Shorts로 업로드 (#Shorts 태그 추가)'}
                   </span>
                 </div>
                 <button
@@ -234,7 +307,66 @@ export function UploadStep() {
                   {uploadAsShort ? 'Shorts ON' : 'Shorts OFF'}
                 </button>
               </div>
-            )}
+
+              {/* Auto upload toggle */}
+              <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
+                <span className="text-sm text-surface-600 dark:text-surface-400">
+                  완료 즉시 자동 업로드
+                </span>
+                <button
+                  onClick={() => { setAutoUpload(!autoUpload); autoUploadTriggered.current = false }}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
+                    autoUpload
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
+                  }`}
+                >
+                  {autoUpload ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              {/* 원본 링크 첨부 — YouTube URL 감지 시만 표시 */}
+              {originalYouTubeUrl && (
+                <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Link2 className="h-4 w-4 flex-shrink-0 text-surface-400" />
+                    <div className="min-w-0">
+                      <p className="text-sm text-surface-600 dark:text-surface-400">
+                        설명란에 원본 YouTube 링크 첨부
+                      </p>
+                      <p className="truncate text-xs text-surface-400">{originalYouTubeUrl}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setAttachOriginalLink(!attachOriginalLink)}
+                    className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
+                      attachOriginalLink
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
+                    }`}
+                  >
+                    {attachOriginalLink ? '첨부 ON' : '첨부 OFF'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Upload info */}
+            <div className="mb-4 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+              <div className="flex items-center gap-2 mb-2">
+                <Upload className="h-4 w-4 text-surface-400" />
+                <span className="text-sm font-medium text-surface-700 dark:text-surface-300">더빙 영상을 새 영상으로 업로드</span>
+              </div>
+              <p className="text-xs text-surface-500">
+                각 언어별 더빙된 영상이 별도의 새 영상으로 YouTube에 업로드됩니다. 원본 영상은 변경되지 않습니다.
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <Volume2 className="h-4 w-4 text-surface-400" />
+                <span className="text-xs text-surface-500">
+                  오디오만 필요하면 아래 다운로드에서 Audio를 받아 YouTube Studio에서 수동 추가하세요.
+                </span>
+              </div>
+            </div>
 
             <div className="space-y-2">
               {completedLangs.map((code) => {
@@ -388,26 +520,66 @@ export function UploadStep() {
         </Card>
       )}
 
-      {/* YouTube Studio guide (for multi-audio track) */}
-      <Card>
-        <CardTitle>YouTube Multi-Audio Track (수동)</CardTitle>
-        <p className="text-xs text-surface-500 mb-3">
-          위 자동 업로드는 각 언어별 새 영상으로 업로드됩니다.
-          하나의 영상에 여러 오디오 트랙을 추가하려면 YouTube Studio에서 수동으로 설정하세요.
-        </p>
-        <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800 dark:bg-amber-900/10 dark:border-amber-800 dark:text-amber-300">
-          Multi-Audio Track 업로드는 YouTube 채널 자격 요건(구독자 1,000명 이상)이 필요합니다.
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-3"
-          onClick={() => window.open('https://studio.youtube.com', '_blank')}
-        >
-          <ExternalLink className="h-4 w-4" />
-          YouTube Studio 열기
-        </Button>
-      </Card>
+      {/* YouTube Multi-Audio Track — audio + Studio popup helper */}
+      {completedLangs.length > 0 && (
+        <Card>
+          <CardTitle>원본 영상에 오디오 트랙 추가 (Multi-Audio)</CardTitle>
+          <p className="text-xs text-surface-500 mb-3">
+            하나의 영상에 여러 오디오 트랙을 붙이려면 YouTube Studio에서 수동 적용이 필요합니다.
+            아래 버튼을 누르면 오디오가 다운로드되고 Studio가 팝업으로 열립니다. 언어 코드는 클립보드에 복사됩니다.
+          </p>
+          <div className="mb-3 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 dark:bg-amber-900/10 dark:border-amber-800 dark:text-amber-300">
+            Multi-Audio Track 업로드는 YouTube 채널 자격 요건(구독자 1,000명 이상)이 필요합니다.
+            {!originalYouTubeId && ' 원본이 YouTube URL이 아니면 Studio 홈으로 이동합니다 — 대상 영상을 직접 선택하세요.'}
+          </div>
+          <div className="space-y-2">
+            {completedLangs.map((code) => {
+              const lang = getLanguageByCode(code)
+              if (!lang) return null
+              const opening = studioOpenedLang === code
+              return (
+                <div
+                  key={code}
+                  className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{lang.flag}</span>
+                    <div>
+                      <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+                      <p className="text-xs text-surface-400">오디오 다운로드 + Studio 팝업</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAudioToStudio(code)}
+                    loading={opening}
+                  >
+                    <Volume2 className="h-3.5 w-3.5" />
+                    오디오 + Studio
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-3"
+            onClick={() =>
+              window.open(
+                originalYouTubeId
+                  ? `https://studio.youtube.com/video/${originalYouTubeId}/translations/audio`
+                  : 'https://studio.youtube.com',
+                '_blank',
+              )
+            }
+          >
+            <ExternalLink className="h-4 w-4" />
+            Studio만 열기
+          </Button>
+        </Card>
+      )}
 
       {/* Translated metadata */}
       <Card>
@@ -418,7 +590,7 @@ export function UploadStep() {
             const lang = getLanguageByCode(code)
             if (!lang) return null
             const title = `[${lang.name}] ${videoMeta?.title || 'Video Title'}`
-            const desc = `${videoMeta?.title || 'Video'} - ${lang.name} 더빙 by CreatorDub AI`
+            const desc = buildDescription(lang.name)
             return (
               <div key={code} className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
                 <div className="flex items-center justify-between mb-2">
@@ -435,7 +607,7 @@ export function UploadStep() {
                   </button>
                 </div>
                 <p className="text-sm font-medium text-surface-900 dark:text-white">{title}</p>
-                <p className="text-xs text-surface-500 mt-1">{desc}</p>
+                <p className="text-xs text-surface-500 mt-1 whitespace-pre-line">{desc}</p>
               </div>
             )
           })}
