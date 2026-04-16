@@ -113,6 +113,14 @@ const addCreditsSchema = z.object({
   }),
 })
 
+const createDubbingJobWithLanguagesSchema = z.object({
+  type: z.literal('createDubbingJobWithLanguages'),
+  payload: z.object({
+    job: createDubbingJobSchema.shape.payload,
+    languages: z.array(z.object({ code: z.string().min(1), projectSeq: z.number().int() })).min(1),
+  }),
+})
+
 const deleteDubbingJobSchema = z.object({
   type: z.literal('deleteDubbingJob'),
   payload: z.object({
@@ -123,6 +131,7 @@ const deleteDubbingJobSchema = z.object({
 export const mutationActionSchema = z.discriminatedUnion('type', [
   createDubbingJobSchema,
   createJobLanguagesSchema,
+  createDubbingJobWithLanguagesSchema,
   updateJobLanguageProgressSchema,
   updateJobLanguageCompletedSchema,
   updateJobStatusSchema,
@@ -144,6 +153,8 @@ export function getUserIdFromAction(action: MutationAction): string | null {
   switch (action.type) {
     case 'createDubbingJob':
       return action.payload.userId
+    case 'createDubbingJobWithLanguages':
+      return action.payload.job.userId
     case 'createYouTubeUpload':
       return action.payload.userId
     case 'deductUserMinutes':

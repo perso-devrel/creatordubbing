@@ -45,6 +45,30 @@ export async function createJobLanguages(
   )
 }
 
+export async function createDubbingJobWithLanguages(
+  job: Parameters<typeof createDubbingJob>[0],
+  languages: { code: string; projectSeq: number }[],
+): Promise<number> {
+  const db = getDb()
+  const jobArgs = [
+    job.userId, job.videoTitle, job.videoDurationMs, job.videoThumbnail,
+    job.sourceLanguage, job.mediaSeq, job.spaceSeq,
+    job.lipSyncEnabled ? 1 : 0, job.isShort ? 1 : 0,
+  ]
+  const results = await db.batch([
+    {
+      sql: `INSERT INTO dubbing_jobs (user_id, video_title, video_duration_ms, video_thumbnail, source_language, media_seq, space_seq, lip_sync_enabled, is_short, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'processing')`,
+      args: jobArgs,
+    },
+    ...languages.map((lang) => ({
+      sql: 'INSERT INTO job_languages (job_id, language_code, project_seq) VALUES (last_insert_rowid(), ?, ?)',
+      args: [lang.code, lang.projectSeq],
+    })),
+  ])
+  return Number(results[0].lastInsertRowid)
+}
+
 export async function updateJobLanguageProgress(
   jobId: number,
   langCode: string,
