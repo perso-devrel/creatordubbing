@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { Link2, Upload, Film, ArrowRight, Play, FileVideo, Zap } from 'lucide-react'
+import { Link2, Upload, Film, ArrowRight, Play, FileVideo, Zap, Loader2 } from 'lucide-react'
 import { Card, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Progress } from '@/components/ui'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
+import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { isValidVideoUrl, isValidYouTubeUrl } from '@/utils/validators'
 import { formatDuration } from '@/utils/formatters'
 import { getPersoFileUrl } from '@/lib/api-client'
@@ -21,6 +22,25 @@ export function VideoInputStep() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { data: channel, isLoading: channelLoading } = useChannelStats()
+  const isConnected = !!channel
+  const { data: myVideos = [], isLoading: myVideosLoading } = useMyVideos(10)
+
+  const handleMyVideoSelect = async (videoId: string) => {
+    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
+    setUrl(videoUrl)
+    setLoading(true)
+    setError(null)
+    try {
+      setVideoSource({ type: 'url', url: videoUrl })
+      await importVideoByUrl(videoUrl)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import video')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleUrlSubmit = async () => {
     if (!isValidVideoUrl(url)) return
@@ -161,11 +181,70 @@ export function VideoInputStep() {
         </TabsContent>
 
         <TabsContent value="channel" className="mt-6">
-          <Card className="py-12 text-center">
-            <Film className="mx-auto h-10 w-10 text-surface-400" />
-            <p className="mt-3 text-sm text-surface-500">YouTube 채널을 연결하면 영상을 바로 선택할 수 있습니다</p>
-            <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/youtube'}>채널 연결</Button>
-          </Card>
+          {channelLoading ? (
+            <Card className="py-12 text-center">
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">채널 정보 불러오는 중...</p>
+            </Card>
+          ) : !isConnected ? (
+            <Card className="py-12 text-center">
+              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">YouTube 채널을 연결하면 영상을 바로 선택할 수 있습니다</p>
+              <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/youtube'}>채널 연결</Button>
+            </Card>
+          ) : myVideosLoading ? (
+            <Card className="py-12 text-center">
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">영상 목록 불러오는 중...</p>
+            </Card>
+          ) : myVideos.length === 0 ? (
+            <Card className="py-12 text-center">
+              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">채널에 업로드된 영상이 없습니다</p>
+            </Card>
+          ) : (
+            <Card>
+              <div className="space-y-2">
+                {myVideos.map((video) => (
+                  <div
+                    key={video.videoId}
+                    className="flex items-center justify-between rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {video.thumbnail && (
+                        <Image
+                          src={video.thumbnail}
+                          alt={video.title}
+                          width={64}
+                          height={36}
+                          className="rounded object-cover shrink-0"
+                        />
+                      )}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
+                        <p className="text-xs text-surface-500">
+                          {new Date(video.publishedAt).toLocaleDateString('ko-KR')}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 ml-3"
+                      loading={loading}
+                      disabled={loading}
+                      onClick={() => handleMyVideoSelect(video.videoId)}
+                    >
+                      선택
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              {error && !loading && (
+                <p className="mt-3 text-sm text-red-500">{error}</p>
+              )}
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
 
