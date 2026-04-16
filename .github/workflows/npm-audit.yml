@@ -1,0 +1,51 @@
+name: npm audit
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit production dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run npm audit (fail on high/critical)
+        run: npm audit --audit-level=high
+
+      - name: Generate audit report (always)
+        if: always()
+        run: |
+          npm audit --json > npm-audit.json || true
+          echo "### npm audit summary" >> "$GITHUB_STEP_SUMMARY"
+          node -e "const r=require('./npm-audit.json');const m=r.metadata&&r.metadata.vulnerabilities||{};console.log('| Severity | Count |\n| --- | --- |');for(const k of ['critical','high','moderate','low','info']){console.log('| '+k+' | '+(m[k]||0)+' |');}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit.json
+          retention-days: 30
