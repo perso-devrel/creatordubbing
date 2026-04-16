@@ -30,7 +30,14 @@ function AuthHydrator() {
           displayName: user.displayName,
           photoURL: user.photoURL,
         }),
-      }).catch(() => {})
+      })
+        .then((res) => {
+          if (res.status === 401) {
+            // Token expired and refresh failed — clear session so user can re-login
+            auth.clear()
+          }
+        })
+        .catch(() => {})
     } else {
       auth.setLoading(false)
     }
