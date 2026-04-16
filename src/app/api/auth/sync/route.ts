@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server'
 import { upsertUser } from '@/lib/db/queries'
-import { SESSION_COOKIE, signSessionCookie } from '@/lib/auth/session-cookie'
+import { SESSION_COOKIE, signSessionCookie, verifySessionCookie } from '@/lib/auth/session-cookie'
 import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 import { syncBodySchema } from '@/lib/validators/auth'
+import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -34,16 +35,41 @@ export async function POST(req: NextRequest) {
 
     const { uid, email, displayName, photoURL, accessToken: bodyToken } = parsed.data
 
-    // Resolve access token: body → httpOnly cookie (set by /api/auth/callback)
+    // Resolve access token: body → httpOnly cookie → DB (refresh if expired)
     const cookieToken = req.cookies.get('google_access_token')?.value
-    const accessToken = bodyToken || cookieToken
+    let accessToken = bodyToken || cookieToken
+
+    // Helper: attempt token refresh via session cookie + DB
+    const tryRefreshFromSession = async (): Promise<string | null> => {
+      const sessionCookie = req.cookies.get(SESSION_COOKIE)?.value
+      if (!sessionCookie) return null
+      const sessionUid = await verifySessionCookie(sessionCookie)
+      if (!sessionUid || sessionUid !== uid) return null
+      return getOrRefreshAccessToken(sessionUid)
+    }
+
+    // No token from body/cookie — try DB refresh
+    if (!accessToken) {
+      accessToken = (await tryRefreshFromSession()) ?? undefined
+    }
 
     if (!accessToken) {
-      return apiFail('UNAUTHORIZED', 'Google access token is required', 401)
+      return apiFail('UNAUTHORIZED', 'Google access token is required — please sign in again', 401)
     }
-    const googleUser = await verifyGoogleToken(accessToken)
+
+    let googleUser = await verifyGoogleToken(accessToken)
+
+    // Token expired/invalid — try DB refresh as last resort
     if (!googleUser) {
-      return apiFail('UNAUTHORIZED', 'Invalid or expired Google access token', 401)
+      const refreshed = (await tryRefreshFromSession()) ?? undefined
+      if (refreshed && refreshed !== accessToken) {
+        accessToken = refreshed
+        googleUser = await verifyGoogleToken(accessToken)
+      }
+    }
+
+    if (!googleUser) {
+      return apiFail('UNAUTHORIZED', 'Invalid or expired Google access token — please sign in again', 401)
     }
     if (googleUser.sub !== uid) {
       return apiFail('FORBIDDEN', 'Token subject does not match uid', 403)

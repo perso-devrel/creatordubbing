@@ -25,9 +25,11 @@ const FOCUSABLE = 'a[href],button:not(:disabled),input:not(:disabled),select:not
 export function Modal({ open, onClose, title, children, className, size = 'md' }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') { onClose(); return }
+    if (e.key === 'Escape') { onCloseRef.current(); return }
     if (e.key !== 'Tab') return
     const el = dialogRef.current
     if (!el) return
@@ -37,7 +39,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
     const last = focusable[focusable.length - 1]
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
-  }, [onClose])
+  }, [])
 
   useEffect(() => {
     if (!open) return

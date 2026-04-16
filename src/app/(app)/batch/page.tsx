@@ -24,12 +24,22 @@ export default function BatchPage() {
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const handleDeleteJob = async (jobId: number) => {
+    if (deletingId === jobId) return
     if (confirmDeleteId === jobId) {
-      await dbMutation({ type: 'deleteDubbingJob', payload: { jobId } })
-      queryClient.invalidateQueries({ queryKey: ['recent-jobs'] })
+      setDeletingId(jobId)
       setConfirmDeleteId(null)
+      queryClient.setQueryData(['recent-jobs', user?.uid], (old: typeof jobs) =>
+        old ? old.filter((j) => j.id !== jobId) : old,
+      )
+      try {
+        await dbMutation({ type: 'deleteDubbingJob', payload: { jobId } })
+      } finally {
+        setDeletingId(null)
+        queryClient.invalidateQueries({ queryKey: ['recent-jobs'] })
+      }
     } else {
       setConfirmDeleteId(jobId)
       setTimeout(() => setConfirmDeleteId((prev) => (prev === jobId ? null : prev)), 3000)
@@ -156,14 +166,21 @@ export default function BatchPage() {
 
                 <button
                   onClick={() => handleDeleteJob(job.id)}
+                  disabled={deletingId === job.id}
                   className={`shrink-0 rounded-md p-1.5 transition-colors ${
-                    confirmDeleteId === job.id
-                      ? 'bg-red-50 text-red-500 dark:bg-red-900/20'
-                      : 'text-surface-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20'
+                    deletingId === job.id
+                      ? 'text-surface-300 cursor-not-allowed'
+                      : confirmDeleteId === job.id
+                        ? 'bg-red-50 text-red-500 dark:bg-red-900/20'
+                        : 'text-surface-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20'
                   }`}
-                  title={confirmDeleteId === job.id ? '한번 더 클릭하면 삭제됩니다' : '작업 삭제'}
+                  title={deletingId === job.id ? '삭제 중...' : confirmDeleteId === job.id ? '한번 더 클릭하면 삭제됩니다' : '작업 삭제'}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {deletingId === job.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             )

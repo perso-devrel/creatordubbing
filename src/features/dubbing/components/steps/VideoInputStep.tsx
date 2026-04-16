@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Link2, Upload, Film, ArrowRight, Play, FileVideo, Zap } from 'lucide-react'
 import { Card, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Progress } from '@/components/ui'
@@ -14,7 +15,8 @@ export function VideoInputStep() {
   const { videoMeta, setVideoSource, setIsShort, nextStep } = useDubbingStore()
   const { uploadLocalVideo, importVideoByUrl } = usePersoFlow()
 
-  const [url, setUrl] = useState('')
+  const searchParams = useSearchParams()
+  const [url, setUrl] = useState(searchParams.get('url') ?? '')
   const [loading, setLoading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +81,7 @@ export function VideoInputStep() {
         <p className="mt-1 text-surface-500">YouTube URL을 붙여넣거나 영상 파일을 업로드하세요</p>
       </div>
 
-      <Tabs defaultValue="upload">
+      <Tabs defaultValue={searchParams.get('url') ? 'url' : 'upload'}>
         <TabsList className="mx-auto w-fit">
           <TabsTrigger value="url">
             <span className="flex items-center gap-1.5"><Link2 className="h-4 w-4" /> 영상 URL</span>
@@ -162,7 +164,7 @@ export function VideoInputStep() {
           <Card className="py-12 text-center">
             <Film className="mx-auto h-10 w-10 text-surface-400" />
             <p className="mt-3 text-sm text-surface-500">YouTube 채널을 연결하면 영상을 바로 선택할 수 있습니다</p>
-            <Button variant="outline" className="mt-4">채널 연결</Button>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/youtube'}>채널 연결</Button>
           </Card>
         </TabsContent>
       </Tabs>
