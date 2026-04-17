@@ -71,7 +71,7 @@ export function ProcessingStep() {
   useEffect(() => {
     if (allCompleted) {
       stopPolling()
-      const t = setTimeout(() => setStep(5), 2000)
+      const t = setTimeout(() => setStep(6), 2000)
       return () => clearTimeout(t)
     }
   }, [allCompleted, setStep, stopPolling])

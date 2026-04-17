@@ -130,10 +130,17 @@ async function pollLanguage(
   if (reason === 'COMPLETED' || reason === 'Completed') {
     try {
       const downloads = await getDownloadLinks(projectSeq, spaceSeq, 'all')
+      // Normalize to absolute URLs — Perso may return relative paths which break
+      // server-side fetch in /api/youtube/upload (requires http-prefixed URLs).
+      const toAbs = (u?: string) => (u ? (u.startsWith('http') ? u : getPersoFileUrl(u)) : undefined)
+      const absVideoUrl = toAbs(downloads.videoFile?.videoDownloadLink)
+      const absAudioUrl = toAbs(downloads.audioFile?.voiceAudioDownloadLink)
+      const absSrtUrl = toAbs(downloads.srtFile?.translatedSubtitleDownloadLink)
+
       store.getState().updateLanguageProgress(langCode, {
-        audioUrl: downloads.audioFile?.voiceAudioDownloadLink,
-        srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
-        dubbingVideoUrl: downloads.videoFile?.videoDownloadLink,
+        audioUrl: absAudioUrl,
+        srtUrl: absSrtUrl,
+        dubbingVideoUrl: absVideoUrl,
       })
       if (dbJobId) {
         dbMutation({
@@ -142,9 +149,9 @@ async function pollLanguage(
             jobId: dbJobId,
             langCode,
             urls: {
-              dubbedVideoUrl: downloads.videoFile?.videoDownloadLink,
-              audioUrl: downloads.audioFile?.voiceAudioDownloadLink,
-              srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
+              dubbedVideoUrl: absVideoUrl,
+              audioUrl: absAudioUrl,
+              srtUrl: absSrtUrl,
             },
           },
         }).catch(() => { /* completion update is best-effort */ })
