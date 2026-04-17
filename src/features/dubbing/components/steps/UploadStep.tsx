@@ -226,16 +226,6 @@ export function UploadStep() {
     }
   }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsTags, privacyStatus, buildDescription])
 
-  // Upload ALL completed languages to YouTube (2 concurrent)
-  const handleUploadAll = async () => {
-    const pending = completedLangs.filter((code) => ytUploads[code]?.status !== 'done')
-    const CONCURRENCY = 2
-    for (let i = 0; i < pending.length; i += CONCURRENCY) {
-      const batch = pending.slice(i, i + CONCURRENCY)
-      await Promise.all(batch.map((code) => handleYouTubeUpload(code)))
-    }
-  }
-
   const completedLangs = selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)
     return lp?.progressReason === 'COMPLETED' || lp?.progressReason === 'Completed'
@@ -248,7 +238,15 @@ export function UploadStep() {
 
   const anyUploading = Object.values(ytUploads).some((s) => s.status === 'uploading')
 
-  // Auto-upload on mount if enabled
+  const handleUploadAll = useCallback(async () => {
+    const pending = completedLangs.filter((code) => ytUploads[code]?.status !== 'done')
+    const CONCURRENCY = 2
+    for (let i = 0; i < pending.length; i += CONCURRENCY) {
+      const batch = pending.slice(i, i + CONCURRENCY)
+      await Promise.all(batch.map((code) => handleYouTubeUpload(code)))
+    }
+  }, [completedLangs, ytUploads, handleYouTubeUpload])
+
   useEffect(() => {
     if (autoUpload && isAuthenticated && completedLangs.length > 0 && !autoUploadTriggered.current && !anyUploading) {
       autoUploadTriggered.current = true

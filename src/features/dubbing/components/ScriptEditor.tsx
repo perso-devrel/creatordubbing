@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { ChevronDown, ChevronUp, RotateCcw, Save, Loader2 } from 'lucide-react'
-import { Button, Card, CardTitle } from '@/components/ui'
+import { Button } from '@/components/ui'
 import { getLanguageByCode } from '@/utils/languages'
 import { useNotificationStore } from '@/stores/notificationStore'
 import {
@@ -68,7 +68,7 @@ function SentenceRow({ sentence, projectSeq, onRegenerate }: SentenceRowProps) {
           <span className="rounded bg-surface-100 px-1.5 py-0.5 dark:bg-surface-800">{sentence.speakerLabel}</span>
         )}
       </div>
-      <p className="text-xs text-surface-500 italic">"{sentence.originalText}"</p>
+      <p className="text-xs text-surface-500 italic">&ldquo;{sentence.originalText}&rdquo;</p>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -153,7 +153,7 @@ export function ScriptEditor({ langCode, projectSeq, spaceSeq }: ScriptEditorPro
       {open && sentences && (
         <div className="border-t border-surface-200 p-3 space-y-2 dark:border-surface-800 max-h-96 overflow-y-auto">
           <p className="text-xs text-surface-400 mb-3">
-            번역 텍스트를 수정하고 저장한 뒤 "오디오 재생성"을 클릭하면 해당 문장의 더빙 오디오가 다시 생성됩니다.
+            번역 텍스트를 수정하고 저장한 뒤 &ldquo;오디오 재생성&rdquo;을 클릭하면 해당 문장의 더빙 오디��가 다시 생성됩니다.
             재생성 후에는 영상을 다시 다운로드하거나 YouTube에 다시 업로드하세요.
           </p>
           {sentences.length === 0 && (
