@@ -73,9 +73,9 @@ describe('getPersoFileUrl', () => {
 })
 
 describe('ytFetchAnalytics', () => {
-  it('fetches analytics with videoIds and userId', async () => {
+  it('fetches analytics with videoIds', async () => {
     mockFetch.mockResolvedValueOnce(okResponse([{ videoId: 'v1', daily: [], countries: [], totals: {} }]))
-    const result = await ytFetchAnalytics(['v1'], 'user1')
+    const result = await ytFetchAnalytics(['v1'])
     expect(result).toHaveLength(1)
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/api/youtube/analytics?'),
@@ -83,12 +83,11 @@ describe('ytFetchAnalytics', () => {
     )
     const url = mockFetch.mock.calls[0][0] as string
     expect(url).toContain('videoIds=v1')
-    expect(url).toContain('userId=user1')
   })
 
   it('includes optional date range', async () => {
     mockFetch.mockResolvedValueOnce(okResponse([]))
-    await ytFetchAnalytics(['v1'], 'u1', '2026-01-01', '2026-01-31')
+    await ytFetchAnalytics(['v1'], '2026-01-01', '2026-01-31')
     const url = mockFetch.mock.calls[0][0] as string
     expect(url).toContain('startDate=2026-01-01')
     expect(url).toContain('endDate=2026-01-31')
@@ -96,7 +95,7 @@ describe('ytFetchAnalytics', () => {
 
   it('throws on error response', async () => {
     mockFetch.mockResolvedValueOnce(errorResponse('QUOTA', 'Quota exceeded', 429))
-    await expect(ytFetchAnalytics(['v1'], 'u1')).rejects.toThrow('Quota exceeded')
+    await expect(ytFetchAnalytics(['v1'])).rejects.toThrow('Quota exceeded')
   })
 })
 
