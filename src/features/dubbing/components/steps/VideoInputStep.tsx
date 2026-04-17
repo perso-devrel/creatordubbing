@@ -4,6 +4,15 @@ import { useState, useRef, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { Link2, Upload, Film, ArrowRight, Play, FileVideo, Zap, Loader2 } from 'lucide-react'
+
+function YouTubeLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="28" height="20" rx="4" fill="#FF0000" />
+      <path d="M18.5 10L11.5 14V6L18.5 10Z" fill="white" />
+    </svg>
+  )
+}
 import { Card, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Progress } from '@/components/ui'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
@@ -125,7 +134,7 @@ export function VideoInputStep() {
                 onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
                 error={error && !loading ? error : undefined}
               />
-              <Button onClick={handleUrlSubmit} loading={loading} disabled={!isValid || loading}>
+              <Button onClick={handleUrlSubmit} loading={loading} disabled={!isValid || loading} className="whitespace-nowrap">
                 {loading ? '가져오는 중...' : '가져오기'}
               </Button>
             </div>
@@ -211,7 +220,7 @@ export function VideoInputStep() {
                     className="flex items-center justify-between rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {video.thumbnail && (
+                      {video.thumbnail ? (
                         <Image
                           src={video.thumbnail}
                           alt={video.title}
@@ -219,6 +228,10 @@ export function VideoInputStep() {
                           height={36}
                           className="rounded object-cover shrink-0"
                         />
+                      ) : (
+                        <div className="flex h-9 w-16 shrink-0 items-center justify-center rounded bg-surface-100 dark:bg-surface-800">
+                          <YouTubeLogo className="h-5 w-7" />
+                        </div>
                       )}
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
@@ -262,8 +275,8 @@ export function VideoInputStep() {
                 unoptimized={!videoMeta.thumbnail.startsWith('http')}
               />
             ) : (
-              <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg bg-surface-200 text-sm text-surface-400 dark:bg-surface-800">
-                {videoMeta.duration > 0 ? formatDuration(videoMeta.duration) : '로컬 파일'}
+              <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg bg-surface-100 dark:bg-surface-800">
+                <YouTubeLogo className="h-8 w-12" />
               </div>
             )}
             <div className="min-w-0">
