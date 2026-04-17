@@ -11,6 +11,7 @@ export {
 export {
   createDubbingJob,
   createJobLanguages,
+  createDubbingJobWithLanguages,
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,

@@ -71,29 +71,25 @@ async function saveJobToDb(
   if (!userId) return null
 
   const result = await dbMutation<{ jobId: number }>({
-    type: 'createDubbingJob',
+    type: 'createDubbingJobWithLanguages',
     payload: {
-      userId,
-      videoTitle: videoMeta?.title || '',
-      videoDurationMs: videoMeta?.durationMs || 0,
-      videoThumbnail: videoMeta?.thumbnail || '',
-      sourceLanguage: 'ko',
-      mediaSeq,
-      spaceSeq,
-      lipSyncEnabled,
-      isShort,
+      job: {
+        userId,
+        videoTitle: videoMeta?.title || '',
+        videoDurationMs: videoMeta?.durationMs || 0,
+        videoThumbnail: videoMeta?.thumbnail || '',
+        sourceLanguage: 'ko',
+        mediaSeq,
+        spaceSeq,
+        lipSyncEnabled,
+        isShort,
+      },
+      languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
     },
   })
   if (!result?.jobId) return null
 
   store.getState().setDbJobId(result.jobId)
-  await dbMutation({
-    type: 'createJobLanguages',
-    payload: {
-      jobId: result.jobId,
-      languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
-    },
-  })
   return result.jobId
 }
 
@@ -165,16 +161,22 @@ async function pollLanguage(
   if (!allDone) return true
 
   const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED' || lp.progressReason === 'Failed')
-  store.getState().setJobStatus(anyFailed ? 'failed' : 'completed')
+  const newStatus = anyFailed ? 'failed' : 'completed'
+
+  // Idempotency: skip deduction if the job was already finalized in a
+  // previous polling cycle (e.g. user navigated away and came back).
+  const prevJobStatus = store.getState().jobStatus
+  const alreadyFinalized = prevJobStatus === 'completed' || prevJobStatus === 'failed'
+  store.getState().setJobStatus(newStatus)
 
   const userId = useAuthStore.getState().user?.uid
-  const durationMs = store.getState().videoMeta?.durationMs || 0
-  const minutesUsed = Math.max(1, Math.ceil(durationMs / 60_000))
-  if (userId && dbJobId) {
+  if (userId && dbJobId && !alreadyFinalized) {
+    const durationMs = store.getState().videoMeta?.durationMs || 0
+    const minutesUsed = Math.max(1, Math.ceil(durationMs / 60_000))
     await dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed, jobId: dbJobId } })
   }
   if (dbJobId) {
-    await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: anyFailed ? 'failed' : 'completed' } })
+    await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: newStatus } })
   }
   addToast({
     type: anyFailed ? 'warning' : 'success',
@@ -185,7 +187,7 @@ async function pollLanguage(
 
 export function usePersoFlow() {
   const addToast = useNotificationStore((s) => s.addToast)
-  const pollTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({})
+  const pollTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   const initSpace = useCallback(async () => {
     try {

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import {
   createDubbingJob,
   createJobLanguages,
+  createDubbingJobWithLanguages,
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
@@ -66,6 +67,10 @@ export async function POST(req: NextRequest) {
       case 'createJobLanguages': {
         await createJobLanguages(action.payload.jobId, action.payload.languages)
         return apiOk({ jobId: action.payload.jobId })
+      }
+      case 'createDubbingJobWithLanguages': {
+        const jobId = await createDubbingJobWithLanguages(action.payload.job, action.payload.languages)
+        return apiOk({ jobId })
       }
       case 'updateJobLanguageProgress': {
         const { jobId, langCode, status, progress, progressReason } = action.payload
