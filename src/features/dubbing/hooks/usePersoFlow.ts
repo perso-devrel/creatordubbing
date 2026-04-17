@@ -64,6 +64,7 @@ async function saveJobToDb(
   selectedLanguages: string[],
   projectMap: Record<string, number>,
   lipSyncEnabled: boolean,
+  sourceLanguage: string,
 ): Promise<number | null> {
   const userId = useAuthStore.getState().user?.uid
   const videoMeta = store.getState().videoMeta
@@ -78,7 +79,7 @@ async function saveJobToDb(
         videoTitle: videoMeta?.title || '',
         videoDurationMs: videoMeta?.durationMs || 0,
         videoThumbnail: videoMeta?.thumbnail || '',
-        sourceLanguage: 'ko',
+        sourceLanguage,
         mediaSeq,
         spaceSeq,
         lipSyncEnabled,
@@ -249,8 +250,9 @@ export function usePersoFlow() {
       duration: 8000,
     })
 
+    const sourceLanguage = store.getState().sourceLanguage
     try {
-      const meta = await getExternalMetadata(spaceSeq!, url, 'ko')
+      const meta = await getExternalMetadata(spaceSeq!, url, sourceLanguage)
       store.getState().setVideoMeta({
         id: url,
         title: meta.originalName || (isYouTube ? 'YouTube Video' : 'External Video'),
@@ -262,7 +264,7 @@ export function usePersoFlow() {
         height: meta.height,
       })
 
-      const result = await uploadExternalVideo(spaceSeq!, url, 'ko')
+      const result = await uploadExternalVideo(spaceSeq!, url, sourceLanguage)
       store.getState().setMediaSeq(result.seq)
 
       addToast({ type: 'success', title: '영상 가져오기 완료' })
@@ -275,7 +277,7 @@ export function usePersoFlow() {
   }, [initSpace, addToast])
 
   const submitDubbing = useCallback(async () => {
-    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled } = store.getState()
+    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, sourceLanguage } = store.getState()
     if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
 
     // Credit check before starting
@@ -310,7 +312,7 @@ export function usePersoFlow() {
       const result = await submitTranslation(spaceSeq, {
         mediaSeq,
         isVideoProject: true,
-        sourceLanguageCode: 'ko',
+        sourceLanguageCode: sourceLanguage,
         targetLanguageCodes: selectedLanguages,
         numberOfSpeakers: 1,
         withLipSync: lipSyncEnabled,
@@ -337,7 +339,7 @@ export function usePersoFlow() {
       store.getState().setJobStatus('transcribing')
 
       try {
-        await saveJobToDb(mediaSeq, spaceSeq, selectedLanguages, projectMap, lipSyncEnabled)
+        await saveJobToDb(mediaSeq, spaceSeq, selectedLanguages, projectMap, lipSyncEnabled, sourceLanguage)
       } catch {
         // DB save is best-effort
       }

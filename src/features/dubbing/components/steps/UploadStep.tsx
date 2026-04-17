@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, ExternalLink, Copy, Check, RotateCcw, Upload, Loader2, Volume2 } from 'lucide-react'
+import { Download, ExternalLink, Check, RotateCcw, Upload, Loader2, Volume2 } from 'lucide-react'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Card, CardTitle, Badge, Progress } from '@/components/ui'
@@ -40,7 +40,6 @@ export function UploadStep() {
 
   const { autoUpload, uploadAsShort, attachOriginalLink, title: settingsTitle, description: settingsDescription, tags: settingsTags, privacyStatus } = uploadSettings
 
-  const [copiedLang, setCopiedLang] = useState<string | null>(null)
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
   const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
@@ -59,12 +58,6 @@ export function UploadStep() {
     },
     [settingsDescription, videoMeta?.title, attachOriginalLink, originalYouTubeUrl],
   )
-
-  const handleCopy = (langCode: string, text: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedLang(langCode)
-    setTimeout(() => setCopiedLang(null), 2000)
-  }
 
   const handleNewDubbing = () => reset()
   const handleGoToDashboard = () => { reset(); router.push('/dashboard') }
@@ -537,40 +530,6 @@ export function UploadStep() {
           </Button>
         </Card>
       )}
-
-      {/* Translated metadata */}
-      <Card>
-        <CardTitle>번역된 메타데이터</CardTitle>
-        <p className="text-sm text-surface-500 mb-4">각 언어별 번역된 제목과 설명을 복사하세요.</p>
-        <div className="space-y-3">
-          {completedLangs.map((code) => {
-            const lang = getLanguageByCode(code)
-            if (!lang) return null
-            const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Video Title'
-            const title = `${uploadAsShort ? '#Shorts ' : ''}[${lang.name}] ${baseTitle}`
-            const desc = buildDescription(lang.name)
-            return (
-              <div key={code} className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span>{lang.flag}</span>
-                    <Badge>{lang.name}</Badge>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(code, `${title}\n\n${desc}`)}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20"
-                  >
-                    {copiedLang === code ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                    {copiedLang === code ? '복사됨' : '복사'}
-                  </button>
-                </div>
-                <p className="text-sm font-medium text-surface-900 dark:text-white">{title}</p>
-                <p className="text-xs text-surface-500 mt-1 whitespace-pre-line">{desc}</p>
-              </div>
-            )
-          })}
-        </div>
-      </Card>
 
       {/* Actions */}
       <div className="flex gap-3 justify-center">

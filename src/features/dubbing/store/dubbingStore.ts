@@ -46,8 +46,10 @@ interface DubbingState {
   setVideoMeta: (meta: VideoMetadata) => void
 
   // Step 2: Language selection
+  sourceLanguage: string
   selectedLanguages: string[]
   lipSyncEnabled: boolean
+  setSourceLanguage: (code: string) => void
   toggleLanguage: (code: string) => void
   setLipSync: (enabled: boolean) => void
 
@@ -94,6 +96,7 @@ const initialState = {
   mediaSeq: null as number | null,
   videoSource: null as VideoSource | null,
   videoMeta: null as VideoMetadata | null,
+  sourceLanguage: 'ko',
   selectedLanguages: [] as string[],
   lipSyncEnabled: false,
   isShort: false,
@@ -120,6 +123,12 @@ export const useDubbingStore = create<DubbingState>((set) => ({
   setVideoSource: (source) => set({ videoSource: source }),
   setVideoMeta: (meta) => set({ videoMeta: meta }),
 
+  setSourceLanguage: (code) =>
+    set((s) => ({
+      sourceLanguage: code,
+      // Target list must not include the source language
+      selectedLanguages: s.selectedLanguages.filter((l) => l !== code),
+    })),
   toggleLanguage: (code) =>
     set((s) => ({
       selectedLanguages: s.selectedLanguages.includes(code)
