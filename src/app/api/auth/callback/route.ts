@@ -40,8 +40,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!tokenRes.ok) {
-      const err = await tokenRes.text()
-      return apiFail('TOKEN_EXCHANGE_FAILED', `Google token exchange failed: ${err}`, 401)
+      return apiFail('TOKEN_EXCHANGE_FAILED', 'Google token exchange failed', 401)
     }
 
     const tokens = (await tokenRes.json()) as {
