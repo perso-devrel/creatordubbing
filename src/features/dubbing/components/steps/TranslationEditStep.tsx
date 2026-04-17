@@ -8,8 +8,7 @@ import { getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 
 export function TranslationEditStep() {
-  const { selectedLanguages, lipSyncEnabled, setLipSync, videoMeta, prevStep, nextStep } = useDubbingStore()
-  const [sourceLanguage] = useState('ko') // test_video.mp4 is Korean
+  const { sourceLanguage, selectedLanguages, lipSyncEnabled, setLipSync, videoMeta, prevStep, nextStep } = useDubbingStore()
   const [speakers, setSpeakers] = useState(1)
 
   const sourceLang = getLanguageByCode(sourceLanguage)

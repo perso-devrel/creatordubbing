@@ -98,15 +98,26 @@ const deductUserMinutesSchema = z.object({
   type: z.literal('deductUserMinutes'),
   payload: z.object({
     userId: z.string().min(1),
+    jobId: z.number().int(),
     minutes: z.number().int().positive(),
   }),
 })
+
+const CREDIT_PACK_MAX = 120 // must match max value in CREDIT_PACKS
 
 const addCreditsSchema = z.object({
   type: z.literal('addCredits'),
   payload: z.object({
     userId: z.string().min(1),
-    minutes: z.number().int().positive(),
+    minutes: z.number().int().positive().max(CREDIT_PACK_MAX),
+  }),
+})
+
+const createDubbingJobWithLanguagesSchema = z.object({
+  type: z.literal('createDubbingJobWithLanguages'),
+  payload: z.object({
+    job: createDubbingJobSchema.shape.payload,
+    languages: z.array(z.object({ code: z.string().min(1), projectSeq: z.number().int() })).min(1),
   }),
 })
 
@@ -120,6 +131,7 @@ const deleteDubbingJobSchema = z.object({
 export const mutationActionSchema = z.discriminatedUnion('type', [
   createDubbingJobSchema,
   createJobLanguagesSchema,
+  createDubbingJobWithLanguagesSchema,
   updateJobLanguageProgressSchema,
   updateJobLanguageCompletedSchema,
   updateJobStatusSchema,
@@ -141,6 +153,8 @@ export function getUserIdFromAction(action: MutationAction): string | null {
   switch (action.type) {
     case 'createDubbingJob':
       return action.payload.userId
+    case 'createDubbingJobWithLanguages':
+      return action.payload.job.userId
     case 'createYouTubeUpload':
       return action.payload.userId
     case 'deductUserMinutes':
@@ -166,6 +180,8 @@ export function getJobIdFromAction(action: MutationAction): number | null {
     case 'updateJobLanguageYouTube':
       return action.payload.jobId
     case 'deleteDubbingJob':
+      return action.payload.jobId
+    case 'deductUserMinutes':
       return action.payload.jobId
     default:
       return null

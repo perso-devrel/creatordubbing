@@ -64,6 +64,7 @@ async function saveJobToDb(
   selectedLanguages: string[],
   projectMap: Record<string, number>,
   lipSyncEnabled: boolean,
+  sourceLanguage: string,
 ): Promise<number | null> {
   const userId = useAuthStore.getState().user?.uid
   const videoMeta = store.getState().videoMeta
@@ -71,29 +72,25 @@ async function saveJobToDb(
   if (!userId) return null
 
   const result = await dbMutation<{ jobId: number }>({
-    type: 'createDubbingJob',
+    type: 'createDubbingJobWithLanguages',
     payload: {
-      userId,
-      videoTitle: videoMeta?.title || '',
-      videoDurationMs: videoMeta?.durationMs || 0,
-      videoThumbnail: videoMeta?.thumbnail || '',
-      sourceLanguage: 'ko',
-      mediaSeq,
-      spaceSeq,
-      lipSyncEnabled,
-      isShort,
+      job: {
+        userId,
+        videoTitle: videoMeta?.title || '',
+        videoDurationMs: videoMeta?.durationMs || 0,
+        videoThumbnail: videoMeta?.thumbnail || '',
+        sourceLanguage,
+        mediaSeq,
+        spaceSeq,
+        lipSyncEnabled,
+        isShort,
+      },
+      languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
     },
   })
   if (!result?.jobId) return null
 
   store.getState().setDbJobId(result.jobId)
-  await dbMutation({
-    type: 'createJobLanguages',
-    payload: {
-      jobId: result.jobId,
-      languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
-    },
-  })
   return result.jobId
 }
 
@@ -134,10 +131,17 @@ async function pollLanguage(
   if (reason === 'COMPLETED' || reason === 'Completed') {
     try {
       const downloads = await getDownloadLinks(projectSeq, spaceSeq, 'all')
+      // Normalize to absolute URLs — Perso may return relative paths which break
+      // server-side fetch in /api/youtube/upload (requires http-prefixed URLs).
+      const toAbs = (u?: string) => (u ? (u.startsWith('http') ? u : getPersoFileUrl(u)) : undefined)
+      const absVideoUrl = toAbs(downloads.videoFile?.videoDownloadLink)
+      const absAudioUrl = toAbs(downloads.audioFile?.voiceAudioDownloadLink)
+      const absSrtUrl = toAbs(downloads.srtFile?.translatedSubtitleDownloadLink)
+
       store.getState().updateLanguageProgress(langCode, {
-        audioUrl: downloads.audioFile?.voiceAudioDownloadLink,
-        srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
-        dubbingVideoUrl: downloads.videoFile?.videoDownloadLink,
+        audioUrl: absAudioUrl,
+        srtUrl: absSrtUrl,
+        dubbingVideoUrl: absVideoUrl,
       })
       if (dbJobId) {
         dbMutation({
@@ -146,9 +150,9 @@ async function pollLanguage(
             jobId: dbJobId,
             langCode,
             urls: {
-              dubbedVideoUrl: downloads.videoFile?.videoDownloadLink,
-              audioUrl: downloads.audioFile?.voiceAudioDownloadLink,
-              srtUrl: downloads.srtFile?.translatedSubtitleDownloadLink,
+              dubbedVideoUrl: absVideoUrl,
+              audioUrl: absAudioUrl,
+              srtUrl: absSrtUrl,
             },
           },
         }).catch(() => { /* completion update is best-effort */ })
@@ -165,16 +169,22 @@ async function pollLanguage(
   if (!allDone) return true
 
   const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED' || lp.progressReason === 'Failed')
-  store.getState().setJobStatus(anyFailed ? 'failed' : 'completed')
+  const newStatus = anyFailed ? 'failed' : 'completed'
+
+  // Idempotency: skip deduction if the job was already finalized in a
+  // previous polling cycle (e.g. user navigated away and came back).
+  const prevJobStatus = store.getState().jobStatus
+  const alreadyFinalized = prevJobStatus === 'completed' || prevJobStatus === 'failed'
+  store.getState().setJobStatus(newStatus)
 
   const userId = useAuthStore.getState().user?.uid
-  const durationMs = store.getState().videoMeta?.durationMs || 0
-  const minutesUsed = Math.max(1, Math.ceil(durationMs / 60_000))
-  if (userId) {
-    await dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed } })
+  if (userId && dbJobId && !alreadyFinalized) {
+    const durationMs = store.getState().videoMeta?.durationMs || 0
+    const minutesUsed = Math.max(1, Math.ceil(durationMs / 60_000))
+    await dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed, jobId: dbJobId } })
   }
   if (dbJobId) {
-    await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: anyFailed ? 'failed' : 'completed' } })
+    await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: newStatus } })
   }
   addToast({
     type: anyFailed ? 'warning' : 'success',
@@ -185,7 +195,7 @@ async function pollLanguage(
 
 export function usePersoFlow() {
   const addToast = useNotificationStore((s) => s.addToast)
-  const pollTimers = useRef<Record<string, ReturnType<typeof setInterval>>>({})
+  const pollTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   const initSpace = useCallback(async () => {
     try {
@@ -240,8 +250,9 @@ export function usePersoFlow() {
       duration: 8000,
     })
 
+    const sourceLanguage = store.getState().sourceLanguage
     try {
-      const meta = await getExternalMetadata(spaceSeq!, url, 'ko')
+      const meta = await getExternalMetadata(spaceSeq!, url, sourceLanguage)
       store.getState().setVideoMeta({
         id: url,
         title: meta.originalName || (isYouTube ? 'YouTube Video' : 'External Video'),
@@ -253,7 +264,7 @@ export function usePersoFlow() {
         height: meta.height,
       })
 
-      const result = await uploadExternalVideo(spaceSeq!, url, 'ko')
+      const result = await uploadExternalVideo(spaceSeq!, url, sourceLanguage)
       store.getState().setMediaSeq(result.seq)
 
       addToast({ type: 'success', title: '영상 가져오기 완료' })
@@ -266,7 +277,7 @@ export function usePersoFlow() {
   }, [initSpace, addToast])
 
   const submitDubbing = useCallback(async () => {
-    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled } = store.getState()
+    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, sourceLanguage } = store.getState()
     if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
 
     // Credit check before starting
@@ -301,7 +312,7 @@ export function usePersoFlow() {
       const result = await submitTranslation(spaceSeq, {
         mediaSeq,
         isVideoProject: true,
-        sourceLanguageCode: 'ko',
+        sourceLanguageCode: sourceLanguage,
         targetLanguageCodes: selectedLanguages,
         numberOfSpeakers: 1,
         withLipSync: lipSyncEnabled,
@@ -328,7 +339,7 @@ export function usePersoFlow() {
       store.getState().setJobStatus('transcribing')
 
       try {
-        await saveJobToDb(mediaSeq, spaceSeq, selectedLanguages, projectMap, lipSyncEnabled)
+        await saveJobToDb(mediaSeq, spaceSeq, selectedLanguages, projectMap, lipSyncEnabled, sourceLanguage)
       } catch {
         // DB save is best-effort
       }

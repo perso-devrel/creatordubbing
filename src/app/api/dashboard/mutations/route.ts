@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import {
   createDubbingJob,
   createJobLanguages,
+  createDubbingJobWithLanguages,
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
@@ -67,6 +68,10 @@ export async function POST(req: NextRequest) {
         await createJobLanguages(action.payload.jobId, action.payload.languages)
         return apiOk({ jobId: action.payload.jobId })
       }
+      case 'createDubbingJobWithLanguages': {
+        const jobId = await createDubbingJobWithLanguages(action.payload.job, action.payload.languages)
+        return apiOk({ jobId })
+      }
       case 'updateJobLanguageProgress': {
         const { jobId, langCode, status, progress, progressReason } = action.payload
         await updateJobLanguageProgress(jobId, langCode, status, progress, progressReason)
@@ -92,7 +97,15 @@ export async function POST(req: NextRequest) {
         return apiOk({ jobId, langCode })
       }
       case 'deductUserMinutes': {
-        const { userId, minutes } = action.payload
+        const { userId, jobId: deductJobId, minutes: clientMinutes } = action.payload
+        const deductDb = getDb()
+        const jobRow = await deductDb.execute({
+          sql: 'SELECT video_duration_ms FROM dubbing_jobs WHERE id = ? AND user_id = ?',
+          args: [deductJobId, auth.session.uid],
+        })
+        const durationMs = (jobRow.rows[0]?.video_duration_ms as number) || 0
+        const serverMinutes = Math.max(1, Math.ceil(durationMs / 60_000))
+        const minutes = Math.min(clientMinutes, serverMinutes)
         await deductUserMinutes(userId, minutes)
         return apiOk({ userId, minutes })
       }

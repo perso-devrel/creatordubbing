@@ -17,18 +17,26 @@ import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
 
 type UploadState = 'idle' | 'fetching' | 'uploading' | 'done' | 'error'
 type PrivacyStatus = 'public' | 'unlisted' | 'private'
+type ShortsMode = 'regular' | 'shorts' | 'both'
 
 interface UploadSettings {
   title: string
   description: string
   tags: string
   privacyStatus: PrivacyStatus
+  shortsMode: ShortsMode
 }
 
 const PRIVACY_OPTIONS = [
   { value: 'private', label: '비공개' },
   { value: 'unlisted', label: '일부 공개' },
   { value: 'public', label: '공개' },
+]
+
+const SHORTS_OPTIONS: Array<{ value: ShortsMode; label: string; hint: string }> = [
+  { value: 'regular', label: '일반 영상', hint: '일반 YouTube 영상으로 업로드' },
+  { value: 'shorts', label: 'Shorts', hint: '제목/태그에 #Shorts 추가' },
+  { value: 'both', label: '일반 + Shorts 양쪽', hint: '두 개의 영상으로 각각 업로드' },
 ]
 
 async function fetchCompletedLanguages(uid: string): Promise<CompletedJobLanguage[]> {
@@ -44,6 +52,7 @@ function buildDefaultSettings(item: CompletedJobLanguage, langName: string): Upl
     description: `${item.video_title} - ${langName} dubbed by CreatorDub AI`,
     tags: `CreatorDub, AI dubbing, ${langName}, dubbed`,
     privacyStatus: 'private',
+    shortsMode: 'regular',
   }
 }
 
@@ -95,6 +104,33 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
           onChange={(e) => onChange({ ...settings, privacyStatus: e.target.value as PrivacyStatus })}
           options={PRIVACY_OPTIONS}
         />
+
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
+            업로드 형식
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {SHORTS_OPTIONS.map((opt) => {
+              const active = settings.shortsMode === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onChange({ ...settings, shortsMode: opt.value })}
+                  className={
+                    'rounded-lg border px-3 py-2 text-left transition-colors cursor-pointer ' +
+                    (active
+                      ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
+                      : 'border-surface-200 hover:border-surface-300 dark:border-surface-700 dark:hover:border-surface-600')
+                  }
+                >
+                  <div className="text-sm font-medium text-surface-900 dark:text-white">{opt.label}</div>
+                  <div className="mt-0.5 text-[11px] text-surface-500">{opt.hint}</div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
         <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
           <span className="text-xs text-surface-500">Language: {langName}</span>
@@ -148,81 +184,133 @@ function UploadRow({ item, userId }: UploadRowProps) {
     setModalOpen(false)
     setState('fetching')
     try {
-      let videoUrl = item.dubbed_video_url
-      let srtUrl = item.srt_url
+      const toAbs = (u: string | null | undefined): string | null => {
+        if (!u) return null
+        return u.startsWith('http') ? u : getPersoFileUrl(u)
+      }
 
-      if (!videoUrl && item.project_seq && item.space_seq) {
+      const refetchFromPerso = async (): Promise<{ video: string | null; srt: string | null }> => {
+        if (!item.project_seq || !item.space_seq) return { video: null, srt: null }
         const [dubDl, allDl] = await Promise.all([
           getDownloadLinks(item.project_seq, item.space_seq, 'dubbingVideo'),
           getDownloadLinks(item.project_seq, item.space_seq, 'all'),
         ])
-        videoUrl = dubDl.videoFile?.videoDownloadLink
+        const raw = dubDl.videoFile?.videoDownloadLink
           ?? allDl.videoFile?.videoDownloadLink
           ?? allDl.zippedFileDownloadLink
           ?? null
-        srtUrl = srtUrl ?? allDl.srtFile?.translatedSubtitleDownloadLink ?? null
-
-        if (videoUrl && !videoUrl.startsWith('http')) {
-          videoUrl = getPersoFileUrl(videoUrl)
-        }
-        if (srtUrl && !srtUrl.startsWith('http')) {
-          srtUrl = getPersoFileUrl(srtUrl)
-        }
-        if (!videoUrl) throw new Error('No dubbed video download link available')
+        const rawSrt = allDl.srtFile?.translatedSubtitleDownloadLink ?? null
+        return { video: toAbs(raw), srt: toAbs(rawSrt) }
       }
 
+      // Start from DB URL (normalized). Refetch if missing or later if fetch fails (expired CDN link).
+      let videoUrl = toAbs(item.dubbed_video_url)
+      let srtUrl = toAbs(item.srt_url)
+
+      if (!videoUrl) {
+        const fresh = await refetchFromPerso()
+        videoUrl = fresh.video
+        srtUrl = srtUrl ?? fresh.srt
+      }
       if (!videoUrl) throw new Error('No dubbed video download link available')
 
       setState('uploading')
-      const tagsArray = settings.tags.split(',').map((t) => t.trim()).filter(Boolean)
-      const result = await ytUploadVideo({
-        videoUrl,
-        title: settings.title,
-        description: settings.description,
-        tags: tagsArray,
-        privacyStatus: settings.privacyStatus,
-        language: item.language_code,
-      })
+      const baseTags = settings.tags.split(',').map((t) => t.trim()).filter(Boolean)
 
-      if (srtUrl) {
+      // Build the list of variants to upload (1 for regular/shorts, 2 for both).
+      const variants: Array<{ isShort: boolean; title: string; tags: string[] }> = []
+      if (settings.shortsMode === 'regular' || settings.shortsMode === 'both') {
+        variants.push({ isShort: false, title: settings.title, tags: baseTags })
+      }
+      if (settings.shortsMode === 'shorts' || settings.shortsMode === 'both') {
+        variants.push({
+          isShort: true,
+          title: settings.title.startsWith('#Shorts ') ? settings.title : `#Shorts ${settings.title}`,
+          tags: Array.from(new Set([...baseTags, 'Shorts'])),
+        })
+      }
+
+      const doUpload = (url: string, v: (typeof variants)[number]) =>
+        ytUploadVideo({
+          videoUrl: url,
+          title: v.title,
+          description: settings.description,
+          tags: v.tags,
+          privacyStatus: settings.privacyStatus,
+          language: item.language_code,
+        })
+
+      const uploadOnce = async (v: (typeof variants)[number]) => {
         try {
-          const srtRes = await fetch(srtUrl)
-          const srtText = await srtRes.text()
-          await ytUploadCaption({
-            videoId: result.videoId,
-            language: item.language_code,
-            name: `${langName} subtitles`,
-            srtContent: srtText,
-          })
-        } catch {
-          // SRT optional
+          return await doUpload(videoUrl!, v)
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : ''
+          const isFetchFailure = /VIDEO_FETCH_FAILED|fetch/i.test(msg)
+          if (!isFetchFailure || !item.project_seq || !item.space_seq) throw err
+          setState('fetching')
+          const fresh = await refetchFromPerso()
+          if (!fresh.video) throw err
+          videoUrl = fresh.video
+          srtUrl = srtUrl ?? fresh.srt
+          setState('uploading')
+          return await doUpload(videoUrl, v)
         }
       }
 
-      setVideoId(result.videoId)
+      const results: Array<{ variant: (typeof variants)[number]; videoId: string }> = []
+      for (const v of variants) {
+        const r = await uploadOnce(v)
+        results.push({ variant: v, videoId: r.videoId })
+
+        if (srtUrl) {
+          try {
+            const srtRes = await fetch(srtUrl)
+            const srtText = await srtRes.text()
+            await ytUploadCaption({
+              videoId: r.videoId,
+              language: item.language_code,
+              name: `${langName} subtitles`,
+              srtContent: srtText,
+            })
+          } catch {
+            // SRT optional
+          }
+        }
+      }
+
+      // Surface the regular (non-short) upload on the row if present, else the first one.
+      const displayed = results.find((r) => !r.variant.isShort) ?? results[0]
+      setVideoId(displayed.videoId)
       setState('done')
 
       const privacyLabel = PRIVACY_OPTIONS.find((o) => o.value === settings.privacyStatus)?.label || settings.privacyStatus
-      addToast({ type: 'success', title: `${langName} upload complete`, message: `Uploaded as ${privacyLabel}` })
+      const modeLabel = settings.shortsMode === 'both' ? '일반 + Shorts' : settings.shortsMode === 'shorts' ? 'Shorts' : '일반'
+      addToast({
+        type: 'success',
+        title: `${langName} upload complete`,
+        message: `${modeLabel} · ${privacyLabel} (${results.length}개 업로드)`,
+      })
 
       await Promise.all([
-        dbMutation({
-          type: 'createYouTubeUpload',
-          payload: {
-            userId,
-            youtubeVideoId: result.videoId,
-            title: settings.title,
-            languageCode: item.language_code,
-            privacyStatus: settings.privacyStatus,
-            isShort: false,
-          },
-        }),
+        ...results.map((r) =>
+          dbMutation({
+            type: 'createYouTubeUpload',
+            payload: {
+              userId,
+              youtubeVideoId: r.videoId,
+              title: r.variant.title,
+              languageCode: item.language_code,
+              privacyStatus: settings.privacyStatus,
+              isShort: r.variant.isShort,
+            },
+          }),
+        ),
         dbMutation({
           type: 'updateJobLanguageYouTube',
           payload: {
             jobId: item.job_id,
             langCode: item.language_code,
-            youtubeVideoId: result.videoId,
+            youtubeVideoId: displayed.videoId,
           },
         }),
       ])

@@ -23,8 +23,7 @@ export async function GET(req: NextRequest) {
   try {
     const data = await getCreditUsageByMonth(auth.session.uid)
     return apiOk(data)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal Server Error'
-    return apiFail('DB_ERROR', message, 500)
+  } catch {
+    return apiFail('DB_ERROR', 'Failed to load credit usage', 500)
   }
 }

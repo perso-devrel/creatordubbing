@@ -23,3 +23,12 @@ export const SUPPORTED_LANGUAGES: Language[] = [
 export function getLanguageByCode(code: string): Language | undefined {
   return SUPPORTED_LANGUAGES.find((l) => l.code === code)
 }
+
+const BCP47_MAP: Record<string, string> = {
+  zh: 'zh-Hans',
+  pt: 'pt-BR',
+}
+
+export function toBcp47(persoCode: string): string {
+  return BCP47_MAP[persoCode] || persoCode
+}

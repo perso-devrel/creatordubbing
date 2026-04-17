@@ -20,6 +20,7 @@ interface NotificationState {
 }
 
 let toastId = 0
+const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
 export const useNotificationStore = create<NotificationState>((set) => ({
   toasts: [],
@@ -28,11 +29,23 @@ export const useNotificationStore = create<NotificationState>((set) => ({
     set((state) => ({ toasts: [...state.toasts, { ...toast, id }] }))
     const duration = toast.duration ?? 4000
     if (duration > 0) {
-      setTimeout(() => {
-        set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }))
-      }, duration)
+      timers.set(
+        id,
+        setTimeout(() => {
+          timers.delete(id)
+          set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }))
+        }, duration),
+      )
     }
   },
-  removeToast: (id) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
-  clearAll: () => set({ toasts: [] }),
+  removeToast: (id) => {
+    const timer = timers.get(id)
+    if (timer) { clearTimeout(timer); timers.delete(id) }
+    set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }))
+  },
+  clearAll: () => {
+    timers.forEach(clearTimeout)
+    timers.clear()
+    set({ toasts: [] })
+  },
 }))

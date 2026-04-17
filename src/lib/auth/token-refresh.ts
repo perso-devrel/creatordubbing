@@ -43,6 +43,8 @@ export async function refreshGoogleToken(
   return { accessToken: data.access_token, expiresIn: data.expires_in }
 }
 
+const inflightRefreshes = new Map<string, Promise<string | null>>()
+
 export async function getOrRefreshAccessToken(
   userId: string,
 ): Promise<string | null> {
@@ -53,15 +55,28 @@ export async function getOrRefreshAccessToken(
     return tokens.accessToken
   }
 
-  if (!tokens.refreshToken) return tokens.accessToken
+  if (!tokens.refreshToken) return null
 
-  const refreshed = await refreshGoogleToken(tokens.refreshToken)
-  if (!refreshed) return tokens.accessToken
+  // Deduplicate concurrent refreshes for the same user
+  const inflight = inflightRefreshes.get(userId)
+  if (inflight) return inflight
 
-  const expiresAt = new Date(
-    Date.now() + refreshed.expiresIn * 1000,
-  ).toISOString()
-  await updateUserTokens(userId, refreshed.accessToken, expiresAt)
+  const refreshPromise = (async (): Promise<string | null> => {
+    const refreshed = await refreshGoogleToken(tokens.refreshToken!)
+    if (!refreshed) return null
 
-  return refreshed.accessToken
+    const expiresAt = new Date(
+      Date.now() + refreshed.expiresIn * 1000,
+    ).toISOString()
+    await updateUserTokens(userId, refreshed.accessToken, expiresAt)
+
+    return refreshed.accessToken
+  })()
+
+  inflightRefreshes.set(userId, refreshPromise)
+  try {
+    return await refreshPromise
+  } finally {
+    inflightRefreshes.delete(userId)
+  }
 }

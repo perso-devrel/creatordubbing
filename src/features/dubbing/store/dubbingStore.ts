@@ -9,7 +9,18 @@ import type {
   LanguageProgress,
   GlossaryEntry,
   JobStatus,
+  UploadSettings,
 } from '../types/dubbing.types'
+
+const DEFAULT_UPLOAD_SETTINGS: UploadSettings = {
+  autoUpload: true,
+  uploadAsShort: false,
+  attachOriginalLink: true,
+  title: '',
+  description: '',
+  tags: ['CreatorDub', 'AI더빙', 'dubbed'],
+  privacyStatus: 'private',
+}
 
 interface DubbingState {
   // Wizard navigation
@@ -35,8 +46,10 @@ interface DubbingState {
   setVideoMeta: (meta: VideoMetadata) => void
 
   // Step 2: Language selection
+  sourceLanguage: string
   selectedLanguages: string[]
   lipSyncEnabled: boolean
+  setSourceLanguage: (code: string) => void
   toggleLanguage: (code: string) => void
   setLipSync: (enabled: boolean) => void
 
@@ -63,6 +76,10 @@ interface DubbingState {
   isShort: boolean
   setIsShort: (v: boolean) => void
 
+  // Upload settings (chosen before dubbing starts)
+  uploadSettings: UploadSettings
+  setUploadSettings: (patch: Partial<UploadSettings>) => void
+
   // Glossary
   glossary: GlossaryEntry[]
   addGlossaryEntry: (entry: GlossaryEntry) => void
@@ -79,6 +96,7 @@ const initialState = {
   mediaSeq: null as number | null,
   videoSource: null as VideoSource | null,
   videoMeta: null as VideoMetadata | null,
+  sourceLanguage: 'ko',
   selectedLanguages: [] as string[],
   lipSyncEnabled: false,
   isShort: false,
@@ -88,6 +106,7 @@ const initialState = {
   jobStatus: 'idle' as JobStatus,
   languageProgress: [] as LanguageProgress[],
   glossary: [] as GlossaryEntry[],
+  uploadSettings: { ...DEFAULT_UPLOAD_SETTINGS } as UploadSettings,
 }
 
 export const useDubbingStore = create<DubbingState>((set) => ({
@@ -95,7 +114,7 @@ export const useDubbingStore = create<DubbingState>((set) => ({
 
   setStep: (step) => set({ currentStep: step }),
   setIsSubmitted: (v) => set({ isSubmitted: v }),
-  nextStep: () => set((s) => ({ currentStep: Math.min(5, s.currentStep + 1) as DubbingStep })),
+  nextStep: () => set((s) => ({ currentStep: Math.min(6, s.currentStep + 1) as DubbingStep })),
   prevStep: () => set((s) => ({ currentStep: Math.max(1, s.currentStep - 1) as DubbingStep })),
 
   setSpaceSeq: (seq) => set({ spaceSeq: seq }),
@@ -104,6 +123,12 @@ export const useDubbingStore = create<DubbingState>((set) => ({
   setVideoSource: (source) => set({ videoSource: source }),
   setVideoMeta: (meta) => set({ videoMeta: meta }),
 
+  setSourceLanguage: (code) =>
+    set((s) => ({
+      sourceLanguage: code,
+      // Target list must not include the source language
+      selectedLanguages: s.selectedLanguages.filter((l) => l !== code),
+    })),
   toggleLanguage: (code) =>
     set((s) => ({
       selectedLanguages: s.selectedLanguages.includes(code)
@@ -144,7 +169,14 @@ export const useDubbingStore = create<DubbingState>((set) => ({
     })),
 
   setDbJobId: (id) => set({ dbJobId: id }),
-  setIsShort: (v) => set({ isShort: v }),
+  setIsShort: (v) => set((s) => ({
+    isShort: v,
+    uploadSettings: { ...s.uploadSettings, uploadAsShort: v },
+  })),
+
+  setUploadSettings: (patch) => set((s) => ({
+    uploadSettings: { ...s.uploadSettings, ...patch },
+  })),
 
   addGlossaryEntry: (entry) => set((s) => ({ glossary: [...s.glossary, entry] })),
   removeGlossaryEntry: (id) => set((s) => ({ glossary: s.glossary.filter((e) => e.id !== id) })),
