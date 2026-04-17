@@ -11,6 +11,7 @@ import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useAuthStore } from '@/stores/authStore'
 import { ytUploadVideo, ytUploadCaption } from '@/lib/api-client'
+import { toBcp47 } from '@/utils/languages'
 import { dbMutation } from '@/lib/api/dbMutation'
 import { ScriptEditor } from '../ScriptEditor'
 
@@ -171,7 +172,7 @@ export function UploadStep() {
           const srtText = await srtResponse.text()
           await ytUploadCaption({
             videoId: result.videoId,
-            language: langCode,
+            language: toBcp47(langCode),
             name: `${lang.name} subtitles`,
             srtContent: srtText,
           })

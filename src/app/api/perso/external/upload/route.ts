@@ -7,7 +7,7 @@ import type { UploadVideoResponse } from '@/lib/perso/types'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+export const maxDuration = 600
 
 export async function PUT(req: NextRequest) {
   const auth = await requireSession(req)

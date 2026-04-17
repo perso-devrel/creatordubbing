@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { ytUploadVideo, ytUploadCaption, getDownloadLinks, getPersoFileUrl } from '@/lib/api-client'
+import { toBcp47 } from '@/utils/languages'
 import { dbMutation } from '@/lib/api/dbMutation'
 import { getLanguageByCode } from '@/utils/languages'
 import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
@@ -190,7 +191,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
           const srtText = await srtRes.text()
           await ytUploadCaption({
             videoId: result.videoId,
-            language: item.language_code,
+            language: toBcp47(item.language_code),
             name: `${langName} subtitles`,
             srtContent: srtText,
           })
