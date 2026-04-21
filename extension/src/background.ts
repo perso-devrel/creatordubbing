@@ -1,11 +1,15 @@
 import type {
   UploadToYouTubeMessage,
-  UploadProgressEvent,
-  UploadDoneEvent,
-  UploadErrorEvent,
   OutboundEvent,
 } from './messages'
-import { isPingMessage, isUploadToYouTubeMessage } from './messages'
+import {
+  isPingMessage,
+  isUploadToYouTubeMessage,
+  isUploadProgressEvent,
+  isUploadDoneEvent,
+  isUploadErrorEvent,
+  isObject,
+} from './messages'
 import type { Job } from './background-types'
 import { STORAGE_KEY } from './background-types'
 import { generateJobId, buildStudioUrl, createJob } from './background-utils'
@@ -117,7 +121,7 @@ chrome.runtime.onMessageExternal.addListener(
       return true
     }
 
-    if (message !== null && typeof message === 'object' && (message as { type: string }).type === 'GET_JOBS') {
+    if (isObject(message) && message.type === 'GET_JOBS') {
       getJobs().then((jobs) => sendResponse({ ok: true, jobs }))
       return true
     }
@@ -130,23 +134,23 @@ chrome.runtime.onMessageExternal.addListener(
 // ── content script → background 내부 메시지 (진행 릴레이) ─
 chrome.runtime.onMessage.addListener(
   (message: unknown, _sender, sendResponse) => {
-    if (isContentProgressMessage(message)) {
-      relayToWebApp(message as OutboundEvent)
+    if (isUploadProgressEvent(message)) {
+      relayToWebApp(message)
       sendResponse({ ok: true })
       return true
     }
 
-    if (isContentDoneMessage(message)) {
+    if (isUploadDoneEvent(message)) {
       updateJobStatus(message.payload.jobId, 'done').then(() => {
-        relayToWebApp(message as OutboundEvent)
+        relayToWebApp(message)
         sendResponse({ ok: true })
       })
       return true
     }
 
-    if (isContentErrorMessage(message)) {
+    if (isUploadErrorEvent(message)) {
       updateJobStatus(message.payload.jobId, 'error').then(() => {
-        relayToWebApp(message as OutboundEvent)
+        relayToWebApp(message)
         sendResponse({ ok: true })
       })
       return true
@@ -155,18 +159,6 @@ chrome.runtime.onMessage.addListener(
     return false
   },
 )
-
-function isContentProgressMessage(msg: unknown): msg is UploadProgressEvent {
-  return msg !== null && typeof msg === 'object' && (msg as UploadProgressEvent).type === 'UPLOAD_PROGRESS'
-}
-
-function isContentDoneMessage(msg: unknown): msg is UploadDoneEvent {
-  return msg !== null && typeof msg === 'object' && (msg as UploadDoneEvent).type === 'UPLOAD_DONE'
-}
-
-function isContentErrorMessage(msg: unknown): msg is UploadErrorEvent {
-  return msg !== null && typeof msg === 'object' && (msg as UploadErrorEvent).type === 'UPLOAD_ERROR'
-}
 
 // ── 설치 이벤트 ──────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(() => {
