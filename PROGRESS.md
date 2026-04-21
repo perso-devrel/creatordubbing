@@ -1,9 +1,9 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 09:57)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 10:46)
 - 진행 중 Phase: 1
-- 완료 이슈: #80 (진단 리포트), #84 (ESLint 실행 복구), #86 (테스트 19건 수정)
-- 진행 중 이슈: (다음 iteration) #5 후보 — 도메인 유닛 테스트 보강, 또는 #6 보안 스윕
-- 블로커: `gh` CLI 토큰 만료 — `GH_TOKEN` 환경변수 우회로 동작 중 (사용자 `gh auth login` 권장)
-- 루프 브랜치: `develop_loop` (생성 + 푸시 완료)
+- 완료 이슈: #80 (진단 리포트), #84 (ESLint), #86 (테스트 19건), #88 (유닛 테스트 보강)
+- 진행 중 이슈: (다음 iteration) #6 보안 스윕
+- 블로커: `gh` CLI 토큰 만료 — `GH_TOKEN` 환경변수 우회로 동작 중
+- 루프 브랜치: `develop_loop`
 
 ---
 
@@ -56,5 +56,15 @@
 - 요약: Vitest 19건 실패 → 0건. 원인 3가지 해소: (1) `getServerEnv()` 환경변수 stub 누락 → `getDb()` mock 추가, (2) `apiFailFromError` 코드/메시지 정규화에 맞춰 기대값 수정 (`DB_ERROR` → `INTERNAL_ERROR`, 500 message 마스킹), (3) `auth-sync` Google 토큰 검증 flow에 맞춰 fetch mock 추가.
 - 다음: #5 도메인 유닛 테스트 보강 또는 #6 보안 스윕
 - 리스크: 없음. 구현 코드 변경 없이 테스트 기대값만 수정.
+
+---
+
+## 2026-04-21 10:46 · Phase 1 · Issue #88 · 핵심 도메인 유닛 테스트 보강
+- 브랜치: `test/issue-88-validators-unit-tests`
+- PR: [#89](https://github.com/perso-devrel/creatordubbing/pull/89) (squash merged, delete-branch)
+- 변경 파일: 1개 (`src/utils/validators.test.ts`)
+- 요약: `validators.ts` 순수 함수 4개(YouTube URL 검증, 비디오 URL 검증, videoId 추출, 파일 검증)의 유닛 테스트를 16개 → 28개로 보강. 엣지 케이스(ftp 프로토콜, 확장자 없는 파일, 대소문자 혼합, 경계값 2048MB, embed/shorts ID 추출) 추가.
+- 다음: #6 보안 1차 스윕
+- 리스크: 없음
 
 ---
