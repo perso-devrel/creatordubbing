@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 11:18)
-- 진행 중 Phase: 2 (Phase 1 완료)
-- 완료 이슈: #80, #84, #86, #88, #90, #92 (Phase 1 전체 + #2 TS 에러 0건으로 스킵)
-- 진행 중 이슈: (다음 iteration) Phase 2 #8 — `/extension` 폴더 구조 결정
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 11:27)
+- 진행 중 Phase: 2
+- 완료 이슈: Phase 1 전체 + #94 (폴더 구조 결정)
+- 진행 중 이슈: (다음 iteration) #9 — Manifest V3 스캐폴드
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -97,5 +97,15 @@
 - #90: 보안 스윕 → PR #91
 - #92: 의존성 패치 업데이트 → PR #93
 - #2 (TypeScript 타입 에러): 진단 시점 0건 — 별도 이슈 불필요
+
+---
+
+## 2026-04-21 11:27 · Phase 2 · Issue #94 · /extension 폴더 구조 결정
+- 브랜치: `docs/issue-94-extension-structure`
+- PR: [#95](https://github.com/perso-devrel/creatordubbing/pull/95) (squash merged, delete-branch)
+- 변경 파일: 3개 (비교 문서 + 빈 폴더 구조)
+- 요약: 단일 `/extension` vs 모노레포(`/apps` + `/packages`) 비교 → MVP 리스크 최소화를 위해 단일 `/extension` 채택. 빈 폴더 구조 생성.
+- 다음: #9 Manifest V3 스캐폴드
+- 리스크: 없음
 
 ---
