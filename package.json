@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.4",
+    "@next/eslint-plugin-next": "^16.2.4",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
@@ -52,10 +53,13 @@
     "@vitest/coverage-v8": "^4.1.4",
     "eslint": "^10",
     "eslint-config-next": "16.2.4",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^16.5.0",
     "jsdom": "^29.0.2",
     "lighthouse": "^13.1.0",
     "tailwindcss": "^4",
     "typescript": "^6",
+    "typescript-eslint": "^8.59.0",
     "vitest": "^4.1.4"
   }
 }
