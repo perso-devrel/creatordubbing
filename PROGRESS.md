@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 11:27)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 11:35)
 - 진행 중 Phase: 2
-- 완료 이슈: Phase 1 전체 + #94 (폴더 구조 결정)
-- 진행 중 이슈: (다음 iteration) #9 — Manifest V3 스캐폴드
+- 완료 이슈: Phase 1 전체 + #92, #94, #96
+- 진행 중 이슈: (다음 iteration) #10 — TypeScript + ESLint 설정, 또는 #12 메시지 타입 스키마
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -107,5 +107,24 @@
 - 요약: 단일 `/extension` vs 모노레포(`/apps` + `/packages`) 비교 → MVP 리스크 최소화를 위해 단일 `/extension` 채택. 빈 폴더 구조 생성.
 - 다음: #9 Manifest V3 스캐폴드
 - 리스크: 없음
+
+---
+
+## 2026-04-21 11:18 · Phase 1 · Issue #92 · 의존성 패치 업데이트
+- 브랜치: `chore/issue-92-outdated-deps`
+- PR: [#93](https://github.com/perso-devrel/creatordubbing/pull/93) (squash merged)
+- 변경 파일: 2개 (`package.json`, `package-lock.json`)
+- 요약: 5건 패치 업데이트 (tailwindcss, react-query, eslint, typescript). globals v17 메이저는 기록만.
+- 리스크: 없음
+
+---
+
+## 2026-04-21 11:35 · Phase 2 · Issue #96 · Manifest V3 스캐폴드
+- 브랜치: `feature/issue-96-manifest-v3-scaffold`
+- PR: [#97](https://github.com/perso-devrel/creatordubbing/pull/97) (squash merged)
+- 변경 파일: 12개 (extension 폴더 전체 + .gitignore + tsconfig.json)
+- 요약: Chrome 확장 MV3 스캐폴드 — Vite 7 멀티 엔트리 빌드, 서비스 워커, content script, popup UI. `npm run build` 성공. @crxjs/vite-plugin 대신 수동 빌드 (rollup 취약점 회피).
+- 다음: #10 TypeScript + ESLint 설정, 또는 #12 메시지 타입 스키마
+- 리스크: 아이콘 파일 미포함 (placeholder)
 
 ---
