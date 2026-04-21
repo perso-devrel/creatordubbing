@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:04)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:07)
 - 진행 중 Phase: 5
-- 완료 이슈: Phase 1~4 전체
-- 진행 중 이슈: (다음 iteration) #25 extension README
+- 완료 이슈: Phase 1~4 전체 + #126
+- 진행 중 이슈: (다음 iteration) #26 루트 README 업데이트
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -295,5 +295,15 @@
 - #120: 확장 감지 훅 + 설치 가이드 → PR #121
 - #122: 진행률 UI → PR #123
 - #124: 실패 복구 UX → PR #125
+
+---
+
+## 2026-04-21 14:07 · Phase 5 · Issue #126 · extension README
+- 브랜치: `docs/issue-126-extension-readme`
+- PR: [#127](https://github.com/perso-devrel/creatordubbing/pull/127) (squash merged, delete-branch)
+- 변경 파일: 1개 (`extension/README.md` 신규)
+- 요약: 개발 환경 세팅, 빌드/개발 명령, Chrome 언팩 로드, 프로젝트 구조, 디버깅 팁, 업로드 모드, 셀렉터 검증 안내.
+- 다음: #26 루트 README 업데이트
+- 리스크: 없음
 
 ---
