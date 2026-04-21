@@ -4,6 +4,7 @@ import type { SelectorChain } from './selectors'
 import { queryWithFallback } from './selectors'
 import { waitForElement, sleep } from './dom-utils'
 import { getStepSequence } from './upload-steps'
+import { withRetry, buildManualGuideUrl } from './retry'
 
 interface StartUploadPayload {
   jobId: string
@@ -81,12 +82,24 @@ async function executeUpload(payload: StartUploadPayload): Promise<void> {
     ctx.reportProgress('NAVIGATING', 'YouTube Studio 페이지 로드 완료')
 
     for (const step of steps) {
-      await step(ctx)
+      await withRetry(() => step(ctx), {
+        maxAttempts: 3,
+        baseDelayMs: 1000,
+        onRetry: (attempt, err) => {
+          ctx.reportProgress('NAVIGATING', `재시도 ${attempt}/3: ${String(err)}`)
+        },
+      })
     }
 
     sendDoneToBackground(jobId, videoId, languageCode)
   } catch (err) {
-    sendErrorToBackground(jobId, 'NAVIGATING', String(err), true)
+    const guideUrl = buildManualGuideUrl(videoId)
+    sendErrorToBackground(
+      jobId,
+      'NAVIGATING',
+      `자동화 실패 (3회 재시도 후). 수동 진행: ${guideUrl} — ${String(err)}`,
+      false,
+    )
   }
 }
 
