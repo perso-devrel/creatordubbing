@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import { Puzzle, Upload, AlertCircle, ExternalLink } from 'lucide-react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { Puzzle, Upload, AlertCircle, ExternalLink, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button, Badge } from '@/components/ui'
 import { getLanguageByCode } from '@/utils/languages'
 import { useNotificationStore } from '@/stores/notificationStore'
@@ -14,11 +14,76 @@ interface Props {
 }
 
 const INSTALL_GUIDE_URL = 'https://github.com/perso-devrel/creatordubbing/blob/main/extension/README.md'
+const POLL_INTERVAL = 3000
+
+type JobStatus = 'pending' | 'running' | 'done' | 'error'
+
+interface ExtJob {
+  jobId: string
+  videoId: string
+  languageCode: string
+  status: JobStatus
+}
+
+interface LangJobState {
+  jobId: string
+  status: JobStatus
+  step?: string
+}
+
+const STEP_LABELS: Record<string, string> = {
+  NAVIGATING: '페이지 이동 중',
+  OPENING_LANGUAGES: '번역 페이지 확인',
+  SELECTING_LANGUAGE: '언어 선택 중',
+  INJECTING_AUDIO: '오디오 주입 중',
+  WAITING_PUBLISH: '게시 대기',
+  PUBLISHING: '게시 중',
+}
 
 export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }: Props) {
   const { status: extensionStatus, version, recheck } = useExtensionDetect()
   const [uploadingLang, setUploadingLang] = useState<string | null>(null)
+  const [langJobs, setLangJobs] = useState<Record<string, LangJobState>>({})
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const addToast = useNotificationStore((s) => s.addToast)
+
+  const pollJobs = useCallback(async () => {
+    try {
+      const response = await sendToExtension({ type: 'GET_JOBS' }) as { ok: boolean; jobs?: ExtJob[] }
+      if (!response.ok || !response.jobs) return
+
+      const updated: Record<string, LangJobState> = {}
+      for (const job of response.jobs) {
+        if (job.videoId === videoId) {
+          updated[job.languageCode] = {
+            jobId: job.jobId,
+            status: job.status,
+          }
+        }
+      }
+      if (Object.keys(updated).length > 0) {
+        setLangJobs((prev) => ({ ...prev, ...updated }))
+      }
+    } catch {
+      // extension unavailable — stop polling
+    }
+  }, [videoId])
+
+  useEffect(() => {
+    const hasActiveJobs = Object.values(langJobs).some(
+      (j) => j.status === 'pending' || j.status === 'running',
+    )
+    if (hasActiveJobs && extensionStatus === 'installed') {
+      pollRef.current = setInterval(pollJobs, POLL_INTERVAL)
+      return () => {
+        if (pollRef.current) clearInterval(pollRef.current)
+      }
+    }
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+  }, [langJobs, extensionStatus, pollJobs])
 
   const handleExtensionUpload = useCallback(async (langCode: string) => {
     const lang = getLanguageByCode(langCode)
@@ -34,19 +99,18 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }:
 
       const response = await sendToExtension({
         type: 'UPLOAD_TO_YOUTUBE',
-        payload: {
-          videoId,
-          languageCode: langCode,
-          audioUrl,
-          mode: 'assisted',
-        },
+        payload: { videoId, languageCode: langCode, audioUrl, mode: 'assisted' },
       }) as { ok: boolean; jobId?: string; error?: string }
 
-      if (response.ok) {
+      if (response.ok && response.jobId) {
+        setLangJobs((prev) => ({
+          ...prev,
+          [langCode]: { jobId: response.jobId!, status: 'running' },
+        }))
         addToast({
           type: 'success',
           title: `${lang.name} 확장 업로드 시작`,
-          message: `작업 ID: ${response.jobId}. YouTube Studio에서 자동 진행됩니다.`,
+          message: 'YouTube Studio에서 자동 진행됩니다.',
         })
       } else {
         addToast({ type: 'error', title: '확장 업로드 실패', message: response.error || '알 수 없는 오류' })
@@ -100,25 +164,59 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }:
       {completedLangs.map((code) => {
         const lang = getLanguageByCode(code)
         if (!lang) return null
+        const job = langJobs[code]
+
         return (
           <div
             key={code}
             className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800"
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <span className="text-lg">{lang.flag}</span>
-              <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+                {job?.status === 'running' && (
+                  <p className="text-xs text-brand-500">
+                    {job.step ? STEP_LABELS[job.step] || job.step : '진행 중...'}
+                  </p>
+                )}
+                {job?.status === 'done' && (
+                  <p className="text-xs text-emerald-600">업로드 완료</p>
+                )}
+                {job?.status === 'error' && (
+                  <p className="text-xs text-red-500">오류 발생</p>
+                )}
+              </div>
             </div>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => handleExtensionUpload(code)}
-              loading={uploadingLang === code}
-              disabled={uploadingLang !== null}
-            >
-              <Upload className="h-3.5 w-3.5" />
-              자동 업로드
-            </Button>
+
+            {job?.status === 'done' ? (
+              <CheckCircle className="h-5 w-5 text-emerald-500" />
+            ) : job?.status === 'running' || job?.status === 'pending' ? (
+              <Loader2 className="h-5 w-5 animate-spin text-brand-500" />
+            ) : job?.status === 'error' ? (
+              <div className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-red-500" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExtensionUpload(code)}
+                  disabled={uploadingLang !== null}
+                >
+                  재시도
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleExtensionUpload(code)}
+                loading={uploadingLang === code}
+                disabled={uploadingLang !== null}
+              >
+                <Upload className="h-3.5 w-3.5" />
+                자동 업로드
+              </Button>
+            )}
           </div>
         )
       })}

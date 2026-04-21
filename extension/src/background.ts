@@ -100,6 +100,11 @@ chrome.runtime.onMessageExternal.addListener(
       return true
     }
 
+    if (message !== null && typeof message === 'object' && (message as { type: string }).type === 'GET_JOBS') {
+      getJobs().then((jobs) => sendResponse({ ok: true, jobs }))
+      return true
+    }
+
     sendResponse({ ok: false, error: 'UNKNOWN_MESSAGE_TYPE' })
     return true
   },
