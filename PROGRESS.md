@@ -1,8 +1,8 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 10:46)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 10:52)
 - 진행 중 Phase: 1
-- 완료 이슈: #80 (진단 리포트), #84 (ESLint), #86 (테스트 19건), #88 (유닛 테스트 보강)
-- 진행 중 이슈: (다음 iteration) #6 보안 스윕
-- 블로커: `gh` CLI 토큰 만료 — `GH_TOKEN` 환경변수 우회로 동작 중
+- 완료 이슈: #80 (진단), #84 (ESLint), #86 (테스트), #88 (유닛 테스트), #90 (보안 스윕)
+- 진행 중 이슈: (다음 iteration) #7 의존성 점검 → Phase 1 완료 → Phase 2 시작
+- 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
 ---
@@ -65,6 +65,16 @@
 - 변경 파일: 1개 (`src/utils/validators.test.ts`)
 - 요약: `validators.ts` 순수 함수 4개(YouTube URL 검증, 비디오 URL 검증, videoId 추출, 파일 검증)의 유닛 테스트를 16개 → 28개로 보강. 엣지 케이스(ftp 프로토콜, 확장자 없는 파일, 대소문자 혼합, 경계값 2048MB, embed/shorts ID 추출) 추가.
 - 다음: #6 보안 1차 스윕
+- 리스크: 없음
+
+---
+
+## 2026-04-21 10:52 · Phase 1 · Issue #90 · 보안 1차 스윕
+- 브랜치: `chore/issue-90-security-sweep`
+- PR: [#91](https://github.com/perso-devrel/creatordubbing/pull/91) (squash merged, delete-branch)
+- 변경 파일: 1개 (`docs/SECURITY_SWEEP.md` 신규)
+- 요약: `.env` 추적, 하드코딩 키, SQL injection, XSS, Cookie 보안, 로그 민감 데이터 전수 점검. 심각/높음 0건. `dangerouslySetInnerHTML` 2건(정적 콘텐츠, 낮은 위험).
+- 다음: #7 의존성 점검
 - 리스크: 없음
 
 ---
