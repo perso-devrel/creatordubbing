@@ -1,10 +1,9 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:29)
-- 진행 중 Phase: 2
-- 완료 이슈: Phase 1 전체 + #94, #96, #98, #100, #102, #104
-- 진행 중 이슈: (다음 iteration) #15 popup UI
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:32)
+- 진행 중 Phase: 3
+- 완료 이슈: Phase 1 전체 + Phase 2 전체 (#94, #96, #98, #100, #102, #104, #106)
+- 진행 중 이슈: (다음 iteration) #16 셀렉터 카탈로그 작성
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
-- 참고: #11 externally_connectable은 #96 스캐폴드에서 이미 구현됨
 
 ---
 
@@ -167,5 +166,27 @@
 - 요약: waitForElement(MutationObserver 기반) 유틸 + 7개 업로드 단계 스텁(openLanguagesPage 등) + getStepSequence(assisted 6단계/auto 7단계). content script에서 START_UPLOAD 수신 → 순차 실행 → 결과 전달. 테스트 5건 추가 (총 36건).
 - 다음: #15 popup UI
 - 리스크: 각 단계 함수는 스텁 — Phase 3에서 구현
+
+---
+
+## 2026-04-21 13:32 · Phase 2 · Issue #106 · popup UI 최소 버전
+- 브랜치: `feature/issue-106-popup-ui`
+- PR: [#107](https://github.com/perso-devrel/creatordubbing/pull/107) (squash merged, delete-branch)
+- 변경 파일: 2개 (`popup/index.html`, `popup/main.ts`)
+- 요약: 확장 팝업에 버전 표시 + 상태 배지(준비됨/진행 중/오류) + chrome.storage.local에서 최근 Job 3건 렌더링(상태 배지, 비디오 ID, 언어 코드, 시간). 빈 상태 및 오류 안내 포함.
+- 다음: Phase 3 #16 셀렉터 카탈로그 작성
+- 리스크: 실제 Chrome 로드 후 수동 UI 검증 필요
+
+---
+
+## ✅ Phase 2 완료 (2026-04-21 13:32)
+- #94: 폴더 구조 결정 → PR #95
+- #96: Manifest V3 스캐폴드 → PR #97
+- #98: TypeScript + ESLint 설정 → PR #99
+- #100: 메시지 타입 스키마 → PR #101
+- #102: background 기본 로직 → PR #103
+- #104: content script 골격 → PR #105
+- #106: popup UI → PR #107
+- #11 (externally_connectable): #96에서 이미 구현 — 별도 이슈 불필요
 
 ---
