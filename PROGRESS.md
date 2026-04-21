@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:22)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:26)
 - 진행 중 Phase: 2
-- 완료 이슈: Phase 1 전체 + #94, #96, #98, #100
-- 진행 중 이슈: (다음 iteration) #13 background 기본 로직
+- 완료 이슈: Phase 1 전체 + #94, #96, #98, #100, #102
+- 진행 중 이슈: (다음 iteration) #14 content script 골격
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 - 참고: #11 externally_connectable은 #96 스캐폴드에서 이미 구현됨
@@ -147,5 +147,15 @@
 - 요약: 웹앱↔확장 통신 메시지 5종(PING, UPLOAD_TO_YOUTUBE, UPLOAD_PROGRESS, UPLOAD_DONE, UPLOAD_ERROR) 타입 정의 + 런타임 타입 가드 7개 + 단위 테스트 24건. Vitest 도입으로 테스트 인프라 확보. #11(externally_connectable)은 #96에서 이미 구현.
 - 다음: #13 background 기본 로직
 - 리스크: 없음
+
+---
+
+## 2026-04-21 13:26 · Phase 2 · Issue #102 · background 서비스 워커 기본 로직
+- 브랜치: `feature/issue-102-background-logic`
+- PR: [#103](https://github.com/perso-devrel/creatordubbing/pull/103) (squash merged, delete-branch)
+- 변경 파일: 4개 (`background.ts` 리팩터, `background-types.ts`, `background-utils.ts`, `background.test.ts` 신규)
+- 요약: 웹앱 PING 응답 + UPLOAD_TO_YOUTUBE 처리 (jobId 생성 → YouTube Studio 탭 열기 → storage 저장 → content script 전달). content→background 릴레이 구조. 순수 로직 분리 + 단위 테스트 7건 추가 (총 31건 통과).
+- 다음: #14 content script 골격
+- 리스크: relayToWebApp() stub — Phase 4에서 구현 필요
 
 ---
