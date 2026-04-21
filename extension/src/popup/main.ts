@@ -1,11 +1,14 @@
 import type { Job } from '../background-types'
 import { STORAGE_KEY } from '../background-types'
+import { getUploadMode, setUploadMode } from '../settings'
 
 const RECENT_JOB_COUNT = 3
 
 const statusEl = document.getElementById('status')!
 const versionEl = document.getElementById('version')!
 const jobsContainer = document.getElementById('jobs-container')!
+const modeToggle = document.getElementById('mode-toggle') as HTMLInputElement
+const modeDesc = document.getElementById('mode-desc')!
 
 function formatTime(timestamp: number): string {
   const d = new Date(timestamp)
@@ -69,9 +72,25 @@ function updateStatus(jobs: Job[]): void {
   }
 }
 
+function updateModeDesc(isAuto: boolean): void {
+  modeDesc.textContent = isAuto
+    ? 'auto — 게시까지 모두 자동'
+    : 'assisted — 파일 주입까지만 자동'
+}
+
 async function init(): Promise<void> {
   const manifest = chrome.runtime.getManifest()
   versionEl.textContent = `v${manifest.version}`
+
+  const currentMode = await getUploadMode()
+  modeToggle.checked = currentMode === 'auto'
+  updateModeDesc(modeToggle.checked)
+
+  modeToggle.addEventListener('change', async () => {
+    const newMode = modeToggle.checked ? 'auto' : 'assisted'
+    await setUploadMode(newMode)
+    updateModeDesc(modeToggle.checked)
+  })
 
   const { [STORAGE_KEY]: stored } = await chrome.storage.local.get(STORAGE_KEY)
   const jobs: Job[] = Array.isArray(stored) ? stored : []
