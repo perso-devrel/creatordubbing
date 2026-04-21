@@ -1,9 +1,10 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 11:58)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:22)
 - 진행 중 Phase: 2
-- 완료 이슈: Phase 1 전체 + #94, #96, #98
-- 진행 중 이슈: (다음 iteration) #11 externally_connectable 정의 또는 #12 메시지 타입 스키마
+- 완료 이슈: Phase 1 전체 + #94, #96, #98, #100
+- 진행 중 이슈: (다음 iteration) #13 background 기본 로직
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
+- 참고: #11 externally_connectable은 #96 스캐폴드에서 이미 구현됨
 
 ---
 
@@ -136,5 +137,15 @@
 - 요약: 확장 폴더에 독립 ESLint 설정 추가. typescript-eslint recommended + browser/webextensions/serviceworker globals. `lint` 스크립트 추가. 루트 lint는 `extension/**`를 globalIgnores에 추가해 격리. 확장 `npm run lint`/`typecheck`/`build` 모두 통과.
 - 다음: #11 externally_connectable 정의 또는 #12 메시지 타입 스키마
 - 리스크: 확장에 테스트 러너 아직 없음 — Phase 3 전에 Vitest 도입 필요
+
+---
+
+## 2026-04-21 13:22 · Phase 2 · Issue #100 · 메시지 타입 스키마 정의
+- 브랜치: `feature/issue-100-message-types`
+- PR: [#101](https://github.com/perso-devrel/creatordubbing/pull/101) (squash merged, delete-branch)
+- 변경 파일: 4개 (`extension/src/messages.ts`, `extension/src/messages.test.ts`, `extension/package.json`, `extension/package-lock.json`)
+- 요약: 웹앱↔확장 통신 메시지 5종(PING, UPLOAD_TO_YOUTUBE, UPLOAD_PROGRESS, UPLOAD_DONE, UPLOAD_ERROR) 타입 정의 + 런타임 타입 가드 7개 + 단위 테스트 24건. Vitest 도입으로 테스트 인프라 확보. #11(externally_connectable)은 #96에서 이미 구현.
+- 다음: #13 background 기본 로직
+- 리스크: 없음
 
 ---
