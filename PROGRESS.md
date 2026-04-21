@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 10:52)
-- 진행 중 Phase: 1
-- 완료 이슈: #80 (진단), #84 (ESLint), #86 (테스트), #88 (유닛 테스트), #90 (보안 스윕)
-- 진행 중 이슈: (다음 iteration) #7 의존성 점검 → Phase 1 완료 → Phase 2 시작
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 11:18)
+- 진행 중 Phase: 2 (Phase 1 완료)
+- 완료 이슈: #80, #84, #86, #88, #90, #92 (Phase 1 전체 + #2 TS 에러 0건으로 스킵)
+- 진행 중 이슈: (다음 iteration) Phase 2 #8 — `/extension` 폴더 구조 결정
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -76,5 +76,26 @@
 - 요약: `.env` 추적, 하드코딩 키, SQL injection, XSS, Cookie 보안, 로그 민감 데이터 전수 점검. 심각/높음 0건. `dangerouslySetInnerHTML` 2건(정적 콘텐츠, 낮은 위험).
 - 다음: #7 의존성 점검
 - 리스크: 없음
+
+---
+
+## 2026-04-21 11:18 · Phase 1 · Issue #92 · 의존성 패치 업데이트
+- 브랜치: `chore/issue-92-outdated-deps`
+- PR: [#93](https://github.com/perso-devrel/creatordubbing/pull/93) (squash merged, delete-branch)
+- 변경 파일: 2개 (`package.json`, `package-lock.json`)
+- 요약: `npm outdated` 결과 5건 패치 업데이트 적용 (tailwindcss, react-query, eslint, typescript). globals v17 메이저는 기록만.
+- 다음: Phase 2 #8 — `/extension` 폴더 구조 결정
+- 리스크: 없음
+
+---
+
+## ✅ Phase 1 완료 (2026-04-21 11:18)
+- #80: 진단 리포트 → PR #81
+- #84: ESLint 실행 복구 → PR #85
+- #86: 테스트 19건 수정 → PR #87
+- #88: 유닛 테스트 보강 → PR #89
+- #90: 보안 스윕 → PR #91
+- #92: 의존성 패치 업데이트 → PR #93
+- #2 (TypeScript 타입 에러): 진단 시점 0건 — 별도 이슈 불필요
 
 ---
