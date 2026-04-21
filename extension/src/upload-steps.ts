@@ -9,6 +9,7 @@ import {
   FILE_INPUT,
   PUBLISH_BUTTON,
 } from './selectors'
+import { fetchAsFile, injectFileToInput } from './file-inject'
 
 // ── DOM 헬퍼 인터페이스 (테스트 시 모킹 가능) ───────────
 export interface DomHelper {
@@ -63,10 +64,13 @@ export async function clickDubAdd(ctx: UploadContext): Promise<void> {
 }
 
 export async function injectAudioFile(ctx: UploadContext): Promise<void> {
-  ctx.reportProgress('INJECTING_AUDIO', '오디오 파일 주입 중')
-  // TODO: Phase 3 #18 — DataTransfer 기반 파일 주입
-  // FILE_INPUT 셀렉터로 input[type="file"] 찾은 뒤 파일 주입
-  await ctx.dom.waitFor(FILE_INPUT)
+  ctx.reportProgress('INJECTING_AUDIO', '오디오 파일 다운로드 중')
+  const file = await fetchAsFile(ctx.audioUrl)
+
+  ctx.reportProgress('INJECTING_AUDIO', '파일 입력 요소에 주입 중')
+  const input = await ctx.dom.waitFor<HTMLInputElement>(FILE_INPUT)
+  injectFileToInput(input, file)
+  await ctx.dom.sleep(1000)
 }
 
 export async function waitForPublishReady(ctx: UploadContext): Promise<void> {
