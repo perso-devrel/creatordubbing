@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:35)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:39)
 - 진행 중 Phase: 3
-- 완료 이슈: Phase 1 전체 + Phase 2 전체 + #108
-- 진행 중 이슈: (다음 iteration) #17 업로드 단계 함수화
+- 완료 이슈: Phase 1 전체 + Phase 2 전체 + #108, #110
+- 진행 중 이슈: (다음 iteration) #18 파일 주입 유틸
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -198,5 +198,15 @@
 - 요약: YouTube Studio DOM 셀렉터 11개 SelectorChain 정의 (각 후보 3개) + queryWithFallback 유틸 + 수동 검증 체크리스트 문서. 모든 셀렉터 NEEDS_VERIFICATION 표시. 테스트 4건 (총 40건).
 - 다음: #17 업로드 단계 함수화
 - 리스크: 셀렉터는 추정값 — 사용자 수동 검증 필수
+
+---
+
+## 2026-04-21 13:39 · Phase 3 · Issue #110 · 업로드 단계 함수화
+- 브랜치: `feature/issue-110-upload-steps-impl`
+- PR: [#111](https://github.com/perso-devrel/creatordubbing/pull/111) (squash merged, delete-branch)
+- 변경 파일: 4개 (`upload-steps.ts`, `upload-steps.test.ts`, `content.ts`, `selectors.ts`)
+- 요약: upload-steps 스텁을 셀렉터 카탈로그와 연결. DomHelper 인터페이스 도입 (waitFor/query/click/typeText/sleep). content.ts에서 createDomHelper로 실제 DOM 조작. 테스트 14건 보강 (총 45건).
+- 다음: #18 파일 주입 유틸
+- 리스크: injectAudioFile은 아직 스텁 — #18에서 DataTransfer 구현 필요
 
 ---
