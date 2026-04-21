@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:49)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:53)
 - 진행 중 Phase: 4
-- 완료 이슈: Phase 1~3 전체
-- 진행 중 이슈: (다음 iteration) #21 웹앱에 "YouTube에 업로드" 버튼 추가
+- 완료 이슈: Phase 1~3 전체 + #118
+- 진행 중 이슈: (다음 iteration) #22 확장 감지 로직
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -247,5 +247,15 @@
 - #112: 파일 주입 유틸 → PR #113
 - #114: 에러 핸들링 & 재시도 → PR #115
 - #116: 자동화 모드 토글 → PR #117
+
+---
+
+## 2026-04-21 13:53 · Phase 4 · Issue #118 · 웹앱 확장 연동 업로드 버튼
+- 브랜치: `feature/issue-118-extension-upload-button`
+- PR: [#119](https://github.com/perso-devrel/creatordubbing/pull/119) (squash merged, delete-branch)
+- 변경 파일: 2개 (`YouTubeExtensionUpload.tsx` 신규, `UploadStep.tsx`)
+- 요약: Chrome 확장 감지 (PING) + UPLOAD_TO_YOUTUBE 메시지 전송 컴포넌트. 미설치 시 안내, 설치 시 언어별 자동 업로드 버튼. UploadStep의 Multi-Audio 섹션에 통합. globalThis 기반 타입 안전 Chrome API 접근.
+- 다음: #22 확장 감지 로직 보강
+- 리스크: NEXT_PUBLIC_EXTENSION_ID 환경변수 설정 필요
 
 ---
