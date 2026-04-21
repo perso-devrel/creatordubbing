@@ -156,15 +156,13 @@ export default function YouTubeSettingsPage() {
                   className="flex items-center justify-between rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    {video.thumbnail && (
-                      <Image
-                        src={video.thumbnail}
-                        alt={video.title}
-                        width={64}
-                        height={36}
-                        className="rounded object-cover shrink-0"
-                      />
-                    )}
+                    <Image
+                      src={video.thumbnail || '/Youtube_logo.png'}
+                      alt={video.title}
+                      width={64}
+                      height={36}
+                      className="rounded object-cover shrink-0"
+                    />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
                       <p className="text-xs text-surface-500">
