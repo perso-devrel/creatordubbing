@@ -14,6 +14,7 @@
 - **스크립트 편집** — 번역 결과를 문장 단위로 수정하고 음성을 재생성할 수 있습니다.
 - **YouTube 자동 업로드** — 더빙된 영상을 서버 경유로 YouTube Data API v3에 업로드하고, 자막(SRT)도 함께 게시합니다.
 - **Multi-audio Track 도우미** — YouTube의 다중 오디오 트랙 미지원 환경에서도 언어별 영상을 체계적으로 관리할 수 있도록 보조합니다.
+- **Chrome 확장 (YouTube Studio 자동화)** — 웹앱에서 생성한 오디오를 Chrome 확장이 YouTube Studio에서 자동으로 오디오 트랙에 추가합니다. 셀렉터 fallback 체인 + 재시도 + assisted/auto 모드 지원.
 - **크레딧 시스템** — 영상 길이(분) 기반으로 크레딧을 사전 검증하고, 완료 시 차감합니다.
 - **대시보드 & 분석** — 언어별 조회수·좋아요, 월별 크레딧 사용, YouTube Analytics 연동 데이터를 제공합니다.
 
@@ -32,6 +33,42 @@
 | 업로드/통계 | YouTube Data API v3 + Analytics API v2 |
 | 인증 | Google OAuth 2.0 + 서버 세션 쿠키 |
 | 테스트 | Vitest, Playwright, Lighthouse |
+| Chrome 확장 | Manifest V3, Vite 7, TypeScript |
+
+## 아키텍처
+
+```mermaid
+graph TB
+    subgraph 웹앱["Next.js 웹앱"]
+        UI[더빙 위저드 UI]
+        API[API Routes]
+        DB[(Turso DB)]
+    end
+
+    subgraph 확장["Chrome 확장 (MV3)"]
+        BG[Background 서비스 워커]
+        CS[Content Script]
+        POP[Popup UI]
+    end
+
+    subgraph 외부["외부 서비스"]
+        PERSO[Perso.ai API]
+        YT_API[YouTube Data API]
+        YT_STUDIO[YouTube Studio]
+    end
+
+    UI -->|더빙 요청| API
+    API -->|음성 생성| PERSO
+    API -->|영상 업로드| YT_API
+    API -->|DB 저장| DB
+
+    UI -->|UPLOAD_TO_YOUTUBE| BG
+    BG -->|탭 생성 + START_UPLOAD| CS
+    CS -->|DOM 조작| YT_STUDIO
+    CS -->|UPLOAD_PROGRESS/DONE/ERROR| BG
+    BG -->|GET_JOBS 응답| UI
+    POP -->|상태 조회| BG
+```
 
 > **주의:** 이 프로젝트는 Next.js 16의 파괴적 변경(breaking changes)에 기반합니다. 코드 수정 전 반드시 `node_modules/next/dist/docs/` 의 관련 가이드를 참고하세요.
 
@@ -76,6 +113,9 @@ SESSION_SECRET=
 # Turso DB
 TURSO_URL=
 TURSO_AUTH_TOKEN=
+
+# Chrome 확장 연동 (chrome://extensions에서 확장 ID 확인)
+NEXT_PUBLIC_EXTENSION_ID=
 ```
 
 ### 개발 서버
@@ -98,6 +138,7 @@ npm run test:lighthouse:gate  # Lighthouse 성능 게이트
 ## 프로젝트 구조
 
 ```
+extension/                  # Chrome 확장 (MV3) — 별도 README 참조
 src/
 ├── app/                    # Next.js App Router
 │   ├── (app)/              # 인증이 필요한 라우트 (dashboard, dubbing, batch, billing, youtube, uploads, settings)
