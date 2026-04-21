@@ -45,9 +45,17 @@
 - **QA 체크리스트** — Phase 1~5 산출물 수동 검증 가이드 (`docs/QA_CHECKLIST.md`)
 - **CHANGELOG** — 이 문서
 
+### Phase 6 — 자율 개선
+
+- **dom-utils 단위 테스트** — jsdom 환경에서 waitForElement/sleep 7건 테스트 추가
+- **relayToWebApp 구현** — background stub → 웹앱 탭에 실시간 이벤트 전달 (chrome.tabs.query)
+- **placeholder 아이콘** — 브랜드 퍼플 16/48/128px PNG + 생성 스크립트
+- **중복 타입가드 제거** — messages.ts isObject export, background 인라인 3개 함수 제거
+- **CHANGELOG Phase 6 업데이트** — 이 항목
+
 ### 테스트 현황
 
-- 웹앱 Vitest: 전체 통과
-- 확장 Vitest: 63건 전체 통과
+- 웹앱 Vitest: 452건 전체 통과
+- 확장 Vitest: 70건 전체 통과
 - 웹앱 빌드: 성공
 - 확장 빌드: 성공
