@@ -82,9 +82,26 @@ function waitForTabLoad(tabId: number, callback: () => void): void {
   chrome.tabs.onUpdated.addListener(listener)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function relayToWebApp(event: OutboundEvent): void {
-  // TODO: Phase 4에서 웹앱 탭에 메시지 전달 구현
+const WEBAPP_URL_PATTERNS = [
+  'http://localhost:3000/*',
+  'https://*.creatordub.com/*',
+]
+
+async function relayToWebApp(event: OutboundEvent): Promise<void> {
+  for (const pattern of WEBAPP_URL_PATTERNS) {
+    try {
+      const tabs = await chrome.tabs.query({ url: pattern })
+      for (const tab of tabs) {
+        if (tab.id != null) {
+          chrome.tabs.sendMessage(tab.id, event).catch(() => {
+            // tab may not have a content script listener — ignore
+          })
+        }
+      }
+    } catch {
+      // pattern may not match any tabs — ignore
+    }
+  }
 }
 
 // ── 웹앱 → 확장 외부 메시지 수신 ────────────────────────
