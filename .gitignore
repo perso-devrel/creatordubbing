@@ -35,6 +35,10 @@ yarn-error.log*
 .env*
 !.env.local.example
 
+# chrome extension
+extension/dist/
+extension/node_modules/
+
 # vercel
 .vercel
 
