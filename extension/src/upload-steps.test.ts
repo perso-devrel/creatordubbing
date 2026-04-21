@@ -1,4 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
+
+vi.mock('./file-inject', () => ({
+  fetchAsFile: vi.fn().mockResolvedValue(new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })),
+  injectFileToInput: vi.fn(),
+}))
+
 import type { DomHelper, UploadContext } from './upload-steps'
 import {
   getStepSequence,
@@ -139,6 +145,7 @@ describe('step sequence execution order', () => {
       'OPENING_LANGUAGES',
       'SELECTING_LANGUAGE',
       'SELECTING_LANGUAGE',
+      'INJECTING_AUDIO',
       'INJECTING_AUDIO',
       'INJECTING_AUDIO',
       'WAITING_PUBLISH',
