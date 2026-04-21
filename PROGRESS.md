@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:39)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:42)
 - 진행 중 Phase: 3
-- 완료 이슈: Phase 1 전체 + Phase 2 전체 + #108, #110
-- 진행 중 이슈: (다음 iteration) #18 파일 주입 유틸
+- 완료 이슈: Phase 1 전체 + Phase 2 전체 + #108, #110, #112
+- 진행 중 이슈: (다음 iteration) #19 에러 핸들링 & 재시도
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -208,5 +208,15 @@
 - 요약: upload-steps 스텁을 셀렉터 카탈로그와 연결. DomHelper 인터페이스 도입 (waitFor/query/click/typeText/sleep). content.ts에서 createDomHelper로 실제 DOM 조작. 테스트 14건 보강 (총 45건).
 - 다음: #18 파일 주입 유틸
 - 리스크: injectAudioFile은 아직 스텁 — #18에서 DataTransfer 구현 필요
+
+---
+
+## 2026-04-21 13:42 · Phase 3 · Issue #112 · 파일 주입 유틸
+- 브랜치: `feature/issue-112-file-inject`
+- PR: [#113](https://github.com/perso-devrel/creatordubbing/pull/113) (squash merged, delete-branch)
+- 변경 파일: 4개 (`file-inject.ts`, `file-inject.test.ts` 신규, `upload-steps.ts`, `upload-steps.test.ts`)
+- 요약: fetchAsFile(URL→File) + injectFileToInput(DataTransfer→input.files) + deriveFilename(URL/MIME→파일명). upload-steps의 injectAudioFile에 연결. 테스트 8건 추가 (총 53건).
+- 다음: #19 에러 핸들링 & 재시도
+- 리스크: CORS로 content script에서 fetch 실패 가능 — background 경유 패턴 고려
 
 ---
