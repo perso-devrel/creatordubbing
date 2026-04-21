@@ -1,5 +1,25 @@
 import type { UploadStep } from './messages'
+import type { SelectorChain } from './selectors'
+import {
+  TRANSLATIONS_PAGE_INDICATOR,
+  ADD_LANGUAGE_BUTTON,
+  LANGUAGE_SEARCH_INPUT,
+  LANGUAGE_LIST_ITEM,
+  AUDIO_ADD_BUTTON,
+  FILE_INPUT,
+  PUBLISH_BUTTON,
+} from './selectors'
 
+// ── DOM 헬퍼 인터페이스 (테스트 시 모킹 가능) ───────────
+export interface DomHelper {
+  waitFor<T extends Element = Element>(chain: SelectorChain, timeout?: number): Promise<T>
+  query<T extends Element = Element>(chain: SelectorChain): T | null
+  click(el: Element): void
+  typeText(el: Element, text: string): void
+  sleep(ms: number): Promise<void>
+}
+
+// ── 업로드 컨텍스트 ──────────────────────────────────────
 export interface UploadContext {
   jobId: string
   videoId: string
@@ -7,45 +27,60 @@ export interface UploadContext {
   audioUrl: string
   mode: 'auto' | 'assisted'
   reportProgress: (step: UploadStep, detail?: string) => void
+  dom: DomHelper
 }
 
-// ── 각 단계 스텁 — Phase 3에서 실제 구현 ────────────────
+// ── 각 단계 구현 ─────────────────────────────────────────
 
 export async function openLanguagesPage(ctx: UploadContext): Promise<void> {
-  ctx.reportProgress('OPENING_LANGUAGES', '번역 페이지 탐색 중')
-  // TODO: Phase 3 #17 — 번역 페이지 DOM 확인
+  ctx.reportProgress('OPENING_LANGUAGES', '번역 페이지 확인 중')
+  await ctx.dom.waitFor(TRANSLATIONS_PAGE_INDICATOR, 15_000)
 }
 
 export async function clickAddLanguage(ctx: UploadContext): Promise<void> {
-  ctx.reportProgress('SELECTING_LANGUAGE', '언어 추가 버튼 탐색 중')
-  // TODO: Phase 3 #17 — "언어 추가" 버튼 클릭
+  ctx.reportProgress('SELECTING_LANGUAGE', '"언어 추가" 버튼 탐색 중')
+  const btn = await ctx.dom.waitFor(ADD_LANGUAGE_BUTTON)
+  ctx.dom.click(btn)
+  await ctx.dom.sleep(500)
 }
 
 export async function selectLanguage(ctx: UploadContext): Promise<void> {
-  ctx.reportProgress('SELECTING_LANGUAGE', `${ctx.languageCode} 선택 중`)
-  // TODO: Phase 3 #17 — 드롭다운에서 언어 선택
+  ctx.reportProgress('SELECTING_LANGUAGE', `${ctx.languageCode} 검색 및 선택 중`)
+  const input = await ctx.dom.waitFor<HTMLInputElement>(LANGUAGE_SEARCH_INPUT)
+  ctx.dom.typeText(input, ctx.languageCode)
+  await ctx.dom.sleep(800)
+
+  const item = await ctx.dom.waitFor(LANGUAGE_LIST_ITEM)
+  ctx.dom.click(item)
+  await ctx.dom.sleep(500)
 }
 
 export async function clickDubAdd(ctx: UploadContext): Promise<void> {
-  ctx.reportProgress('INJECTING_AUDIO', '더빙 추가 탐색 중')
-  // TODO: Phase 3 #17 — "��빙 추가" 또는 오디오 트랙 추가 버튼
+  ctx.reportProgress('INJECTING_AUDIO', '오디오 추가 버튼 탐색 중')
+  const btn = await ctx.dom.waitFor(AUDIO_ADD_BUTTON)
+  ctx.dom.click(btn)
+  await ctx.dom.sleep(500)
 }
 
 export async function injectAudioFile(ctx: UploadContext): Promise<void> {
   ctx.reportProgress('INJECTING_AUDIO', '오디오 파일 주입 중')
   // TODO: Phase 3 #18 — DataTransfer 기반 파일 주입
+  // FILE_INPUT 셀렉터로 input[type="file"] 찾은 뒤 파일 주입
+  await ctx.dom.waitFor(FILE_INPUT)
 }
 
 export async function waitForPublishReady(ctx: UploadContext): Promise<void> {
   ctx.reportProgress('WAITING_PUBLISH', '게시 준비 상태 대기 중')
-  // TODO: Phase 3 #17 — 게시 버튼 활성화 대기
+  await ctx.dom.waitFor(PUBLISH_BUTTON, 30_000)
 }
 
 export async function publish(ctx: UploadContext): Promise<void> {
   ctx.reportProgress('PUBLISHING', '게시 중')
-  // TODO: Phase 3 #20 — auto 모드에서만 실행
+  const btn = await ctx.dom.waitFor(PUBLISH_BUTTON)
+  ctx.dom.click(btn)
 }
 
+// ── 단계 시퀀스 ──────────────────────────────────────────
 export type StepFn = (ctx: UploadContext) => Promise<void>
 
 export function getStepSequence(mode: 'auto' | 'assisted'): StepFn[] {
