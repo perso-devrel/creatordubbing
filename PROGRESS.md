@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:57)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:01)
 - 진행 중 Phase: 4
-- 완료 이슈: Phase 1~3 전체 + #118, #120
-- 진행 중 이슈: (다음 iteration) #23 업로드 진행률 UI
+- 완료 이슈: Phase 1~3 전체 + #118, #120, #122
+- 진행 중 이슈: (다음 iteration) #24 실패 복구 UX
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -267,5 +267,15 @@
 - 요약: useExtensionDetect 훅 분리 (PING 감지 + 버전 + recheck). sendToExtension 공유 유틸. 미설치 시 설치 가이드 버튼 + 다시 감지 버튼. 연결 시 버전 표시.
 - 다음: #23 업로드 진행률 UI
 - 리스크: Chrome 웹 스토어 URL은 배포 후 교체 필요
+
+---
+
+## 2026-04-21 14:01 · Phase 4 · Issue #122 · 업로드 진행률 UI
+- 브랜치: `feature/issue-122-progress-ui`
+- PR: [#123](https://github.com/perso-devrel/creatordubbing/pull/123) (squash merged, delete-branch)
+- 변경 파일: 2개 (`background.ts`, `YouTubeExtensionUpload.tsx`)
+- 요약: GET_JOBS 핸들러 추가 + 3초 폴링으로 작업 상태 표시. 단계별 한국어 라벨, 완료/오류 아이콘, 재시도 버튼. 63건 테스트 통과.
+- 다음: #24 실패 복구 UX
+- 리스크: 폴링 방식 3초 지연
 
 ---
