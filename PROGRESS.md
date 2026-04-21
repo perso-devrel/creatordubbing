@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:18)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:19)
 - 진행 중 Phase: 6 (자율 개선 모드)
-- 완료 이슈: Phase 1~5 전체 + Phase 6: #134
-- 진행 중 이슈: (다음 iteration) Phase 6 개선 후보 브레인스토밍 #2
+- 완료 이슈: Phase 1~5 전체 + Phase 6: #134, #136
+- 진행 중 이슈: (다음 iteration) Phase 6 개선 후보 브레인스토밍 #3
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -360,5 +360,15 @@
 - 요약: jsdom 환경에서 waitForElement 5건 + sleep 2건 테스트. 즉시 발견, 동적 추가, 타임아웃, 커스텀 root, root 외부 미검색 검증. 총 70건.
 - 다음: Phase 6 #2 개선 후보 브레인스토밍
 - 리스크: 없음
+
+---
+
+## 2026-04-21 14:19 · Phase 6 · Issue #136 · relayToWebApp 구현
+- 브랜치: `feat/issue-136-relay-to-webapp`
+- PR: [#137](https://github.com/perso-devrel/creatordubbing/pull/137) (squash merged, delete-branch)
+- 변경 파일: 1개 (`background.ts`)
+- 요약: relayToWebApp stub → 실제 구현. chrome.tabs.query로 웹앱 탭 탐색 후 이벤트 전달. eslint-disable 제거.
+- 다음: Phase 6 #3 개선 후보
+- 리스크: 웹앱 측 리스너는 향후 추가 필요
 
 ---
