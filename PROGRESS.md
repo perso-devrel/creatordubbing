@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:53)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:57)
 - 진행 중 Phase: 4
-- 완료 이슈: Phase 1~3 전체 + #118
-- 진행 중 이슈: (다음 iteration) #22 확장 감지 로직
+- 완료 이슈: Phase 1~3 전체 + #118, #120
+- 진행 중 이슈: (다음 iteration) #23 업로드 진행률 UI
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -257,5 +257,15 @@
 - 요약: Chrome 확장 감지 (PING) + UPLOAD_TO_YOUTUBE 메시지 전송 컴포넌트. 미설치 시 안내, 설치 시 언어별 자동 업로드 버튼. UploadStep의 Multi-Audio 섹션에 통합. globalThis 기반 타입 안전 Chrome API 접근.
 - 다음: #22 확장 감지 로직 보강
 - 리스크: NEXT_PUBLIC_EXTENSION_ID 환경변수 설정 필요
+
+---
+
+## 2026-04-21 13:57 · Phase 4 · Issue #120 · 확장 감지 훅 및 설치 가이드
+- 브랜치: `feature/issue-120-extension-detect-hook`
+- PR: [#121](https://github.com/perso-devrel/creatordubbing/pull/121) (squash merged, delete-branch)
+- 변경 파일: 2개 (`useExtensionDetect.ts` 신규, `YouTubeExtensionUpload.tsx` 리팩터)
+- 요약: useExtensionDetect 훅 분리 (PING 감지 + 버전 + recheck). sendToExtension 공유 유틸. 미설치 시 설치 가이드 버튼 + 다시 감지 버튼. 연결 시 버전 표시.
+- 다음: #23 업로드 진행률 UI
+- 리스크: Chrome 웹 스토어 URL은 배포 후 교체 필요
 
 ---
