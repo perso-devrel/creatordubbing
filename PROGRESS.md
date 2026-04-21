@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:01)
-- 진행 중 Phase: 4
-- 완료 이슈: Phase 1~3 전체 + #118, #120, #122
-- 진행 중 이슈: (다음 iteration) #24 실패 복구 UX
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:04)
+- 진행 중 Phase: 5
+- 완료 이슈: Phase 1~4 전체
+- 진행 중 이슈: (다음 iteration) #25 extension README
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -277,5 +277,23 @@
 - 요약: GET_JOBS 핸들러 추가 + 3초 폴링으로 작업 상태 표시. 단계별 한국어 라벨, 완료/오류 아이콘, 재시도 버튼. 63건 테스트 통과.
 - 다음: #24 실패 복구 UX
 - 리스크: 폴링 방식 3초 지연
+
+---
+
+## 2026-04-21 14:04 · Phase 4 · Issue #124 · 실패 복구 UX
+- 브랜치: `feature/issue-124-failure-recovery-ux`
+- PR: [#125](https://github.com/perso-devrel/creatordubbing/pull/125) (squash merged, delete-branch)
+- 변경 파일: 1개 (`YouTubeExtensionUpload.tsx`)
+- 요약: 오류 상태에 재시도/오디오 다운로드/Studio 딥링크 버튼. 수동 업로드 3단계 안내 배너.
+- 다음: Phase 5 #25 extension README
+- 리스크: 없음
+
+---
+
+## ✅ Phase 4 완료 (2026-04-21 14:04)
+- #118: 확장 연동 업로드 버튼 → PR #119
+- #120: 확장 감지 훅 + 설치 가이드 → PR #121
+- #122: 진행률 UI → PR #123
+- #124: 실패 복구 UX → PR #125
 
 ---
