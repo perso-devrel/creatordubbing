@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CreatorDub</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 320px; min-height: 200px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 16px; background: #fff; color: #1a1a1a; }
+    h1 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+    .status { padding: 8px 12px; border-radius: 6px; font-size: 13px; margin-bottom: 8px; }
+    .status.ok { background: #e8f5e9; color: #2e7d32; }
+    .status.warn { background: #fff3e0; color: #e65100; }
+    #log { font-size: 12px; color: #666; margin-top: 12px; }
+    #log li { margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h1>CreatorDub</h1>
+  <div id="status" class="status warn">로딩 중…</div>
+  <ul id="log"></ul>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
