@@ -116,7 +116,7 @@ export function isOutboundEvent(msg: unknown): msg is OutboundEvent {
   return isUploadProgressEvent(msg) || isUploadDoneEvent(msg) || isUploadErrorEvent(msg)
 }
 
-// ── 내부 유틸 ────────────────────────────────────────────
-function isObject(val: unknown): val is Record<string, unknown> {
+// ── 유틸 ─────────────────────────────────────────────────
+export function isObject(val: unknown): val is Record<string, unknown> {
   return val !== null && typeof val === 'object' && !Array.isArray(val)
 }
