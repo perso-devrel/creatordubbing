@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 09:50)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 09:57)
 - 진행 중 Phase: 1
-- 완료 이슈: #80 (진단 리포트), #84 (ESLint 실행 복구)
-- 진행 중 이슈: (다음 iteration) #2 후보 — TypeScript 타입 에러 수정 또는 #4 테스트 인프라 점검
+- 완료 이슈: #80 (진단 리포트), #84 (ESLint 실행 복구), #86 (테스트 19건 수정)
+- 진행 중 이슈: (다음 iteration) #5 후보 — 도메인 유닛 테스트 보강, 또는 #6 보안 스윕
 - 블로커: `gh` CLI 토큰 만료 — `GH_TOKEN` 환경변수 우회로 동작 중 (사용자 `gh auth login` 권장)
 - 루프 브랜치: `develop_loop` (생성 + 푸시 완료)
 
@@ -46,5 +46,15 @@
 - 요약: `eslint-plugin-react@7.37.5`의 ESLint 10 비호환(`getFilename is not a function`) 해결. `eslint-config-next` 대신 `@next/eslint-plugin-next` 직접 사용으로 전환 (Next.js 공식 대안). Modal.tsx의 ref 렌더링 중 접근 린트 에러도 수정. `npm run lint` exit 0 달성.
 - 다음: #4 테스트 인프라 점검 (환경변수 stub 누락 해결)
 - 리스크: `eslint-plugin-react`(display-name 등)와 `eslint-plugin-jsx-a11y` 룰이 제외됨 — 두 플러그인이 ESLint 10 지원 시 재추가 필요
+
+---
+
+## 2026-04-21 09:57 · Phase 1 · Issue #86 · 테스트 인프라 점검
+- 브랜치: `fix/issue-86-test-infrastructure`
+- PR: [#87](https://github.com/perso-devrel/creatordubbing/pull/87) (squash merged, delete-branch)
+- 변경 파일: 5개 (테스트 파일만)
+- 요약: Vitest 19건 실패 → 0건. 원인 3가지 해소: (1) `getServerEnv()` 환경변수 stub 누락 → `getDb()` mock 추가, (2) `apiFailFromError` 코드/메시지 정규화에 맞춰 기대값 수정 (`DB_ERROR` → `INTERNAL_ERROR`, 500 message 마스킹), (3) `auth-sync` Google 토큰 검증 flow에 맞춰 fetch mock 추가.
+- 다음: #5 도메인 유닛 테스트 보강 또는 #6 보안 스윕
+- 리스크: 없음. 구현 코드 변경 없이 테스트 기대값만 수정.
 
 ---
