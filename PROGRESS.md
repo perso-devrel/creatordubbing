@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:07)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:10)
 - 진행 중 Phase: 5
-- 완료 이슈: Phase 1~4 전체 + #126
-- 진행 중 이슈: (다음 iteration) #26 루트 README 업데이트
+- 완료 이슈: Phase 1~4 전체 + #126, #128
+- 진행 중 이슈: (다음 iteration) #27 QA 체크리스트
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -304,6 +304,16 @@
 - 변경 파일: 1개 (`extension/README.md` 신규)
 - 요약: 개발 환경 세팅, 빌드/개발 명령, Chrome 언팩 로드, 프로젝트 구조, 디버깅 팁, 업로드 모드, 셀렉터 검증 안내.
 - 다음: #26 루트 README 업데이트
+- 리스크: 없음
+
+---
+
+## 2026-04-21 14:10 · Phase 5 · Issue #128 · 루트 README 업데이트
+- 브랜치: `docs/issue-128-root-readme`
+- PR: [#129](https://github.com/perso-devrel/creatordubbing/pull/129) (squash merged, delete-branch)
+- 변경 파일: 1개 (`README.md`)
+- 요약: Chrome 확장 기능 설명, 기술 스택 행, mermaid 아키텍처 다이어그램, extension/ 구조, NEXT_PUBLIC_EXTENSION_ID 환경변수 추가.
+- 다음: #27 QA 체크리스트
 - 리스크: 없음
 
 ---
