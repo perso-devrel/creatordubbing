@@ -62,7 +62,7 @@ describe('requireSession', () => {
     if (!result.ok) {
       const body = await result.response.json()
       expect(body.error.code).toBe('UNAUTHORIZED')
-      expect(body.error.message).toContain('Invalid or expired')
+      expect(body.error.message).toContain('Missing or expired')
     }
   })
 
@@ -78,20 +78,20 @@ describe('requireSession', () => {
     if (!result.ok) {
       const body = await result.response.json()
       expect(body.error.code).toBe('UNAUTHORIZED')
-      expect(body.error.message).toContain('missing required claims')
+      expect(body.error.message).toContain('Missing or expired')
     }
   })
 
-  it('returns 500 when fetch throws', async () => {
+  it('returns 401 when fetch throws', async () => {
     mockFetch.mockRejectedValueOnce(new Error('network error'))
 
     const req = makeReq({ cookie: 'some-token' })
     const result = await requireSession(req)
     expect(result.ok).toBe(false)
     if (!result.ok) {
-      expect(result.response.status).toBe(500)
+      expect(result.response.status).toBe(401)
       const body = await result.response.json()
-      expect(body.error.code).toBe('AUTH_ERROR')
+      expect(body.error.code).toBe('UNAUTHORIZED')
     }
   })
 

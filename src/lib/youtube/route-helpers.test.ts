@@ -42,7 +42,7 @@ describe('ytFail', () => {
     const res = ytFail(new Error('something broke'))
     const body = await res.json()
     expect(res.status).toBe(500)
-    expect(body.error).toEqual({ code: 'INTERNAL_ERROR', message: 'something broke', details: null })
+    expect(body.error).toEqual({ code: 'INTERNAL_ERROR', message: 'Internal Server Error', details: null })
   })
 
   it('handles non-Error values', async () => {

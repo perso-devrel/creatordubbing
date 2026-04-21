@@ -14,6 +14,7 @@ import { ytUploadVideo, ytUploadCaption, getPersoFileUrl } from '@/lib/api-clien
 import { toBcp47 } from '@/utils/languages'
 import { dbMutation } from '@/lib/api/dbMutation'
 import { ScriptEditor } from '../ScriptEditor'
+import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -468,10 +469,24 @@ export function UploadStep() {
         </Card>
       )}
 
-      {/* YouTube Multi-Audio Track — audio + Studio popup helper */}
+      {/* YouTube Multi-Audio Track — extension auto + manual fallback */}
       {completedLangs.length > 0 && (
         <Card>
           <CardTitle>원본 영상에 오디오 트랙 추가 (Multi-Audio)</CardTitle>
+
+          {/* Chrome Extension auto upload */}
+          {originalYouTubeId && (
+            <div className="mb-4">
+              <YouTubeExtensionUpload
+                videoId={originalYouTubeId}
+                completedLangs={completedLangs}
+                getAudioUrl={async (langCode) => {
+                  const data = await fetchDownloads(langCode, 'voiceAudio')
+                  return data?.audioFile?.voiceAudioDownloadLink
+                }}
+              />
+            </div>
+          )}
           <p className="text-xs text-surface-500 mb-3">
             하나의 영상에 여러 오디오 트랙을 붙이려면 YouTube Studio에서 수동 적용이 필요합니다.
             아래 버튼을 누르면 오디오가 다운로드되고 Studio가 팝업으로 열립니다. 언어 코드는 클립보드에 복사됩니다.
