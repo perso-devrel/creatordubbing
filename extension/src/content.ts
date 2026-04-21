@@ -1,5 +1,8 @@
 import type { UploadStep } from './messages'
-import type { UploadContext } from './upload-steps'
+import type { DomHelper, UploadContext } from './upload-steps'
+import type { SelectorChain } from './selectors'
+import { queryWithFallback } from './selectors'
+import { waitForElement, sleep } from './dom-utils'
 import { getStepSequence } from './upload-steps'
 
 interface StartUploadPayload {
@@ -26,6 +29,39 @@ function sendErrorToBackground(jobId: string, step: UploadStep, error: string, r
   chrome.runtime.sendMessage({ type: 'UPLOAD_ERROR', payload: { jobId, step, error, retryable } })
 }
 
+function createDomHelper(): DomHelper {
+  return {
+    async waitFor<T extends Element = Element>(chain: SelectorChain, timeout?: number): Promise<T> {
+      for (const selector of chain.candidates) {
+        try {
+          const el = await waitForElement<T>(selector, { timeout: timeout ?? 10_000 })
+          return el
+        } catch {
+          // try next candidate
+        }
+      }
+      throw new Error(`셀렉터 체인 "${chain.name}" 실패: 모든 후보 탐색 불가`)
+    },
+
+    query<T extends Element = Element>(chain: SelectorChain): T | null {
+      return queryWithFallback<T>(chain)
+    },
+
+    click(el: Element): void {
+      (el as HTMLElement).click()
+    },
+
+    typeText(el: Element, text: string): void {
+      const input = el as HTMLInputElement
+      input.focus()
+      input.value = text
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+    },
+
+    sleep,
+  }
+}
+
 async function executeUpload(payload: StartUploadPayload): Promise<void> {
   const { jobId, videoId, languageCode, audioUrl, mode } = payload
 
@@ -36,6 +72,7 @@ async function executeUpload(payload: StartUploadPayload): Promise<void> {
     audioUrl,
     mode,
     reportProgress: (step, detail) => sendProgressToBackground(step, jobId, detail),
+    dom: createDomHelper(),
   }
 
   const steps = getStepSequence(mode)

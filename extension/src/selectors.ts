@@ -111,10 +111,10 @@ export const SUCCESS_TOAST = chain(
 )
 
 // ── 유틸: fallback 체인 실행 ─────────────────────────────
-export async function queryWithFallback<T extends Element = Element>(
+export function queryWithFallback<T extends Element = Element>(
   chain: SelectorChain,
   root: ParentNode = document,
-): Promise<T | null> {
+): T | null {
   for (const selector of chain.candidates) {
     try {
       const el = root.querySelector<T>(selector)
