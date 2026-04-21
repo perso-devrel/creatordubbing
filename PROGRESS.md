@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:26)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:29)
 - 진행 중 Phase: 2
-- 완료 이슈: Phase 1 전체 + #94, #96, #98, #100, #102
-- 진행 중 이슈: (다음 iteration) #14 content script 골격
+- 완료 이슈: Phase 1 전체 + #94, #96, #98, #100, #102, #104
+- 진행 중 이슈: (다음 iteration) #15 popup UI
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 - 참고: #11 externally_connectable은 #96 스캐폴드에서 이미 구현됨
@@ -157,5 +157,15 @@
 - 요약: 웹앱 PING 응답 + UPLOAD_TO_YOUTUBE 처리 (jobId 생성 → YouTube Studio 탭 열기 → storage 저장 → content script 전달). content→background 릴레이 구조. 순수 로직 분리 + 단위 테스트 7건 추가 (총 31건 통과).
 - 다음: #14 content script 골격
 - 리스크: relayToWebApp() stub — Phase 4에서 구현 필요
+
+---
+
+## 2026-04-21 13:29 · Phase 2 · Issue #104 · content script 골격
+- 브랜치: `feature/issue-104-content-script-skeleton`
+- PR: [#105](https://github.com/perso-devrel/creatordubbing/pull/105) (squash merged, delete-branch)
+- 변경 파일: 4개 (`content.ts` 리팩터, `dom-utils.ts`, `upload-steps.ts`, `upload-steps.test.ts` 신규)
+- 요약: waitForElement(MutationObserver 기반) 유틸 + 7개 업로드 단계 스텁(openLanguagesPage 등) + getStepSequence(assisted 6단계/auto 7단계). content script에서 START_UPLOAD 수신 → 순차 실행 → 결과 전달. 테스트 5건 추가 (총 36건).
+- 다음: #15 popup UI
+- 리스크: 각 단계 함수는 스텁 — Phase 3에서 구현
 
 ---
