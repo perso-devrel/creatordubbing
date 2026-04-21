@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:22)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 14:25)
 - 진행 중 Phase: 6 (자율 개선 모드)
-- 완료 이슈: Phase 1~5 전체 + Phase 6: #134, #136, #138
-- 진행 중 이슈: (다음 iteration) Phase 6 개선 후보 브레인스토밍 #4
+- 완료 이슈: Phase 1~5 전체 + Phase 6: #134, #136, #138, #140
+- 진행 중 이슈: (다음 iteration) Phase 6 개선 후보 브레인스토밍 #5
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -379,6 +379,16 @@
 - 변경 파일: 4개 (`icon-16/48/128.png` + `generate-icons.js`)
 - 요약: 브랜드 퍼플 배경 placeholder PNG 아이콘 3개. Chrome 로드 시 아이콘 경고 제거.
 - 다음: Phase 6 #4 개선 후보
+- 리스크: 없음
+
+---
+
+## 2026-04-21 14:25 · Phase 6 · Issue #140 · 중복 타입가드 제거
+- 브랜치: `refactor/issue-140-dedup-typeguards`
+- PR: [#141](https://github.com/perso-devrel/creatordubbing/pull/141) (squash merged, delete-branch)
+- 변경 파일: 2개 (`messages.ts`, `background.ts`)
+- 요약: isObject export + 인라인 타입체크 3개 함수 제거 → messages.ts 타입가드 재사용. -8줄 순감.
+- 다음: Phase 6 #5 개선 후보
 - 리스크: 없음
 
 ---
