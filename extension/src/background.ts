@@ -9,6 +9,7 @@ import { isPingMessage, isUploadToYouTubeMessage } from './messages'
 import type { Job } from './background-types'
 import { STORAGE_KEY } from './background-types'
 import { generateJobId, buildStudioUrl, createJob } from './background-utils'
+import { getUploadMode } from './settings'
 
 // ── Storage helpers ──────────────────────────────────────
 async function saveJob(job: Job): Promise<void> {
@@ -42,7 +43,8 @@ async function handleUpload(
   msg: UploadToYouTubeMessage,
 ): Promise<{ ok: true; jobId: string } | { ok: false; error: string }> {
   const jobId = generateJobId()
-  const job = createJob(jobId, msg.payload)
+  const effectiveMode = msg.payload.mode || await getUploadMode()
+  const job = createJob(jobId, { ...msg.payload, mode: effectiveMode })
 
   try {
     const tab = await chrome.tabs.create({ url: buildStudioUrl(msg.payload.videoId), active: false })
@@ -54,7 +56,7 @@ async function handleUpload(
       waitForTabLoad(tab.id, () => {
         chrome.tabs.sendMessage(tab.id!, {
           type: 'START_UPLOAD',
-          payload: { jobId, ...msg.payload },
+          payload: { jobId, ...msg.payload, mode: effectiveMode },
         })
       })
     }
