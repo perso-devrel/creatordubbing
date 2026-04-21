@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:42)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:45)
 - 진행 중 Phase: 3
-- 완료 이슈: Phase 1 전체 + Phase 2 전체 + #108, #110, #112
-- 진행 중 이슈: (다음 iteration) #19 에러 핸들링 & 재시도
+- 완료 이슈: Phase 1 전체 + Phase 2 전체 + #108, #110, #112, #114
+- 진행 중 이슈: (다음 iteration) #20 업로드 자동화 모드 토글
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -218,5 +218,15 @@
 - 요약: fetchAsFile(URL→File) + injectFileToInput(DataTransfer→input.files) + deriveFilename(URL/MIME→파일명). upload-steps의 injectAudioFile에 연결. 테스트 8건 추가 (총 53건).
 - 다음: #19 에러 핸들링 & 재시도
 - 리스크: CORS로 content script에서 fetch 실패 가능 — background 경유 패턴 고려
+
+---
+
+## 2026-04-21 13:45 · Phase 3 · Issue #114 · 에러 핸들링 & 재시도
+- 브랜치: `feature/issue-114-retry-logic`
+- PR: [#115](https://github.com/perso-devrel/creatordubbing/pull/115) (squash merged, delete-branch)
+- 변경 파일: 3개 (`retry.ts`, `retry.test.ts` 신규, `content.ts`)
+- 요약: withRetry 유틸 (최대 3회, 지수 백오프 1s→2s→4s). content.ts의 각 업로드 단계에 적용. 최종 실패 시 수동 가이드 URL 포함 에러 (retryable=false). 테스트 7건 추가 (총 60건).
+- 다음: #20 업로드 자동화 모드 토글
+- 리스크: 없음
 
 ---
