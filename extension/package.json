@@ -6,11 +6,15 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build && node scripts/postbuild.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.318",
+    "eslint": "^9.39.4",
+    "globals": "^16.5.0",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.0",
     "vite": "^7.0.0"
   }
 }
