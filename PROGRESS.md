@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:45)
-- 진행 중 Phase: 3
-- 완료 이슈: Phase 1 전체 + Phase 2 전체 + #108, #110, #112, #114
-- 진행 중 이슈: (다음 iteration) #20 업로드 자동화 모드 토글
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:49)
+- 진행 중 Phase: 4
+- 완료 이슈: Phase 1~3 전체
+- 진행 중 이슈: (다음 iteration) #21 웹앱에 "YouTube에 업로드" 버튼 추가
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -228,5 +228,24 @@
 - 요약: withRetry 유틸 (최대 3회, 지수 백오프 1s→2s→4s). content.ts의 각 업로드 단계에 적용. 최종 실패 시 수동 가이드 URL 포함 에러 (retryable=false). 테스트 7건 추가 (총 60건).
 - 다음: #20 업로드 자동화 모드 토글
 - 리스크: 없음
+
+---
+
+## 2026-04-21 13:49 · Phase 3 · Issue #116 · 업로드 자동화 모드 토글
+- 브랜치: `feature/issue-116-mode-toggle`
+- PR: [#117](https://github.com/perso-devrel/creatordubbing/pull/117) (squash merged, delete-branch)
+- 변경 파일: 5개 (`settings.ts`, `settings.test.ts` 신규, `popup/index.html`, `popup/main.ts`, `background.ts`)
+- 요약: auto(게시까지)/assisted(파일 주입까지) 모드 전환. settings.ts로 chrome.storage 기반 저장. popup에 토글 UI 추가. background에서 fallback 모드 적용. 테스트 3건 추가 (총 63건).
+- 다음: Phase 4 #21 웹앱에 "YouTube에 업로드" 버튼 추가
+- 리스크: 없음
+
+---
+
+## ✅ Phase 3 완료 (2026-04-21 13:49)
+- #108: 셀렉터 카탈로그 → PR #109
+- #110: 업로드 단계 함수화 → PR #111
+- #112: 파일 주입 유틸 → PR #113
+- #114: 에러 핸들링 & 재시도 → PR #115
+- #116: 자동화 모드 토글 → PR #117
 
 ---
