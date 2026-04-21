@@ -28,6 +28,12 @@ vi.mock('@/lib/db/queries', () => ({
   updateJobLanguageYouTube: vi.fn(),
 }))
 
+vi.mock('@/lib/db/client', () => ({
+  getDb: vi.fn(() => ({
+    execute: vi.fn(async () => ({ rows: [{ user_id: 'user1' }] })),
+  })),
+}))
+
 vi.mock('@/lib/youtube/server', () => ({
   fetchVideoStatistics: vi.fn(async () => []),
   YouTubeError: class YouTubeError extends Error {
@@ -124,7 +130,7 @@ describe('/api/dashboard/summary', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.message).toBe('Internal Server Error')
+    expect(body.error.message).toBe('Failed to load summary')
   })
 })
 
@@ -174,7 +180,7 @@ describe('/api/dashboard/jobs', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.code).toBe('DB_ERROR')
+    expect(body.error.code).toBe('INTERNAL_ERROR')
   })
 
   it('returns generic message when non-Error is thrown', async () => {
@@ -246,7 +252,7 @@ describe('/api/dashboard/credit-usage', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.message).toBe('Internal Server Error')
+    expect(body.error.message).toBe('Failed to load credit usage')
   })
 })
 
@@ -364,7 +370,7 @@ describe('/api/dashboard/language-performance', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.code).toBe('DB_ERROR')
+    expect(body.error.code).toBe('INTERNAL_ERROR')
   })
 
   it('returns generic message when non-Error is thrown from outer catch', async () => {
@@ -643,7 +649,7 @@ describe('/api/dashboard/mutations', () => {
     const res = await POST(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.code).toBe('DB_ERROR')
+    expect(body.error.code).toBe('INTERNAL_ERROR')
   })
 
   it('returns generic message when non-Error is thrown from DB', async () => {

@@ -107,14 +107,14 @@ describe('getOrRefreshAccessToken', () => {
     expect(mockFetch).not.toHaveBeenCalled()
   })
 
-  it('returns existing token when expired but no refresh token', async () => {
+  it('returns null when expired but no refresh token', async () => {
     vi.mocked(getUserTokens).mockResolvedValueOnce({
       accessToken: 'old-at',
       refreshToken: null,
       tokenExpiresAt: '2020-01-01T00:00:00.000Z',
     })
     const result = await getOrRefreshAccessToken('user-1')
-    expect(result).toBe('old-at')
+    expect(result).toBeNull()
   })
 
   it('refreshes and updates DB when token is expired', async () => {
@@ -137,7 +137,7 @@ describe('getOrRefreshAccessToken', () => {
     )
   })
 
-  it('falls back to old token when refresh fails', async () => {
+  it('returns null when refresh fails', async () => {
     vi.mocked(getUserTokens).mockResolvedValueOnce({
       accessToken: 'old-at',
       refreshToken: 'rt-bad',
@@ -146,6 +146,6 @@ describe('getOrRefreshAccessToken', () => {
     mockFetch.mockResolvedValueOnce({ ok: false, status: 401 })
 
     const result = await getOrRefreshAccessToken('user-1')
-    expect(result).toBe('old-at')
+    expect(result).toBeNull()
   })
 })

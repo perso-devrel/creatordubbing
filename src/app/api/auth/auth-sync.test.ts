@@ -7,17 +7,32 @@ vi.mock('@/lib/db/queries', () => ({
 vi.mock('@/lib/auth/session-cookie', () => ({
   SESSION_COOKIE: 'creatordub_session',
   signSessionCookie: vi.fn((uid: string) => `${uid}.fakesig`),
+  verifySessionCookie: vi.fn(),
+}))
+
+vi.mock('@/lib/auth/token-refresh', () => ({
+  getOrRefreshAccessToken: vi.fn(),
 }))
 
 import { POST } from './sync/route'
 import { upsertUser } from '@/lib/db/queries'
 import { NextRequest } from 'next/server'
 
+const mockFetch = vi.fn()
+vi.stubGlobal('fetch', mockFetch)
+
 function makeReq(body: unknown) {
   return new NextRequest('http://localhost/api/auth/sync', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
+  })
+}
+
+function mockGoogleUserinfo(sub: string, email: string) {
+  mockFetch.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ sub, email }),
   })
 }
 
@@ -55,7 +70,8 @@ describe('POST /api/auth/sync', () => {
   })
 
   it('returns 200 with valid body and sets session cookie', async () => {
-    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com', displayName: 'Test' }))
+    mockGoogleUserinfo('u1', 'a@b.com')
+    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com', displayName: 'Test', accessToken: 'tok-valid' }))
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.ok).toBe(true)
@@ -65,7 +81,7 @@ describe('POST /api/auth/sync', () => {
       email: 'a@b.com',
       displayName: 'Test',
       photoURL: null,
-      accessToken: null,
+      accessToken: 'tok-valid',
     })
 
     const setCookie = res.headers.getSetCookie()
@@ -73,6 +89,7 @@ describe('POST /api/auth/sync', () => {
   })
 
   it('sets google_access_token cookie when provided', async () => {
+    mockGoogleUserinfo('u1', 'a@b.com')
     const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com', accessToken: 'tok123' }))
     expect(res.status).toBe(200)
     const setCookie = res.headers.getSetCookie()
@@ -80,8 +97,9 @@ describe('POST /api/auth/sync', () => {
   })
 
   it('returns 500 on DB error', async () => {
+    mockGoogleUserinfo('u1', 'a@b.com')
     vi.mocked(upsertUser).mockRejectedValueOnce(new Error('DB down'))
-    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }))
+    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com', accessToken: 'tok-valid' }))
     expect(res.status).toBe(500)
     const data = await res.json()
     expect(data.ok).toBe(false)
