@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Puzzle, Upload, AlertCircle, ExternalLink, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { Puzzle, Upload, AlertCircle, ExternalLink, CheckCircle, XCircle, Loader2, Download } from 'lucide-react'
 import { Button, Badge } from '@/components/ui'
 import { getLanguageByCode } from '@/utils/languages'
 import { useNotificationStore } from '@/stores/notificationStore'
@@ -184,7 +184,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }:
                   <p className="text-xs text-emerald-600">업로드 완료</p>
                 )}
                 {job?.status === 'error' && (
-                  <p className="text-xs text-red-500">오류 발생</p>
+                  <p className="text-xs text-red-500">자동 업로드 실패 — 아래에서 수동 진행</p>
                 )}
               </div>
             </div>
@@ -194,16 +194,44 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }:
             ) : job?.status === 'running' || job?.status === 'pending' ? (
               <Loader2 className="h-5 w-5 animate-spin text-brand-500" />
             ) : job?.status === 'error' ? (
-              <div className="flex items-center gap-2">
-                <XCircle className="h-5 w-5 text-red-500" />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExtensionUpload(code)}
-                  disabled={uploadingLang !== null}
-                >
-                  재시도
-                </Button>
+              <div className="flex flex-col items-end gap-2">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExtensionUpload(code)}
+                    disabled={uploadingLang !== null}
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    재시도
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={async () => {
+                      const url = await getAudioUrl(code)
+                      if (url) window.open(url, '_blank')
+                    }}
+                  >
+                    <Download className="h-3 w-3" />
+                    오디오
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      window.open(
+                        `https://studio.youtube.com/video/${videoId}/translations`,
+                        '_blank',
+                      )
+                    }
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Studio
+                  </Button>
+                </div>
               </div>
             ) : (
               <Button
@@ -220,6 +248,19 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }:
           </div>
         )
       })}
+
+      {Object.values(langJobs).some((j) => j.status === 'error') && (
+        <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-3 dark:bg-amber-900/10 dark:border-amber-800">
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-300 mb-1">
+            수동 업로드 안내
+          </p>
+          <ol className="text-xs text-amber-700 dark:text-amber-400 list-decimal list-inside space-y-0.5">
+            <li>위에서 &quot;오디오&quot; 버튼을 눌러 파일을 다운로드하세요.</li>
+            <li>&quot;Studio&quot; 버튼을 눌러 YouTube Studio 번역 페이지를 여세요.</li>
+            <li>해당 언어의 오디오 트랙에 다운로드한 파일을 업로드하세요.</li>
+          </ol>
+        </div>
+      )}
     </div>
   )
 }
