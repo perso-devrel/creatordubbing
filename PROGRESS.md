@@ -1,7 +1,7 @@
-# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:32)
+# 📌 현재 상태 (마지막 업데이트: 2026-04-21 13:35)
 - 진행 중 Phase: 3
-- 완료 이슈: Phase 1 전체 + Phase 2 전체 (#94, #96, #98, #100, #102, #104, #106)
-- 진행 중 이슈: (다음 iteration) #16 셀렉터 카탈로그 작성
+- 완료 이슈: Phase 1 전체 + Phase 2 전체 + #108
+- 진행 중 이슈: (다음 iteration) #17 업로드 단계 함수화
 - 블로커: 없음
 - 루프 브랜치: `develop_loop`
 
@@ -188,5 +188,15 @@
 - #104: content script 골격 → PR #105
 - #106: popup UI → PR #107
 - #11 (externally_connectable): #96에서 이미 구현 — 별도 이슈 불필요
+
+---
+
+## 2026-04-21 13:35 · Phase 3 · Issue #108 · 셀렉터 카탈로그 작성
+- 브랜치: `feature/issue-108-selector-catalog`
+- PR: [#109](https://github.com/perso-devrel/creatordubbing/pull/109) (squash merged, delete-branch)
+- 변경 파일: 3개 (`selectors.ts`, `selectors.test.ts`, `docs/SELECTORS_TO_VERIFY.md`)
+- 요약: YouTube Studio DOM 셀렉터 11개 SelectorChain 정의 (각 후보 3개) + queryWithFallback 유틸 + 수동 검증 체크리스트 문서. 모든 셀렉터 NEEDS_VERIFICATION 표시. 테스트 4건 (총 40건).
+- 다음: #17 업로드 단계 함수화
+- 리스크: 셀렉터는 추정값 — 사용자 수동 검증 필수
 
 ---
