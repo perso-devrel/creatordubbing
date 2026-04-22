@@ -12,7 +12,8 @@ import {
 } from '@/lib/api-client'
 import type { ScriptSentence } from '@/lib/perso/types'
 
-function formatMs(ms: number) {
+function formatMs(ms: number | undefined | null) {
+  if (ms == null || isNaN(ms)) return '0:00'
   const s = Math.floor(ms / 1000)
   const m = Math.floor(s / 60)
   const sec = s % 60
@@ -153,7 +154,7 @@ export function ScriptEditor({ langCode, projectSeq, spaceSeq }: ScriptEditorPro
       {open && sentences && (
         <div className="border-t border-surface-200 p-3 space-y-2 dark:border-surface-800 max-h-96 overflow-y-auto">
           <p className="text-xs text-surface-400 mb-3">
-            번역 텍스트를 수정하고 저장한 뒤 &ldquo;오디오 재생성&rdquo;을 클릭하면 해당 문장의 더빙 오디��가 다시 생성됩니다.
+            번역 텍스트를 수정하고 저장한 뒤 &ldquo;오디오 재생성&rdquo;을 클릭하면 해당 문장의 더빙 오디오가 다시 생성됩니다.
             재생성 후에는 영상을 다시 다운로드하거나 YouTube에 다시 업로드하세요.
           </p>
           {sentences.length === 0 && (
