@@ -39,8 +39,8 @@ const nextConfig: NextConfig = {
       new URL('https://*.googleusercontent.com/**'),
       new URL('https://perso.ai/**'),
       new URL('https://*.perso.ai/**'),
-      new URL('https://i.ytimg.com/**'),
-      new URL('https://yt3.ggpht.com/**'),
+      new URL('https://*.ytimg.com/**'),
+      new URL('https://*.ggpht.com/**'),
     ],
   },
   async headers() {
