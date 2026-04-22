@@ -69,3 +69,5 @@ testvideo/
 /blob-report/
 /playwright/.cache/
 
+TASK.md
+ralph-loop-debug.log
