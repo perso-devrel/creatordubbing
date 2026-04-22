@@ -74,8 +74,12 @@ export function UploadStep() {
       const data = await fetchDownloads(langCode, 'voiceAudio')
       const audioUrl = data?.audioFile?.voiceAudioDownloadLink
       if (audioUrl) {
-        // Trigger download in new tab
-        window.open(audioUrl, '_blank')
+        const a = document.createElement('a')
+        a.href = audioUrl
+        a.download = `${lang.name}_${langCode}_audio.wav`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
       }
 
       // 2. Copy language code to clipboard (Studio audio track needs it)
@@ -492,7 +496,7 @@ export function UploadStep() {
             아래 버튼을 누르면 오디오가 다운로드되고 Studio가 팝업으로 열립니다. 언어 코드는 클립보드에 복사됩니다.
           </p>
           <div className="mb-3 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 dark:bg-amber-900/10 dark:border-amber-800 dark:text-amber-300">
-            Multi-Audio Track 업로드는 YouTube 채널 자격 요건(구독자 1,000명 이상)이 필요합니다.
+            Multi-Audio Track은 YouTube 고급 기능(Advanced Features) 접근 권한이 필요하며, 점진적으로 확대 중입니다.
             {!originalYouTubeId && ' 원본이 YouTube URL이 아니면 Studio 홈으로 이동합니다 — 대상 영상을 직접 선택하세요.'}
           </div>
           <div className="space-y-2">
