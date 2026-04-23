@@ -112,14 +112,14 @@ export function VideoInputStep() {
 
       <Tabs defaultValue={searchParams.get('url') ? 'url' : 'upload'}>
         <TabsList className="mx-auto w-fit">
-          <TabsTrigger value="url">
-            <span className="flex items-center gap-1.5"><Link2 className="h-4 w-4" /> 영상 URL</span>
-          </TabsTrigger>
           <TabsTrigger value="upload">
             <span className="flex items-center gap-1.5"><Upload className="h-4 w-4" /> 업로드</span>
           </TabsTrigger>
           <TabsTrigger value="channel">
             <span className="flex items-center gap-1.5"><Film className="h-4 w-4" /> 내 영상</span>
+          </TabsTrigger>
+          <TabsTrigger value="url">
+            <span className="flex items-center gap-1.5"><Link2 className="h-4 w-4" /> 영상 URL</span>
           </TabsTrigger>
         </TabsList>
 
