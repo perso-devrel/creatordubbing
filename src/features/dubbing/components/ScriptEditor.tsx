@@ -112,13 +112,7 @@ export function ScriptEditor({ langCode, projectSeq, spaceSeq }: ScriptEditorPro
     setOpen(true)
     try {
       const data = await getProjectScript(projectSeq, spaceSeq)
-      // Perso may return [] directly, or wrap sentences in an object envelope —
-      // normalize so `.map` below can never crash.
-      const list: ScriptSentence[] = Array.isArray(data)
-        ? data
-        : Array.isArray((data as { sentences?: ScriptSentence[] } | null)?.sentences)
-          ? (data as { sentences: ScriptSentence[] }).sentences
-          : []
+      const list: ScriptSentence[] = Array.isArray(data) ? data : []
       setSentences(list)
     } catch {
       addToast({ type: 'error', title: '스크립트 로드 실패' })
