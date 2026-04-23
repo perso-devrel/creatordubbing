@@ -16,6 +16,7 @@ import { requireSession } from '@/lib/auth/session'
 import { mutationActionSchema, getUserIdFromAction, getJobIdFromAction } from '@/lib/validators/dashboard'
 import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 import { getDb } from '@/lib/db/client'
+import { persoFetch } from '@/lib/perso/client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -116,6 +117,22 @@ export async function POST(req: NextRequest) {
       }
       case 'deleteDubbingJob': {
         const { jobId } = action.payload
+        const db2 = getDb()
+        const langRows = await db2.execute({
+          sql: 'SELECT jl.project_seq, dj.space_seq FROM job_languages jl JOIN dubbing_jobs dj ON dj.id = jl.job_id WHERE jl.job_id = ?',
+          args: [jobId],
+        })
+        await Promise.allSettled(
+          langRows.rows.map((row) => {
+            const projectSeq = row.project_seq as number
+            const spaceSeq = row.space_seq as number
+            if (!projectSeq || !spaceSeq) return Promise.resolve()
+            return persoFetch<unknown>(
+              `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/cancel`,
+              { method: 'POST', baseURL: 'api' },
+            ).catch(() => {})
+          }),
+        )
         await deleteDubbingJob(jobId)
         return apiOk({ jobId })
       }

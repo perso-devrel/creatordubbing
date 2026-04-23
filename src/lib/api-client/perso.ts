@@ -128,6 +128,15 @@ export function submitTranslation(
   return sendJson(`${PERSO}/translate?spaceSeq=${spaceSeq}`, 'POST', body)
 }
 
+// ─── Cancel ──────────────────────────────────────────────────
+
+export function cancelProject(
+  projectSeq: number,
+  spaceSeq: number,
+): Promise<unknown> {
+  return sendJson(`${PERSO}/cancel?projectSeq=${projectSeq}&spaceSeq=${spaceSeq}`, 'POST')
+}
+
 // ─── Progress / Projects / Script ─────────────────────────────
 
 export function getProjectProgress(
