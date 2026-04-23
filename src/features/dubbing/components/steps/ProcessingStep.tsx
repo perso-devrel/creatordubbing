@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
-import { Card, Progress, Badge } from '@/components/ui'
+import { useEffect, useState } from 'react'
+import { Loader2, CheckCircle2, AlertCircle, XCircle } from 'lucide-react'
+import { Card, Progress, Badge, Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
@@ -43,7 +43,8 @@ function getProgressLabel(lp: { progressReason: string; progress: number }) {
 
 export function ProcessingStep() {
   const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted } = useDubbingStore()
-  const { submitDubbing, startPolling, stopPolling } = usePersoFlow()
+  const { submitDubbing, startPolling, stopPolling, cancelAll } = usePersoFlow()
+  const [cancelling, setCancelling] = useState(false)
 
   // Submit dubbing and start polling on mount
   useEffect(() => {
@@ -61,7 +62,8 @@ export function ProcessingStep() {
     run()
 
     return () => stopPolling()
-  }, [isSubmitted, setIsSubmitted, submitDubbing, startPolling, stopPolling])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once on mount; callbacks are stable enough
+  }, [isSubmitted])
 
   // Auto-advance when all complete
   const allCompleted = languageProgress.length > 0 && languageProgress.every(
@@ -102,6 +104,27 @@ export function ProcessingStep() {
         </div>
         <Progress value={overallProgress} size="lg" />
       </Card>
+
+      {/* Cancel button */}
+      {!allCompleted && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              setCancelling(true)
+              await cancelAll()
+              setCancelling(false)
+            }}
+            loading={cancelling}
+            disabled={cancelling}
+            className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20"
+          >
+            <XCircle className="h-4 w-4" />
+            더빙 취소
+          </Button>
+        </div>
+      )}
 
       {/* Per-language cards */}
       <div className="grid gap-3 sm:grid-cols-2">

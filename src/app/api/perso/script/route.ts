@@ -5,6 +5,27 @@ import { handle, parseBody, requireIntParam } from '@/lib/perso/route-helpers'
 import { scriptPatchBodySchema } from '@/lib/validators/perso'
 import type { ScriptSentence } from '@/lib/perso/types'
 
+interface RawSentence {
+  seq: number
+  offsetMs: number
+  durationMs: number
+  originalText: string
+  translatedText: string
+  speakerOrderIndex?: number
+}
+
+function mapSentence(s: RawSentence): ScriptSentence {
+  return {
+    sentenceSeq: s.seq,
+    audioSentenceSeq: s.seq,
+    startMs: s.offsetMs,
+    endMs: s.offsetMs + s.durationMs,
+    originalText: s.originalText,
+    translatedText: s.translatedText,
+    speakerLabel: s.speakerOrderIndex != null ? `화자 ${s.speakerOrderIndex}` : '',
+  }
+}
+
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -16,10 +37,16 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url)
     const projectSeq = requireIntParam(url, 'projectSeq')
     const spaceSeq = requireIntParam(url, 'spaceSeq')
-    return persoFetch<ScriptSentence[]>(
+    const raw = await persoFetch<{ sentences?: RawSentence[] } | RawSentence[]>(
       `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/script`,
       { baseURL: 'api' },
     )
+    const list: RawSentence[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw?.sentences)
+        ? raw.sentences
+        : []
+    return list.map(mapSentence)
   })
 }
 

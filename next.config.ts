@@ -11,7 +11,7 @@ const cspDirectives = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data: https://*.googleusercontent.com https://perso.ai https://*.perso.ai https://i.ytimg.com",
+  "img-src 'self' blob: data: https://*.googleusercontent.com https://perso.ai https://*.perso.ai https://*.ytimg.com",
   "font-src 'self'",
   "connect-src 'self' https://*.blob.core.windows.net https://*.perso.ai https://www.googleapis.com https://accounts.google.com",
   "object-src 'none'",
@@ -36,11 +36,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     remotePatterns: [
-      new URL('https://*.googleusercontent.com/**'),
-      new URL('https://perso.ai/**'),
-      new URL('https://*.perso.ai/**'),
-      new URL('https://*.ytimg.com/**'),
-      new URL('https://*.ggpht.com/**'),
+      { protocol: 'https', hostname: '*.googleusercontent.com' },
+      { protocol: 'https', hostname: 'perso.ai' },
+      { protocol: 'https', hostname: '*.perso.ai' },
+      { protocol: 'https', hostname: '*.ytimg.com' },
+      { protocol: 'https', hostname: '*.ggpht.com' },
     ],
   },
   async headers() {

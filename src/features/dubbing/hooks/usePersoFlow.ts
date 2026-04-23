@@ -14,6 +14,7 @@ import {
   getProjectProgress,
   getDownloadLinks,
   getPersoFileUrl,
+  cancelProject,
 } from '@/lib/api-client'
 import type { DownloadTarget } from '@/lib/perso/types'
 import type { LanguageProgress } from '../types/dubbing.types'
@@ -23,6 +24,7 @@ const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
 const POLL_BACKOFF = 1.5          // 매 폴링마다 1.5배씩 증가
 const POLL_FINALIZING = 2_000     // 100%인데 COMPLETED 아직 안 온 경우 빠르게 재확인
+const AUTO_CANCEL_TIMEOUT = 15 * 60_000 // 15분 경과 시 자동 취소
 
 function mapProgressReasonToStatus(reason: string) {
   switch (reason) {
@@ -193,9 +195,47 @@ async function pollLanguage(
   return true
 }
 
+async function cancelAllProjects(
+  addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
+  reason: string,
+) {
+  const { spaceSeq, projectMap, languageProgress } = store.getState()
+  if (!spaceSeq) return
+
+  const activeLangs = languageProgress.filter(
+    (lp) => lp.progressReason !== 'COMPLETED' && lp.progressReason !== 'Completed' &&
+            lp.progressReason !== 'FAILED' && lp.progressReason !== 'Failed' &&
+            lp.progressReason !== 'CANCELED',
+  )
+
+  await Promise.allSettled(
+    activeLangs.map(async (lp) => {
+      const projectSeq = projectMap[lp.langCode]
+      if (!projectSeq) return
+      try {
+        await cancelProject(projectSeq, spaceSeq)
+      } catch {
+        // Perso returns 400 if not cancelable — ignore
+      }
+      store.getState().updateLanguageProgress(lp.langCode, {
+        status: 'failed',
+        progressReason: 'CANCELED',
+      })
+    }),
+  )
+
+  const dbJobId = store.getState().dbJobId
+  if (dbJobId) {
+    dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: 'failed' } }).catch(() => {})
+  }
+  store.getState().setJobStatus('failed')
+  addToast({ type: 'warning', title: reason })
+}
+
 export function usePersoFlow() {
   const addToast = useNotificationStore((s) => s.addToast)
   const pollTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const timeoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const initSpace = useCallback(async () => {
     try {
@@ -360,6 +400,13 @@ export function usePersoFlow() {
 
     Object.values(pollTimers.current).forEach(clearTimeout)
     pollTimers.current = {}
+    if (timeoutTimer.current) clearTimeout(timeoutTimer.current)
+
+    timeoutTimer.current = setTimeout(() => {
+      Object.values(pollTimers.current).forEach(clearTimeout)
+      pollTimers.current = {}
+      cancelAllProjects(addToast, '15분 초과 — 자동 취소됨')
+    }, AUTO_CANCEL_TIMEOUT)
 
     function scheduleNext(langCode: string, projectSeq: number, interval: number) {
       pollTimers.current[langCode] = setTimeout(async () => {
@@ -372,7 +419,6 @@ export function usePersoFlow() {
             scheduleNext(langCode, projectSeq, POLL_FINALIZING)
           }
         } catch {
-          // Network hiccup — retry with same interval
           scheduleNext(langCode, projectSeq, interval)
         }
       }, interval)
@@ -386,7 +432,16 @@ export function usePersoFlow() {
   const stopPolling = useCallback(() => {
     Object.values(pollTimers.current).forEach(clearTimeout)
     pollTimers.current = {}
+    if (timeoutTimer.current) {
+      clearTimeout(timeoutTimer.current)
+      timeoutTimer.current = null
+    }
   }, [])
+
+  const cancelAll = useCallback(async () => {
+    stopPolling()
+    await cancelAllProjects(addToast, '더빙이 취소되었습니다.')
+  }, [stopPolling, addToast])
 
   const fetchDownloads = useCallback(async (langCode: string, target: DownloadTarget = 'all') => {
     const { spaceSeq, projectMap } = store.getState()
@@ -408,6 +463,7 @@ export function usePersoFlow() {
     submitDubbing,
     startPolling,
     stopPolling,
+    cancelAll,
     fetchDownloads,
   }
 }

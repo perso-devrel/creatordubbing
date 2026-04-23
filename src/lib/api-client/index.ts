@@ -10,6 +10,7 @@ export {
   validateMedia,
   initializeQueue,
   submitTranslation,
+  cancelProject,
   getProjectProgress,
   listProjects,
   getProjectDetail,

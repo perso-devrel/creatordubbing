@@ -1,7 +1,6 @@
 import 'server-only'
 
 import { getDb } from '@/lib/db/client'
-import type { Row } from '@libsql/client'
 import type {
   DashboardSummary,
   DubbingJob,
@@ -11,7 +10,15 @@ import type {
 
 export interface YouTubeUploadRow {
   youtube_video_id: string
-  [key: string]: Row[string]
+  [key: string]: unknown
+}
+
+function toPlain<T>(rows: Record<string, unknown>[]): T[] {
+  return rows.map((row) => ({ ...row }) as T)
+}
+
+function toPlainOne<T>(row: Record<string, unknown> | undefined): T | null {
+  return row ? ({ ...row } as T) : null
 }
 
 export async function getUserDubbingJobs(userId: string, limit = 10): Promise<DubbingJob[]> {
@@ -27,7 +34,7 @@ export async function getUserDubbingJobs(userId: string, limit = 10): Promise<Du
           LIMIT ?`,
     args: [userId, limit],
   })
-  return result.rows as unknown as DubbingJob[]
+  return toPlain<DubbingJob>(result.rows as Record<string, unknown>[])
 }
 
 export async function getUserSummary(userId: string): Promise<DashboardSummary | null> {
@@ -42,7 +49,7 @@ export async function getUserSummary(userId: string): Promise<DashboardSummary |
           WHERE dj.user_id = ?`,
     args: [userId, userId],
   })
-  return (result.rows[0] as unknown as DashboardSummary) || null
+  return toPlainOne<DashboardSummary>(result.rows[0] as Record<string, unknown> | undefined)
 }
 
 export async function getCreditUsageByMonth(userId: string): Promise<CreditUsageRow[]> {
@@ -58,7 +65,7 @@ export async function getCreditUsageByMonth(userId: string): Promise<CreditUsage
           LIMIT 6`,
     args: [userId],
   })
-  return result.rows as unknown as CreditUsageRow[]
+  return toPlain<CreditUsageRow>(result.rows as Record<string, unknown>[])
 }
 
 export async function getLanguagePerformance(userId: string): Promise<LanguagePerformanceRow[]> {
@@ -74,7 +81,7 @@ export async function getLanguagePerformance(userId: string): Promise<LanguagePe
           ORDER BY total_views DESC`,
     args: [userId],
   })
-  return result.rows as unknown as LanguagePerformanceRow[]
+  return toPlain<LanguagePerformanceRow>(result.rows as Record<string, unknown>[])
 }
 
 export async function getUserYouTubeUploads(userId: string): Promise<YouTubeUploadRow[]> {
@@ -83,7 +90,7 @@ export async function getUserYouTubeUploads(userId: string): Promise<YouTubeUplo
     sql: 'SELECT * FROM youtube_uploads WHERE user_id = ? ORDER BY created_at DESC',
     args: [userId],
   })
-  return result.rows as unknown as YouTubeUploadRow[]
+  return toPlain<YouTubeUploadRow>(result.rows as Record<string, unknown>[])
 }
 
 export interface CompletedJobLanguage {
@@ -116,5 +123,5 @@ export async function getCompletedJobLanguages(userId: string): Promise<Complete
           LIMIT 50`,
     args: [userId],
   })
-  return result.rows as unknown as CompletedJobLanguage[]
+  return toPlain<CompletedJobLanguage>(result.rows as Record<string, unknown>[])
 }
