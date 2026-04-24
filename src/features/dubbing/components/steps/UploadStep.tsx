@@ -10,10 +10,12 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useAuthStore } from '@/stores/authStore'
-import { ytUploadVideo, ytUploadCaption, getPersoFileUrl } from '@/lib/api-client'
+import { ytUploadVideo, ytUploadCaption, getPersoFileUrl, getProjectScript } from '@/lib/api-client'
 import { toBcp47 } from '@/utils/languages'
 import { dbMutation } from '@/lib/api/dbMutation'
+import { toSRT } from '@/utils/srt'
 import { ScriptEditor } from '../ScriptEditor'
+import { SubtitleEditor } from '../SubtitleEditor'
 import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
@@ -148,20 +150,38 @@ export function UploadStep() {
   const handleDownload = useCallback(async (langCode: string, type: 'video' | 'voiceAudio' | 'translatedSubtitle') => {
     setLoadingDownload(`${langCode}-${type}`)
     try {
-      const target = type === 'video' ? 'dubbingVideo' : type === 'voiceAudio' ? 'voiceAudio' : 'translatedSubtitle'
+      const lang = getLanguageByCode(langCode)
+
+      if (type === 'translatedSubtitle') {
+        const pSeq = projectMap[langCode]
+        if (!pSeq || !spaceSeq) return
+        const data = await getProjectScript(pSeq, spaceSeq)
+        const list = Array.isArray(data) ? data : []
+        const srtContent = toSRT(list)
+        const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${lang?.name || langCode}_${langCode}.srt`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        return
+      }
+
+      const target = type === 'video' ? 'dubbingVideo' : 'voiceAudio'
       const data = await fetchDownloads(langCode, target as 'all')
       if (!data) return
 
       let rawUrl: string | undefined
       if (type === 'video' && data.videoFile?.videoDownloadLink) rawUrl = data.videoFile.videoDownloadLink
       else if (type === 'voiceAudio' && data.audioFile?.voiceAudioDownloadLink) rawUrl = data.audioFile.voiceAudioDownloadLink
-      else if (type === 'translatedSubtitle' && data.srtFile?.translatedSubtitleDownloadLink) rawUrl = data.srtFile.translatedSubtitleDownloadLink
       else if (data.zippedFileDownloadLink) rawUrl = data.zippedFileDownloadLink
 
       if (rawUrl) {
         const fullUrl = rawUrl.startsWith('http') ? rawUrl : getPersoFileUrl(rawUrl)
-        const ext = type === 'video' ? 'mp4' : type === 'voiceAudio' ? 'wav' : 'srt'
-        const lang = getLanguageByCode(langCode)
+        const ext = type === 'video' ? 'mp4' : 'wav'
         const a = document.createElement('a')
         a.href = fullUrl
         a.download = `${lang?.name || langCode}_${langCode}.${ext}`
@@ -172,7 +192,7 @@ export function UploadStep() {
     } finally {
       setLoadingDownload(null)
     }
-  }, [fetchDownloads])
+  }, [fetchDownloads, projectMap, spaceSeq])
 
   // ─── Upload dubbed video to YouTube (newDubbedVideos mode) ──────────
   const handleYouTubeUpload = useCallback(async (langCode: string) => {
@@ -211,20 +231,22 @@ export function UploadStep() {
       })
       setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 90 } }))
 
-      // Upload SRT caption
+      // Upload SRT caption from Script API
       setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 92 } }))
       try {
-        const srtDownloads = await fetchDownloads(langCode, 'translatedSubtitle')
-        const srtUrl = srtDownloads?.srtFile?.translatedSubtitleDownloadLink
-        if (srtUrl) {
-          const srtResponse = await fetch(srtUrl)
-          const srtText = await srtResponse.text()
-          await ytUploadCaption({
-            videoId: result.videoId,
-            language: toBcp47(langCode),
-            name: `${lang.name} subtitles`,
-            srtContent: srtText,
-          })
+        const pSeq = projectMap[langCode]
+        if (pSeq && spaceSeq) {
+          const scriptData = await getProjectScript(pSeq, spaceSeq)
+          const scriptList = Array.isArray(scriptData) ? scriptData : []
+          if (scriptList.length > 0) {
+            const srtText = toSRT(scriptList)
+            await ytUploadCaption({
+              videoId: result.videoId,
+              language: toBcp47(langCode),
+              name: `${lang.name} subtitles`,
+              srtContent: srtText,
+            })
+          }
         }
       } catch { /* caption upload is optional */ }
 
@@ -269,7 +291,7 @@ export function UploadStep() {
       }))
       addToast({ type: 'error', title: `${lang?.name} 업로드 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsTags, privacyStatus, buildDescription])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsTags, privacyStatus, buildDescription, projectMap, spaceSeq])
 
   // ─── Queue upload (background — survives tab close) ─────────────────
   const queueYouTubeUpload = useCallback(async (langCode: string) => {
@@ -758,6 +780,26 @@ export function UploadStep() {
           <div className="space-y-2">
             {completedLangs.map((code) => (
               <ScriptEditor
+                key={code}
+                langCode={code}
+                projectSeq={projectMap[code] || 0}
+                spaceSeq={spaceSeq}
+              />
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* ─── Subtitle editor ─── */}
+      {completedLangs.length > 0 && spaceSeq && (
+        <Card>
+          <CardTitle>자막 편집 · 다운로드</CardTitle>
+          <p className="mb-4 mt-1 text-xs text-surface-500">
+            자막 타이밍과 텍스트를 수정하고 SRT 파일로 다운로드할 수 있습니다.
+          </p>
+          <div className="space-y-2">
+            {completedLangs.map((code) => (
+              <SubtitleEditor
                 key={code}
                 langCode={code}
                 projectSeq={projectMap[code] || 0}
