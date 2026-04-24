@@ -3,7 +3,6 @@
 import { useEffect, useMemo } from 'react'
 import { ArrowLeft, ArrowRight, Link2, Upload, Zap } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
-import { cn } from '@/utils/cn'
 import { extractVideoId } from '@/utils/validators'
 import { getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
