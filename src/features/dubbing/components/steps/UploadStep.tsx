@@ -48,6 +48,7 @@ export function UploadStep() {
 
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
+  const [captionUploads, setCaptionUploads] = useState<Record<string, UploadStatus>>({})
   const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
   const autoUploadTriggered = useRef(false)
   const autoChainTriggered = useRef(false)
@@ -380,8 +381,46 @@ export function UploadStep() {
     }
   }, [completedLangs, ytUploads, queueYouTubeUpload])
 
+  // ─── Caption upload to YouTube ───────────────────────────────────────
+  const uploadCaptions = useCallback(async (targetVideoId: string, langs: string[]) => {
+    for (const langCode of langs) {
+      const lang = getLanguageByCode(langCode)
+      if (!lang) continue
+      const pSeq = projectMap[langCode]
+      if (!pSeq || !spaceSeq) continue
+
+      setCaptionUploads((prev) => ({ ...prev, [langCode]: 'uploading' }))
+      try {
+        const data = await getProjectScript(pSeq, spaceSeq)
+        const list = Array.isArray(data) ? data : []
+        if (list.length === 0) {
+          setCaptionUploads((prev) => ({ ...prev, [langCode]: 'error' }))
+          continue
+        }
+        const srtContent = toSRT(list)
+        await ytUploadCaption({
+          videoId: targetVideoId,
+          language: toBcp47(langCode),
+          name: `${lang.name} subtitles`,
+          srtContent,
+        })
+        setCaptionUploads((prev) => ({ ...prev, [langCode]: 'done' }))
+        addToast({ type: 'success', title: `${lang.name} 자막 업로드 완료` })
+      } catch (err) {
+        setCaptionUploads((prev) => ({ ...prev, [langCode]: 'error' }))
+        const msg = err instanceof Error ? err.message : '자막 업로드 실패'
+        addToast({ type: 'error', title: `${lang.name} 자막 업로드 실패`, message: msg })
+      }
+    }
+  }, [projectMap, spaceSeq, addToast])
+
+  const handleUploadCaptionsToVideo = useCallback(async (targetVideoId: string) => {
+    const pending = completedLangs.filter((code) => captionUploads[code] !== 'done')
+    await uploadCaptions(targetVideoId, pending)
+  }, [completedLangs, captionUploads, uploadCaptions])
+
   // ─── Auto-chain: originalWithMultiAudio ──────────────────────────────
-  // 1. Upload original (if file upload) → 2. Auto-trigger extension for audio tracks
+  // 1. Upload original (if file upload) → 2. Auto-upload captions → 3. Extension for audio tracks
   useEffect(() => {
     if (deliverableMode !== 'originalWithMultiAudio') return
     if (!autoUpload || !isAuthenticated) return
@@ -398,8 +437,9 @@ export function UploadStep() {
         targetVideoId = await uploadOriginalToYouTube()
       }
 
-      // Extension auto-upload is handled by YouTubeExtensionUpload component
-      // which is rendered with the resolved videoId
+      if (targetVideoId) {
+        await uploadCaptions(targetVideoId, completedLangs)
+      }
     }
 
     chain()
@@ -503,6 +543,69 @@ export function UploadStep() {
                   영상 보기
                 </a>
               </div>
+            </Card>
+          )}
+
+          {/* Caption auto-upload */}
+          {multiAudioVideoId && (
+            <Card className="border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center justify-between mb-4">
+                <CardTitle>자막(SRT) 업로드</CardTitle>
+                {isAuthenticated ? (
+                  <Badge variant="success">인증됨</Badge>
+                ) : (
+                  <Badge variant="warning">로그인 필요</Badge>
+                )}
+              </div>
+              <p className="mb-4 text-sm text-surface-500">
+                번역된 자막을 원본 영상에 자동으로 업로드합니다.
+              </p>
+              <div className="space-y-2">
+                {completedLangs.map((code) => {
+                  const lang = getLanguageByCode(code)
+                  if (!lang) return null
+                  const status = captionUploads[code]
+                  return (
+                    <div key={code} className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-lg">{lang.flag}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+                          {status === 'uploading' && <p className="text-xs text-brand-500">업로드 중...</p>}
+                          {status === 'done' && <p className="text-xs text-emerald-600">자막 업로드 완료</p>}
+                          {status === 'error' && <p className="text-xs text-red-500">업로드 실패</p>}
+                        </div>
+                      </div>
+                      {status === 'done' ? (
+                        <Badge variant="success">완료</Badge>
+                      ) : status === 'uploading' ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => uploadCaptions(multiAudioVideoId, [code])}
+                          disabled={!isAuthenticated}
+                        >
+                          <Upload className="h-3.5 w-3.5" />
+                          {status === 'error' ? '재시도' : '업로드'}
+                        </Button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              {completedLangs.length > 1 && (
+                <Button
+                  className="mt-3 w-full"
+                  variant="secondary"
+                  onClick={() => handleUploadCaptionsToVideo(multiAudioVideoId)}
+                  disabled={!isAuthenticated || completedLangs.every((c) => captionUploads[c] === 'done')}
+                >
+                  <Upload className="h-4 w-4" />
+                  전체 자막 업로드
+                </Button>
+              )}
             </Card>
           )}
 
@@ -705,6 +808,45 @@ export function UploadStep() {
               YouTube에 로그인하면 더빙된 영상을 자동으로 채널에 업로드할 수 있습니다.
             </p>
           )}
+        </Card>
+      )}
+
+      {/* ─── Caption upload to original video (URL source) ─── */}
+      {deliverableMode === 'newDubbedVideos' && originalYouTubeId && completedLangs.length > 0 && isAuthenticated && (
+        <Card>
+          <CardTitle>원본 영상에 자막 추가</CardTitle>
+          <p className="mb-4 mt-1 text-sm text-surface-500">
+            번역된 자막(SRT)을 원본 YouTube 영상에 업로드합니다.
+          </p>
+          <div className="space-y-2">
+            {completedLangs.map((code) => {
+              const lang = getLanguageByCode(code)
+              if (!lang) return null
+              const status = captionUploads[code]
+              return (
+                <div key={code} className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">{lang.flag}</span>
+                    <div>
+                      <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+                      {status === 'done' && <p className="text-xs text-emerald-600">자막 업로드 완료</p>}
+                      {status === 'error' && <p className="text-xs text-red-500">업로드 실패</p>}
+                    </div>
+                  </div>
+                  {status === 'done' ? (
+                    <Badge variant="success">완료</Badge>
+                  ) : status === 'uploading' ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={() => uploadCaptions(originalYouTubeId, [code])}>
+                      <Upload className="h-3.5 w-3.5" />
+                      자막 업로드
+                    </Button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </Card>
       )}
 
