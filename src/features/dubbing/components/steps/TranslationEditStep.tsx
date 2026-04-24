@@ -96,7 +96,7 @@ export function TranslationEditStep() {
             <span className="text-sm text-surface-600 dark:text-surface-400">결과물 모드</span>
             <span className="text-sm font-medium text-surface-900 dark:text-white">
               {deliverableMode === 'newDubbedVideos' ? '새 더빙 영상 업로드'
-                : deliverableMode === 'originalWithMultiAudio' ? '멀티 오디오 트랙 추가'
+                : deliverableMode === 'originalWithMultiAudio' ? '원본 영상에 자막 추가'
                 : '다운로드만'}
             </span>
           </div>

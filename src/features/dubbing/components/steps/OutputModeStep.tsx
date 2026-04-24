@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { ArrowLeft, ArrowRight, Film, Music, Download, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Film, Subtitles, Download, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { useDubbingStore } from '../../store/dubbingStore'
@@ -27,16 +27,16 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
   if (sourceType === 'channel') {
     options.push({
       value: 'originalWithMultiAudio',
-      icon: Music,
-      title: '기존 영상에 오디오 트랙 추가',
-      description: '내 YouTube 영상에 더빙 오디오를 멀티 트랙으로 자동 추가합니다.',
+      icon: Subtitles,
+      title: '기존 영상에 자막 추가',
+      description: '내 YouTube 영상에 번역 자막을 자동 업로드합니다. 오디오 트랙도 선택 가능합니다.',
     })
   } else if (sourceType === 'upload') {
     options.push({
       value: 'originalWithMultiAudio',
-      icon: Music,
-      title: '원본 업로드 + 오디오 트랙 추가',
-      description: '원본 영상을 YouTube에 업로드한 뒤, 더빙 오디오를 멀티 트랙으로 자동 추가합니다.',
+      icon: Subtitles,
+      title: '원본 업로드 + 자막 추가',
+      description: '원본 영상을 YouTube에 업로드한 뒤, 번역 자막을 자동 추가합니다. 오디오 트랙도 선택 가능합니다.',
     })
   }
 
