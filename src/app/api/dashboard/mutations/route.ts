@@ -18,6 +18,7 @@ import { mutationActionSchema, getUserIdFromAction, getJobIdFromAction } from '@
 import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 import { getDb } from '@/lib/db/client'
 import { persoFetch } from '@/lib/perso/client'
+import { processUploadQueue } from '@/lib/upload-queue/process'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
       }
       case 'queueYouTubeUpload': {
         const id = await createUploadQueueItem(action.payload)
+        processUploadQueue().catch(() => {})
         return apiOk({ queueId: id })
       }
       case 'deleteDubbingJob': {
