@@ -2,7 +2,15 @@ import type { Job } from '../background-types'
 import { STORAGE_KEY } from '../background-types'
 import { getUploadMode, setUploadMode } from '../settings'
 
-const RECENT_JOB_COUNT = 3
+const RECENT_JOB_COUNT = 5
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max) + '…' : s
+}
 
 const statusEl = document.getElementById('status')!
 const versionEl = document.getElementById('version')!
@@ -46,11 +54,14 @@ function renderJobs(jobs: Job[]): void {
   for (const job of recent) {
     const li = document.createElement('li')
     li.className = 'job-item'
+    const stepInfo = job.step ? ` · ${job.step}` : ''
+    const errorInfo = job.error ? `<span class="job-error" title="${escapeHtml(job.error)}">${truncate(job.error, 40)}</span>` : ''
     li.innerHTML = `
-      <span class="job-badge ${badgeClass(job.status)}">${statusLabel(job.status)}</span>
+      <span class="job-badge ${badgeClass(job.status)}">${statusLabel(job.status)}${stepInfo}</span>
       <span class="job-info">
         <span class="job-video">${job.videoId}</span>
         <span class="job-lang">${job.languageCode}</span>
+        ${errorInfo}
       </span>
       <span class="job-time">${formatTime(job.createdAt)}</span>
     `

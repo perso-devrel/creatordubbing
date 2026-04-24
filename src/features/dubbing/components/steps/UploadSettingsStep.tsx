@@ -20,6 +20,7 @@ export function UploadSettingsStep() {
     videoSource,
     isShort,
     selectedLanguages,
+    deliverableMode,
     uploadSettings,
     setUploadSettings,
     prevStep,
@@ -32,7 +33,6 @@ export function UploadSettingsStep() {
     ? `https://www.youtube.com/watch?v=${originalYouTubeId}`
     : null
 
-  // 처음 진입 시 기본값(제목/설명) 채워 주기 — 비어 있을 때만
   useEffect(() => {
     const patch: Partial<typeof uploadSettings> = {}
     if (!uploadSettings.title && videoMeta?.title) {
@@ -50,9 +50,9 @@ export function UploadSettingsStep() {
     return getLanguageByCode(first)?.name || first
   }, [selectedLanguages])
 
-  const previewTitle = firstLangName
+  const previewTitle = firstLangName && deliverableMode === 'newDubbedVideos'
     ? `${uploadSettings.uploadAsShort ? '#Shorts ' : ''}[${firstLangName}] ${uploadSettings.title || '(제목 없음)'}`
-    : null
+    : uploadSettings.title || '(제목 없음)'
 
   const previewDescription = (() => {
     const base = uploadSettings.description || '(설명 없음)'
@@ -72,84 +72,139 @@ export function UploadSettingsStep() {
     setUploadSettings({ tags: parsed })
   }
 
-  const canContinue = uploadSettings.title.trim().length > 0
+  const canContinue =
+    deliverableMode === 'originalWithMultiAudio'
+      ? true
+      : uploadSettings.title.trim().length > 0
+
+  const isMultiAudio = deliverableMode === 'originalWithMultiAudio'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">업로드 설정</h2>
         <p className="mt-1 text-surface-500">
-          처리 완료 후 YouTube에 어떻게 업로드할지 미리 설정하세요. 각 언어별로 제목 앞에 [언어명]이 자동 추가됩니다.
+          {isMultiAudio
+            ? '원본 영상에 오디오 트랙을 추가합니다. 기본 설정을 확인하세요.'
+            : '처리 완료 후 YouTube에 어떻게 업로드할지 미리 설정하세요.'}
         </p>
       </div>
 
-      <Card>
-        <CardTitle>제목 · 설명 · 태그</CardTitle>
-        <div className="mt-4 space-y-4">
-          <Input
-            label="제목 (공통)"
-            value={uploadSettings.title}
-            onChange={(e) => setUploadSettings({ title: e.target.value })}
-            placeholder="영상 제목"
-          />
+      {/* Title/Desc/Tags — only for newDubbedVideos or originalWithMultiAudio(upload) */}
+      {deliverableMode === 'newDubbedVideos' && (
+        <Card>
+          <CardTitle>제목 · 설명 · 태그</CardTitle>
+          <p className="mt-1 mb-4 text-xs text-surface-500">각 언어별로 제목 앞에 [언어명]이 자동 추가됩니다.</p>
+          <div className="space-y-4">
+            <Input
+              label="제목 (공통)"
+              value={uploadSettings.title}
+              onChange={(e) => setUploadSettings({ title: e.target.value })}
+              placeholder="영상 제목"
+            />
 
-          <div className="w-full">
-            <label htmlFor="upload-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
-              설명
-            </label>
-            <textarea
-              id="upload-description"
-              rows={4}
-              value={uploadSettings.description}
-              onChange={(e) => setUploadSettings({ description: e.target.value })}
-              placeholder="영상 설명"
-              className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
+            <div className="w-full">
+              <label htmlFor="upload-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
+                설명
+              </label>
+              <textarea
+                id="upload-description"
+                rows={4}
+                value={uploadSettings.description}
+                onChange={(e) => setUploadSettings({ description: e.target.value })}
+                placeholder="영상 설명"
+                className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
+              />
+            </div>
+
+            <Input
+              label="태그 (쉼표 구분)"
+              value={tagsString}
+              onChange={(e) => handleTagsChange(e.target.value)}
+              placeholder="CreatorDub, AI더빙, dubbed"
+            />
+
+            <Select
+              label="공개 설정"
+              value={uploadSettings.privacyStatus}
+              onChange={(e) => setUploadSettings({ privacyStatus: e.target.value as PrivacyStatus })}
+              options={PRIVACY_OPTIONS}
+            />
+            <p className="-mt-2 text-xs text-surface-400">
+              안전을 위해 비공개를 권장합니다. 업로드 후 YouTube Studio에서 변경할 수 있습니다.
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Multi-audio: show privacy for original upload if source is file upload */}
+      {isMultiAudio && videoSource?.type === 'upload' && (
+        <Card>
+          <CardTitle>원본 영상 업로드 설정</CardTitle>
+          <p className="mt-1 mb-4 text-xs text-surface-500">
+            원본 영상이 YouTube에 먼저 업로드된 후, 더빙 오디오 트랙이 자동 추가됩니다.
+          </p>
+          <div className="space-y-4">
+            <Input
+              label="제목"
+              value={uploadSettings.title}
+              onChange={(e) => setUploadSettings({ title: e.target.value })}
+              placeholder="영상 제목"
+            />
+
+            <div className="w-full">
+              <label htmlFor="upload-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
+                설명
+              </label>
+              <textarea
+                id="upload-description"
+                rows={3}
+                value={uploadSettings.description}
+                onChange={(e) => setUploadSettings({ description: e.target.value })}
+                placeholder="영상 설명"
+                className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
+              />
+            </div>
+
+            <Select
+              label="공개 설정"
+              value={uploadSettings.privacyStatus}
+              onChange={(e) => setUploadSettings({ privacyStatus: e.target.value as PrivacyStatus })}
+              options={PRIVACY_OPTIONS}
             />
           </div>
+        </Card>
+      )}
 
-          <Input
-            label="태그 (쉼표 구분)"
-            value={tagsString}
-            onChange={(e) => handleTagsChange(e.target.value)}
-            placeholder="CreatorDub, AI더빙, dubbed"
-          />
-
-          <Select
-            label="공개 설정"
-            value={uploadSettings.privacyStatus}
-            onChange={(e) => setUploadSettings({ privacyStatus: e.target.value as PrivacyStatus })}
-            options={PRIVACY_OPTIONS}
-          />
-          <p className="-mt-2 text-xs text-surface-400">
-            안전을 위해 비공개를 권장합니다. 업로드 후 YouTube Studio에서 변경할 수 있습니다.
-          </p>
-        </div>
-      </Card>
-
+      {/* Upload options — for both newDubbedVideos and originalWithMultiAudio */}
       <Card>
         <CardTitle>업로드 옵션</CardTitle>
         <div className="mt-4 space-y-2">
           <ToggleRow
             icon={<Upload className="h-4 w-4 text-emerald-500" />}
             label="완료 즉시 자동 업로드"
-            description="더빙이 완료되면 개입 없이 모든 언어를 자동으로 업로드합니다."
+            description={isMultiAudio
+              ? '더빙 완료 시 자동으로 오디오 트랙을 추가합니다.'
+              : '더빙이 완료되면 개입 없이 모든 언어를 자동으로 업로드합니다.'}
             active={uploadSettings.autoUpload}
             activeLabel="ON"
             inactiveLabel="OFF"
             onToggle={() => setUploadSettings({ autoUpload: !uploadSettings.autoUpload })}
           />
 
-          <ToggleRow
-            icon={<Zap className="h-4 w-4 text-brand-500" />}
-            label={isShort ? 'Shorts로 업로드 (자동 감지됨)' : 'Shorts로 업로드'}
-            description="제목 앞에 #Shorts가 추가되고 Shorts 태그가 붙습니다."
-            active={uploadSettings.uploadAsShort}
-            activeLabel="Shorts ON"
-            inactiveLabel="Shorts OFF"
-            onToggle={() => setUploadSettings({ uploadAsShort: !uploadSettings.uploadAsShort })}
-          />
+          {deliverableMode === 'newDubbedVideos' && (
+            <ToggleRow
+              icon={<Zap className="h-4 w-4 text-brand-500" />}
+              label={isShort ? 'Shorts로 업로드 (자동 감지됨)' : 'Shorts로 업로드'}
+              description="제목 앞에 #Shorts가 추가되고 Shorts 태그가 붙습니다."
+              active={uploadSettings.uploadAsShort}
+              activeLabel="Shorts ON"
+              inactiveLabel="Shorts OFF"
+              onToggle={() => setUploadSettings({ uploadAsShort: !uploadSettings.uploadAsShort })}
+            />
+          )}
 
-          {originalYouTubeUrl && (
+          {originalYouTubeUrl && deliverableMode === 'newDubbedVideos' && (
             <ToggleRow
               icon={<Link2 className="h-4 w-4 text-surface-400" />}
               label="설명란에 원본 YouTube 링크 첨부"
@@ -163,7 +218,8 @@ export function UploadSettingsStep() {
         </div>
       </Card>
 
-      {previewTitle && (
+      {/* Preview — only for newDubbedVideos */}
+      {deliverableMode === 'newDubbedVideos' && firstLangName && (
         <Card className="border-brand-200 bg-brand-50/40 dark:border-brand-800 dark:bg-brand-900/10">
           <CardTitle>미리보기 ({firstLangName})</CardTitle>
           <div className="mt-3 space-y-2">

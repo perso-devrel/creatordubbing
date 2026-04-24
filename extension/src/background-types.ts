@@ -6,6 +6,8 @@ export interface Job {
   mode: 'auto' | 'assisted'
   tabId: number | null
   status: 'pending' | 'running' | 'done' | 'error'
+  step?: string
+  error?: string
   createdAt: number
 }
 

@@ -5,6 +5,7 @@ import { cn } from '@/utils/cn'
 import { useDubbingStore } from '../store/dubbingStore'
 import { VideoInputStep } from './steps/VideoInputStep'
 import { LanguageSelectStep } from './steps/LanguageSelectStep'
+import { OutputModeStep } from './steps/OutputModeStep'
 import { UploadSettingsStep } from './steps/UploadSettingsStep'
 import { TranslationEditStep } from './steps/TranslationEditStep'
 import { ProcessingStep } from './steps/ProcessingStep'
@@ -13,10 +14,11 @@ import { UploadStep } from './steps/UploadStep'
 const steps = [
   { num: 1, label: '영상' },
   { num: 2, label: '언어' },
-  { num: 3, label: '업로드 설정' },
-  { num: 4, label: '확인' },
-  { num: 5, label: '처리' },
-  { num: 6, label: '결과' },
+  { num: 3, label: '결과물' },
+  { num: 4, label: '업로드 설정' },
+  { num: 5, label: '확인' },
+  { num: 6, label: '처리' },
+  { num: 7, label: '결과' },
 ] as const
 
 export function DubbingWizard() {
@@ -70,10 +72,11 @@ export function DubbingWizard() {
       <div className="animate-fade-in">
         {currentStep === 1 && <VideoInputStep />}
         {currentStep === 2 && <LanguageSelectStep />}
-        {currentStep === 3 && <UploadSettingsStep />}
-        {currentStep === 4 && <TranslationEditStep />}
-        {currentStep === 5 && <ProcessingStep />}
-        {currentStep === 6 && <UploadStep />}
+        {currentStep === 3 && <OutputModeStep />}
+        {currentStep === 4 && <UploadSettingsStep />}
+        {currentStep === 5 && <TranslationEditStep />}
+        {currentStep === 6 && <ProcessingStep />}
+        {currentStep === 7 && <UploadStep />}
       </div>
     </div>
   )

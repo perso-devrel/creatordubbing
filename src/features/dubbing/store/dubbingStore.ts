@@ -10,6 +10,7 @@ import type {
   GlossaryEntry,
   JobStatus,
   UploadSettings,
+  DeliverableMode,
 } from '../types/dubbing.types'
 
 const DEFAULT_UPLOAD_SETTINGS: UploadSettings = {
@@ -42,8 +43,10 @@ interface DubbingState {
   // Step 1: Video source
   videoSource: VideoSource | null
   videoMeta: VideoMetadata | null
+  originalVideoUrl: string | null
   setVideoSource: (source: VideoSource) => void
   setVideoMeta: (meta: VideoMetadata) => void
+  setOriginalVideoUrl: (url: string) => void
 
   // Step 2: Language selection
   sourceLanguage: string
@@ -76,6 +79,12 @@ interface DubbingState {
   isShort: boolean
   setIsShort: (v: boolean) => void
 
+  // Deliverable mode
+  deliverableMode: DeliverableMode
+  copyrightAcknowledged: boolean
+  setDeliverableMode: (mode: DeliverableMode) => void
+  setCopyrightAcknowledged: (v: boolean) => void
+
   // Upload settings (chosen before dubbing starts)
   uploadSettings: UploadSettings
   setUploadSettings: (patch: Partial<UploadSettings>) => void
@@ -96,6 +105,7 @@ const initialState = {
   mediaSeq: null as number | null,
   videoSource: null as VideoSource | null,
   videoMeta: null as VideoMetadata | null,
+  originalVideoUrl: null as string | null,
   sourceLanguage: 'ko',
   selectedLanguages: [] as string[],
   lipSyncEnabled: false,
@@ -106,6 +116,8 @@ const initialState = {
   jobStatus: 'idle' as JobStatus,
   languageProgress: [] as LanguageProgress[],
   glossary: [] as GlossaryEntry[],
+  deliverableMode: 'newDubbedVideos' as DeliverableMode,
+  copyrightAcknowledged: false,
   uploadSettings: { ...DEFAULT_UPLOAD_SETTINGS } as UploadSettings,
 }
 
@@ -114,14 +126,23 @@ export const useDubbingStore = create<DubbingState>((set) => ({
 
   setStep: (step) => set({ currentStep: step }),
   setIsSubmitted: (v) => set({ isSubmitted: v }),
-  nextStep: () => set((s) => ({ currentStep: Math.min(6, s.currentStep + 1) as DubbingStep })),
-  prevStep: () => set((s) => ({ currentStep: Math.max(1, s.currentStep - 1) as DubbingStep })),
+  nextStep: () => set((s) => {
+    let next = s.currentStep + 1
+    if (next === 4 && s.deliverableMode === 'downloadOnly') next = 5
+    return { currentStep: Math.min(7, next) as DubbingStep }
+  }),
+  prevStep: () => set((s) => {
+    let prev = s.currentStep - 1
+    if (prev === 4 && s.deliverableMode === 'downloadOnly') prev = 3
+    return { currentStep: Math.max(1, prev) as DubbingStep }
+  }),
 
   setSpaceSeq: (seq) => set({ spaceSeq: seq }),
   setMediaSeq: (seq) => set({ mediaSeq: seq }),
 
   setVideoSource: (source) => set({ videoSource: source }),
   setVideoMeta: (meta) => set({ videoMeta: meta }),
+  setOriginalVideoUrl: (url) => set({ originalVideoUrl: url }),
 
   setSourceLanguage: (code) =>
     set((s) => ({
@@ -173,6 +194,9 @@ export const useDubbingStore = create<DubbingState>((set) => ({
     isShort: v,
     uploadSettings: { ...s.uploadSettings, uploadAsShort: v },
   })),
+
+  setDeliverableMode: (mode) => set({ deliverableMode: mode }),
+  setCopyrightAcknowledged: (v) => set({ copyrightAcknowledged: v }),
 
   setUploadSettings: (patch) => set((s) => ({
     uploadSettings: { ...s.uploadSettings, ...patch },
