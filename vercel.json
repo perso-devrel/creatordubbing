@@ -7,11 +7,5 @@
       "feature/*": false,
       "fix/*": false
     }
-  },
-  "crons": [
-    {
-      "path": "/api/cron/process-uploads",
-      "schedule": "*/2 * * * *"
-    }
-  ]
+  }
 }

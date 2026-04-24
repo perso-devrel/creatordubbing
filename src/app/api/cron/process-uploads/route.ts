@@ -3,21 +3,19 @@ import { getPendingUploads, updateQueueItemStatus } from '@/lib/db/queries/uploa
 import { createYouTubeUpload, updateJobLanguageYouTube } from '@/lib/db/queries'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 import { uploadVideoToYouTube } from '@/lib/youtube/upload'
-import { apiOk, apiFail } from '@/lib/api/response'
+import { apiOk } from '@/lib/api/response'
+import { requireSession } from '@/lib/auth/session'
 import { logger } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
-export async function GET(req: NextRequest) {
-  const secret = req.headers.get('authorization')?.replace('Bearer ', '')
-  const expected = process.env.CRON_SECRET
-  if (expected && secret !== expected) {
-    return apiFail('UNAUTHORIZED', 'Invalid cron secret', 401)
-  }
+export async function POST(req: NextRequest) {
+  const auth = await requireSession(req)
+  if (!auth.ok) return auth.response
 
-  const items = await getPendingUploads(3)
+  const items = await getPendingUploads(50)
   if (items.length === 0) {
     return apiOk({ processed: 0, message: 'No pending uploads' })
   }
@@ -35,7 +33,6 @@ export async function GET(req: NextRequest) {
         continue
       }
 
-      // Fetch video from source URL
       const allowed = ['.blob.core.windows.net', '.perso.ai', 'perso.ai']
       const urlHost = new URL(item.videoUrl).hostname
       const isAllowed = allowed.some((d) => urlHost === d || urlHost.endsWith(d))
@@ -65,7 +62,6 @@ export async function GET(req: NextRequest) {
 
       await updateQueueItemStatus(item.id, 'done', { youtubeVideoId: result.videoId })
 
-      // Update DB records
       try {
         await createYouTubeUpload({
           userId: item.userId,

@@ -118,6 +118,11 @@ export async function POST(req: NextRequest) {
       }
       case 'queueYouTubeUpload': {
         const id = await createUploadQueueItem(action.payload)
+        const origin = req.nextUrl.origin
+        fetch(`${origin}/api/cron/process-uploads`, {
+          method: 'POST',
+          headers: { cookie: req.headers.get('cookie') || '' },
+        }).catch(() => {})
         return apiOk({ queueId: id })
       }
       case 'deleteDubbingJob': {
