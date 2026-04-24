@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Loader2, CheckCircle2, AlertCircle, XCircle } from 'lucide-react'
 import { Card, Progress, Badge, Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
@@ -45,10 +45,12 @@ export function ProcessingStep() {
   const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted } = useDubbingStore()
   const { submitDubbing, startPolling, stopPolling, cancelAll } = usePersoFlow()
   const [cancelling, setCancelling] = useState(false)
+  const submittedRef = useRef(isSubmitted)
 
-  // Submit dubbing and start polling on mount
+  // Submit dubbing and start polling on mount — ref guard prevents double-fire in Strict Mode
   useEffect(() => {
-    if (isSubmitted) return
+    if (submittedRef.current) return
+    submittedRef.current = true
     setIsSubmitted(true)
 
     const run = async () => {
@@ -62,8 +64,8 @@ export function ProcessingStep() {
     run()
 
     return () => stopPolling()
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once on mount; callbacks are stable enough
-  }, [isSubmitted])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- fire once on mount
+  }, [])
 
   // Auto-advance when all complete
   const allCompleted = languageProgress.length > 0 && languageProgress.every(
@@ -73,7 +75,7 @@ export function ProcessingStep() {
   useEffect(() => {
     if (allCompleted) {
       stopPolling()
-      const t = setTimeout(() => setStep(6), 2000)
+      const t = setTimeout(() => setStep(7), 2000)
       return () => clearTimeout(t)
     }
   }, [allCompleted, setStep, stopPolling])

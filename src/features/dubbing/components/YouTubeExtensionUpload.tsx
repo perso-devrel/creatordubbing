@@ -11,6 +11,7 @@ interface Props {
   videoId: string
   completedLangs: string[]
   getAudioUrl: (langCode: string) => Promise<string | undefined>
+  autoTrigger?: boolean
 }
 
 const INSTALL_GUIDE_URL = 'https://github.com/perso-devrel/creatordubbing/blob/main/extension/README.md'
@@ -23,12 +24,15 @@ interface ExtJob {
   videoId: string
   languageCode: string
   status: JobStatus
+  step?: string
+  error?: string
 }
 
 interface LangJobState {
   jobId: string
   status: JobStatus
   step?: string
+  error?: string
 }
 
 const STEP_LABELS: Record<string, string> = {
@@ -38,13 +42,15 @@ const STEP_LABELS: Record<string, string> = {
   INJECTING_AUDIO: '오디오 주입 중',
   WAITING_PUBLISH: '게시 대기',
   PUBLISHING: '게시 중',
+  COMPLETED: '완료',
 }
 
-export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }: Props) {
+export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, autoTrigger = false }: Props) {
   const { status: extensionStatus, version, recheck } = useExtensionDetect()
   const [uploadingLang, setUploadingLang] = useState<string | null>(null)
   const [langJobs, setLangJobs] = useState<Record<string, LangJobState>>({})
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const autoTriggered = useRef(false)
   const addToast = useNotificationStore((s) => s.addToast)
 
   const pollJobs = useCallback(async () => {
@@ -58,6 +64,8 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }:
           updated[job.languageCode] = {
             jobId: job.jobId,
             status: job.status,
+            step: job.step,
+            error: job.error,
           }
         }
       }
@@ -122,6 +130,23 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }:
     }
   }, [videoId, getAudioUrl, addToast])
 
+  // Auto-trigger: sequentially upload all languages without user clicking
+  useEffect(() => {
+    if (!autoTrigger || autoTriggered.current) return
+    if (extensionStatus !== 'installed') return
+    if (completedLangs.length === 0) return
+    autoTriggered.current = true
+
+    const runAll = async () => {
+      for (const code of completedLangs) {
+        if (langJobs[code]?.status === 'done') continue
+        await handleExtensionUpload(code)
+      }
+    }
+    runAll()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTrigger, extensionStatus, completedLangs.length])
+
   if (extensionStatus === 'checking') return null
 
   if (extensionStatus === 'not-installed') {
@@ -184,7 +209,15 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl }:
                   <p className="text-xs text-emerald-600">업로드 완료</p>
                 )}
                 {job?.status === 'error' && (
-                  <p className="text-xs text-red-500">자동 업로드 실패 — 아래에서 수동 진행</p>
+                  <div>
+                    <p className="text-xs text-red-500">자동 업로드 실패</p>
+                    {job.error && (
+                      <p className="text-[10px] text-red-400 mt-0.5 break-all">{job.error}</p>
+                    )}
+                    {job.step && (
+                      <p className="text-[10px] text-red-400">실패 단계: {STEP_LABELS[job.step] || job.step}</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
