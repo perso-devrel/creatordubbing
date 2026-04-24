@@ -42,7 +42,7 @@ export function VideoInputStep() {
     setLoading(true)
     setError(null)
     try {
-      setVideoSource({ type: 'url', url: videoUrl })
+      setVideoSource({ type: 'channel', url: videoUrl, videoId })
       await importVideoByUrl(videoUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import video')

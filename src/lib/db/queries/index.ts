@@ -25,6 +25,13 @@ export {
 } from './youtube'
 
 export {
+  createUploadQueueItem,
+  getPendingUploads,
+  updateQueueItemStatus,
+  getUserQueueItems,
+} from './upload-queue'
+
+export {
   getUserDubbingJobs,
   getUserSummary,
   getCreditUsageByMonth,

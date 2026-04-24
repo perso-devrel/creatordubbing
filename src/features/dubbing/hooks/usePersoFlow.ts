@@ -262,6 +262,9 @@ export function usePersoFlow() {
     try {
       const result = await persoUploadVideoFile(spaceSeq!, file)
       store.getState().setMediaSeq(result.seq)
+      if (result.videoFilePath) {
+        store.getState().setOriginalVideoUrl(getPersoFileUrl(result.videoFilePath))
+      }
       store.getState().setVideoMeta({
         id: String(result.seq),
         title: file.name.replace(/\.\w+$/, ''),

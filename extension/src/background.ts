@@ -33,11 +33,17 @@ async function getJobs(): Promise<Job[]> {
   return Array.isArray(existing) ? existing : []
 }
 
-async function updateJobStatus(jobId: string, status: Job['status']): Promise<void> {
+async function updateJobStatus(
+  jobId: string,
+  status: Job['status'],
+  extra?: { step?: string; error?: string },
+): Promise<void> {
   const jobs = await getJobs()
   const job = jobs.find((j) => j.jobId === jobId)
   if (job) {
     job.status = status
+    if (extra?.step) job.step = extra.step
+    if (extra?.error) job.error = extra.error
     await chrome.storage.local.set({ [STORAGE_KEY]: jobs })
   }
 }
@@ -113,21 +119,21 @@ chrome.runtime.onMessageExternal.addListener(
   (message: unknown, _sender, sendResponse) => {
     if (isPingMessage(message)) {
       sendResponse({ ok: true, version: chrome.runtime.getManifest().version })
-      return true
+      return false
     }
 
     if (isUploadToYouTubeMessage(message)) {
-      handleUpload(message).then(sendResponse)
+      handleUpload(message).then(sendResponse).catch(() => sendResponse({ ok: false, error: 'upload failed' }))
       return true
     }
 
     if (isObject(message) && message.type === 'GET_JOBS') {
-      getJobs().then((jobs) => sendResponse({ ok: true, jobs }))
+      getJobs().then((jobs) => sendResponse({ ok: true, jobs })).catch(() => sendResponse({ ok: true, jobs: [] }))
       return true
     }
 
     sendResponse({ ok: false, error: 'UNKNOWN_MESSAGE_TYPE' })
-    return true
+    return false
   },
 )
 
@@ -135,25 +141,27 @@ chrome.runtime.onMessageExternal.addListener(
 chrome.runtime.onMessage.addListener(
   (message: unknown, _sender, sendResponse) => {
     if (isUploadProgressEvent(message)) {
-      relayToWebApp(message)
       sendResponse({ ok: true })
-      return true
+      updateJobStatus(message.payload.jobId, 'running', {
+        step: message.payload.step,
+      }).then(() => relayToWebApp(message)).catch(() => {})
+      return false
     }
 
     if (isUploadDoneEvent(message)) {
-      updateJobStatus(message.payload.jobId, 'done').then(() => {
-        relayToWebApp(message)
-        sendResponse({ ok: true })
-      })
-      return true
+      sendResponse({ ok: true })
+      updateJobStatus(message.payload.jobId, 'done', { step: 'COMPLETED' })
+        .then(() => relayToWebApp(message)).catch(() => {})
+      return false
     }
 
     if (isUploadErrorEvent(message)) {
-      updateJobStatus(message.payload.jobId, 'error').then(() => {
-        relayToWebApp(message)
-        sendResponse({ ok: true })
-      })
-      return true
+      sendResponse({ ok: true })
+      updateJobStatus(message.payload.jobId, 'error', {
+        step: message.payload.step,
+        error: message.payload.error,
+      }).then(() => relayToWebApp(message)).catch(() => {})
+      return false
     }
 
     return false

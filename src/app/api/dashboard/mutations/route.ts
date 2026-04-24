@@ -11,6 +11,7 @@ import {
   deductUserMinutes,
   addUserCredits,
   deleteDubbingJob,
+  createUploadQueueItem,
 } from '@/lib/db/queries'
 import { requireSession } from '@/lib/auth/session'
 import { mutationActionSchema, getUserIdFromAction, getJobIdFromAction } from '@/lib/validators/dashboard'
@@ -114,6 +115,10 @@ export async function POST(req: NextRequest) {
         const { userId, minutes } = action.payload
         await addUserCredits(userId, minutes)
         return apiOk({ userId, minutes })
+      }
+      case 'queueYouTubeUpload': {
+        const id = await createUploadQueueItem(action.payload)
+        return apiOk({ queueId: id })
       }
       case 'deleteDubbingJob': {
         const { jobId } = action.payload

@@ -8,7 +8,7 @@ import { getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 
 export function TranslationEditStep() {
-  const { sourceLanguage, selectedLanguages, lipSyncEnabled, setLipSync, videoMeta, prevStep, nextStep } = useDubbingStore()
+  const { sourceLanguage, selectedLanguages, lipSyncEnabled, setLipSync, videoMeta, deliverableMode, uploadSettings, prevStep, nextStep } = useDubbingStore()
   const [speakers, setSpeakers] = useState(1)
 
   const sourceLang = getLanguageByCode(sourceLanguage)
@@ -89,6 +89,27 @@ export function TranslationEditStep() {
               <p className="text-xs text-surface-400 mt-0.5">더빙 오디오에 맞춰 입 모양을 조절합니다</p>
             </div>
             <Toggle checked={lipSyncEnabled} onChange={setLipSync} />
+          </div>
+
+          {/* Deliverable mode */}
+          <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
+            <span className="text-sm text-surface-600 dark:text-surface-400">결과물 모드</span>
+            <span className="text-sm font-medium text-surface-900 dark:text-white">
+              {deliverableMode === 'newDubbedVideos' ? '새 더빙 영상 업로드'
+                : deliverableMode === 'originalWithMultiAudio' ? '원본 영상에 자막 추가'
+                : '다운로드만'}
+            </span>
+          </div>
+
+          {/* Auto upload */}
+          <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
+            <span className="text-sm text-surface-600 dark:text-surface-400">자동 업로드</span>
+            <span className={cn(
+              'text-sm font-medium',
+              uploadSettings.autoUpload ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-500',
+            )}>
+              {uploadSettings.autoUpload ? 'ON' : 'OFF'}
+            </span>
           </div>
         </div>
       </Card>
