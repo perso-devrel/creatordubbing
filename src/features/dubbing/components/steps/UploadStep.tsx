@@ -49,6 +49,7 @@ export function UploadStep() {
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
   const [captionUploads, setCaptionUploads] = useState<Record<string, UploadStatus>>({})
+  const [audioTrackEnabled, setAudioTrackEnabled] = useState(false)
   const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
   const autoUploadTriggered = useRef(false)
   const autoChainTriggered = useRef(false)
@@ -609,49 +610,74 @@ export function UploadStep() {
             </Card>
           )}
 
-          {/* Extension auto-upload for multi-audio */}
+          {/* Audio track toggle + extension upload */}
           {multiAudioVideoId && (
-            <Card className="border-brand-200 dark:border-brand-800">
-              <CardTitle>멀티 오디오 트랙 추가</CardTitle>
-              <p className="mb-4 mt-1 text-sm text-surface-500">
-                더빙된 오디오를 원본 영상에 멀티 트랙으로 추가합니다.
-              </p>
-              <YouTubeExtensionUpload
-                videoId={multiAudioVideoId}
-                completedLangs={completedLangs}
-                autoTrigger={autoUpload}
-                getAudioUrl={async (langCode) => {
-                  const data = await fetchDownloads(langCode, 'voiceAudio')
-                  const raw = data?.audioFile?.voiceAudioDownloadLink
-                  return raw ? (raw.startsWith('http') ? raw : getPersoFileUrl(raw)) : undefined
-                }}
-              />
-
-              {/* Manual fallback */}
-              <div className="mt-4 border-t border-surface-200 pt-4 dark:border-surface-700">
-                <p className="text-xs text-surface-500 mb-3">
-                  확장 프로그램 없이 수동으로 진행하려면 아래 버튼을 사용하세요.
-                </p>
-                <div className="space-y-2">
-                  {completedLangs.map((code) => {
-                    const lang = getLanguageByCode(code)
-                    if (!lang) return null
-                    const opening = studioOpenedLang === code
-                    return (
-                      <div key={code} className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg">{lang.flag}</span>
-                          <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
-                        </div>
-                        <Button variant="outline" size="sm" onClick={() => handleAudioToStudio(code, multiAudioVideoId)} loading={opening}>
-                          <Volume2 className="h-3.5 w-3.5" />
-                          오디오 + Studio
-                        </Button>
-                      </div>
-                    )
-                  })}
+            <Card className="border-surface-200 dark:border-surface-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>멀티 오디오 트랙 추가</CardTitle>
+                  <p className="mt-1 text-xs text-surface-500">
+                    더빙된 오디오를 원본 영상에 멀티 트랙으로 추가합니다.
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setAudioTrackEnabled((v) => !v)}
+                  className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
+                    audioTrackEnabled
+                      ? 'bg-brand-500 text-white'
+                      : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
+                  }`}
+                >
+                  {audioTrackEnabled ? 'ON' : 'OFF'}
+                </button>
               </div>
+
+              {!audioTrackEnabled && (
+                <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                  YouTube 멀티 오디오 트랙 기능 허가가 필요합니다. 허가 후 ON으로 전환하세요.
+                </p>
+              )}
+
+              {audioTrackEnabled && (
+                <div className="mt-4 space-y-4">
+                  <YouTubeExtensionUpload
+                    videoId={multiAudioVideoId}
+                    completedLangs={completedLangs}
+                    autoTrigger={autoUpload}
+                    getAudioUrl={async (langCode) => {
+                      const data = await fetchDownloads(langCode, 'voiceAudio')
+                      const raw = data?.audioFile?.voiceAudioDownloadLink
+                      return raw ? (raw.startsWith('http') ? raw : getPersoFileUrl(raw)) : undefined
+                    }}
+                  />
+
+                  <div className="border-t border-surface-200 pt-4 dark:border-surface-700">
+                    <p className="text-xs text-surface-500 mb-3">
+                      확장 프로그램 없이 수동으로 진행하려면 아래 버튼을 사용하세요.
+                    </p>
+                    <div className="space-y-2">
+                      {completedLangs.map((code) => {
+                        const lang = getLanguageByCode(code)
+                        if (!lang) return null
+                        const opening = studioOpenedLang === code
+                        return (
+                          <div key={code} className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{lang.flag}</span>
+                              <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => handleAudioToStudio(code, multiAudioVideoId)} loading={opening}>
+                              <Volume2 className="h-3.5 w-3.5" />
+                              오디오 + Studio
+                            </Button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </Card>
           )}
         </>
