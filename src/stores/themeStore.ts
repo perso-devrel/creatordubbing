@@ -25,7 +25,7 @@ export const useThemeStore = create<ThemeState>()(
       },
     }),
     {
-      name: 'creatordub-theme',
+      name: 'dubtube-theme',
       skipHydration: true,
       onRehydrateStorage: () => (state) => {
         if (state && typeof document !== 'undefined') {

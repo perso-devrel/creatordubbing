@@ -59,7 +59,7 @@ export async function requireSession(
   }
 
   // 2) Cookie expired or invalid — try refreshing via session cookie
-  const sessionCookie = req.cookies.get('creatordub_session')?.value
+  const sessionCookie = req.cookies.get('dubtube_session')?.value
   if (sessionCookie) {
     const uid = await verifySessionCookie(sessionCookie)
     if (uid) {

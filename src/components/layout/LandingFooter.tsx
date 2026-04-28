@@ -10,11 +10,11 @@ export function LandingFooter() {
               <Languages className="h-3.5 w-3.5 text-white" />
             </div>
             <span className="font-bold text-surface-900 dark:text-surface-100">
-              Creator<span className="text-brand-500">Dub</span>
+              Dub<span className="text-brand-500">tube</span>
             </span>
           </div>
           <p className="text-sm text-surface-500">
-            &copy; {new Date().getFullYear()} CreatorDub. All rights reserved.
+            &copy; {new Date().getFullYear()} Dubtube. All rights reserved.
           </p>
         </div>
       </div>

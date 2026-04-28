@@ -9,11 +9,11 @@ describe('POST /api/auth/signout', () => {
     expect(body).toEqual({ ok: true, data: null })
   })
 
-  it('clears creatordub_session cookie', async () => {
+  it('clears dubtube_session cookie', async () => {
     const res = await POST()
     const setCookies = res.headers.getSetCookie()
     const sessionCookie = setCookies.find((c: string) =>
-      c.startsWith('creatordub_session='),
+      c.startsWith('dubtube_session='),
     )
     expect(sessionCookie).toBeDefined()
     expect(sessionCookie).toContain('Max-Age=0')

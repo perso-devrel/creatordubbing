@@ -1,4 +1,4 @@
-# CreatorDub Chrome 확장
+# Dubtube Chrome 확장
 
 YouTube Studio에서 다국어 더빙 오디오를 자동 업로드하는 Chrome 확장(Manifest V3).
 
@@ -78,11 +78,11 @@ extension/
 
 ### 서비스 워커 (background)
 1. `chrome://extensions`에서 확장의 **서비스 워커** 링크 클릭
-2. DevTools Console에서 `[CreatorDub]` 로그 확인
+2. DevTools Console에서 `[Dubtube]` 로그 확인
 
 ### Content Script
 1. YouTube Studio 페이지에서 DevTools 열기
-2. Console에서 `[CreatorDub]` 로그 확인
+2. Console에서 `[Dubtube]` 로그 확인
 
 ### Popup
 1. 확장 아이콘 우클릭 → **팝업 검사**

@@ -70,7 +70,7 @@ export function UploadStep() {
     (langName: string) => {
       const base = settingsDescription?.trim()
         ? settingsDescription
-        : `${videoMeta?.title || 'Video'} - ${langName} 더빙 by CreatorDub AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
+        : `${videoMeta?.title || 'Video'} - ${langName} 더빙 by Dubtube AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
       if (attachOriginalLink && originalYouTubeUrl) {
         return `${base}\n\n원본 영상: ${originalYouTubeUrl}`
       }

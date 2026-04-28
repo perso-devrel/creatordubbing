@@ -5,7 +5,7 @@ import { verifySessionCookie } from '@/lib/auth/session-cookie'
 
 export default async function DashboardPage() {
   const cookieStore = await cookies()
-  const raw = cookieStore.get('creatordub_session')?.value
+  const raw = cookieStore.get('dubtube_session')?.value
   const uid = raw ? await verifySessionCookie(raw) : null
 
   if (!uid) {

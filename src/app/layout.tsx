@@ -15,19 +15,19 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://creatordub.com";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dubtube.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "CreatorDub",
-    template: "%s | CreatorDub",
+    default: "Dubtube",
+    template: "%s | Dubtube",
   },
   description:
     "Perso.ai + YouTube API 기반 크리에이터 전용 10개 언어 자동 더빙 SaaS",
 };
 
-const themeInitScript = `try{if(localStorage.getItem('creatordub-theme')==='dark'||(!localStorage.getItem('creatordub-theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;
+const themeInitScript = `try{if(localStorage.getItem('dubtube-theme')==='dark'||(!localStorage.getItem('dubtube-theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;
 
 export default function RootLayout({
   children,

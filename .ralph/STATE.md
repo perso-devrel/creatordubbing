@@ -2,7 +2,7 @@
 
 - **브랜치**: harness가 `ralph/<timestamp>`를 자동 생성
 - **Base 브랜치**: `develop` (없으면 `main`으로 폴백)
-- **현재 origin**: `https://github.com/perso-devrel/creatordubbing.git` (private, admin 권한 있음)
+- **현재 origin**: `https://github.com/perso-devrel/dubtube.git` (private, admin 권한 있음)
 - **main / develop** 모두 origin에 최초 push 완료 (커밋 `33ccde2`)
 - **마지막 사람 터치**: 2026-04-10, Ralph 하네스 초기 세팅 + 원격 연결 완료
 - **최근 주요 결정**:
@@ -16,7 +16,7 @@
   - `gh` CLI는 alpaka206 계정으로 인증됨. repo 설정 반영 완료 (`delete_branch_on_merge=false`, `allow_squash_merge=true`, `allow_merge_commit=true`). `allow_auto_merge`는 org 정책으로 false 유지.
   - Google OAuth access token이 `localStorage`에 저장되어 있음 (authStore.ts:30-35).
   - **Vercel 자동 배포 미구성** — CLI TLS 에러로 자동화 불가. 사람이 아침에 다음 단계를 수동 진행:
-    1. https://vercel.com/new 에서 `perso-devrel/creatordubbing` import (root = 현재 디렉토리)
+    1. https://vercel.com/new 에서 `perso-devrel/dubtube` import (root = 현재 디렉토리)
     2. env 변수 입력: `PERSO_API_KEY`, `PERSO_API_BASE_URL`, `NEXT_PUBLIC_PERSO_FILE_BASE_URL`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TURSO_URL`, `TURSO_AUTH_TOKEN`
     3. Production branch = `main`, Preview = `develop`
     4. Build command = `npm run build` (default), Framework = Next.js (auto)

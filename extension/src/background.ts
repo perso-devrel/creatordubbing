@@ -94,7 +94,7 @@ function waitForTabLoad(tabId: number, callback: () => void): void {
 
 const WEBAPP_URL_PATTERNS = [
   'http://localhost:3000/*',
-  'https://*.creatordub.com/*',
+  'https://*.dubtube.com/*',
 ]
 
 async function relayToWebApp(event: OutboundEvent): Promise<void> {
@@ -170,5 +170,5 @@ chrome.runtime.onMessage.addListener(
 
 // ── 설치 이벤트 ──────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[CreatorDub] Extension installed')
+  console.log('[Dubtube] Extension installed')
 })
