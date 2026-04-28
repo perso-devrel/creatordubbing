@@ -29,7 +29,7 @@
 ### 2-2. 개발 환경 시크릿 폴백
 
 - **파일**: `src/lib/auth/session-cookie.ts:7-12`
-- **내용**: `SESSION_SECRET` 미설정 시 `'creatordub-dev-secret-do-not-use-in-prod'` 사용
+- **내용**: `SESSION_SECRET` 미설정 시 `'dubtube-dev-secret-do-not-use-in-prod'` 사용
 - **위험도**: 없음 — `NODE_ENV === 'production'`이면 throw하므로 프로덕션 노출 불가
 - **권고**: 현행 유지 (개발 편의성 vs 보안 트레이드오프 적절)
 

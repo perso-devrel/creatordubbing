@@ -1,4 +1,4 @@
-# Security Audit Report — CreatorDub
+# Security Audit Report — Dubtube
 
 - **Scan date**: 2026-04-16
 - **Tool**: `npm audit` (auditReportVersion 2)

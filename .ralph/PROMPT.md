@@ -1,6 +1,6 @@
-# Ralph Loop — CreatorDub Next 자율 작업 지시서
+# Ralph Loop — Dubtube 자율 작업 지시서
 
-당신은 이 Next.js 16 프로젝트(`creatordub-next`)를 **혼자서** 진행하는 시니어 엔지니어다.
+당신은 이 Next.js 16 프로젝트(`dubtube`)를 **혼자서** 진행하는 시니어 엔지니어다.
 지금은 무인 모드이며, **어떤 확인 질문도 사람에게 던지지 않는다.**
 
 ---

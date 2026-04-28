@@ -1,9 +1,9 @@
-# CreatorDub
+# Dubtube
 
 [🇰🇷 한국어](./README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
 
 > **AI-powered multilingual dubbing & YouTube upload automation for creators.**
-> Upload one video and CreatorDub dubs it into multiple languages, uploads the results to YouTube with captions, and surfaces watch-time analytics in a single dashboard.
+> Upload one video and Dubtube dubs it into multiple languages, uploads the results to YouTube with captions, and surfaces watch-time analytics in a single dashboard.
 
 Powered by the [Perso.ai](https://developers.perso.ai) API.
 
@@ -13,7 +13,7 @@ Powered by the [Perso.ai](https://developers.perso.ai) API.
 - **Lip-sync** — optional mouth re-animation to match the translated audio.
 - **Script editing** — edit the translated transcript sentence-by-sentence and regenerate audio.
 - **YouTube auto-upload** — dubbed videos are uploaded through our server to YouTube Data API v3 along with SRT captions.
-- **Multi-audio track helper** — YouTube's multi-audio-track API is unavailable, so CreatorDub organises per-language videos instead.
+- **Multi-audio track helper** — YouTube's multi-audio-track API is unavailable, so Dubtube organises per-language videos instead.
 - **Credit system** — per-minute credit pre-check before dubbing, deduction on completion.
 - **Dashboard & analytics** — per-language views/likes, monthly credit usage, and YouTube Analytics integration.
 
@@ -47,8 +47,8 @@ Powered by the [Perso.ai](https://developers.perso.ai) API.
 ### Install
 
 ```bash
-git clone https://github.com/perso-devrel/creatordubbing.git
-cd creatordubbing
+git clone https://github.com/perso-devrel/dubtube.git
+cd dubtube
 npm install
 ```
 

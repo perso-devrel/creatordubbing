@@ -1,4 +1,4 @@
-# CreatorDub
+# Dubtube
 
 [🇰🇷 한국어](./README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
 
@@ -47,8 +47,8 @@
 ### インストール
 
 ```bash
-git clone https://github.com/perso-devrel/creatordubbing.git
-cd creatordubbing
+git clone https://github.com/perso-devrel/dubtube.git
+cd dubtube
 npm install
 ```
 

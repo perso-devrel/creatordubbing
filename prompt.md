@@ -1,14 +1,14 @@
-# CreatorDub — Reproducible Build Prompt
+# Dubtube — Reproducible Build Prompt
 
-> **Purpose.** Hand this file to a capable coding assistant (Claude Opus, GPT-4, etc.) and it should be able to reproduce the CreatorDub project from scratch. Every section is intentionally concrete — follow conventions literally rather than improvising.
+> **Purpose.** Hand this file to a capable coding assistant (Claude Opus, GPT-4, etc.) and it should be able to reproduce the Dubtube project from scratch. Every section is intentionally concrete — follow conventions literally rather than improvising.
 
 ---
 
 ## 1. Project Vision
 
-**CreatorDub** is an AI multilingual dubbing and YouTube upload automation platform aimed at YouTube creators who want to reach non-native audiences without running a manual translation pipeline.
+**Dubtube** is an AI multilingual dubbing and YouTube upload automation platform aimed at YouTube creators who want to reach non-native audiences without running a manual translation pipeline.
 
-A creator signs in with Google, pastes a YouTube URL (or uploads a video), picks target languages, optionally edits the translated script, and CreatorDub:
+A creator signs in with Google, pastes a YouTube URL (or uploads a video), picks target languages, optionally edits the translated script, and Dubtube:
 
 1. Dubs the video into every selected language via [Perso.ai](https://developers.perso.ai).
 2. Optionally applies lip-sync to match the translated audio.
@@ -40,7 +40,7 @@ A creator signs in with Google, pastes a YouTube URL (or uploads a video), picks
 | DB | **Turso (libSQL)** via `@libsql/client@0.17.x` | `db.execute()` for single statements, `db.batch()` for atomic multi-statement. |
 | Dubbing engine | **Perso.ai API** | All requests proxied server-side through `src/lib/perso/client.ts` (injects `XP-API-KEY`). |
 | YouTube | **YouTube Data API v3** + Analytics API v2 | Upload, caption, stats, analytics. |
-| Auth | Google OAuth 2.0 | Signed session cookie (`creatordub_session`), `SESSION_SECRET`. |
+| Auth | Google OAuth 2.0 | Signed session cookie (`dubtube_session`), `SESSION_SECRET`. |
 | Testing | Vitest (unit) + Playwright (E2E) + Lighthouse gate | See `npm run` scripts. |
 | Deployment | Vercel | `vercel.json` at root. |
 
@@ -288,7 +288,7 @@ Operations: `upsertUser`, `getUser`, `getUserTokens`, `updateUserTokens`, `updat
 9. **Modal keyboard handling gotcha.** `src/components/ui/Modal.tsx` uses `useRef` for `handleKeyDown` instead of the handler itself in deps. Inlining would cause focus loss when the handler's identity changes on each render. Keep the `useRef` pattern.
 10. **Zod schema per domain.** `src/lib/validators/{auth,dashboard,dubbing,perso,youtube}.ts`. Every route handler validates query/body against a schema before touching `queries/`.
 11. **YouTube uploads run server-side.** Never let the browser hit `upload.youtube.googleapis.com` directly — CORS fails. Proxy through `/api/youtube/upload`.
-12. **Session cookie is `creatordub_session`.** Signed with `SESSION_SECRET`. `middleware.ts` gates `(app)` routes.
+12. **Session cookie is `dubtube_session`.** Signed with `SESSION_SECRET`. `middleware.ts` gates `(app)` routes.
 13. **OAuth tokens are stored per user.** `google_access_token`, `google_refresh_token`, `token_expires_at` on `users`. Refresh via `src/lib/google-auth.ts` before expiry.
 14. **Next.js 16 specifics.** Read `node_modules/next/dist/docs/` before touching routing, caching, or metadata — several APIs moved or changed semantics vs Next 15.
 
@@ -305,7 +305,7 @@ Copy `.env.example` to `.env.local`. Every variable is required.
 | `NEXT_PUBLIC_PERSO_FILE_BASE_URL` | client | Base URL for Perso-hosted files (e.g. `https://perso.ai`). |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | client | Google OAuth client ID. |
 | `GOOGLE_CLIENT_SECRET` | server | Google OAuth client secret. |
-| `SESSION_SECRET` | server | Signs `creatordub_session` cookie. Rotate if compromised. |
+| `SESSION_SECRET` | server | Signs `dubtube_session` cookie. Rotate if compromised. |
 | `TURSO_URL` | server | libSQL URL — `libsql://<db>.turso.io`. |
 | `TURSO_AUTH_TOKEN` | server | libSQL auth token. |
 
@@ -349,4 +349,4 @@ npm run dev                   # Manual smoke at http://localhost:3000
 - Put new server-only code under `src/lib/**` with `import 'server-only'` at the top.
 - For every UI piece, check `src/components/ui/` first for a reusable primitive.
 
-This document is the contract. Follow it literally and the result will be a working CreatorDub.
+This document is the contract. Follow it literally and the result will be a working Dubtube.

@@ -19,7 +19,7 @@ const DEFAULT_UPLOAD_SETTINGS: UploadSettings = {
   attachOriginalLink: true,
   title: '',
   description: '',
-  tags: ['CreatorDub', 'AI더빙', 'dubbed'],
+  tags: ['Dubtube', 'AI더빙', 'dubbed'],
   privacyStatus: 'private',
 }
 

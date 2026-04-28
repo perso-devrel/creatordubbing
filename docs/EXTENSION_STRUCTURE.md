@@ -25,7 +25,7 @@
 ### 채택 구조
 
 ```
-creatordub-next/
+dubtube/
 ├── extension/           ← 신규
 │   ├── src/
 │   │   ├── background.ts

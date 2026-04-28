@@ -12,7 +12,7 @@
 - pnpm: 미설치
 - GitHub CLI: 인증됨 (`alpaka206` 계정)
 - OS: Windows 11 Pro
-- 원격: https://github.com/perso-devrel/creatordubbing
+- 원격: https://github.com/perso-devrel/dubtube
 - 베이스: `develop` → 루프 브랜치: `develop_loop`
 - 구조 베이스라인 문서: `docs/STRUCTURE_BASELINE.md`
 
@@ -30,7 +30,7 @@
 
 ## 2026-04-17 18:27 · Phase 1 · Issue #80 · 진단 리포트
 - 브랜치: `feature/issue-80-diagnosis-report`
-- PR: [#81](https://github.com/perso-devrel/creatordubbing/pull/81) (squash merged, delete-branch)
+- PR: [#81](https://github.com/perso-devrel/dubtube/pull/81) (squash merged, delete-branch)
 - 변경 파일: `docs/DIAGNOSIS.md` (신규 120줄)
 - 요약: TypeScript 통과(0), Lint 실행 불가(eslint-plugin-react↔ESLint10 비호환), Vitest 19/436 실패를 3개 카테고리로 분류. 후속 이슈(#2~#7) 후보와 처리 순서(린트 복구 선행) 제안.
 - 다음: Lint 실행 복구 이슈 생성(DIAGNOSIS 권고에 따라 먼저 처리)
@@ -40,7 +40,7 @@
 
 ## 2026-04-21 09:50 · Phase 1 · Issue #84 · ESLint 실행 복구
 - 브랜치: `fix/issue-lint-eslint10-compat`
-- PR: [#85](https://github.com/perso-devrel/creatordubbing/pull/85) (squash merged, delete-branch)
+- PR: [#85](https://github.com/perso-devrel/dubtube/pull/85) (squash merged, delete-branch)
 - 변경 파일: 4개 (`eslint.config.mjs`, `package.json`, `package-lock.json`, `src/components/ui/Modal.tsx`)
 - 요약: `eslint-plugin-react@7.37.5`의 ESLint 10 비호환(`getFilename is not a function`) 해결. `eslint-config-next` 대신 `@next/eslint-plugin-next` 직접 사용으로 전환 (Next.js 공식 대안). Modal.tsx의 ref 렌더링 중 접근 린트 에러도 수정. `npm run lint` exit 0 달성.
 - 다음: #4 테스트 인프라 점검 (환경변수 stub 누락 해결)
@@ -50,7 +50,7 @@
 
 ## 2026-04-21 09:57 · Phase 1 · Issue #86 · 테스트 인프라 점검
 - 브랜치: `fix/issue-86-test-infrastructure`
-- PR: [#87](https://github.com/perso-devrel/creatordubbing/pull/87) (squash merged, delete-branch)
+- PR: [#87](https://github.com/perso-devrel/dubtube/pull/87) (squash merged, delete-branch)
 - 변경 파일: 5개 (테스트 파일만)
 - 요약: Vitest 19건 실패 → 0건. 원인 3가지 해소: (1) `getServerEnv()` 환경변수 stub 누락 → `getDb()` mock 추가, (2) `apiFailFromError` 코드/메시지 정규화에 맞춰 기대값 수정 (`DB_ERROR` → `INTERNAL_ERROR`, 500 message 마스킹), (3) `auth-sync` Google 토큰 검증 flow에 맞춰 fetch mock 추가.
 - 다음: #5 도메인 유닛 테스트 보강 또는 #6 보안 스윕
@@ -60,7 +60,7 @@
 
 ## 2026-04-21 10:46 · Phase 1 · Issue #88 · 핵심 도메인 유닛 테스트 보강
 - 브랜치: `test/issue-88-validators-unit-tests`
-- PR: [#89](https://github.com/perso-devrel/creatordubbing/pull/89) (squash merged, delete-branch)
+- PR: [#89](https://github.com/perso-devrel/dubtube/pull/89) (squash merged, delete-branch)
 - 변경 파일: 1개 (`src/utils/validators.test.ts`)
 - 요약: `validators.ts` 순수 함수 4개(YouTube URL 검증, 비디오 URL 검증, videoId 추출, 파일 검증)의 유닛 테스트를 16개 → 28개로 보강. 엣지 케이스(ftp 프로토콜, 확장자 없는 파일, 대소문자 혼합, 경계값 2048MB, embed/shorts ID 추출) 추가.
 - 다음: #6 보안 1차 스윕
@@ -70,7 +70,7 @@
 
 ## 2026-04-21 10:52 · Phase 1 · Issue #90 · 보안 1차 스윕
 - 브랜치: `chore/issue-90-security-sweep`
-- PR: [#91](https://github.com/perso-devrel/creatordubbing/pull/91) (squash merged, delete-branch)
+- PR: [#91](https://github.com/perso-devrel/dubtube/pull/91) (squash merged, delete-branch)
 - 변경 파일: 1개 (`docs/SECURITY_SWEEP.md` 신규)
 - 요약: `.env` 추적, 하드코딩 키, SQL injection, XSS, Cookie 보안, 로그 민감 데이터 전수 점검. 심각/높음 0건. `dangerouslySetInnerHTML` 2건(정적 콘텐츠, 낮은 위험).
 - 다음: #7 의존성 점검
@@ -80,7 +80,7 @@
 
 ## 2026-04-21 11:18 · Phase 1 · Issue #92 · 의존성 패치 업데이트
 - 브랜치: `chore/issue-92-outdated-deps`
-- PR: [#93](https://github.com/perso-devrel/creatordubbing/pull/93) (squash merged, delete-branch)
+- PR: [#93](https://github.com/perso-devrel/dubtube/pull/93) (squash merged, delete-branch)
 - 변경 파일: 2개 (`package.json`, `package-lock.json`)
 - 요약: `npm outdated` 결과 5건 패치 업데이트 적용 (tailwindcss, react-query, eslint, typescript). globals v17 메이저는 기록만.
 - 다음: Phase 2 #8 — `/extension` 폴더 구조 결정
@@ -101,7 +101,7 @@
 
 ## 2026-04-21 11:27 · Phase 2 · Issue #94 · /extension 폴더 구조 결정
 - 브랜치: `docs/issue-94-extension-structure`
-- PR: [#95](https://github.com/perso-devrel/creatordubbing/pull/95) (squash merged, delete-branch)
+- PR: [#95](https://github.com/perso-devrel/dubtube/pull/95) (squash merged, delete-branch)
 - 변경 파일: 3개 (비교 문서 + 빈 폴더 구조)
 - 요약: 단일 `/extension` vs 모노레포(`/apps` + `/packages`) 비교 → MVP 리스크 최소화를 위해 단일 `/extension` 채택. 빈 폴더 구조 생성.
 - 다음: #9 Manifest V3 스캐폴드
@@ -111,7 +111,7 @@
 
 ## 2026-04-21 11:18 · Phase 1 · Issue #92 · 의존성 패치 업데이트
 - 브랜치: `chore/issue-92-outdated-deps`
-- PR: [#93](https://github.com/perso-devrel/creatordubbing/pull/93) (squash merged)
+- PR: [#93](https://github.com/perso-devrel/dubtube/pull/93) (squash merged)
 - 변경 파일: 2개 (`package.json`, `package-lock.json`)
 - 요약: 5건 패치 업데이트 (tailwindcss, react-query, eslint, typescript). globals v17 메이저는 기록만.
 - 리스크: 없음
@@ -120,7 +120,7 @@
 
 ## 2026-04-21 11:35 · Phase 2 · Issue #96 · Manifest V3 스캐폴드
 - 브랜치: `feature/issue-96-manifest-v3-scaffold`
-- PR: [#97](https://github.com/perso-devrel/creatordubbing/pull/97) (squash merged)
+- PR: [#97](https://github.com/perso-devrel/dubtube/pull/97) (squash merged)
 - 변경 파일: 12개 (extension 폴더 전체 + .gitignore + tsconfig.json)
 - 요약: Chrome 확장 MV3 스캐폴드 — Vite 7 멀티 엔트리 빌드, 서비스 워커, content script, popup UI. `npm run build` 성공. @crxjs/vite-plugin 대신 수동 빌드 (rollup 취약점 회피).
 - 다음: #10 TypeScript + ESLint 설정, 또는 #12 메시지 타입 스키마
@@ -130,7 +130,7 @@
 
 ## 2026-04-21 11:58 · Phase 2 · Issue #98 · 확장 ESLint 설정 + 도구체인 일관화
 - 브랜치: `feature/issue-98-extension-ts-eslint`
-- PR: [#99](https://github.com/perso-devrel/creatordubbing/pull/99) (squash merged, delete-branch)
+- PR: [#99](https://github.com/perso-devrel/dubtube/pull/99) (squash merged, delete-branch)
 - 변경 파일: 4개 (`eslint.config.mjs`, `extension/eslint.config.mjs`, `extension/package.json`, `extension/package-lock.json`)
 - 요약: 확장 폴더에 독립 ESLint 설정 추가. typescript-eslint recommended + browser/webextensions/serviceworker globals. `lint` 스크립트 추가. 루트 lint는 `extension/**`를 globalIgnores에 추가해 격리. 확장 `npm run lint`/`typecheck`/`build` 모두 통과.
 - 다음: #11 externally_connectable 정의 또는 #12 메시지 타입 스키마
@@ -140,7 +140,7 @@
 
 ## 2026-04-21 13:22 · Phase 2 · Issue #100 · 메시지 타입 스키마 정의
 - 브랜치: `feature/issue-100-message-types`
-- PR: [#101](https://github.com/perso-devrel/creatordubbing/pull/101) (squash merged, delete-branch)
+- PR: [#101](https://github.com/perso-devrel/dubtube/pull/101) (squash merged, delete-branch)
 - 변경 파일: 4개 (`extension/src/messages.ts`, `extension/src/messages.test.ts`, `extension/package.json`, `extension/package-lock.json`)
 - 요약: 웹앱↔확장 통신 메시지 5종(PING, UPLOAD_TO_YOUTUBE, UPLOAD_PROGRESS, UPLOAD_DONE, UPLOAD_ERROR) 타입 정의 + 런타임 타입 가드 7개 + 단위 테스트 24건. Vitest 도입으로 테스트 인프라 확보. #11(externally_connectable)은 #96에서 이미 구현.
 - 다음: #13 background 기본 로직
@@ -150,7 +150,7 @@
 
 ## 2026-04-21 13:26 · Phase 2 · Issue #102 · background 서비스 워커 기본 로직
 - 브랜치: `feature/issue-102-background-logic`
-- PR: [#103](https://github.com/perso-devrel/creatordubbing/pull/103) (squash merged, delete-branch)
+- PR: [#103](https://github.com/perso-devrel/dubtube/pull/103) (squash merged, delete-branch)
 - 변경 파일: 4개 (`background.ts` 리팩터, `background-types.ts`, `background-utils.ts`, `background.test.ts` 신규)
 - 요약: 웹앱 PING 응답 + UPLOAD_TO_YOUTUBE 처리 (jobId 생성 → YouTube Studio 탭 열기 → storage 저장 → content script 전달). content→background 릴레이 구조. 순수 로직 분리 + 단위 테스트 7건 추가 (총 31건 통과).
 - 다음: #14 content script 골격
@@ -160,7 +160,7 @@
 
 ## 2026-04-21 13:29 · Phase 2 · Issue #104 · content script 골격
 - 브랜치: `feature/issue-104-content-script-skeleton`
-- PR: [#105](https://github.com/perso-devrel/creatordubbing/pull/105) (squash merged, delete-branch)
+- PR: [#105](https://github.com/perso-devrel/dubtube/pull/105) (squash merged, delete-branch)
 - 변경 파일: 4개 (`content.ts` 리팩터, `dom-utils.ts`, `upload-steps.ts`, `upload-steps.test.ts` 신규)
 - 요약: waitForElement(MutationObserver 기반) 유틸 + 7개 업로드 단계 스텁(openLanguagesPage 등) + getStepSequence(assisted 6단계/auto 7단계). content script에서 START_UPLOAD 수신 → 순차 실행 → 결과 전달. 테스트 5건 추가 (총 36건).
 - 다음: #15 popup UI
@@ -170,7 +170,7 @@
 
 ## 2026-04-21 13:32 · Phase 2 · Issue #106 · popup UI 최소 버전
 - 브랜치: `feature/issue-106-popup-ui`
-- PR: [#107](https://github.com/perso-devrel/creatordubbing/pull/107) (squash merged, delete-branch)
+- PR: [#107](https://github.com/perso-devrel/dubtube/pull/107) (squash merged, delete-branch)
 - 변경 파일: 2개 (`popup/index.html`, `popup/main.ts`)
 - 요약: 확장 팝업에 버전 표시 + 상태 배지(준비됨/진행 중/오류) + chrome.storage.local에서 최근 Job 3건 렌더링(상태 배지, 비디오 ID, 언어 코드, 시간). 빈 상태 및 오류 안내 포함.
 - 다음: Phase 3 #16 셀렉터 카탈로그 작성
@@ -192,7 +192,7 @@
 
 ## 2026-04-21 13:35 · Phase 3 · Issue #108 · 셀렉터 카탈로그 작성
 - 브랜치: `feature/issue-108-selector-catalog`
-- PR: [#109](https://github.com/perso-devrel/creatordubbing/pull/109) (squash merged, delete-branch)
+- PR: [#109](https://github.com/perso-devrel/dubtube/pull/109) (squash merged, delete-branch)
 - 변경 파일: 3개 (`selectors.ts`, `selectors.test.ts`, `docs/SELECTORS_TO_VERIFY.md`)
 - 요약: YouTube Studio DOM 셀렉터 11개 SelectorChain 정의 (각 후보 3개) + queryWithFallback 유틸 + 수동 검증 체크리스트 문서. 모든 셀렉터 NEEDS_VERIFICATION 표시. 테스트 4건 (총 40건).
 - 다음: #17 업로드 단계 함수화
@@ -202,7 +202,7 @@
 
 ## 2026-04-21 13:39 · Phase 3 · Issue #110 · 업로드 단계 함수화
 - 브랜치: `feature/issue-110-upload-steps-impl`
-- PR: [#111](https://github.com/perso-devrel/creatordubbing/pull/111) (squash merged, delete-branch)
+- PR: [#111](https://github.com/perso-devrel/dubtube/pull/111) (squash merged, delete-branch)
 - 변경 파일: 4개 (`upload-steps.ts`, `upload-steps.test.ts`, `content.ts`, `selectors.ts`)
 - 요약: upload-steps 스텁을 셀렉터 카탈로그와 연결. DomHelper 인터페이스 도입 (waitFor/query/click/typeText/sleep). content.ts에서 createDomHelper로 실제 DOM 조작. 테스트 14건 보강 (총 45건).
 - 다음: #18 파일 주입 유틸
@@ -212,7 +212,7 @@
 
 ## 2026-04-21 13:42 · Phase 3 · Issue #112 · 파일 주입 유틸
 - 브랜치: `feature/issue-112-file-inject`
-- PR: [#113](https://github.com/perso-devrel/creatordubbing/pull/113) (squash merged, delete-branch)
+- PR: [#113](https://github.com/perso-devrel/dubtube/pull/113) (squash merged, delete-branch)
 - 변경 파일: 4개 (`file-inject.ts`, `file-inject.test.ts` 신규, `upload-steps.ts`, `upload-steps.test.ts`)
 - 요약: fetchAsFile(URL→File) + injectFileToInput(DataTransfer→input.files) + deriveFilename(URL/MIME→파일명). upload-steps의 injectAudioFile에 연결. 테스트 8건 추가 (총 53건).
 - 다음: #19 에러 핸들링 & 재시도
@@ -222,7 +222,7 @@
 
 ## 2026-04-21 13:45 · Phase 3 · Issue #114 · 에러 핸들링 & 재시도
 - 브랜치: `feature/issue-114-retry-logic`
-- PR: [#115](https://github.com/perso-devrel/creatordubbing/pull/115) (squash merged, delete-branch)
+- PR: [#115](https://github.com/perso-devrel/dubtube/pull/115) (squash merged, delete-branch)
 - 변경 파일: 3개 (`retry.ts`, `retry.test.ts` 신규, `content.ts`)
 - 요약: withRetry 유틸 (최대 3회, 지수 백오프 1s→2s→4s). content.ts의 각 업로드 단계에 적용. 최종 실패 시 수동 가이드 URL 포함 에러 (retryable=false). 테스트 7건 추가 (총 60건).
 - 다음: #20 업로드 자동화 모드 토글
@@ -232,7 +232,7 @@
 
 ## 2026-04-21 13:49 · Phase 3 · Issue #116 · 업로드 자동화 모드 토글
 - 브랜치: `feature/issue-116-mode-toggle`
-- PR: [#117](https://github.com/perso-devrel/creatordubbing/pull/117) (squash merged, delete-branch)
+- PR: [#117](https://github.com/perso-devrel/dubtube/pull/117) (squash merged, delete-branch)
 - 변경 파일: 5개 (`settings.ts`, `settings.test.ts` 신규, `popup/index.html`, `popup/main.ts`, `background.ts`)
 - 요약: auto(게시까지)/assisted(파일 주입까지) 모드 전환. settings.ts로 chrome.storage 기반 저장. popup에 토글 UI 추가. background에서 fallback 모드 적용. 테스트 3건 추가 (총 63건).
 - 다음: Phase 4 #21 웹앱에 "YouTube에 업로드" 버튼 추가
@@ -251,7 +251,7 @@
 
 ## 2026-04-21 13:53 · Phase 4 · Issue #118 · 웹앱 확장 연동 업로드 버튼
 - 브랜치: `feature/issue-118-extension-upload-button`
-- PR: [#119](https://github.com/perso-devrel/creatordubbing/pull/119) (squash merged, delete-branch)
+- PR: [#119](https://github.com/perso-devrel/dubtube/pull/119) (squash merged, delete-branch)
 - 변경 파일: 2개 (`YouTubeExtensionUpload.tsx` 신규, `UploadStep.tsx`)
 - 요약: Chrome 확장 감지 (PING) + UPLOAD_TO_YOUTUBE 메시지 전송 컴포넌트. 미설치 시 안내, 설치 시 언어별 자동 업로드 버튼. UploadStep의 Multi-Audio 섹션에 통합. globalThis 기반 타입 안전 Chrome API 접근.
 - 다음: #22 확장 감지 로직 보강
@@ -261,7 +261,7 @@
 
 ## 2026-04-21 13:57 · Phase 4 · Issue #120 · 확장 감지 훅 및 설치 가이드
 - 브랜치: `feature/issue-120-extension-detect-hook`
-- PR: [#121](https://github.com/perso-devrel/creatordubbing/pull/121) (squash merged, delete-branch)
+- PR: [#121](https://github.com/perso-devrel/dubtube/pull/121) (squash merged, delete-branch)
 - 변경 파일: 2개 (`useExtensionDetect.ts` 신규, `YouTubeExtensionUpload.tsx` 리팩터)
 - 요약: useExtensionDetect 훅 분리 (PING 감지 + 버전 + recheck). sendToExtension 공유 유틸. 미설치 시 설치 가이드 버튼 + 다시 감지 버튼. 연결 시 버전 표시.
 - 다음: #23 업로드 진행률 UI
@@ -271,7 +271,7 @@
 
 ## 2026-04-21 14:01 · Phase 4 · Issue #122 · 업로드 진행률 UI
 - 브랜치: `feature/issue-122-progress-ui`
-- PR: [#123](https://github.com/perso-devrel/creatordubbing/pull/123) (squash merged, delete-branch)
+- PR: [#123](https://github.com/perso-devrel/dubtube/pull/123) (squash merged, delete-branch)
 - 변경 파일: 2개 (`background.ts`, `YouTubeExtensionUpload.tsx`)
 - 요약: GET_JOBS 핸들러 추가 + 3초 폴링으로 작업 상태 표시. 단계별 한국어 라벨, 완료/오류 아이콘, 재시도 버튼. 63건 테스트 통과.
 - 다음: #24 실패 복구 UX
@@ -281,7 +281,7 @@
 
 ## 2026-04-21 14:04 · Phase 4 · Issue #124 · 실패 복구 UX
 - 브랜치: `feature/issue-124-failure-recovery-ux`
-- PR: [#125](https://github.com/perso-devrel/creatordubbing/pull/125) (squash merged, delete-branch)
+- PR: [#125](https://github.com/perso-devrel/dubtube/pull/125) (squash merged, delete-branch)
 - 변경 파일: 1개 (`YouTubeExtensionUpload.tsx`)
 - 요약: 오류 상태에 재시도/오디오 다운로드/Studio 딥링크 버튼. 수동 업로드 3단계 안내 배너.
 - 다음: Phase 5 #25 extension README
@@ -299,7 +299,7 @@
 
 ## 2026-04-21 14:07 · Phase 5 · Issue #126 · extension README
 - 브랜치: `docs/issue-126-extension-readme`
-- PR: [#127](https://github.com/perso-devrel/creatordubbing/pull/127) (squash merged, delete-branch)
+- PR: [#127](https://github.com/perso-devrel/dubtube/pull/127) (squash merged, delete-branch)
 - 변경 파일: 1개 (`extension/README.md` 신규)
 - 요약: 개발 환경 세팅, 빌드/개발 명령, Chrome 언팩 로드, 프로젝트 구조, 디버깅 팁, 업로드 모드, 셀렉터 검증 안내.
 - 다음: #26 루트 README 업데이트
@@ -309,7 +309,7 @@
 
 ## 2026-04-21 14:10 · Phase 5 · Issue #128 · 루트 README 업데이트
 - 브랜치: `docs/issue-128-root-readme`
-- PR: [#129](https://github.com/perso-devrel/creatordubbing/pull/129) (squash merged, delete-branch)
+- PR: [#129](https://github.com/perso-devrel/dubtube/pull/129) (squash merged, delete-branch)
 - 변경 파일: 1개 (`README.md`)
 - 요약: Chrome 확장 기능 설명, 기술 스택 행, mermaid 아키텍처 다이어그램, extension/ 구조, NEXT_PUBLIC_EXTENSION_ID 환경변수 추가.
 - 다음: #27 QA 체크리스트
@@ -319,7 +319,7 @@
 
 ## 2026-04-21 14:13 · Phase 5 · Issue #130 · QA 체크리스트
 - 브랜치: `docs/issue-130-qa-checklist`
-- PR: [#131](https://github.com/perso-devrel/creatordubbing/pull/131) (squash merged, delete-branch)
+- PR: [#131](https://github.com/perso-devrel/dubtube/pull/131) (squash merged, delete-branch)
 - 변경 파일: 1개 (`docs/QA_CHECKLIST.md` 신규)
 - 요약: Phase 1~5 산출물 수동 검증 가이드 + 전체 회귀 테스트 체크리스트.
 - 다음: #28 CHANGELOG
@@ -329,7 +329,7 @@
 
 ## 2026-04-21 14:16 · Phase 5 · Issue #132 · CHANGELOG
 - 브랜치: `docs/issue-132-changelog`
-- PR: [#133](https://github.com/perso-devrel/creatordubbing/pull/133) (squash merged, delete-branch)
+- PR: [#133](https://github.com/perso-devrel/dubtube/pull/133) (squash merged, delete-branch)
 - 변경 파일: 1개 (`CHANGELOG.md` 신규)
 - 요약: develop_loop Phase 1~5 주요 변경점 + 테스트 현황 정리.
 - 다음: Phase 6 진입
@@ -354,7 +354,7 @@
 
 ## 2026-04-21 14:18 · Phase 6 · Issue #134 · dom-utils 단위 테스트
 - 브랜치: `test/issue-134-dom-utils-tests`
-- PR: [#135](https://github.com/perso-devrel/creatordubbing/pull/135) (squash merged, delete-branch)
+- PR: [#135](https://github.com/perso-devrel/dubtube/pull/135) (squash merged, delete-branch)
 - 변경 파일: 3개 (`dom-utils.test.ts` 신규, `package.json`, `package-lock.json`)
 - 요약: jsdom 환경에서 waitForElement 5건 + sleep 2건 테스트. 즉시 발견, 동적 추가, 타임아웃, 커스텀 root, root 외부 미검색 검증. 총 70건.
 - 다음: Phase 6 #2 개선 후보 브레인스토밍
@@ -364,7 +364,7 @@
 
 ## 2026-04-21 14:19 · Phase 6 · Issue #136 · relayToWebApp 구현
 - 브랜치: `feat/issue-136-relay-to-webapp`
-- PR: [#137](https://github.com/perso-devrel/creatordubbing/pull/137) (squash merged, delete-branch)
+- PR: [#137](https://github.com/perso-devrel/dubtube/pull/137) (squash merged, delete-branch)
 - 변경 파일: 1개 (`background.ts`)
 - 요약: relayToWebApp stub → 실제 구현. chrome.tabs.query로 웹앱 탭 탐색 후 이벤트 전달. eslint-disable 제거.
 - 다음: Phase 6 #3 개선 후보
@@ -374,7 +374,7 @@
 
 ## 2026-04-21 14:22 · Phase 6 · Issue #138 · placeholder 아이콘
 - 브랜치: `chore/issue-138-placeholder-icons`
-- PR: [#139](https://github.com/perso-devrel/creatordubbing/pull/139) (squash merged, delete-branch)
+- PR: [#139](https://github.com/perso-devrel/dubtube/pull/139) (squash merged, delete-branch)
 - 변경 파일: 4개 (`icon-16/48/128.png` + `generate-icons.js`)
 - 요약: 브랜드 퍼플 배경 placeholder PNG 아이콘 3개. Chrome 로드 시 아이콘 경고 제거.
 - 다음: Phase 6 #4 개선 후보
@@ -384,7 +384,7 @@
 
 ## 2026-04-21 14:25 · Phase 6 · Issue #140 · 중복 타입가드 제거
 - 브랜치: `refactor/issue-140-dedup-typeguards`
-- PR: [#141](https://github.com/perso-devrel/creatordubbing/pull/141) (squash merged, delete-branch)
+- PR: [#141](https://github.com/perso-devrel/dubtube/pull/141) (squash merged, delete-branch)
 - 변경 파일: 2개 (`messages.ts`, `background.ts`)
 - 요약: isObject export + 인라인 타입체크 3개 함수 제거 → messages.ts 타입가드 재사용. -8줄 순감.
 - 다음: Phase 6 #5 개선 후보
@@ -394,7 +394,7 @@
 
 ## 2026-04-21 14:28 · Phase 6 · Issue #142 · CHANGELOG Phase 6 업데이트
 - 브랜치: `docs/issue-142-changelog-phase6`
-- PR: [#143](https://github.com/perso-devrel/creatordubbing/pull/143) (squash merged, delete-branch)
+- PR: [#143](https://github.com/perso-devrel/dubtube/pull/143) (squash merged, delete-branch)
 - 변경 파일: 1개 (`CHANGELOG.md`)
 - 요약: Phase 6 자율 개선 4건 + 테스트 현황 업데이트 (452+70=522건).
 

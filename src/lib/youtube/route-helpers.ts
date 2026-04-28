@@ -63,7 +63,7 @@ export async function requireAccessToken(req: Request): Promise<string> {
   const cookieToken = cookieStore.get('google_access_token')?.value
 
   if (!cookieToken) {
-    const sessionCookie = cookieStore.get('creatordub_session')?.value
+    const sessionCookie = cookieStore.get('dubtube_session')?.value
     if (sessionCookie) {
       const uid = await verifySessionCookie(sessionCookie)
       if (uid) {

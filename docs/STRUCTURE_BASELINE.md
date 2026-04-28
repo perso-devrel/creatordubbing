@@ -9,7 +9,7 @@
 - pnpm: 미설치 (npm 단독 운용)
 - OS: Windows 11 Pro (build 10.0.26200)
 - 루트 경로: `C:\Users\EST-INFRA\Desktop\creatordub-next`
-- 원격: https://github.com/perso-devrel/creatordubbing
+- 원격: https://github.com/perso-devrel/dubtube
 - 베이스 브랜치: `develop`
 - 루프 브랜치: `develop_loop`
 

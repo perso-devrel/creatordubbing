@@ -1,5 +1,5 @@
 // Web Crypto API — compatible with both Edge Runtime and Node.js 18+
-const SESSION_COOKIE = 'creatordub_session'
+const SESSION_COOKIE = 'dubtube_session'
 const SEPARATOR = '.'
 const enc = new TextEncoder()
 
@@ -9,7 +9,7 @@ function getSecret(): string {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('SESSION_SECRET env var is required in production')
   }
-  return 'creatordub-dev-secret-do-not-use-in-prod'
+  return 'dubtube-dev-secret-do-not-use-in-prod'
 }
 
 async function importKey(secret: string): Promise<CryptoKey> {

@@ -14,7 +14,7 @@ interface Props {
   autoTrigger?: boolean
 }
 
-const INSTALL_GUIDE_URL = 'https://github.com/perso-devrel/creatordubbing/blob/main/extension/README.md'
+const INSTALL_GUIDE_URL = 'https://github.com/perso-devrel/dubtube/blob/main/extension/README.md'
 const POLL_INTERVAL = 3000
 
 type JobStatus = 'pending' | 'running' | 'done' | 'error'
@@ -155,7 +155,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
         <AlertCircle className="h-5 w-5 flex-shrink-0 text-surface-400" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-surface-600 dark:text-surface-400">
-            CreatorDub 확장 미설치
+            Dubtube 확장 미설치
           </p>
           <p className="text-xs text-surface-400 mb-2">
             Chrome 확장을 설치하면 오디오 트랙 업로드를 자동화할 수 있습니다.
@@ -184,7 +184,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
         <Badge variant="success">연결됨{version ? ` v${version}` : ''}</Badge>
       </div>
       <p className="text-xs text-surface-500 mb-3">
-        CreatorDub 확장이 YouTube Studio를 자동으로 열고 오디오 트랙을 추가합니다.
+        Dubtube 확장이 YouTube Studio를 자동으로 열고 오디오 트랙을 추가합니다.
       </p>
       {completedLangs.map((code) => {
         const lang = getLanguageByCode(code)

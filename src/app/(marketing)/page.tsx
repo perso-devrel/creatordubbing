@@ -11,18 +11,18 @@ const description =
   'Perso.ai + YouTube API 기반 크리에이터 전용 10개 언어 자동 더빙. 한 번 클릭으로 영상 글로벌화.'
 
 export const metadata: Metadata = {
-  title: 'CreatorDub — AI Dubbing for YouTube Creators',
+  title: 'Dubtube — AI Dubbing for YouTube Creators',
   description,
   openGraph: {
-    title: 'CreatorDub — AI Dubbing for YouTube Creators',
+    title: 'Dubtube — AI Dubbing for YouTube Creators',
     description,
     type: 'website',
     locale: 'ko_KR',
-    siteName: 'CreatorDub',
+    siteName: 'Dubtube',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CreatorDub — AI Dubbing for YouTube Creators',
+    title: 'Dubtube — AI Dubbing for YouTube Creators',
     description,
   },
   alternates: { canonical: '/' },
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'CreatorDub',
+  name: 'Dubtube',
   description,
   applicationCategory: 'MultimediaApplication',
   operatingSystem: 'Web',
