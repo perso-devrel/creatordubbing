@@ -5,7 +5,7 @@ vi.mock('@/lib/db/queries', () => ({
 }))
 
 vi.mock('@/lib/auth/session-cookie', () => ({
-  SESSION_COOKIE: 'creatordub_session',
+  SESSION_COOKIE: 'dubtube_session',
   signSessionCookie: vi.fn((uid: string) => `${uid}.fakesig`),
 }))
 
@@ -143,7 +143,7 @@ describe('POST /api/auth/callback', () => {
     )
 
     const setCookies = res.headers.getSetCookie()
-    expect(setCookies.find((c: string) => c.startsWith('creatordub_session='))).toBeDefined()
+    expect(setCookies.find((c: string) => c.startsWith('dubtube_session='))).toBeDefined()
     expect(setCookies.find((c: string) => c.startsWith('google_access_token='))).toBeDefined()
   })
 

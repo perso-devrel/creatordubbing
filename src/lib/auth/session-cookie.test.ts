@@ -3,7 +3,7 @@ import { signSessionCookie, verifySessionCookie, SESSION_COOKIE } from './sessio
 
 describe('session-cookie', () => {
   it('exports SESSION_COOKIE constant', () => {
-    expect(SESSION_COOKIE).toBe('creatordub_session')
+    expect(SESSION_COOKIE).toBe('dubtube_session')
   })
 
   describe('signSessionCookie', () => {

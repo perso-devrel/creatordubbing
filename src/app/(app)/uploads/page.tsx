@@ -49,8 +49,8 @@ async function fetchCompletedLanguages(uid: string): Promise<CompletedJobLanguag
 function buildDefaultSettings(item: CompletedJobLanguage, langName: string): UploadSettings {
   return {
     title: `[${langName}] ${item.video_title}`,
-    description: `${item.video_title} - ${langName} dubbed by CreatorDub AI`,
-    tags: `CreatorDub, AI dubbing, ${langName}, dubbed`,
+    description: `${item.video_title} - ${langName} dubbed by Dubtube AI`,
+    tags: `Dubtube, AI dubbing, ${langName}, dubbed`,
     privacyStatus: 'private',
     shortsMode: 'regular',
   }

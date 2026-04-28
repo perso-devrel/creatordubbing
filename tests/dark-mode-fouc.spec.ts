@@ -13,7 +13,7 @@ import { signTestSessionCookie } from './helpers/signed-cookie'
 
 test('dark mode has no FOUC on landing', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('creatordub-theme', 'dark')
+    localStorage.setItem('dubtube-theme', 'dark')
   })
 
   await page.goto('http://localhost:3000/', { waitUntil: 'domcontentloaded' })
@@ -27,11 +27,11 @@ test('dark mode has no FOUC on landing', async ({ page }) => {
 
 test('dark mode has no FOUC on dashboard', async ({ page }) => {
   await page.context().addCookies([
-    { name: 'creatordub_session', value: signTestSessionCookie('x'), domain: 'localhost', path: '/' },
+    { name: 'dubtube_session', value: signTestSessionCookie('x'), domain: 'localhost', path: '/' },
     { name: 'google_access_token', value: 'mock', domain: 'localhost', path: '/' },
   ])
   await page.addInitScript(() => {
-    localStorage.setItem('creatordub-theme', 'dark')
+    localStorage.setItem('dubtube-theme', 'dark')
     localStorage.setItem(
       'google_user',
       JSON.stringify({ uid: 'x', email: 'x@x.x', displayName: 'X', photoURL: null })

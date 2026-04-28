@@ -11,4 +11,4 @@ export interface Job {
   createdAt: number
 }
 
-export const STORAGE_KEY = 'creatordub_jobs'
+export const STORAGE_KEY = 'dubtube_jobs'

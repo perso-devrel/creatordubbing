@@ -32,7 +32,7 @@ export function Sidebar() {
           <Languages className="h-4.5 w-4.5 text-white" />
         </div>
         <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
-          Creator<span className="text-brand-500">Dub</span>
+          Dub<span className="text-brand-500">tube</span>
         </span>
       </div>
 

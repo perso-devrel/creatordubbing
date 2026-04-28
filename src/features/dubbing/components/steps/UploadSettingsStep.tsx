@@ -39,7 +39,7 @@ export function UploadSettingsStep() {
       patch.title = videoMeta.title
     }
     if (!uploadSettings.description && videoMeta?.title) {
-      patch.description = `${videoMeta.title} - CreatorDub AI 더빙\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
+      patch.description = `${videoMeta.title} - Dubtube AI 더빙\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
     }
     if (Object.keys(patch).length > 0) setUploadSettings(patch)
   }, [videoMeta?.title, uploadSettings.title, uploadSettings.description, setUploadSettings])
@@ -121,7 +121,7 @@ export function UploadSettingsStep() {
               label="태그 (쉼표 구분)"
               value={tagsString}
               onChange={(e) => handleTagsChange(e.target.value)}
-              placeholder="CreatorDub, AI더빙, dubbed"
+              placeholder="Dubtube, AI더빙, dubbed"
             />
 
             <Select

@@ -6,7 +6,7 @@
 ## P0 — 사람 전용 (Ralph 루프가 건드리지 않는다)
 
 ### P0-0. Vercel 자동 배포 연동 [사람이 아침에 수동]
-- [ ] https://vercel.com/new → `perso-devrel/creatordubbing` import
+- [ ] https://vercel.com/new → `perso-devrel/dubtube` import
 - [ ] env 변수 입력: `PERSO_API_KEY`, `PERSO_API_BASE_URL`, `NEXT_PUBLIC_PERSO_FILE_BASE_URL`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `TURSO_URL`, `TURSO_AUTH_TOKEN`
 - [ ] Production = `main`, Preview = `develop`
 - [ ] 첫 배포 성공 확인 후 production URL을 STATE.md에 기록

@@ -17,8 +17,8 @@ lib/firebase.ts (OAuth)         lib/perso/*.ts                        Turso (lib
 
 1. 클라이언트: `signInWithGoogle()` → Google OAuth popup → authorization code 획득
 2. 클라이언트: `POST /api/auth/callback` → 서버가 code를 access_token + refresh_token으로 교환
-3. 서버: `creatordub_session` + `google_access_token` httpOnly 쿠키 설정, refresh_token DB 저장
-4. 서버: `proxy.ts` 미들웨어가 `creatordub_session` 쿠키로 인증 상태 확인
+3. 서버: `dubtube_session` + `google_access_token` httpOnly 쿠키 설정, refresh_token DB 저장
+4. 서버: `proxy.ts` 미들웨어가 `dubtube_session` 쿠키로 인증 상태 확인
 5. API 라우트: `requireSession()` (대시보드) 또는 `requireAccessToken()` (YouTube) 로 인가
 
 ### 더빙 데이터 플로우

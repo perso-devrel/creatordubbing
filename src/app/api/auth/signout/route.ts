@@ -3,7 +3,7 @@ import { apiOk } from '@/lib/api/response'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const COOKIES_TO_CLEAR = ['creatordub_session', 'google_access_token']
+const COOKIES_TO_CLEAR = ['dubtube_session', 'google_access_token']
 
 export async function POST() {
   const res = apiOk(null)
