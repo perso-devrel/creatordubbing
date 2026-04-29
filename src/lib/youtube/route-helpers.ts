@@ -25,6 +25,29 @@ export async function ytHandle<T>(fn: () => Promise<T>): Promise<Response> {
   }
 }
 
+/**
+ * YouTube API 호출 함수를 401 자동 재시도로 감싼다.
+ * 401(인증 거부)이 떨어지면 DB의 refresh_token으로 강제 리프레시 후 1회 재시도한다.
+ * 사용 예:
+ *   await withTokenRetry(req, (token) => uploadCaptionToYouTube({ accessToken: token, ... }))
+ */
+export async function withTokenRetry<T>(
+  req: Request,
+  fn: (accessToken: string) => Promise<T>,
+): Promise<T> {
+  const token = await requireAccessToken(req)
+  try {
+    return await fn(token)
+  } catch (err) {
+    const status = err instanceof YouTubeError ? err.status : 0
+    if (status !== 401) throw err
+    // 401: 토큰이 stale일 가능성 → 강제 리프레시 후 1회 재시도
+    const fresh = await requireAccessToken(req, { forceRefresh: true })
+    if (fresh === token) throw err
+    return await fn(fresh)
+  }
+}
+
 import type { ZodSchema, ZodError } from 'zod'
 
 export function parseQuery<T>(url: URL, schema: ZodSchema<T>): T {
@@ -58,21 +81,29 @@ import { cookies } from 'next/headers'
 import { verifySessionCookie } from '@/lib/auth/session-cookie'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 
-export async function requireAccessToken(req: Request): Promise<string> {
+/**
+ * Google 액세스 토큰을 가져온다. DB+세션 기반 리프레시 경로를 최우선으로 삼아
+ * stale 쿠키를 자동으로 우회한다(getOrRefreshAccessToken이 만료 임박 시 자동 갱신).
+ * - 1순위: dubtube_session 쿠키 → uid 검증 → DB의 refresh_token으로 fresh 토큰 확보
+ * - 2순위: google_access_token 쿠키 (세션이 없는 짧은 흐름용 fallback)
+ * - 3순위: Authorization Bearer / x-google-access-token 헤더
+ */
+export async function requireAccessToken(
+  req: Request,
+  opts: { forceRefresh?: boolean } = {},
+): Promise<string> {
   const cookieStore = await cookies()
-  const cookieToken = cookieStore.get('google_access_token')?.value
+  const sessionCookie = cookieStore.get('dubtube_session')?.value
 
-  if (!cookieToken) {
-    const sessionCookie = cookieStore.get('dubtube_session')?.value
-    if (sessionCookie) {
-      const uid = await verifySessionCookie(sessionCookie)
-      if (uid) {
-        const refreshed = await getOrRefreshAccessToken(uid)
-        if (refreshed) return refreshed
-      }
+  if (sessionCookie) {
+    const uid = await verifySessionCookie(sessionCookie)
+    if (uid) {
+      const token = await getOrRefreshAccessToken(uid, { force: opts.forceRefresh })
+      if (token) return token
     }
   }
 
+  const cookieToken = cookieStore.get('google_access_token')?.value
   if (cookieToken) return cookieToken
 
   const auth = req.headers.get('authorization') || ''

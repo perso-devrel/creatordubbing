@@ -42,7 +42,14 @@ export async function fetchChannelStatistics(
     `${YOUTUBE_API_BASE}/youtube/v3/channels?part=statistics,snippet&mine=true`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   )
-  if (!res.ok) return null
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new YouTubeError(
+      res.status,
+      `Channel fetch failed: ${body}`,
+      'CHANNEL_FETCH_FAILED',
+    )
+  }
 
   const data = (await res.json()) as {
     items?: Array<{
