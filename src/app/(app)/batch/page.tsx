@@ -23,26 +23,24 @@ export default function BatchPage() {
   const { data: jobs = [], isLoading } = useRecentJobs()
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const handleDeleteJob = async (jobId: number) => {
     if (deletingId === jobId) return
-    if (confirmDeleteId === jobId) {
-      setDeletingId(jobId)
-      setConfirmDeleteId(null)
-      queryClient.setQueryData(['recent-jobs', user?.uid], (old: typeof jobs) =>
-        old ? old.filter((j) => j.id !== jobId) : old,
-      )
-      try {
-        await dbMutation({ type: 'deleteDubbingJob', payload: { jobId } })
-      } finally {
-        setDeletingId(null)
-        queryClient.invalidateQueries({ queryKey: ['recent-jobs'] })
-      }
-    } else {
-      setConfirmDeleteId(jobId)
-      setTimeout(() => setConfirmDeleteId((prev) => (prev === jobId ? null : prev)), 3000)
+    const ok = window.confirm(
+      '이 작업을 큐에서 삭제하시겠습니까?\n진행 중인 Perso 더빙도 함께 취소됩니다.',
+    )
+    if (!ok) return
+
+    setDeletingId(jobId)
+    queryClient.setQueryData(['recent-jobs', user?.uid], (old: typeof jobs) =>
+      old ? old.filter((j) => j.id !== jobId) : old,
+    )
+    try {
+      await dbMutation({ type: 'deleteDubbingJob', payload: { jobId } })
+    } finally {
+      setDeletingId(null)
+      queryClient.invalidateQueries({ queryKey: ['recent-jobs'] })
     }
   }
 
@@ -165,16 +163,16 @@ export default function BatchPage() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => handleDeleteJob(job.id)}
                   disabled={deletingId === job.id}
+                  aria-label="작업 삭제"
                   className={`shrink-0 rounded-md p-1.5 transition-colors ${
                     deletingId === job.id
-                      ? 'text-surface-300 cursor-not-allowed'
-                      : confirmDeleteId === job.id
-                        ? 'bg-red-50 text-red-500 dark:bg-red-900/20'
-                        : 'text-surface-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20'
+                      ? 'cursor-not-allowed text-surface-300'
+                      : 'text-surface-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20'
                   }`}
-                  title={deletingId === job.id ? '삭제 중...' : confirmDeleteId === job.id ? '한번 더 클릭하면 삭제됩니다' : '작업 삭제'}
+                  title={deletingId === job.id ? '삭제 중...' : '작업 삭제 (Perso 처리도 함께 취소)'}
                 >
                   {deletingId === job.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
