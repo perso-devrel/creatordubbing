@@ -12,18 +12,22 @@ export function CTASection() {
             <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
               전 세계를 만날 준비 되셨나요?
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-lg text-white/80">
+            <p className="mx-auto mt-4 text-lg text-white/80 break-keep sm:whitespace-nowrap">
               AI 더빙으로 글로벌 시청자를 확보하고 있는 수천 명의 크리에이터와 함께하세요.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link href="/dashboard">
                 <Button size="lg" className="bg-white text-brand-600 shadow-lg hover:bg-surface-50">
-                  무료 체험 시작
+                  지금 시작하기
                   <ArrowRight className="h-5 w-5" />
                 </Button>
               </Link>
               <a href="#pricing">
-                <Button variant="ghost" size="lg" className="text-white hover:bg-white/10">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="border-2 border-white/80 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:border-white"
+                >
                   요금제 보기
                 </Button>
               </a>

@@ -5,32 +5,49 @@ import { TrendingUp } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { formatNumber } from '@/utils/formatters'
 
-const LANGUAGE_MULTIPLIERS: Record<string, number> = {
-  '스페인어': 1.8, '힌디어': 2.2, '포르투갈어': 1.5, '일본어': 1.3, '한국어': 1.4,
-  '프랑스어': 1.2, '독일어': 1.1, '아랍어': 1.6, '인도네시아어': 1.7, '중국어': 2.0,
-}
+const BASE_VIEWS = 100000
+
+// 언어별 추가 조회수 기여율 (원본 조회수 대비).
+// 앵커 데이터:
+//  - YouTube 공식 (blog.youtube, 2023): 멀티오디오 적용 영상 평균 시청시간의 25%+ 가 비주력 언어
+//    → 원본 대비 약 +33% 추가 도달
+//  - Jamie Oliver: 멀티오디오로 조회수 3배 (+200%)
+//  - AIR Media-Tech: 채널 간 오디오 교차 적용 시 +45%
+//  - 국제 구독자 평균 +40%
+// 위 매크로 데이터를 언어별로 분배한 추정치로, 화자 규모·YouTube 시장 점유율·시청 시간 비중을
+// 반영해 도달률 내림차순 정렬했다. 단순 누적합 = 단조 증가 + 자연스러운 한계효용 감소.
+// 정확한 채널별 측정값이 아니므로 UI에서 반드시 추정치임을 명시할 것.
+const LANGUAGE_LIFT_RATES = [
+  0.30, // 스페인어 (LATAM + 스페인, 공개 사례 중 가장 큰 단일 언어 효과)
+  0.22, // 힌디어 (인도, YouTube 1위 시장)
+  0.18, // 포르투갈어 (브라질, YouTube 상위 시장)
+  0.14, // 아랍어 (MENA 권역)
+  0.12, // 인도네시아어
+  0.10, // 프랑스어 (프랑스 + 아프리카 프랑코폰)
+  0.09, // 일본어
+  0.08, // 독일어
+  0.06, // 한국어
+  0.04, // 중국어 (YouTube 접근성 제한)
+]
 
 export function ROICalculator() {
-  const [monthlyViews, setMonthlyViews] = useState(50000)
   const [selectedCount, setSelectedCount] = useState(5)
 
-  const avgMultiplier =
-    Object.values(LANGUAGE_MULTIPLIERS)
-      .slice(0, selectedCount)
-      .reduce((a, b) => a + b, 0) / Math.max(selectedCount, 1)
-
-  const projectedViews = Math.round(monthlyViews * (1 + avgMultiplier * selectedCount * 0.12))
-  const growthPct = Math.round(((projectedViews - monthlyViews) / monthlyViews) * 100)
+  const lift = LANGUAGE_LIFT_RATES.slice(0, selectedCount).reduce((a, b) => a + b, 0)
+  const growthPct = Math.round(lift * 100)
+  const projectedViews = Math.round(BASE_VIEWS * (1 + lift))
 
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            성장 가능성 계산기
+            성장 가능성 시뮬레이터
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            다국어 더빙으로 얼마나 성장할 수 있는지 확인해보세요
+            YouTube 공식 데이터 및 Jamie Oliver(3배 도달)·MrBeast 등 공개 사례 기반 추정치.
+            <br className="hidden sm:block" />
+            실제 성과는 콘텐츠·썸네일·업로드 빈도·채널 규모에 따라 크게 달라집니다.
           </p>
         </div>
 
@@ -38,31 +55,10 @@ export function ROICalculator() {
           <div className="space-y-8">
             <div>
               <div className="mb-3 flex items-center justify-between">
-                <label htmlFor="roi-views" className="text-sm font-medium text-surface-700 dark:text-surface-300">
-                  현재 월간 조회수
+                <label htmlFor="roi-langs" className="text-sm font-medium text-surface-700 dark:text-surface-300">
+                  더빙 언어 수
                 </label>
-                <span className="text-lg font-bold text-surface-900 dark:text-white">
-                  {formatNumber(monthlyViews)}
-                </span>
-              </div>
-              <input
-                id="roi-views"
-                type="range"
-                min={1000}
-                max={1000000}
-                step={1000}
-                value={monthlyViews}
-                onChange={(e) => setMonthlyViews(Number(e.target.value))}
-                aria-label="현재 월간 조회수"
-                className="w-full accent-brand-500"
-              />
-              <div className="mt-1 flex justify-between text-xs text-surface-400"><span>1K</span><span>1M</span></div>
-            </div>
-
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <label htmlFor="roi-langs" className="text-sm font-medium text-surface-700 dark:text-surface-300">언어 수</label>
-                <span className="text-lg font-bold text-surface-900 dark:text-white">{selectedCount}</span>
+                <span className="text-lg font-bold text-surface-900 dark:text-white">{selectedCount}개</span>
               </div>
               <input
                 id="roi-langs"
@@ -71,7 +67,7 @@ export function ROICalculator() {
                 max={10}
                 value={selectedCount}
                 onChange={(e) => setSelectedCount(Number(e.target.value))}
-                aria-label="언어 수"
+                aria-label="더빙 언어 수"
                 className="w-full accent-brand-500"
               />
               <div className="mt-1 flex justify-between text-xs text-surface-400"><span>1</span><span>10</span></div>
@@ -80,14 +76,19 @@ export function ROICalculator() {
             <div className="rounded-xl bg-gradient-to-r from-brand-50 to-pink-50 p-6 dark:from-brand-900/20 dark:to-pink-900/20">
               <div className="flex items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-400">
                 <TrendingUp className="h-4 w-4" />
-                예상 월간 조회수
+                예상 도달 증가율
               </div>
-              <div className="mt-2 text-3xl font-extrabold text-surface-900 dark:text-white">
-                {formatNumber(projectedViews)}
+              <div className="mt-2 text-5xl font-extrabold text-surface-900 dark:text-white">
+                +{growthPct}%
               </div>
-              <div className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
-                +{growthPct}% 예상 성장률
+              <div className="mt-3 text-sm text-surface-600 dark:text-surface-400">
+                월 조회수 <span className="font-semibold">{formatNumber(BASE_VIEWS)}회</span> 기준{' '}
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatNumber(projectedViews)}회</span>까지 도달 가능
               </div>
+              <p className="mt-3 text-xs text-surface-500 dark:text-surface-400">
+                * YouTube 공식 멀티오디오 통계(평균 +25% 시청시간)와 Jamie Oliver 3배 등
+                공개 사례를 언어별로 분배한 추정치입니다. 채널별 실측치는 아닙니다.
+              </p>
             </div>
           </div>
         </Card>

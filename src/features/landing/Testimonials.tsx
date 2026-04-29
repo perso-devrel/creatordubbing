@@ -39,15 +39,15 @@ export function Testimonials() {
 
         <div className="mt-16 grid gap-8 md:grid-cols-3">
           {testimonials.map((t) => (
-            <div key={t.name} className="rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-800 dark:bg-surface-900">
+            <div key={t.name} className="flex h-full flex-col rounded-2xl border border-surface-200 bg-white p-6 dark:border-surface-800 dark:bg-surface-900">
               <div className="mb-4 flex gap-0.5">
                 {Array.from({ length: t.rating }).map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
                 ))}
               </div>
-              <p className="text-surface-700 dark:text-surface-300 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
-              <div className="mt-6 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-600 text-sm font-bold text-white">
+              <p className="flex-1 text-surface-700 dark:text-surface-300 leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
+              <div className="mt-6 flex items-center gap-3 border-t border-surface-100 pt-6 dark:border-surface-800">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-600 text-sm font-bold text-white">
                   {t.avatar}
                 </div>
                 <div>
