@@ -106,7 +106,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
         </div>
       </div>
 
-      <div className="h-64">
+      <div className="h-64 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           {tab === 'daily' ? (
             <BarChart data={mergedDaily} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
