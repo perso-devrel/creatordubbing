@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Languages } from 'lucide-react'
 
 export function LandingFooter() {
@@ -13,7 +14,29 @@ export function LandingFooter() {
               Dub<span className="text-brand-500">tube</span>
             </span>
           </div>
-          <p className="text-sm text-surface-500">
+
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
+            <Link
+              href="/privacy"
+              className="text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100"
+            >
+              개인정보처리방침
+            </Link>
+            <Link
+              href="/terms"
+              className="text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100"
+            >
+              서비스 약관
+            </Link>
+            <a
+              href="mailto:devrel.365@gmail.com"
+              className="text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100"
+            >
+              문의
+            </a>
+          </nav>
+
+          <p className="text-xs text-surface-500">
             &copy; {new Date().getFullYear()} Dubtube. All rights reserved.
           </p>
         </div>
