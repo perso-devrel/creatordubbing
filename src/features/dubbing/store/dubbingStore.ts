@@ -52,9 +52,11 @@ interface DubbingState {
   sourceLanguage: string
   selectedLanguages: string[]
   lipSyncEnabled: boolean
+  numberOfSpeakers: number
   setSourceLanguage: (code: string) => void
   toggleLanguage: (code: string) => void
   setLipSync: (enabled: boolean) => void
+  setNumberOfSpeakers: (n: number) => void
 
   // Step 3: Translation editing
   segments: Record<string, TranslationSegment[]>
@@ -106,9 +108,10 @@ const initialState = {
   videoSource: null as VideoSource | null,
   videoMeta: null as VideoMetadata | null,
   originalVideoUrl: null as string | null,
-  sourceLanguage: 'ko',
+  sourceLanguage: 'auto',
   selectedLanguages: [] as string[],
   lipSyncEnabled: false,
+  numberOfSpeakers: 1,
   isShort: false,
   segments: {} as Record<string, TranslationSegment[]>,
   projectMap: {} as Record<string, number>,
@@ -157,6 +160,8 @@ export const useDubbingStore = create<DubbingState>((set) => ({
         : [...s.selectedLanguages, code],
     })),
   setLipSync: (enabled) => set({ lipSyncEnabled: enabled }),
+  setNumberOfSpeakers: (n) =>
+    set({ numberOfSpeakers: Math.max(1, Math.min(10, Math.floor(n))) }),
 
   setSegments: (langCode, segments) =>
     set((s) => ({ segments: { ...s.segments, [langCode]: segments } })),

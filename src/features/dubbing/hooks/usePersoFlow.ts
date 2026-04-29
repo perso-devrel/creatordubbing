@@ -320,7 +320,7 @@ export function usePersoFlow() {
   }, [initSpace, addToast])
 
   const submitDubbing = useCallback(async () => {
-    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, sourceLanguage } = store.getState()
+    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, sourceLanguage, numberOfSpeakers } = store.getState()
     if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
 
     // Credit check before starting
@@ -357,7 +357,7 @@ export function usePersoFlow() {
         isVideoProject: true,
         sourceLanguageCode: sourceLanguage,
         targetLanguageCodes: selectedLanguages,
-        numberOfSpeakers: 1,
+        numberOfSpeakers: Math.max(1, Math.min(10, numberOfSpeakers || 1)),
         withLipSync: lipSyncEnabled,
         preferredSpeedType: 'GREEN',
       })
