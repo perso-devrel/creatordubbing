@@ -5,8 +5,8 @@ import {
   fetchVideoStatistics,
 } from '@/lib/youtube/server'
 import {
-  requireAccessToken,
   parseQuery,
+  withTokenRetry,
   ytHandle,
 } from '@/lib/youtube/route-helpers'
 import { statsQuerySchema } from '@/lib/validators/youtube'
@@ -19,14 +19,14 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) return auth.response
 
   return ytHandle(async () => {
-    const accessToken = await requireAccessToken(req)
     const url = new URL(req.url)
     const query = parseQuery(url, statsQuerySchema)
 
-    if (query.channel === 'true') {
-      return fetchChannelStatistics(accessToken)
-    }
-
-    return fetchVideoStatistics(accessToken, query.videoIds)
+    return withTokenRetry(req, (accessToken) => {
+      if (query.channel === 'true') {
+        return fetchChannelStatistics(accessToken)
+      }
+      return fetchVideoStatistics(accessToken, query.videoIds)
+    })
   })
 }

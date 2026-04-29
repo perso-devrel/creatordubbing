@@ -47,11 +47,16 @@ const inflightRefreshes = new Map<string, Promise<string | null>>()
 
 export async function getOrRefreshAccessToken(
   userId: string,
+  opts: { force?: boolean } = {},
 ): Promise<string | null> {
   const tokens = await getUserTokens(userId)
   if (!tokens) return null
 
-  if (tokens.accessToken && !isTokenExpired(tokens.tokenExpiresAt)) {
+  if (
+    !opts.force &&
+    tokens.accessToken &&
+    !isTokenExpired(tokens.tokenExpiresAt)
+  ) {
     return tokens.accessToken
   }
 
