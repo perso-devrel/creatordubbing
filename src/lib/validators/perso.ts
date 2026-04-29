@@ -51,6 +51,7 @@ export const downloadTargetSchema = z.enum([
   'lipSyncVideo',
   'originalSubtitle',
   'translatedSubtitle',
+  'audioScript',
   'voiceAudio',
   'backgroundAudio',
   'all',

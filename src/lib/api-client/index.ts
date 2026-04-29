@@ -18,6 +18,7 @@ export {
   updateSentenceTranslation,
   regenerateSentenceAudio,
   getDownloadLinks,
+  getTranslatedSrt,
   requestLipSync,
   getPersoFileUrl,
 } from './perso'
