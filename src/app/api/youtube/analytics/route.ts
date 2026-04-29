@@ -17,6 +17,28 @@ export const dynamic = 'force-dynamic'
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
+let cacheTableEnsured = false
+
+/**
+ * Lazy bootstrap analytics_cache table.
+ * Idempotent — runs CREATE TABLE IF NOT EXISTS once per process.
+ */
+async function ensureCacheTable(): Promise<void> {
+  if (cacheTableEnsured) return
+  const db = getDb()
+  await db.execute({
+    sql: `CREATE TABLE IF NOT EXISTS analytics_cache (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      video_id TEXT NOT NULL,
+      data TEXT NOT NULL,
+      fetched_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    args: [],
+  })
+  cacheTableEnsured = true
+}
+
 function defaultDateRange() {
   const end = new Date()
   const start = new Date()
@@ -31,6 +53,7 @@ async function getCached(
   userId: string,
   videoId: string,
 ): Promise<VideoAnalytics | null> {
+  await ensureCacheTable()
   const db = getDb()
   const row = await db.execute({
     sql: 'SELECT data, fetched_at FROM analytics_cache WHERE id = ? AND user_id = ?',
@@ -47,6 +70,7 @@ async function setCache(
   videoId: string,
   data: VideoAnalytics,
 ): Promise<void> {
+  await ensureCacheTable()
   const db = getDb()
   await db.execute({
     sql: `INSERT OR REPLACE INTO analytics_cache (id, user_id, video_id, data, fetched_at)
