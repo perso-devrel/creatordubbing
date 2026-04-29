@@ -22,11 +22,13 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url)
     const query = parseQuery(url, statsQuerySchema)
 
-    return withTokenRetry(req, (accessToken) => {
-      if (query.channel === 'true') {
-        return fetchChannelStatistics(accessToken)
-      }
-      return fetchVideoStatistics(accessToken, query.videoIds)
-    })
+    if (query.channel === 'true') {
+      return withTokenRetry(req, (accessToken) =>
+        fetchChannelStatistics(accessToken),
+      )
+    }
+    return withTokenRetry(req, (accessToken) =>
+      fetchVideoStatistics(accessToken, query.videoIds),
+    )
   })
 }
