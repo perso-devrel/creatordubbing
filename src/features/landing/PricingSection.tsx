@@ -5,7 +5,7 @@ import { CREDIT_PACKS } from '@/features/billing/constants/plans'
 import { formatCurrency } from '@/utils/formatters'
 
 const INCLUDED_FEATURES = [
-  '모든 언어 지원',
+  '10개 언어 지원',
   '1080p 출력',
   '워터마크 없음',
   '립싱크',
