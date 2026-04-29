@@ -2,8 +2,8 @@ import { NextRequest } from 'next/server'
 import { requireSession } from '@/lib/auth/session'
 import { uploadCaptionToYouTube } from '@/lib/youtube/server'
 import {
-  requireAccessToken,
   parseYtBody,
+  withTokenRetry,
   ytHandle,
 } from '@/lib/youtube/route-helpers'
 import { captionBodySchema } from '@/lib/validators/youtube'
@@ -16,9 +16,10 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return auth.response
 
   return ytHandle(async () => {
-    const accessToken = await requireAccessToken(req)
     const body = await parseYtBody(req, captionBodySchema)
-    await uploadCaptionToYouTube({ accessToken, ...body })
+    await withTokenRetry(req, (accessToken) =>
+      uploadCaptionToYouTube({ accessToken, ...body }),
+    )
     return { uploaded: true }
   })
 }

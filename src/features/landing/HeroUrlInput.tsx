@@ -27,9 +27,6 @@ export function HeroUrlInput() {
           </Button>
         </Link>
       </div>
-      <p className="mt-2 text-xs text-surface-400">
-        무료로 시작하세요 — 월 3분 더빙, 신용카드 불필요
-      </p>
     </div>
   )
 }

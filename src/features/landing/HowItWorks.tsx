@@ -1,23 +1,29 @@
-import { Link2, Languages, Upload } from 'lucide-react'
+import { FileVideo, Languages, FileText, Upload } from 'lucide-react'
 
 const steps = [
   {
-    icon: Link2,
+    icon: FileVideo,
     step: '01',
-    title: 'URL 붙여넣기',
-    description: 'YouTube 영상 URL을 붙여넣거나 영상 파일을 업로드하세요. 자동으로 오디오 추출, 언어 감지, 전사가 진행됩니다.',
+    title: '동영상 선택',
+    description: 'YouTube URL 붙여넣기, 내 채널 영상 불러오기, 직접 업로드 중 원하는 방식을 고르세요. 오디오 추출과 언어 감지가 자동으로 진행됩니다.',
   },
   {
     icon: Languages,
     step: '02',
-    title: '언어 선택',
-    description: '최대 10개 대상 언어를 선택하세요. 번역 수정, 고유명사 보호, 처리 전 미리보기가 가능합니다.',
+    title: '언어 & 보이스 설정',
+    description: '최대 10개 대상 언어를 고르고, 내 목소리를 그대로 살릴 보이스 클론을 활성화하세요. 화자별 음성 매핑도 가능합니다.',
+  },
+  {
+    icon: FileText,
+    step: '03',
+    title: '번역 검토 & 편집',
+    description: '자동 생성된 번역과 자막을 검토하고 다듬으세요. 고유명사 보호, 문장 단위 수정, 미리듣기로 디테일을 잡을 수 있습니다.',
   },
   {
     icon: Upload,
-    step: '03',
-    title: '더빙 & 업로드',
-    description: 'AI가 보이스 클론으로 자연스러운 더빙을 생성합니다. 파일 다운로드 또는 YouTube에 바로 업로드하세요.',
+    step: '04',
+    title: '더빙 생성 & 업로드',
+    description: 'AI 더빙이 완성되면 파일로 다운로드하거나 YouTube 채널에 다국어 트랙으로 바로 업로드하세요.',
   },
 ]
 
@@ -27,18 +33,18 @@ export function HowItWorks() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            3단계로 글로벌 진출
+            4단계로 글로벌 진출
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            URL에서 더빙 영상까지, 몇 분이면 끝
+            동영상 선택부터 다국어 업로드까지, 한 흐름으로
           </p>
         </div>
 
-        <div className="mt-16 grid gap-8 md:grid-cols-3">
+        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map(({ icon: Icon, step, title, description }, i) => (
             <div key={step} className="relative text-center">
               {i < steps.length - 1 && (
-                <div className="absolute left-[calc(50%+40px)] top-10 hidden h-0.5 w-[calc(100%-80px)] bg-gradient-to-r from-brand-300 to-brand-100 dark:from-brand-700 dark:to-brand-900 md:block" />
+                <div className="absolute left-[calc(50%+40px)] top-10 hidden h-0.5 w-[calc(100%-80px)] bg-gradient-to-r from-brand-300 to-brand-100 dark:from-brand-700 dark:to-brand-900 lg:block" />
               )}
               <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 shadow-lg shadow-brand-500/25">
                 <Icon className="h-9 w-9 text-white" />

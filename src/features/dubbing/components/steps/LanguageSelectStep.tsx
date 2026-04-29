@@ -39,6 +39,7 @@ export function LanguageSelectStep() {
           onChange={(e) => setSourceLanguage(e.target.value)}
           className="w-full rounded-md border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-surface-700 dark:bg-surface-900 dark:text-white"
         >
+          <option value="auto">🌐 자동 감지 (권장)</option>
           {SUPPORTED_LANGUAGES.map((lang) => (
             <option key={lang.code} value={lang.code}>
               {lang.flag} {lang.name} ({lang.nativeName})
@@ -46,7 +47,8 @@ export function LanguageSelectStep() {
           ))}
         </select>
         <p className="mt-2 text-xs text-surface-500">
-          영상 속 음성의 언어입니다. 잘못 설정하면 전사가 실패할 수 있습니다.
+          자동 감지를 사용하면 Perso AI가 영상 음성에서 언어를 자동으로 판별합니다.
+          정확한 언어를 알고 있다면 직접 선택하는 편이 안정적입니다.
         </p>
       </Card>
 

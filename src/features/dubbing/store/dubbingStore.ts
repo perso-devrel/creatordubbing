@@ -1,6 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
+import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import type {
   DubbingStep,
   VideoSource,
@@ -11,17 +12,29 @@ import type {
   JobStatus,
   UploadSettings,
   DeliverableMode,
+  PrivacyStatus,
 } from '../types/dubbing.types'
 
-const DEFAULT_UPLOAD_SETTINGS: UploadSettings = {
+// YouTube 설정 페이지의 기본 공개 설정을 그때그때 가져온다.
+// SSR 단계에서는 localStorage가 없으므로 fallback 'private'.
+const readDefaultPrivacy = (): PrivacyStatus => {
+  if (typeof window === 'undefined') return 'private'
+  try {
+    return useYouTubeSettingsStore.getState().defaultPrivacy
+  } catch {
+    return 'private'
+  }
+}
+
+const buildDefaultUploadSettings = (): UploadSettings => ({
   autoUpload: true,
   uploadAsShort: false,
   attachOriginalLink: true,
   title: '',
   description: '',
   tags: ['Dubtube', 'AI더빙', 'dubbed'],
-  privacyStatus: 'private',
-}
+  privacyStatus: readDefaultPrivacy(),
+})
 
 interface DubbingState {
   // Wizard navigation
@@ -52,9 +65,11 @@ interface DubbingState {
   sourceLanguage: string
   selectedLanguages: string[]
   lipSyncEnabled: boolean
+  numberOfSpeakers: number
   setSourceLanguage: (code: string) => void
   toggleLanguage: (code: string) => void
   setLipSync: (enabled: boolean) => void
+  setNumberOfSpeakers: (n: number) => void
 
   // Step 3: Translation editing
   segments: Record<string, TranslationSegment[]>
@@ -87,7 +102,12 @@ interface DubbingState {
 
   // Upload settings (chosen before dubbing starts)
   uploadSettings: UploadSettings
+  /** Wizard 세션 내에서 사용자가 privacyStatus를 직접 변경했는지 여부.
+   * true이면 YouTube 설정 페이지의 글로벌 기본값으로 덮어쓰지 않는다. */
+  privacyOverridden: boolean
   setUploadSettings: (patch: Partial<UploadSettings>) => void
+  /** YouTube 설정 페이지의 기본값을 wizard에 동기화한다 (사용자 override 없을 때만). */
+  syncPrivacyFromGlobalDefault: () => void
 
   // Glossary
   glossary: GlossaryEntry[]
@@ -106,9 +126,10 @@ const initialState = {
   videoSource: null as VideoSource | null,
   videoMeta: null as VideoMetadata | null,
   originalVideoUrl: null as string | null,
-  sourceLanguage: 'ko',
+  sourceLanguage: 'auto',
   selectedLanguages: [] as string[],
   lipSyncEnabled: false,
+  numberOfSpeakers: 1,
   isShort: false,
   segments: {} as Record<string, TranslationSegment[]>,
   projectMap: {} as Record<string, number>,
@@ -118,7 +139,8 @@ const initialState = {
   glossary: [] as GlossaryEntry[],
   deliverableMode: 'newDubbedVideos' as DeliverableMode,
   copyrightAcknowledged: false,
-  uploadSettings: { ...DEFAULT_UPLOAD_SETTINGS } as UploadSettings,
+  uploadSettings: buildDefaultUploadSettings() as UploadSettings,
+  privacyOverridden: false,
 }
 
 export const useDubbingStore = create<DubbingState>((set) => ({
@@ -157,6 +179,8 @@ export const useDubbingStore = create<DubbingState>((set) => ({
         : [...s.selectedLanguages, code],
     })),
   setLipSync: (enabled) => set({ lipSyncEnabled: enabled }),
+  setNumberOfSpeakers: (n) =>
+    set({ numberOfSpeakers: Math.max(1, Math.min(10, Math.floor(n))) }),
 
   setSegments: (langCode, segments) =>
     set((s) => ({ segments: { ...s.segments, [langCode]: segments } })),
@@ -200,10 +224,21 @@ export const useDubbingStore = create<DubbingState>((set) => ({
 
   setUploadSettings: (patch) => set((s) => ({
     uploadSettings: { ...s.uploadSettings, ...patch },
+    privacyOverridden:
+      patch.privacyStatus !== undefined ? true : s.privacyOverridden,
   })),
+
+  syncPrivacyFromGlobalDefault: () => set((s) => {
+    if (s.privacyOverridden) return s
+    const next = readDefaultPrivacy()
+    if (s.uploadSettings.privacyStatus === next) return s
+    return {
+      uploadSettings: { ...s.uploadSettings, privacyStatus: next },
+    }
+  }),
 
   addGlossaryEntry: (entry) => set((s) => ({ glossary: [...s.glossary, entry] })),
   removeGlossaryEntry: (id) => set((s) => ({ glossary: s.glossary.filter((e) => e.id !== id) })),
 
-  reset: () => set(initialState),
+  reset: () => set({ ...initialState, uploadSettings: buildDefaultUploadSettings() }),
 }))

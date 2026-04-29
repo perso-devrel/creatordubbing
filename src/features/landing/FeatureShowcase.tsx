@@ -1,4 +1,4 @@
-import { Mic, Subtitles, Clock, BarChart3, Users, Wand2 } from 'lucide-react'
+import { Mic, Subtitles, Clock, BarChart3, Wand2 } from 'lucide-react'
 
 const features = [
   {
@@ -18,18 +18,13 @@ const features = [
   },
   {
     icon: Clock,
-    title: '15분 롱폼 지원',
+    title: '롱폼 지원',
     description: '긴 영상도 실시간 진행률 추적으로 처리. 완료되면 알림을 받으세요.',
   },
   {
     icon: BarChart3,
     title: '분석 대시보드',
     description: '어떤 더빙 언어가 가장 효과적인지 데이터로 확인. 글로벌 콘텐츠 전략 최적화.',
-  },
-  {
-    icon: Users,
-    title: '배치 처리',
-    description: '여러 영상을 한 번에 큐에 넣고 우선순위 설정. 시스템이 자동으로 처리합니다.',
   },
 ]
 

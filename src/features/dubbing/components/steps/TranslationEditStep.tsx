@@ -1,17 +1,30 @@
 'use client'
 
-import { useState } from 'react'
 import { ArrowLeft, ArrowRight, Info } from 'lucide-react'
 import { Button, Card, Badge, Toggle } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 
+const MAX_SPEAKERS = 10
+
 export function TranslationEditStep() {
-  const { sourceLanguage, selectedLanguages, lipSyncEnabled, setLipSync, videoMeta, deliverableMode, uploadSettings, prevStep, nextStep } = useDubbingStore()
-  const [speakers, setSpeakers] = useState(1)
+  const {
+    sourceLanguage,
+    selectedLanguages,
+    lipSyncEnabled,
+    setLipSync,
+    numberOfSpeakers,
+    setNumberOfSpeakers,
+    videoMeta,
+    deliverableMode,
+    uploadSettings,
+    prevStep,
+    nextStep,
+  } = useDubbingStore()
 
   const sourceLang = getLanguageByCode(sourceLanguage)
+  const isAutoSource = sourceLanguage === 'auto'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -39,7 +52,9 @@ export function TranslationEditStep() {
           <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
             <span className="text-sm text-surface-600 dark:text-surface-400">원본 언어</span>
             <span className="text-sm font-medium text-surface-900 dark:text-white">
-              {sourceLang?.flag} {sourceLang?.name || '자동 감지'}
+              {isAutoSource
+                ? '🌐 자동 감지'
+                : `${sourceLang?.flag ?? ''} ${sourceLang?.name ?? '알 수 없음'}`}
             </span>
           </div>
 
@@ -62,16 +77,22 @@ export function TranslationEditStep() {
           </div>
 
           {/* Number of speakers */}
-          <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
-            <span className="text-sm text-surface-600 dark:text-surface-400">화자 수</span>
-            <div className="flex items-center gap-2">
-              {[1, 2, 3].map((n) => (
+          <div className="rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-surface-600 dark:text-surface-400">화자 수</span>
+              <span className="text-sm font-semibold text-surface-900 dark:text-white">
+                {numberOfSpeakers}명
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {Array.from({ length: MAX_SPEAKERS }, (_, i) => i + 1).map((n) => (
                 <button
                   key={n}
-                  onClick={() => setSpeakers(n)}
+                  type="button"
+                  onClick={() => setNumberOfSpeakers(n)}
                   className={cn(
                     'h-8 w-8 rounded-lg text-sm font-medium transition-all cursor-pointer',
-                    speakers === n
+                    numberOfSpeakers === n
                       ? 'bg-brand-500 text-white'
                       : 'bg-white text-surface-600 border border-surface-300 hover:border-brand-300 dark:bg-surface-700 dark:text-surface-300 dark:border-surface-600',
                   )}
@@ -80,6 +101,9 @@ export function TranslationEditStep() {
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-xs text-surface-400">
+              영상에 등장하는 화자 수를 선택하세요. 정확하게 설정하면 Perso AI가 화자별로 음성을 분리해 더빙합니다.
+            </p>
           </div>
 
           {/* Lip sync */}

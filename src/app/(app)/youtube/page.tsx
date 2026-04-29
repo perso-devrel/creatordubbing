@@ -1,17 +1,20 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Video, ExternalLink, Unlink, AlertTriangle, Settings, Globe, Loader2 } from 'lucide-react'
 import { Card, CardTitle, CardDescription, Button, Badge, Select, Toggle } from '@/components/ui'
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { formatNumber } from '@/utils/formatters'
+import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
+import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
 
 export default function YouTubeSettingsPage() {
   const router = useRouter()
-  const [defaultVisibility, setDefaultVisibility] = useState('public')
-  const [autoSubtitles, setAutoSubtitles] = useState(true)
+  const defaultVisibility = useYouTubeSettingsStore((s) => s.defaultPrivacy)
+  const setDefaultVisibility = useYouTubeSettingsStore((s) => s.setDefaultPrivacy)
+  const autoSubtitles = useYouTubeSettingsStore((s) => s.autoSubtitles)
+  const setAutoSubtitles = useYouTubeSettingsStore((s) => s.setAutoSubtitles)
 
   const { data: channel, isLoading: channelLoading } = useChannelStats()
   const isConnected = !!channel
@@ -115,13 +118,16 @@ export default function YouTubeSettingsPage() {
           <Select
             label="기본 공개 설정"
             value={defaultVisibility}
-            onChange={(e) => setDefaultVisibility(e.target.value)}
+            onChange={(e) => setDefaultVisibility(e.target.value as PrivacyStatus)}
             options={[
               { value: 'public', label: '공개' },
               { value: 'unlisted', label: '일부 공개' },
               { value: 'private', label: '비공개' },
             ]}
           />
+          <p className="-mt-3 text-xs text-surface-400">
+            새 더빙 시작 시 이 값이 기본값으로 적용됩니다. 각 더빙 별로 변경할 수 있습니다.
+          </p>
 
           <div className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
             <div>

@@ -129,7 +129,8 @@ export async function POST(req: NextRequest) {
           sql: 'SELECT jl.project_seq, dj.space_seq FROM job_languages jl JOIN dubbing_jobs dj ON dj.id = jl.job_id WHERE jl.job_id = ?',
           args: [jobId],
         })
-        await Promise.allSettled(
+        // Perso cancel + DB delete를 병렬로 실행. cancel 실패가 DB 삭제를 막지 않도록 allSettled.
+        const cancelAll = Promise.allSettled(
           langRows.rows.map((row) => {
             const projectSeq = row.project_seq as number
             const spaceSeq = row.space_seq as number
@@ -137,10 +138,10 @@ export async function POST(req: NextRequest) {
             return persoFetch<unknown>(
               `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/cancel`,
               { method: 'POST', baseURL: 'api' },
-            ).catch(() => {})
+            )
           }),
         )
-        await deleteDubbingJob(jobId)
+        await Promise.all([cancelAll, deleteDubbingJob(jobId)])
         return apiOk({ jobId })
       }
       default: {

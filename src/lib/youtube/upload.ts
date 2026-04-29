@@ -114,12 +114,72 @@ export interface CaptionUploadInput {
   language: string
   name: string
   srtContent: string
+  /** true면 동일 language의 기존 캡션을 모두 삭제한 뒤 새 SRT를 삽입한다. */
+  replace?: boolean
+}
+
+const YOUTUBE_DATA_BASE = 'https://www.googleapis.com/youtube/v3'
+
+interface CaptionListItem {
+  id: string
+  snippet?: { language?: string; name?: string }
+}
+
+async function listCaptionsForVideo(
+  accessToken: string,
+  videoId: string,
+): Promise<CaptionListItem[]> {
+  const res = await fetch(
+    `${YOUTUBE_DATA_BASE}/captions?videoId=${encodeURIComponent(videoId)}&part=snippet`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  if (!res.ok) {
+    const err = await res.text()
+    throw new YouTubeError(
+      res.status,
+      `Caption list failed: ${err}`,
+      'CAPTION_LIST_FAILED',
+    )
+  }
+  const data = (await res.json()) as { items?: CaptionListItem[] }
+  return data.items ?? []
+}
+
+async function deleteCaption(
+  accessToken: string,
+  captionId: string,
+): Promise<void> {
+  const res = await fetch(
+    `${YOUTUBE_DATA_BASE}/captions?id=${encodeURIComponent(captionId)}`,
+    {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+  )
+  if (!res.ok && res.status !== 404) {
+    const err = await res.text()
+    throw new YouTubeError(
+      res.status,
+      `Caption delete failed: ${err}`,
+      'CAPTION_DELETE_FAILED',
+    )
+  }
 }
 
 export async function uploadCaptionToYouTube(
   input: CaptionUploadInput,
 ): Promise<void> {
-  const { accessToken, videoId, language, name, srtContent } = input
+  const { accessToken, videoId, language, name, srtContent, replace } = input
+
+  if (replace) {
+    const existing = await listCaptionsForVideo(accessToken, videoId)
+    const sameLang = existing.filter(
+      (c) => (c.snippet?.language || '').toLowerCase() === language.toLowerCase(),
+    )
+    for (const c of sameLang) {
+      await deleteCaption(accessToken, c.id)
+    }
+  }
 
   const metadata = { snippet: { videoId, language, name } }
   const boundary = `caption_boundary_${Date.now()}`
