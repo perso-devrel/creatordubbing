@@ -23,9 +23,15 @@ export function UploadSettingsStep() {
     deliverableMode,
     uploadSettings,
     setUploadSettings,
+    syncPrivacyFromGlobalDefault,
     prevStep,
     nextStep,
   } = useDubbingStore()
+
+  // YouTube 설정 페이지의 기본 공개 설정과 동기화 (사용자 override 없을 때만).
+  useEffect(() => {
+    syncPrivacyFromGlobalDefault()
+  }, [syncPrivacyFromGlobalDefault])
 
   const originalYouTubeId =
     videoSource?.type === 'url' && videoSource.url ? extractVideoId(videoSource.url) : null
