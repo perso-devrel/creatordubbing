@@ -5,6 +5,8 @@ export const captionBodySchema = z.object({
   language: z.string().min(1),
   name: z.string().min(1),
   srtContent: z.string().min(1),
+  /** true면 동일 language의 기존 캡션을 모두 삭제한 뒤 새로 삽입한다. */
+  replace: z.boolean().optional(),
 })
 
 export const analyticsQuerySchema = z.object({

@@ -14,8 +14,7 @@ import { ytUploadVideo, ytUploadCaption, getPersoFileUrl, getProjectScript } fro
 import { toBcp47 } from '@/utils/languages'
 import { dbMutation } from '@/lib/api/dbMutation'
 import { toSRT } from '@/utils/srt'
-import { ScriptEditor } from '../ScriptEditor'
-import { SubtitleEditor } from '../SubtitleEditor'
+import { SubtitleScriptEditor } from '../SubtitleScriptEditor'
 import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
@@ -938,40 +937,23 @@ export function UploadStep() {
         </Card>
       )}
 
-      {/* ─── Script editor ─── */}
+      {/* ─── Subtitle & Script editor (merged) ─── */}
       {completedLangs.length > 0 && spaceSeq && (
         <Card>
-          <CardTitle>스크립트 수정</CardTitle>
+          <CardTitle>자막 · 스크립트 편집</CardTitle>
           <p className="mb-4 mt-1 text-xs text-surface-500">
-            번역이 잘못된 경우 문장별로 수정하고 오디오를 재생성할 수 있습니다.
+            번역 텍스트는 Perso에 저장되어 더빙 오디오에 반영되며(재생성 필요),
+            시간 변경은 SRT 다운로드와 YouTube 자막 트랙에만 적용됩니다.
+            업로드된 영상이 있으면 한 번에 YouTube 자막을 교체할 수 있습니다.
           </p>
           <div className="space-y-2">
             {completedLangs.map((code) => (
-              <ScriptEditor
+              <SubtitleScriptEditor
                 key={code}
                 langCode={code}
                 projectSeq={projectMap[code] || 0}
                 spaceSeq={spaceSeq}
-              />
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* ─── Subtitle editor ─── */}
-      {completedLangs.length > 0 && spaceSeq && (
-        <Card>
-          <CardTitle>자막 편집 · 다운로드</CardTitle>
-          <p className="mb-4 mt-1 text-xs text-surface-500">
-            자막 타이밍과 텍스트를 수정하고 SRT 파일로 다운로드할 수 있습니다.
-          </p>
-          <div className="space-y-2">
-            {completedLangs.map((code) => (
-              <SubtitleEditor
-                key={code}
-                langCode={code}
-                projectSeq={projectMap[code] || 0}
-                spaceSeq={spaceSeq}
+                youtubeVideoId={ytUploads[code]?.videoId ?? null}
               />
             ))}
           </div>

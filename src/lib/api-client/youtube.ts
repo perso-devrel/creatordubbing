@@ -44,6 +44,8 @@ export async function ytUploadCaption(params: {
   language: string
   name: string
   srtContent: string
+  /** true면 동일 language의 기존 자막 트랙을 삭제하고 교체한다. */
+  replace?: boolean
 }): Promise<{ uploaded: true }> {
   const res = await fetch(`${YT}/caption`, {
     method: 'POST',
