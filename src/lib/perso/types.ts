@@ -108,21 +108,44 @@ export interface ProgressResponse {
 }
 
 export interface DownloadResponse {
-  videoFile?: { videoDownloadLink: string }
-  audioFile?: { voiceAudioDownloadLink: string }
-  srtFile?: {
-    originalSubtitleDownloadLink: string
-    translatedSubtitleDownloadLink: string
+  videoFile?: { videoDownloadLink: string | null }
+  audioFile?: {
+    voiceAudioDownloadLink?: string | null
+    backgroundAudioDownloadLink?: string | null
+    voiceWithBackgroundAudioDownloadLink?: string | null
+    speakerSegmentExcelFilePath?: string | null
+    speakerSegmentWithTranslationExcelFilePath?: string | null
+    /** target=audioScript 응답에 포함되는 타임스탬프 데이터(있을 때만). */
+    scriptTimestampsDownloadLink?: string | null
+    originalSubBackgroundDownloadLink?: string | null
   }
-  zippedFileDownloadLink?: string
+  srtFile?: {
+    originalSubtitleDownloadLink?: string | null
+    translatedSubtitleDownloadLink?: string | null
+    /** target=audioScript 응답에 포함되는 VTT 자막(있을 때만). */
+    originalSubtitleVttDownloadLink?: string | null
+  }
+  zippedFileDownloadLink?: string | null
 }
 
+/**
+ * 다운로드 가능한 산출물 종류.
+ *
+ * 주의: Perso 공식 문서엔 `originalSubtitle` / `translatedSubtitle`이
+ * 정식으로 적혀 있으나 현재 백엔드는 두 값에 대해 500
+ * (Unexpected Download value: ORIGINAL_SUBTITLE / TRANSLATED_SUBTITLE)을
+ * 반환한다. 대신 문서엔 없는 `audioScript` target을 사용하면 응답의
+ * srtFile.translatedSubtitleDownloadLink / originalSubtitleDownloadLink로
+ * 두 SRT 링크를 한 번에 받을 수 있다.
+ */
 export type DownloadTarget =
   | 'video'
   | 'dubbingVideo'
   | 'lipSyncVideo'
   | 'originalSubtitle'
   | 'translatedSubtitle'
+  /** Perso가 생성한 SRT(원본/번역)와 부가 산출물 링크를 묶어 반환한다. */
+  | 'audioScript'
   | 'voiceAudio'
   | 'backgroundAudio'
   | 'all'
