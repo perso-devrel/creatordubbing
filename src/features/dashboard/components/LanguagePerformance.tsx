@@ -37,7 +37,7 @@ export function LanguagePerformance() {
       <CardTitle>언어별 성과</CardTitle>
       <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">더빙 언어별 조회수</p>
 
-      <div className="h-64">
+      <div className="h-64 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} horizontal={false} />
