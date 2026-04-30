@@ -10,10 +10,14 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useAuthStore } from '@/stores/authStore'
-import { ytUploadVideo, ytUploadCaption, getPersoFileUrl, getProjectScript } from '@/lib/api-client'
+import {
+  ytUploadVideo,
+  ytUploadCaption,
+  getPersoFileUrl,
+  getTranslatedSrt,
+} from '@/lib/api-client'
 import { toBcp47 } from '@/utils/languages'
 import { dbMutation } from '@/lib/api/dbMutation'
-import { toSRT } from '@/utils/srt'
 import { SubtitleScriptEditor } from '../SubtitleScriptEditor'
 import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
 
@@ -156,10 +160,8 @@ export function UploadStep() {
       if (type === 'translatedSubtitle') {
         const pSeq = projectMap[langCode]
         if (!pSeq || !spaceSeq) return
-        const data = await getProjectScript(pSeq, spaceSeq)
-        const list = Array.isArray(data) ? data : []
-        const srtContent = toSRT(list)
-        const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' })
+        const srtContent = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
+        const blob = new Blob([srtContent], { type: 'application/x-subrip;charset=utf-8' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -232,15 +234,13 @@ export function UploadStep() {
       })
       setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 90 } }))
 
-      // Upload SRT caption from Script API
+      // Upload SRT caption — use Perso's official translated SRT (audioScript target)
       setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 92 } }))
       try {
         const pSeq = projectMap[langCode]
         if (pSeq && spaceSeq) {
-          const scriptData = await getProjectScript(pSeq, spaceSeq)
-          const scriptList = Array.isArray(scriptData) ? scriptData : []
-          if (scriptList.length > 0) {
-            const srtText = toSRT(scriptList)
+          const srtText = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
+          if (srtText.trim().length > 0) {
             await ytUploadCaption({
               videoId: result.videoId,
               language: toBcp47(langCode),
@@ -391,13 +391,11 @@ export function UploadStep() {
 
       setCaptionUploads((prev) => ({ ...prev, [langCode]: 'uploading' }))
       try {
-        const data = await getProjectScript(pSeq, spaceSeq)
-        const list = Array.isArray(data) ? data : []
-        if (list.length === 0) {
+        const srtContent = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
+        if (srtContent.trim().length === 0) {
           setCaptionUploads((prev) => ({ ...prev, [langCode]: 'error' }))
           continue
         }
-        const srtContent = toSRT(list)
         await ytUploadCaption({
           videoId: targetVideoId,
           language: toBcp47(langCode),

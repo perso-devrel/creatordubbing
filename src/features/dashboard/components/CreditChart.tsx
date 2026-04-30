@@ -32,7 +32,7 @@ export function CreditChart({ initialData }: CreditChartProps) {
       <CardTitle>크레딧 사용량</CardTitle>
       <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">월별 크레딧 소비 현황</p>
 
-      <div className="h-64">
+      <div className="h-64 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
             <defs>

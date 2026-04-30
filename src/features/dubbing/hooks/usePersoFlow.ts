@@ -135,7 +135,8 @@ async function pollLanguage(
       const downloads = await getDownloadLinks(projectSeq, spaceSeq, 'all')
       // Normalize to absolute URLs — Perso may return relative paths which break
       // server-side fetch in /api/youtube/upload (requires http-prefixed URLs).
-      const toAbs = (u?: string) => (u ? (u.startsWith('http') ? u : getPersoFileUrl(u)) : undefined)
+      const toAbs = (u?: string | null) =>
+        u ? (u.startsWith('http') ? u : getPersoFileUrl(u)) : undefined
       const absVideoUrl = toAbs(downloads.videoFile?.videoDownloadLink)
       const absAudioUrl = toAbs(downloads.audioFile?.voiceAudioDownloadLink)
       const absSrtUrl = toAbs(downloads.srtFile?.translatedSubtitleDownloadLink)

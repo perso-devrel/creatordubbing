@@ -211,6 +211,33 @@ export function requestLipSync(projectSeq: number, spaceSeq: number) {
   )
 }
 
+/**
+ * Perso가 생성한 SRT 자막 본문을 텍스트로 받는다.
+ * 서버 라우트(/api/perso/srt)가 audioScript target으로 다운로드 링크를 얻고
+ * perso-storage에서 파일을 받아 그대로 전달한다.
+ */
+export async function getTranslatedSrt(
+  projectSeq: number,
+  spaceSeq: number,
+  kind: 'translated' | 'original' = 'translated',
+): Promise<string> {
+  const res = await fetch(
+    `${PERSO}/srt?projectSeq=${projectSeq}&spaceSeq=${spaceSeq}&kind=${kind}`,
+    { cache: 'no-store' },
+  )
+  if (!res.ok) {
+    let msg = `SRT fetch failed (${res.status})`
+    try {
+      const body = await res.json()
+      if (body?.error?.message) msg = body.error.message
+    } catch {
+      // raw error response
+    }
+    throw new Error(msg)
+  }
+  return res.text()
+}
+
 // ─── Helper: resolve Perso file path to full URL ──────────────
 
 const PERSO_FILE_BASE =
