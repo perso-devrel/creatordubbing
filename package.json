@@ -36,7 +36,7 @@
     "recharts": "^3.8.1",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.5.0",
-    "zod": "^4.3.6",
+    "zod": "^4.4.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -55,7 +55,7 @@
     "eslint-config-next": "16.2.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.5.0",
-    "jsdom": "^29.1.0",
+    "jsdom": "^29.1.1",
     "lighthouse": "^13.1.0",
     "tailwindcss": "^4.2.3",
     "typescript": "^6.0.3",
