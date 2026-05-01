@@ -18,6 +18,8 @@ export async function ytUploadVideo(params: {
   categoryId?: string
   privacyStatus?: 'public' | 'unlisted' | 'private'
   language?: string
+  /** BCP-47 language code → { title, description } 맵. snippet.localizations로 전달. */
+  localizations?: Record<string, { title: string; description: string }>
 }): Promise<YouTubeUploadResult> {
   const form = new FormData()
   if (params.videoUrl) {
@@ -31,6 +33,9 @@ export async function ytUploadVideo(params: {
   if (params.categoryId) form.append('categoryId', params.categoryId)
   if (params.privacyStatus) form.append('privacyStatus', params.privacyStatus)
   if (params.language) form.append('language', params.language)
+  if (params.localizations && Object.keys(params.localizations).length > 0) {
+    form.append('localizations', JSON.stringify(params.localizations))
+  }
 
   const res = await fetch(`${YT}/upload`, {
     method: 'POST',

@@ -40,6 +40,14 @@ export const videosQuerySchema = z.object({
     .pipe(z.number().int().min(1).max(50)),
 })
 
+const localizationsRecordSchema = z.record(
+  z.string().min(1),
+  z.object({
+    title: z.string().min(1).max(2000),
+    description: z.string().max(20000).default(''),
+  }),
+)
+
 export const uploadFormSchema = z.object({
   title: z.string().default(''),
   description: z.string().default(''),
@@ -50,4 +58,16 @@ export const uploadFormSchema = z.object({
   categoryId: z.string().optional(),
   privacyStatus: z.enum(['public', 'unlisted', 'private']).optional(),
   language: z.string().optional(),
+  /** form에서는 JSON 문자열로 전달. */
+  localizations: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (!v) return undefined
+      try {
+        return localizationsRecordSchema.parse(JSON.parse(v))
+      } catch {
+        return undefined
+      }
+    }),
 })

@@ -5,6 +5,11 @@ import { YouTubeError } from '@/lib/youtube/error'
 
 const YOUTUBE_UPLOAD_BASE = 'https://www.googleapis.com/upload/youtube/v3'
 
+export interface YouTubeLocalization {
+  title: string
+  description: string
+}
+
 export interface YouTubeUploadInput {
   accessToken: string
   videoBlob: Blob
@@ -14,6 +19,11 @@ export interface YouTubeUploadInput {
   categoryId?: string
   privacyStatus?: 'public' | 'unlisted' | 'private'
   language?: string
+  /**
+   * BCP-47 언어 코드를 키로 한 추가 번역 맵.
+   * snippet.defaultLanguage가 함께 설정돼야 YouTube가 적용한다.
+   */
+  localizations?: Record<string, YouTubeLocalization>
 }
 
 export async function uploadVideoToYouTube(
@@ -28,9 +38,11 @@ export async function uploadVideoToYouTube(
     categoryId = '22',
     privacyStatus = 'private',
     language = 'en',
+    localizations,
   } = input
 
-  const metadata = {
+  const hasLocalizations = !!localizations && Object.keys(localizations).length > 0
+  const metadata: Record<string, unknown> = {
     snippet: {
       title,
       description,
@@ -44,9 +56,14 @@ export async function uploadVideoToYouTube(
       selfDeclaredMadeForKids: false,
     },
   }
+  if (hasLocalizations) {
+    metadata.localizations = localizations
+  }
+  // localizations가 있으면 part에 포함되도록 아래 URL에서 동적으로 합친다.
+  const parts = ['snippet', 'status', ...(hasLocalizations ? ['localizations'] : [])].join(',')
 
   const initRes = await fetch(
-    `${YOUTUBE_UPLOAD_BASE}/videos?uploadType=resumable&part=snippet,status`,
+    `${YOUTUBE_UPLOAD_BASE}/videos?uploadType=resumable&part=${parts}`,
     {
       method: 'POST',
       headers: {
