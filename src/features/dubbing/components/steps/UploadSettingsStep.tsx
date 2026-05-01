@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { ArrowLeft, ArrowRight, Languages, Link2, Upload, Zap } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { extractVideoId } from '@/utils/validators'
-import { getLanguageByCode } from '@/utils/languages'
+import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
@@ -13,6 +13,11 @@ const PRIVACY_OPTIONS: { value: PrivacyStatus; label: string }[] = [
   { value: 'unlisted', label: '일부 공개' },
   { value: 'public', label: '공개' },
 ]
+
+const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((l) => ({
+  value: l.code,
+  label: `${l.flag} ${l.name} (${l.nativeName})`,
+}))
 
 export function UploadSettingsStep() {
   const {
@@ -24,14 +29,16 @@ export function UploadSettingsStep() {
     uploadSettings,
     setUploadSettings,
     syncPrivacyFromGlobalDefault,
+    syncMetadataLanguageFromGlobalDefault,
     prevStep,
     nextStep,
   } = useDubbingStore()
 
-  // YouTube 설정 페이지의 기본 공개 설정과 동기화 (사용자 override 없을 때만).
+  // YouTube 설정 페이지의 기본값과 동기화 (사용자 override 없을 때만).
   useEffect(() => {
     syncPrivacyFromGlobalDefault()
-  }, [syncPrivacyFromGlobalDefault])
+    syncMetadataLanguageFromGlobalDefault()
+  }, [syncPrivacyFromGlobalDefault, syncMetadataLanguageFromGlobalDefault])
 
   const originalYouTubeId =
     videoSource?.type === 'url' && videoSource.url ? extractVideoId(videoSource.url) : null
@@ -100,8 +107,20 @@ export function UploadSettingsStep() {
       {deliverableMode === 'newDubbedVideos' && (
         <Card>
           <CardTitle>제목 · 설명 · 태그</CardTitle>
-          <p className="mt-1 mb-4 text-xs text-surface-500">각 언어별로 제목 앞에 [언어명]이 자동 추가됩니다.</p>
+          <p className="mt-1 mb-4 text-xs text-surface-500">
+            아래 텍스트는 <strong>{getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage}</strong> 기준으로 작성한 것으로 간주하고, 각 대상 언어로 자동 번역되어 업로드됩니다.
+          </p>
           <div className="space-y-4">
+            <Select
+              label="제목·설명 작성 언어"
+              value={uploadSettings.metadataLanguage}
+              onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
+              options={LANGUAGE_OPTIONS}
+            />
+            <p className="-mt-2 text-xs text-surface-400">
+              마이페이지의 기본 작성 언어를 따르며, 여기에서 더빙별로 변경할 수 있습니다.
+            </p>
+
             <Input
               label="제목 (공통)"
               value={uploadSettings.title}
@@ -148,9 +167,16 @@ export function UploadSettingsStep() {
         <Card>
           <CardTitle>원본 영상 업로드 설정</CardTitle>
           <p className="mt-1 mb-4 text-xs text-surface-500">
-            원본 영상이 YouTube에 먼저 업로드된 후, 더빙 오디오 트랙이 자동 추가됩니다.
+            아래 텍스트는 <strong>{getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage}</strong> 기준으로 작성한 것으로 간주하고, 선택한 대상 언어로 자동 번역되어 YouTube `localizations`에 함께 등록됩니다.
           </p>
           <div className="space-y-4">
+            <Select
+              label="제목·설명 작성 언어"
+              value={uploadSettings.metadataLanguage}
+              onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
+              options={LANGUAGE_OPTIONS}
+            />
+
             <Input
               label="제목"
               value={uploadSettings.title}

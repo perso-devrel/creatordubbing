@@ -15,6 +15,8 @@ import {
   ytUploadCaption,
   getPersoFileUrl,
   getTranslatedSrt,
+  translateMetadata,
+  type MetadataTranslation,
 } from '@/lib/api-client'
 import { toBcp47 } from '@/utils/languages'
 import { dbMutation } from '@/lib/api/dbMutation'
@@ -47,7 +49,7 @@ export function UploadStep() {
     ? `https://www.youtube.com/watch?v=${originalYouTubeId}`
     : null
 
-  const { autoUpload, uploadAsShort, attachOriginalLink, title: settingsTitle, description: settingsDescription, tags: settingsTags, privacyStatus } = uploadSettings
+  const { autoUpload, uploadAsShort, attachOriginalLink, title: settingsTitle, description: settingsDescription, tags: settingsTags, privacyStatus, metadataLanguage } = uploadSettings
 
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
@@ -57,6 +59,56 @@ export function UploadStep() {
   const autoUploadTriggered = useRef(false)
   const autoChainTriggered = useRef(false)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+
+  // ─── Metadata translations (Gemini) ─────────────────────────────────
+  // Upload Step에 진입한 시점의 (title, description, metadataLanguage, selectedLanguages) 조합으로
+  // 한 번 번역해두고 캐시. 모든 언어별 업로드와 localizations에서 공용으로 쓴다.
+  // 실패해도 fallback으로 원문이 들어가도록 처리되어 업로드를 막지 않는다.
+  const [translations, setTranslations] = useState<Record<string, MetadataTranslation>>({})
+  const translatePromiseRef = useRef<Promise<Record<string, MetadataTranslation>> | null>(null)
+  const ensureTranslations = useCallback(async (): Promise<Record<string, MetadataTranslation>> => {
+    if (Object.keys(translations).length > 0) return translations
+    if (translatePromiseRef.current) return translatePromiseRef.current
+
+    const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
+    if (!baseTitle || selectedLanguages.length === 0) return {}
+
+    const p = (async () => {
+      try {
+        const result = await translateMetadata({
+          title: baseTitle,
+          description: settingsDescription || '',
+          sourceLang: metadataLanguage || 'ko',
+          targetLangs: selectedLanguages,
+        })
+        setTranslations(result)
+        return result
+      } catch (err) {
+        // 실패 시 모든 언어를 원문으로 fallback. 사용자에게는 toast로 1회 안내.
+        const fallback: Record<string, MetadataTranslation> = {}
+        for (const code of selectedLanguages) {
+          fallback[code] = { title: baseTitle, description: settingsDescription || '' }
+        }
+        setTranslations(fallback)
+        addToast({
+          type: 'warning',
+          title: '메타데이터 번역 실패',
+          message: err instanceof Error ? err.message : '원문으로 업로드합니다',
+        })
+        return fallback
+      } finally {
+        translatePromiseRef.current = null
+      }
+    })()
+    translatePromiseRef.current = p
+    return p
+  }, [translations, settingsTitle, videoMeta?.title, settingsDescription, metadataLanguage, selectedLanguages, addToast])
+
+  // 사용자가 제목/설명을 다시 만지면 캐시 무효화.
+  useEffect(() => {
+    setTranslations({})
+    translatePromiseRef.current = null
+  }, [settingsTitle, settingsDescription, metadataLanguage])
 
   // Original video upload state (for upload + originalWithMultiAudio)
   const [originalUploadState, setOriginalUploadState] = useState<{
@@ -69,17 +121,25 @@ export function UploadStep() {
   const multiAudioVideoId =
     originalUploadState.videoId || channelVideoId || null
 
+  /** 번역되었거나 원문인 description에 공통 footer(원본 링크)를 붙여 준다. */
+  const applyDescriptionFooter = useCallback(
+    (desc: string) => {
+      if (attachOriginalLink && originalYouTubeUrl) {
+        return `${desc}\n\n원본 영상: ${originalYouTubeUrl}`
+      }
+      return desc
+    },
+    [attachOriginalLink, originalYouTubeUrl],
+  )
+
   const buildDescription = useCallback(
     (langName: string) => {
       const base = settingsDescription?.trim()
         ? settingsDescription
         : `${videoMeta?.title || 'Video'} - ${langName} 더빙 by Dubtube AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
-      if (attachOriginalLink && originalYouTubeUrl) {
-        return `${base}\n\n원본 영상: ${originalYouTubeUrl}`
-      }
-      return base
+      return applyDescriptionFooter(base)
     },
-    [settingsDescription, videoMeta?.title, attachOriginalLink, originalYouTubeUrl],
+    [settingsDescription, videoMeta?.title, applyDescriptionFooter],
   )
 
   const handleNewDubbing = () => reset()
@@ -91,12 +151,23 @@ export function UploadStep() {
 
     setOriginalUploadState({ status: 'uploading' })
     try {
+      // 다국어 자막 모드는 영상 1개에 localizations 맵을 함께 보내 YouTube가 시청자
+      // 로케일에 맞춰 제목·설명을 보여주도록 한다.
+      const allTranslations = await ensureTranslations()
+      const localizations: Record<string, { title: string; description: string }> = {}
+      for (const code of selectedLanguages) {
+        const t = allTranslations[code]
+        if (t) localizations[code] = { title: t.title, description: t.description }
+      }
+
       const result = await ytUploadVideo({
         videoUrl: originalVideoUrl,
         title: settingsTitle?.trim() || videoMeta?.title || 'Original Video',
         description: settingsDescription || '',
         tags: settingsTags,
         privacyStatus,
+        language: metadataLanguage,
+        localizations: Object.keys(localizations).length > 0 ? localizations : undefined,
       })
       setOriginalUploadState({ status: 'done', videoId: result.videoId })
       addToast({
@@ -111,7 +182,7 @@ export function UploadStep() {
       addToast({ type: 'error', title: '원본 영상 업로드 실패', message: msg })
       return null
     }
-  }, [isAuthenticated, originalVideoUrl, settingsTitle, settingsDescription, settingsTags, privacyStatus, videoMeta?.title, addToast])
+  }, [isAuthenticated, originalVideoUrl, settingsTitle, settingsDescription, settingsTags, privacyStatus, videoMeta?.title, addToast, ensureTranslations, selectedLanguages, metadataLanguage])
 
   // ─── Audio → Studio helper ──────────────────────────────────────────
   const handleAudioToStudio = useCallback(async (langCode: string, targetVideoId?: string) => {
@@ -217,8 +288,13 @@ export function UploadStep() {
 
       setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 20 } }))
       const titlePrefix = uploadAsShort ? '#Shorts ' : ''
+
+      // 번역된 제목·설명을 가져와 그 언어 영상의 메타로 사용한다.
+      const allTranslations = await ensureTranslations()
       const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
-      const ytTitle = `${titlePrefix}[${lang.name}] ${baseTitle}`
+      const translated = allTranslations[langCode] ?? { title: baseTitle, description: settingsDescription || '' }
+      const ytTitle = `${titlePrefix}${translated.title}`
+      const ytDescription = applyDescriptionFooter(translated.description)
       const langTags = Array.from(new Set([
         ...settingsTags,
         lang.name,
@@ -227,7 +303,7 @@ export function UploadStep() {
       const result = await ytUploadVideo({
         videoUrl,
         title: ytTitle,
-        description: buildDescription(lang.name),
+        description: ytDescription,
         tags: langTags,
         privacyStatus,
         language: langCode,
@@ -292,7 +368,7 @@ export function UploadStep() {
       }))
       addToast({ type: 'error', title: `${lang?.name} 업로드 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsTags, privacyStatus, buildDescription, projectMap, spaceSeq])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsDescription, settingsTags, privacyStatus, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter])
 
   // ─── Queue upload (background — survives tab close) ─────────────────
   const queueYouTubeUpload = useCallback(async (langCode: string) => {
@@ -310,8 +386,10 @@ export function UploadStep() {
       const videoUrl = rawVideoUrl.startsWith('http') ? rawVideoUrl : getPersoFileUrl(rawVideoUrl)
 
       const titlePrefix = uploadAsShort ? '#Shorts ' : ''
+      const allTranslations = await ensureTranslations()
       const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
-      const ytTitle = `${titlePrefix}[${lang.name}] ${baseTitle}`
+      const translated = allTranslations[langCode] ?? { title: baseTitle, description: settingsDescription || '' }
+      const ytTitle = `${titlePrefix}${translated.title}`
       const langTags = Array.from(new Set([
         ...settingsTags,
         lang.name,
@@ -326,7 +404,7 @@ export function UploadStep() {
           langCode,
           videoUrl,
           title: ytTitle,
-          description: buildDescription(lang.name),
+          description: applyDescriptionFooter(translated.description),
           tags: langTags,
           privacyStatus,
           language: langCode,
@@ -351,7 +429,7 @@ export function UploadStep() {
       }))
       addToast({ type: 'error', title: `${lang?.name} 큐 등록 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, settingsTitle, settingsTags, privacyStatus, buildDescription])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, settingsTitle, settingsDescription, settingsTags, privacyStatus, ensureTranslations, applyDescriptionFooter])
 
   const completedLangs = selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)

@@ -12,6 +12,11 @@ export interface UploadSettings {
   description: string
   tags: string[]
   privacyStatus: PrivacyStatus
+  /**
+   * 사용자가 작성한 제목/설명의 언어. 다른 대상 언어로 자동 번역하는 기준.
+   * 마이페이지의 `defaultLanguage`로 초기화되며 더빙별로 override 가능.
+   */
+  metadataLanguage: string
 }
 
 export type JobStatus = 'idle' | 'transcribing' | 'translating' | 'synthesizing' | 'lip-syncing' | 'merging' | 'completed' | 'failed'
