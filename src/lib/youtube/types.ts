@@ -29,6 +29,7 @@ export interface MyVideoItem {
   title: string
   thumbnail: string
   publishedAt: string
+  privacyStatus: 'public' | 'unlisted' | 'private' | 'unknown'
 }
 
 export interface AnalyticsDailyRow {

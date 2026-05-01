@@ -95,10 +95,43 @@ export async function fetchMyVideos(
     }>
   }
 
-  return (data.items || []).map((item) => ({
+  const base = (data.items || []).map((item) => ({
     videoId: item.id.videoId,
     title: item.snippet?.title || '',
     thumbnail: item.snippet?.thumbnails?.medium?.url || '',
     publishedAt: item.snippet?.publishedAt || '',
   }))
+
+  // search.list는 status를 안 돌려주므로 videos.list로 privacyStatus 보강.
+  const privacyById = await fetchPrivacyStatuses(accessToken, base.map((v) => v.videoId))
+
+  return base.map((v) => ({
+    ...v,
+    privacyStatus: privacyById.get(v.videoId) ?? 'unknown',
+  }))
+}
+
+async function fetchPrivacyStatuses(
+  accessToken: string,
+  videoIds: string[],
+): Promise<Map<string, MyVideoItem['privacyStatus']>> {
+  const result = new Map<string, MyVideoItem['privacyStatus']>()
+  if (videoIds.length === 0) return result
+
+  const res = await fetch(
+    `${YOUTUBE_API_BASE}/youtube/v3/videos?part=status&id=${videoIds.join(',')}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  if (!res.ok) return result
+
+  const data = (await res.json()) as {
+    items?: Array<{ id: string; status?: { privacyStatus?: string } }>
+  }
+  for (const item of data.items || []) {
+    const p = item.status?.privacyStatus
+    if (p === 'public' || p === 'unlisted' || p === 'private') {
+      result.set(item.id, p)
+    }
+  }
+  return result
 }

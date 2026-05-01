@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo } from 'react'
-import { ArrowLeft, ArrowRight, Link2, Upload, Zap } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Languages, Link2, Upload, Zap } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { extractVideoId } from '@/utils/validators'
 import { getLanguageByCode } from '@/utils/languages'
@@ -91,7 +91,7 @@ export function UploadSettingsStep() {
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">업로드 설정</h2>
         <p className="mt-1 text-surface-500">
           {isMultiAudio
-            ? '원본 영상에 오디오 트랙을 추가합니다. 기본 설정을 확인하세요.'
+            ? '원본 영상에 자막을 추가합니다. 기본 설정을 확인하세요.'
             : '처리 완료 후 YouTube에 어떻게 업로드할지 미리 설정하세요.'}
         </p>
       </div>
@@ -198,7 +198,10 @@ export function UploadSettingsStep() {
             onToggle={() => setUploadSettings({ autoUpload: !uploadSettings.autoUpload })}
           />
 
-          {deliverableMode === 'newDubbedVideos' && (
+          {/* Shorts 토글: 새로 영상을 YouTube에 올리는 케이스에만 노출.
+              channel 모드는 이미 업로드된 영상이라 Shorts 분류가 고정됨. */}
+          {(deliverableMode === 'newDubbedVideos' ||
+            (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload')) && (
             <ToggleRow
               icon={<Zap className="h-4 w-4 text-brand-500" />}
               label={isShort ? 'Shorts로 업로드 (자동 감지됨)' : 'Shorts로 업로드'}
@@ -219,6 +222,20 @@ export function UploadSettingsStep() {
               activeLabel="첨부 ON"
               inactiveLabel="첨부 OFF"
               onToggle={() => setUploadSettings({ attachOriginalLink: !uploadSettings.attachOriginalLink })}
+            />
+          )}
+
+          {/* 다국어 오디오 트랙: 자막 모드에서만 노출. 실서비스 검증 전이라 비활성. */}
+          {isMultiAudio && (
+            <ToggleRow
+              icon={<Languages className="h-4 w-4 text-surface-400" />}
+              label="다국어 오디오 트랙 추가"
+              description="번역된 더빙 오디오를 YouTube 다국어 오디오 트랙으로 함께 추가합니다. 추후 기능이 추가될 예정입니다."
+              active={false}
+              activeLabel="ON"
+              inactiveLabel="준비 중"
+              onToggle={() => {}}
+              disabled
             />
           )}
         </div>
@@ -263,27 +280,38 @@ interface ToggleRowProps {
   activeLabel: string
   inactiveLabel: string
   onToggle: () => void
+  disabled?: boolean
 }
 
-function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabel, onToggle }: ToggleRowProps) {
+function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabel, onToggle, disabled }: ToggleRowProps) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
+    <div className={`flex items-center justify-between gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 ${disabled ? 'opacity-60' : ''}`}>
       <div className="flex min-w-0 items-start gap-2">
         <div className="mt-0.5 flex-shrink-0">{icon}</div>
         <div className="min-w-0">
-          <p className="text-sm text-surface-700 dark:text-surface-300">{label}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm text-surface-700 dark:text-surface-300">{label}</p>
+            {disabled && (
+              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                준비 중
+              </span>
+            )}
+          </div>
           {description && (
-            <p className="mt-0.5 truncate text-xs text-surface-400">{description}</p>
+            <p className={`mt-0.5 text-xs text-surface-400 ${disabled ? '' : 'truncate'}`}>{description}</p>
           )}
         </div>
       </div>
       <button
         type="button"
-        onClick={onToggle}
-        className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
-          active
-            ? 'bg-brand-500 text-white'
-            : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
+        onClick={disabled ? undefined : onToggle}
+        disabled={disabled}
+        className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all ${
+          disabled
+            ? 'bg-surface-200 text-surface-400 dark:bg-surface-700 dark:text-surface-500 cursor-not-allowed'
+            : `cursor-pointer ${active
+              ? 'bg-brand-500 text-white'
+              : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'}`
         }`}
       >
         {active ? activeLabel : inactiveLabel}

@@ -29,14 +29,14 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
       value: 'originalWithMultiAudio',
       icon: Subtitles,
       title: '기존 영상에 자막 추가',
-      description: '내 YouTube 영상에 번역 자막을 자동 업로드합니다. 오디오 트랙도 선택 가능합니다.',
+      description: '내 YouTube 영상에 번역 자막을 자동 업로드합니다.',
     })
   } else if (sourceType === 'upload') {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
       title: '원본 업로드 + 자막 추가',
-      description: '원본 영상을 YouTube에 업로드한 뒤, 번역 자막을 자동 추가합니다. 오디오 트랙도 선택 가능합니다.',
+      description: '원본 영상을 YouTube에 업로드한 뒤, 번역 자막을 자동 추가합니다.',
     })
   }
 
@@ -128,7 +128,7 @@ export function OutputModeStep() {
           이전
         </Button>
         <Button onClick={nextStep}>
-          {deliverableMode === 'downloadOnly' ? '다음: 설정 확인' : '다음: 업로드 설정'}
+          다음: 언어 선택
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

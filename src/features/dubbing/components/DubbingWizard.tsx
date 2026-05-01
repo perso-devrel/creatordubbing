@@ -13,8 +13,8 @@ import { UploadStep } from './steps/UploadStep'
 
 const steps = [
   { num: 1, label: '영상' },
-  { num: 2, label: '언어' },
-  { num: 3, label: '결과물' },
+  { num: 2, label: '결과물' },
+  { num: 3, label: '언어' },
   { num: 4, label: '업로드 설정' },
   { num: 5, label: '확인' },
   { num: 6, label: '처리' },
@@ -71,8 +71,8 @@ export function DubbingWizard() {
       {/* Step content */}
       <div className="animate-fade-in">
         {currentStep === 1 && <VideoInputStep />}
-        {currentStep === 2 && <LanguageSelectStep />}
-        {currentStep === 3 && <OutputModeStep />}
+        {currentStep === 2 && <OutputModeStep />}
+        {currentStep === 3 && <LanguageSelectStep />}
         {currentStep === 4 && <UploadSettingsStep />}
         {currentStep === 5 && <TranslationEditStep />}
         {currentStep === 6 && <ProcessingStep />}
