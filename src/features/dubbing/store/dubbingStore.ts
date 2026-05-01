@@ -117,6 +117,9 @@ interface DubbingState {
   privacyOverridden: boolean
   /** Wizard 세션 내에서 사용자가 metadataLanguage를 직접 변경했는지 여부. */
   metadataLanguageOverridden: boolean
+  /** Wizard 세션 내에서 사용자가 Shorts 토글을 직접 변경했는지 여부.
+   * true이면 videoMeta 갱신 시 자동 감지가 uploadAsShort를 덮어쓰지 않는다. */
+  uploadAsShortOverridden: boolean
   setUploadSettings: (patch: Partial<UploadSettings>) => void
   /** YouTube 설정 페이지의 기본값을 wizard에 동기화한다 (사용자 override 없을 때만). */
   syncPrivacyFromGlobalDefault: () => void
@@ -155,6 +158,7 @@ const initialState = {
   uploadSettings: buildDefaultUploadSettings() as UploadSettings,
   privacyOverridden: false,
   metadataLanguageOverridden: false,
+  uploadAsShortOverridden: false,
 }
 
 export const useDubbingStore = create<DubbingState>((set) => ({
@@ -230,7 +234,10 @@ export const useDubbingStore = create<DubbingState>((set) => ({
   setDbJobId: (id) => set({ dbJobId: id }),
   setIsShort: (v) => set((s) => ({
     isShort: v,
-    uploadSettings: { ...s.uploadSettings, uploadAsShort: v },
+    // 사용자가 토글을 직접 만진 적이 있으면 그 선택을 보존한다.
+    uploadSettings: s.uploadAsShortOverridden
+      ? s.uploadSettings
+      : { ...s.uploadSettings, uploadAsShort: v },
   })),
 
   setDeliverableMode: (mode) => set({ deliverableMode: mode }),
@@ -242,6 +249,8 @@ export const useDubbingStore = create<DubbingState>((set) => ({
       patch.privacyStatus !== undefined ? true : s.privacyOverridden,
     metadataLanguageOverridden:
       patch.metadataLanguage !== undefined ? true : s.metadataLanguageOverridden,
+    uploadAsShortOverridden:
+      patch.uploadAsShort !== undefined ? true : s.uploadAsShortOverridden,
   })),
 
   syncPrivacyFromGlobalDefault: () => set((s) => {

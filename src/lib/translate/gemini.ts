@@ -2,8 +2,9 @@ import 'server-only'
 
 import { getServerEnv } from '@/lib/env'
 
+// gemini-2.0-flash는 신규 키로 사용 불가(NOT_FOUND). 2.5 Flash 사용.
 const GEMINI_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
 export interface MetadataTranslation {
   title: string

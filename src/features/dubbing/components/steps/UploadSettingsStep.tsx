@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Languages, Link2, Upload, Zap } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { extractVideoId } from '@/utils/validators'
@@ -46,16 +46,23 @@ export function UploadSettingsStep() {
     ? `https://www.youtube.com/watch?v=${originalYouTubeId}`
     : null
 
+  // 영상 정보로 제목/설명을 초기 1회 채워준다. 사용자가 빈 값으로 지웠을 때
+  // 다시 채워 넣지 않도록 videoMeta.id 단위로 한 번만 실행. (deps에 입력값을
+  // 넣으면 사용자가 지울 때마다 재초기화돼 빈 값이 유지되지 않는다.)
+  const initializedForVideoIdRef = useRef<string | null>(null)
   useEffect(() => {
+    if (!videoMeta?.title) return
+    if (initializedForVideoIdRef.current === videoMeta.id) return
+    initializedForVideoIdRef.current = videoMeta.id
+
+    const { title, description } = useDubbingStore.getState().uploadSettings
     const patch: Partial<typeof uploadSettings> = {}
-    if (!uploadSettings.title && videoMeta?.title) {
-      patch.title = videoMeta.title
-    }
-    if (!uploadSettings.description && videoMeta?.title) {
+    if (!title) patch.title = videoMeta.title
+    if (!description) {
       patch.description = `${videoMeta.title} - Dubtube AI 더빙\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
     }
     if (Object.keys(patch).length > 0) setUploadSettings(patch)
-  }, [videoMeta?.title, uploadSettings.title, uploadSettings.description, setUploadSettings])
+  }, [videoMeta?.id, videoMeta?.title, setUploadSettings])
 
   const firstLangName = useMemo(() => {
     const first = selectedLanguages[0]
@@ -230,11 +237,11 @@ export function UploadSettingsStep() {
             (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload')) && (
             <ToggleRow
               icon={<Zap className="h-4 w-4 text-brand-500" />}
-              label={isShort ? 'Shorts로 업로드 (자동 감지됨)' : 'Shorts로 업로드'}
-              description="제목 앞에 #Shorts가 추가되고 Shorts 태그가 붙습니다."
+              label={isShort ? 'Shorts 해시태그 붙이기 (자동 감지됨)' : 'Shorts 해시태그 붙이기'}
+              description="제목 앞에 #Shorts가 추가되고 Shorts 태그가 붙습니다. 최종 Shorts 분류는 영상 비율·길이에 따라 YouTube가 결정합니다."
               active={uploadSettings.uploadAsShort}
-              activeLabel="Shorts ON"
-              inactiveLabel="Shorts OFF"
+              activeLabel="ON"
+              inactiveLabel="OFF"
               onToggle={() => setUploadSettings({ uploadAsShort: !uploadSettings.uploadAsShort })}
             />
           )}

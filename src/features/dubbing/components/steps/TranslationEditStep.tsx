@@ -147,7 +147,7 @@ export function TranslationEditStep() {
           <p className="text-sm font-medium text-blue-900 dark:text-blue-300">처리 과정</p>
           <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
             {deliverableMode === 'originalWithMultiAudio'
-              ? 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 보이스 클론으로 자막을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'
+              ? 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 자막을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'
               : 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 보이스 클론으로 더빙 영상을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'}
           </p>
         </div>
