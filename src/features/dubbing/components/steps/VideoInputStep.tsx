@@ -348,7 +348,7 @@ export function VideoInputStep() {
 
       <div className="flex justify-end">
         <Button onClick={nextStep} disabled={!videoMeta || loading}>
-          다음: 언어 선택
+          다음: 결과물 선택
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

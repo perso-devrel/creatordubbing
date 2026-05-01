@@ -21,6 +21,7 @@ const serverSchema = z.object({
   TURSO_URL: z.string().min(1, "TURSO_URL is required"),
   TURSO_AUTH_TOKEN: z.string().min(1, "TURSO_AUTH_TOKEN is required"),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  GEMINI_API_KEY: z.string().min(1).optional(),
 });
 
 const clientSchema = z.object({
@@ -60,6 +61,7 @@ export function getServerEnv(): ServerEnv {
     TURSO_URL: process.env.TURSO_URL,
     TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   });
 
   if (!parsed.success) {

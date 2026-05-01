@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       categoryId: (form.get('categoryId') as string) || undefined,
       privacyStatus: (form.get('privacyStatus') as string) || undefined,
       language: (form.get('language') as string) || undefined,
+      localizations: (form.get('localizations') as string) || undefined,
     }
     const fields = uploadFormSchema.parse(rawFields)
 
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
       categoryId: fields.categoryId,
       privacyStatus: fields.privacyStatus,
       language: fields.language,
+      localizations: fields.localizations,
     })
   })
 }
