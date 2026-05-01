@@ -42,7 +42,7 @@ function getProgressLabel(lp: { progressReason: string; progress: number }) {
 }
 
 export function ProcessingStep() {
-  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted } = useDubbingStore()
+  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted, deliverableMode } = useDubbingStore()
   const { submitDubbing, startPolling, stopPolling, cancelAll } = usePersoFlow()
   const [cancelling, setCancelling] = useState(false)
   const submittedRef = useRef(isSubmitted)
@@ -94,7 +94,9 @@ export function ProcessingStep() {
         <p className="mt-1 text-surface-500">
           {allCompleted
             ? '모든 언어 처리가 완료되었습니다.'
-            : 'Perso.ai가 전사, 번역, 더빙 오디오를 생성하고 있습니다. 몇 분 정도 소요됩니다.'}
+            : deliverableMode === 'originalWithMultiAudio'
+              ? 'AI가 전사, 번역, 자막 생성을 진행하고 있습니다.'
+              : 'AI가 전사, 번역, 더빙 오디오를 생성하고 있습니다. 몇 분 정도 소요됩니다.'}
         </p>
       </div>
 
