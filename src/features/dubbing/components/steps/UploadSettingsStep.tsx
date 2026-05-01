@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
-import { ArrowLeft, ArrowRight, Link2, Upload, Zap } from 'lucide-react'
+import { useEffect, useMemo, useRef } from 'react'
+import { ArrowLeft, ArrowRight, Languages, Link2, Upload, Zap } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { extractVideoId } from '@/utils/validators'
-import { getLanguageByCode } from '@/utils/languages'
+import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
@@ -13,6 +13,11 @@ const PRIVACY_OPTIONS: { value: PrivacyStatus; label: string }[] = [
   { value: 'unlisted', label: '일부 공개' },
   { value: 'public', label: '공개' },
 ]
+
+const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((l) => ({
+  value: l.code,
+  label: `${l.flag} ${l.name} (${l.nativeName})`,
+}))
 
 export function UploadSettingsStep() {
   const {
@@ -24,14 +29,16 @@ export function UploadSettingsStep() {
     uploadSettings,
     setUploadSettings,
     syncPrivacyFromGlobalDefault,
+    syncMetadataLanguageFromGlobalDefault,
     prevStep,
     nextStep,
   } = useDubbingStore()
 
-  // YouTube 설정 페이지의 기본 공개 설정과 동기화 (사용자 override 없을 때만).
+  // YouTube 설정 페이지의 기본값과 동기화 (사용자 override 없을 때만).
   useEffect(() => {
     syncPrivacyFromGlobalDefault()
-  }, [syncPrivacyFromGlobalDefault])
+    syncMetadataLanguageFromGlobalDefault()
+  }, [syncPrivacyFromGlobalDefault, syncMetadataLanguageFromGlobalDefault])
 
   const originalYouTubeId =
     videoSource?.type === 'url' && videoSource.url ? extractVideoId(videoSource.url) : null
@@ -39,16 +46,23 @@ export function UploadSettingsStep() {
     ? `https://www.youtube.com/watch?v=${originalYouTubeId}`
     : null
 
+  // 영상 정보로 제목/설명을 초기 1회 채워준다. 사용자가 빈 값으로 지웠을 때
+  // 다시 채워 넣지 않도록 videoMeta.id 단위로 한 번만 실행. (deps에 입력값을
+  // 넣으면 사용자가 지울 때마다 재초기화돼 빈 값이 유지되지 않는다.)
+  const initializedForVideoIdRef = useRef<string | null>(null)
   useEffect(() => {
+    if (!videoMeta?.title) return
+    if (initializedForVideoIdRef.current === videoMeta.id) return
+    initializedForVideoIdRef.current = videoMeta.id
+
+    const { title, description } = useDubbingStore.getState().uploadSettings
     const patch: Partial<typeof uploadSettings> = {}
-    if (!uploadSettings.title && videoMeta?.title) {
-      patch.title = videoMeta.title
-    }
-    if (!uploadSettings.description && videoMeta?.title) {
+    if (!title) patch.title = videoMeta.title
+    if (!description) {
       patch.description = `${videoMeta.title} - Dubtube AI 더빙\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
     }
     if (Object.keys(patch).length > 0) setUploadSettings(patch)
-  }, [videoMeta?.title, uploadSettings.title, uploadSettings.description, setUploadSettings])
+  }, [videoMeta?.id, videoMeta?.title, setUploadSettings])
 
   const firstLangName = useMemo(() => {
     const first = selectedLanguages[0]
@@ -91,7 +105,7 @@ export function UploadSettingsStep() {
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">업로드 설정</h2>
         <p className="mt-1 text-surface-500">
           {isMultiAudio
-            ? '원본 영상에 오디오 트랙을 추가합니다. 기본 설정을 확인하세요.'
+            ? '원본 영상에 자막을 추가합니다. 기본 설정을 확인하세요.'
             : '처리 완료 후 YouTube에 어떻게 업로드할지 미리 설정하세요.'}
         </p>
       </div>
@@ -100,8 +114,20 @@ export function UploadSettingsStep() {
       {deliverableMode === 'newDubbedVideos' && (
         <Card>
           <CardTitle>제목 · 설명 · 태그</CardTitle>
-          <p className="mt-1 mb-4 text-xs text-surface-500">각 언어별로 제목 앞에 [언어명]이 자동 추가됩니다.</p>
+          <p className="mt-1 mb-4 text-xs text-surface-500">
+            아래 텍스트는 <strong>{getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage}</strong> 기준으로 작성한 것으로 간주하고, 각 대상 언어로 자동 번역되어 업로드됩니다.
+          </p>
           <div className="space-y-4">
+            <Select
+              label="제목·설명 작성 언어"
+              value={uploadSettings.metadataLanguage}
+              onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
+              options={LANGUAGE_OPTIONS}
+            />
+            <p className="-mt-2 text-xs text-surface-400">
+              마이페이지의 기본 작성 언어를 따르며, 여기에서 더빙별로 변경할 수 있습니다.
+            </p>
+
             <Input
               label="제목 (공통)"
               value={uploadSettings.title}
@@ -148,9 +174,16 @@ export function UploadSettingsStep() {
         <Card>
           <CardTitle>원본 영상 업로드 설정</CardTitle>
           <p className="mt-1 mb-4 text-xs text-surface-500">
-            원본 영상이 YouTube에 먼저 업로드된 후, 더빙 오디오 트랙이 자동 추가됩니다.
+            아래 텍스트는 <strong>{getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage}</strong> 기준으로 작성한 것으로 간주하고, 선택한 대상 언어로 자동 번역되어 YouTube `localizations`에 함께 등록됩니다.
           </p>
           <div className="space-y-4">
+            <Select
+              label="제목·설명 작성 언어"
+              value={uploadSettings.metadataLanguage}
+              onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
+              options={LANGUAGE_OPTIONS}
+            />
+
             <Input
               label="제목"
               value={uploadSettings.title}
@@ -198,14 +231,17 @@ export function UploadSettingsStep() {
             onToggle={() => setUploadSettings({ autoUpload: !uploadSettings.autoUpload })}
           />
 
-          {deliverableMode === 'newDubbedVideos' && (
+          {/* Shorts 토글: 새로 영상을 YouTube에 올리는 케이스에만 노출.
+              channel 모드는 이미 업로드된 영상이라 Shorts 분류가 고정됨. */}
+          {(deliverableMode === 'newDubbedVideos' ||
+            (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload')) && (
             <ToggleRow
               icon={<Zap className="h-4 w-4 text-brand-500" />}
-              label={isShort ? 'Shorts로 업로드 (자동 감지됨)' : 'Shorts로 업로드'}
-              description="제목 앞에 #Shorts가 추가되고 Shorts 태그가 붙습니다."
+              label={isShort ? 'Shorts 해시태그 붙이기 (자동 감지됨)' : 'Shorts 해시태그 붙이기'}
+              description="제목 앞에 #Shorts가 추가되고 Shorts 태그가 붙습니다. 최종 Shorts 분류는 영상 비율·길이에 따라 YouTube가 결정합니다."
               active={uploadSettings.uploadAsShort}
-              activeLabel="Shorts ON"
-              inactiveLabel="Shorts OFF"
+              activeLabel="ON"
+              inactiveLabel="OFF"
               onToggle={() => setUploadSettings({ uploadAsShort: !uploadSettings.uploadAsShort })}
             />
           )}
@@ -219,6 +255,20 @@ export function UploadSettingsStep() {
               activeLabel="첨부 ON"
               inactiveLabel="첨부 OFF"
               onToggle={() => setUploadSettings({ attachOriginalLink: !uploadSettings.attachOriginalLink })}
+            />
+          )}
+
+          {/* 다국어 오디오 트랙: 자막 모드에서만 노출. 실서비스 검증 전이라 비활성. */}
+          {isMultiAudio && (
+            <ToggleRow
+              icon={<Languages className="h-4 w-4 text-surface-400" />}
+              label="다국어 오디오 트랙 추가"
+              description="번역된 더빙 오디오를 YouTube 다국어 오디오 트랙으로 함께 추가합니다. 추후 기능이 추가될 예정입니다."
+              active={false}
+              activeLabel="ON"
+              inactiveLabel="준비 중"
+              onToggle={() => {}}
+              disabled
             />
           )}
         </div>
@@ -263,27 +313,38 @@ interface ToggleRowProps {
   activeLabel: string
   inactiveLabel: string
   onToggle: () => void
+  disabled?: boolean
 }
 
-function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabel, onToggle }: ToggleRowProps) {
+function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabel, onToggle, disabled }: ToggleRowProps) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
+    <div className={`flex items-center justify-between gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 ${disabled ? 'opacity-60' : ''}`}>
       <div className="flex min-w-0 items-start gap-2">
         <div className="mt-0.5 flex-shrink-0">{icon}</div>
         <div className="min-w-0">
-          <p className="text-sm text-surface-700 dark:text-surface-300">{label}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm text-surface-700 dark:text-surface-300">{label}</p>
+            {disabled && (
+              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                준비 중
+              </span>
+            )}
+          </div>
           {description && (
-            <p className="mt-0.5 truncate text-xs text-surface-400">{description}</p>
+            <p className={`mt-0.5 text-xs text-surface-400 ${disabled ? '' : 'truncate'}`}>{description}</p>
           )}
         </div>
       </div>
       <button
         type="button"
-        onClick={onToggle}
-        className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
-          active
-            ? 'bg-brand-500 text-white'
-            : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
+        onClick={disabled ? undefined : onToggle}
+        disabled={disabled}
+        className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all ${
+          disabled
+            ? 'bg-surface-200 text-surface-400 dark:bg-surface-700 dark:text-surface-500 cursor-not-allowed'
+            : `cursor-pointer ${active
+              ? 'bg-brand-500 text-white'
+              : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'}`
         }`}
       >
         {active ? activeLabel : inactiveLabel}

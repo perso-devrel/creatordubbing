@@ -102,18 +102,20 @@ export function TranslationEditStep() {
               ))}
             </div>
             <p className="mt-2 text-xs text-surface-400">
-              영상에 등장하는 화자 수를 선택하세요. 정확하게 설정하면 Perso AI가 화자별로 음성을 분리해 더빙합니다.
+              영상에 등장하는 화자 수를 선택하세요.
             </p>
           </div>
 
-          {/* Lip sync */}
-          <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
-            <div>
-              <span className="text-sm text-surface-600 dark:text-surface-400">립싱크</span>
-              <p className="text-xs text-surface-400 mt-0.5">더빙 오디오에 맞춰 입 모양을 조절합니다</p>
+          {/* Lip sync — 원본+자막 모드는 비디오 픽셀을 건드리지 않으므로 미노출 */}
+          {deliverableMode !== 'originalWithMultiAudio' && (
+            <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
+              <div>
+                <span className="text-sm text-surface-600 dark:text-surface-400">립싱크</span>
+                <p className="text-xs text-surface-400 mt-0.5">더빙 오디오에 맞춰 입 모양을 조절합니다</p>
+              </div>
+              <Toggle checked={lipSyncEnabled} onChange={setLipSync} />
             </div>
-            <Toggle checked={lipSyncEnabled} onChange={setLipSync} />
-          </div>
+          )}
 
           {/* Deliverable mode */}
           <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
@@ -144,7 +146,9 @@ export function TranslationEditStep() {
         <div>
           <p className="text-sm font-medium text-blue-900 dark:text-blue-300">처리 과정</p>
           <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
-            Perso.ai가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 보이스 클론으로 더빙 오디오를 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 보통 3-10분입니다.
+            {deliverableMode === 'originalWithMultiAudio'
+              ? 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 자막을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'
+              : 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 보이스 클론으로 더빙 영상을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'}
           </p>
         </div>
       </Card>

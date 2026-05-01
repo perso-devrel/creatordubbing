@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { Link2, Upload, Film, ArrowRight, Play, FileVideo, Zap, Loader2 } from 'lucide-react'
+import { Link2, Upload, Film, ArrowRight, Play, FileVideo, Zap, Loader2, Search, Lock, Info } from 'lucide-react'
 
 function YouTubeLogo({ className }: { className?: string }) {
   return (
@@ -34,7 +34,19 @@ export function VideoInputStep() {
 
   const { data: channel, isLoading: channelLoading } = useChannelStats()
   const isConnected = !!channel
-  const { data: myVideos = [], isLoading: myVideosLoading } = useMyVideos(10)
+  const { data: myVideos = [], isLoading: myVideosLoading } = useMyVideos(50)
+  const [videoSearch, setVideoSearch] = useState('')
+
+  const publicVideos = useMemo(
+    () => myVideos.filter((v) => v.privacyStatus === 'public'),
+    [myVideos],
+  )
+  const filteredVideos = useMemo(() => {
+    const q = videoSearch.trim().toLowerCase()
+    if (!q) return publicVideos
+    return publicVideos.filter((v) => v.title.toLowerCase().includes(q))
+  }, [publicVideos, videoSearch])
+  const hiddenCount = myVideos.length - publicVideos.length
 
   const handleMyVideoSelect = async (videoId: string) => {
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
@@ -110,7 +122,10 @@ export function VideoInputStep() {
         <p className="mt-1 text-surface-500">YouTube URL을 붙여넣거나 영상 파일을 업로드하세요</p>
       </div>
 
-      <Tabs defaultValue={searchParams.get('url') ? 'url' : 'upload'}>
+      <Tabs
+        defaultValue={searchParams.get('url') ? 'url' : 'upload'}
+        onChange={() => setError(null)}
+      >
         <TabsList className="mx-auto w-fit">
           <TabsTrigger value="upload">
             <span className="flex items-center gap-1.5"><Upload className="h-4 w-4" /> 업로드</span>
@@ -125,6 +140,10 @@ export function VideoInputStep() {
 
         <TabsContent value="url" className="mt-6">
           <Card>
+            <div className="mb-3 flex items-start gap-2 rounded-lg bg-blue-50 p-2.5 text-xs text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+              <Info className="h-4 w-4 shrink-0 mt-0.5" />
+              <p>공개 영상만 가져올 수 있습니다. 비공개·일부공개 영상은 외부 다운로드가 막혀 있어 가져올 수 없으니, YouTube에서 공개로 변경하거나 영상 파일을 직접 업로드해 주세요.</p>
+            </div>
             <div className="flex gap-2">
               <Input
                 placeholder="YouTube URL 또는 영상 직접 링크 (.mp4, .mov, .webm)"
@@ -211,48 +230,78 @@ export function VideoInputStep() {
               <Film className="mx-auto h-10 w-10 text-surface-400" />
               <p className="mt-3 text-sm text-surface-500">채널에 업로드된 영상이 없습니다</p>
             </Card>
+          ) : publicVideos.length === 0 ? (
+            <Card className="py-12 text-center">
+              <Lock className="mx-auto h-10 w-10 text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">공개된 영상이 없습니다</p>
+              <p className="mt-1 text-xs text-surface-400">
+                비공개·일부공개 영상은 외부 다운로드가 막혀 가져올 수 없습니다.<br />
+                YouTube에서 공개로 변경하거나 영상 파일을 직접 업로드해 주세요.
+              </p>
+            </Card>
           ) : (
             <Card>
-              <div className="space-y-2">
-                {myVideos.map((video) => (
-                  <div
-                    key={video.videoId}
-                    className="flex items-center justify-between rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {video.thumbnail ? (
-                        <Image
-                          src={video.thumbnail}
-                          alt={video.title}
-                          width={64}
-                          height={36}
-                          className="rounded object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="flex h-9 w-16 shrink-0 items-center justify-center rounded bg-surface-100 dark:bg-surface-800">
-                          <YouTubeLogo className="h-5 w-7" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
-                        <p className="text-xs text-surface-500">
-                          {new Date(video.publishedAt).toLocaleDateString('ko-KR')}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 ml-3"
-                      loading={loading}
-                      disabled={loading}
-                      onClick={() => handleMyVideoSelect(video.videoId)}
-                    >
-                      선택
-                    </Button>
-                  </div>
-                ))}
+              <div className="relative mb-3">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-surface-400" />
+                <input
+                  type="text"
+                  value={videoSearch}
+                  onChange={(e) => setVideoSearch(e.target.value)}
+                  placeholder="영상 제목으로 검색"
+                  className="w-full rounded-md border border-surface-300 bg-white py-2 pl-9 pr-3 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-surface-700 dark:bg-surface-900 dark:text-white"
+                />
               </div>
+
+              <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+                {filteredVideos.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-surface-500">검색 결과가 없습니다</p>
+                ) : (
+                  filteredVideos.map((video) => (
+                    <div
+                      key={video.videoId}
+                      className="flex items-center justify-between rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {video.thumbnail ? (
+                          <Image
+                            src={video.thumbnail}
+                            alt={video.title}
+                            width={64}
+                            height={36}
+                            className="rounded object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="flex h-9 w-16 shrink-0 items-center justify-center rounded bg-surface-100 dark:bg-surface-800">
+                            <YouTubeLogo className="h-5 w-7" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
+                          <p className="text-xs text-surface-500">
+                            {new Date(video.publishedAt).toLocaleDateString('ko-KR')}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0 ml-3"
+                        loading={loading}
+                        disabled={loading}
+                        onClick={() => handleMyVideoSelect(video.videoId)}
+                      >
+                        선택
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {hiddenCount > 0 && !videoSearch && (
+                <p className="mt-3 text-xs text-surface-400">
+                  비공개·일부공개 영상 {hiddenCount}개는 외부 다운로드가 막혀 표시되지 않습니다.
+                </p>
+              )}
               {error && !loading && (
                 <p className="mt-3 text-sm text-red-500">{error}</p>
               )}
@@ -299,7 +348,7 @@ export function VideoInputStep() {
 
       <div className="flex justify-end">
         <Button onClick={nextStep} disabled={!videoMeta || loading}>
-          다음: 언어 선택
+          다음: 결과물 선택
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

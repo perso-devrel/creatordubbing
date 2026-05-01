@@ -30,3 +30,4 @@ export {
   ytFetchMyVideos,
   ytFetchAnalytics,
 } from './youtube'
+export { translateMetadata, type MetadataTranslation } from './translate'

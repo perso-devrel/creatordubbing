@@ -135,16 +135,20 @@ describe('fetchChannelStatistics', () => {
 
 describe('fetchMyVideos', () => {
   it('returns mapped video items', async () => {
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse({
-        items: [{
-          id: { videoId: 'v1' },
-          snippet: { title: 'T1', publishedAt: '2026-01-01', thumbnails: { medium: { url: 'http://thumb' } } },
-        }],
-      }),
-    )
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse({
+          items: [{
+            id: { videoId: 'v1' },
+            snippet: { title: 'T1', publishedAt: '2026-01-01', thumbnails: { medium: { url: 'http://thumb' } } },
+          }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ items: [{ id: 'v1', status: { privacyStatus: 'public' } }] }),
+      )
     const vids = await fetchMyVideos('tok', 5)
-    expect(vids).toEqual([{ videoId: 'v1', title: 'T1', thumbnail: 'http://thumb', publishedAt: '2026-01-01' }])
+    expect(vids).toEqual([{ videoId: 'v1', title: 'T1', thumbnail: 'http://thumb', publishedAt: '2026-01-01', privacyStatus: 'public' }])
   })
 
   it('returns empty array on non-ok response', async () => {
@@ -157,12 +161,12 @@ describe('fetchMyVideos', () => {
     expect(await fetchMyVideos('tok')).toEqual([])
   })
 
-  it('defaults missing snippet fields to empty strings', async () => {
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse({ items: [{ id: { videoId: 'v1' } }] }),
-    )
+  it('defaults missing snippet fields and unknown privacy', async () => {
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse({ items: [{ id: { videoId: 'v1' } }] }))
+      .mockResolvedValueOnce(jsonResponse({ items: [] }))
     const vids = await fetchMyVideos('tok')
-    expect(vids).toEqual([{ videoId: 'v1', title: '', thumbnail: '', publishedAt: '' }])
+    expect(vids).toEqual([{ videoId: 'v1', title: '', thumbnail: '', publishedAt: '', privacyStatus: 'unknown' }])
   })
 })
 

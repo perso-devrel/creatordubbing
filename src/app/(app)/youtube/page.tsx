@@ -7,6 +7,7 @@ import { Card, CardTitle, CardDescription, Button, Badge, Select, Toggle } from 
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { formatNumber } from '@/utils/formatters'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
+import { SUPPORTED_LANGUAGES } from '@/utils/languages'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
 
 export default function YouTubeSettingsPage() {
@@ -15,6 +16,8 @@ export default function YouTubeSettingsPage() {
   const setDefaultVisibility = useYouTubeSettingsStore((s) => s.setDefaultPrivacy)
   const autoSubtitles = useYouTubeSettingsStore((s) => s.autoSubtitles)
   const setAutoSubtitles = useYouTubeSettingsStore((s) => s.setAutoSubtitles)
+  const defaultLanguage = useYouTubeSettingsStore((s) => s.defaultLanguage)
+  const setDefaultLanguage = useYouTubeSettingsStore((s) => s.setDefaultLanguage)
 
   const { data: channel, isLoading: channelLoading } = useChannelStats()
   const isConnected = !!channel
@@ -127,6 +130,19 @@ export default function YouTubeSettingsPage() {
           />
           <p className="-mt-3 text-xs text-surface-400">
             새 더빙 시작 시 이 값이 기본값으로 적용됩니다. 각 더빙 별로 변경할 수 있습니다.
+          </p>
+
+          <Select
+            label="기본 작성 언어"
+            value={defaultLanguage}
+            onChange={(e) => setDefaultLanguage(e.target.value)}
+            options={SUPPORTED_LANGUAGES.map((l) => ({
+              value: l.code,
+              label: `${l.flag} ${l.name} (${l.nativeName})`,
+            }))}
+          />
+          <p className="-mt-3 text-xs text-surface-400">
+            업로드 제목·설명을 이 언어로 작성한다고 간주합니다. 다른 대상 언어들은 Gemini로 자동 번역되어 함께 업로드됩니다. 더빙별로도 변경할 수 있습니다.
           </p>
 
           <div className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
