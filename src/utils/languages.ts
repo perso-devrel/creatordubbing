@@ -1,23 +1,61 @@
+export type LanguageRegion = 'popular' | 'asia' | 'europe' | 'middle-east'
+
 export interface Language {
   code: string // Perso API language code
   name: string
   nativeName: string
   flag: string
+  region: LanguageRegion
 }
 
-// Perso.ai uses ISO 639-1 codes
+export const REGION_LABELS: Record<LanguageRegion, string> = {
+  popular: '인기',
+  asia: '아시아',
+  europe: '유럽',
+  'middle-east': '중동',
+}
+
+// Perso.ai supported target languages (sourced from /video-translator/api/v1/languages).
+// Codes are mostly ISO 639-1 with a few exceptions (e.g. `fil` for Filipino).
 export const SUPPORTED_LANGUAGES: Language[] = [
-  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
-  { code: 'pt', name: 'Portuguese (Brazil)', nativeName: 'Português', flag: '🇧🇷' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
-  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦' },
-  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
-  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
+  // Popular — 사용 빈도 높은 메이저 언어
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸', region: 'popular' },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷', region: 'popular' },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵', region: 'popular' },
+  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳', region: 'popular' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', region: 'popular' },
+  { code: 'pt', name: 'Portuguese (Brazil)', nativeName: 'Português', flag: '🇧🇷', region: 'popular' },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷', region: 'popular' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', region: 'popular' },
+  // Asia
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳', region: 'asia' },
+  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩', region: 'asia' },
+  { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳', region: 'asia' },
+  { code: 'th', name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭', region: 'asia' },
+  { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾', region: 'asia' },
+  { code: 'fil', name: 'Filipino', nativeName: 'Filipino', flag: '🇵🇭', region: 'asia' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳', region: 'asia' },
+  { code: 'kk', name: 'Kazakh', nativeName: 'Қазақ тілі', flag: '🇰🇿', region: 'asia' },
+  // Europe
+  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹', region: 'europe' },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱', region: 'europe' },
+  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺', region: 'europe' },
+  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦', region: 'europe' },
+  { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱', region: 'europe' },
+  { code: 'cs', name: 'Czech', nativeName: 'Čeština', flag: '🇨🇿', region: 'europe' },
+  { code: 'sk', name: 'Slovak', nativeName: 'Slovenčina', flag: '🇸🇰', region: 'europe' },
+  { code: 'hu', name: 'Hungarian', nativeName: 'Magyar', flag: '🇭🇺', region: 'europe' },
+  { code: 'ro', name: 'Romanian', nativeName: 'Română', flag: '🇷🇴', region: 'europe' },
+  { code: 'bg', name: 'Bulgarian', nativeName: 'Български', flag: '🇧🇬', region: 'europe' },
+  { code: 'hr', name: 'Croatian', nativeName: 'Hrvatski', flag: '🇭🇷', region: 'europe' },
+  { code: 'el', name: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷', region: 'europe' },
+  { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪', region: 'europe' },
+  { code: 'no', name: 'Norwegian', nativeName: 'Norsk', flag: '🇳🇴', region: 'europe' },
+  { code: 'da', name: 'Danish', nativeName: 'Dansk', flag: '🇩🇰', region: 'europe' },
+  { code: 'fi', name: 'Finnish', nativeName: 'Suomi', flag: '🇫🇮', region: 'europe' },
+  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷', region: 'europe' },
+  // Middle East
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', region: 'middle-east' },
 ]
 
 export function getLanguageByCode(code: string): Language | undefined {
