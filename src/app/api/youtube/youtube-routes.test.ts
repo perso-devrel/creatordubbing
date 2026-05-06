@@ -82,6 +82,8 @@ describe('POST /api/youtube/upload', () => {
       ['description', 'Desc'],
       ['tags', 'a,b'],
       ['language', 'ko'],
+      ['selfDeclaredMadeForKids', 'false'],
+      ['containsSyntheticMedia', 'true'],
     ])
     const req = {
       url: 'http://localhost/api/youtube/upload',
@@ -98,6 +100,8 @@ describe('POST /api/youtube/upload', () => {
         accessToken: 'mock-token',
         title: 'Test',
         tags: ['a', 'b'],
+        selfDeclaredMadeForKids: false,
+        containsSyntheticMedia: true,
       }),
     )
   })

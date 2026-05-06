@@ -28,6 +28,8 @@ export async function POST(req: NextRequest) {
       tags: String(form.get('tags') || ''),
       categoryId: (form.get('categoryId') as string) || undefined,
       privacyStatus: (form.get('privacyStatus') as string) || undefined,
+      selfDeclaredMadeForKids: (form.get('selfDeclaredMadeForKids') as string) || undefined,
+      containsSyntheticMedia: (form.get('containsSyntheticMedia') as string) || undefined,
       language: (form.get('language') as string) || undefined,
       localizations: (form.get('localizations') as string) || undefined,
     }
@@ -63,6 +65,8 @@ export async function POST(req: NextRequest) {
       tags: fields.tags,
       categoryId: fields.categoryId,
       privacyStatus: fields.privacyStatus,
+      selfDeclaredMadeForKids: fields.selfDeclaredMadeForKids,
+      containsSyntheticMedia: fields.containsSyntheticMedia,
       language: fields.language,
       localizations: fields.localizations,
     })

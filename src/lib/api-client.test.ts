@@ -296,6 +296,8 @@ describe('ytUploadVideo', () => {
       tags: ['a', 'b'],
       categoryId: '22',
       privacyStatus: 'unlisted',
+      selfDeclaredMadeForKids: false,
+      containsSyntheticMedia: true,
       language: 'ko',
     })
     expect(result.videoId).toBe('yt1')
@@ -305,6 +307,8 @@ describe('ytUploadVideo', () => {
     expect(body.get('tags')).toBe('a,b')
     expect(body.get('categoryId')).toBe('22')
     expect(body.get('privacyStatus')).toBe('unlisted')
+    expect(body.get('selfDeclaredMadeForKids')).toBe('false')
+    expect(body.get('containsSyntheticMedia')).toBe('true')
     expect(body.get('language')).toBe('ko')
   })
 
@@ -320,6 +324,8 @@ describe('ytUploadVideo', () => {
     const body = mockFetch.mock.calls[0][1].body as FormData
     expect(body.get('categoryId')).toBeNull()
     expect(body.get('privacyStatus')).toBeNull()
+    expect(body.get('selfDeclaredMadeForKids')).toBeNull()
+    expect(body.get('containsSyntheticMedia')).toBeNull()
     expect(body.get('language')).toBeNull()
   })
 })

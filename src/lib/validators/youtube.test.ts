@@ -120,11 +120,15 @@ describe('uploadFormSchema', () => {
       tags: 'a,b,c',
       categoryId: '22',
       privacyStatus: 'unlisted',
+      selfDeclaredMadeForKids: 'false',
+      containsSyntheticMedia: 'true',
       language: 'ko',
     })
     expect(result.title).toBe('My Video')
     expect(result.tags).toEqual(['a', 'b', 'c'])
     expect(result.privacyStatus).toBe('unlisted')
+    expect(result.selfDeclaredMadeForKids).toBe(false)
+    expect(result.containsSyntheticMedia).toBe(true)
   })
 
   it('defaults title and description to empty', () => {
