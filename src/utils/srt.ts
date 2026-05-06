@@ -28,7 +28,7 @@ export function parseSRT(text: string): SrtCue[] {
     const lines = block.split('\n')
     if (lines.length < 2) continue
     // 1번 줄이 인덱스가 아닐 수도 있어 timing 라인을 직접 찾는다
-    let timingIdx = lines[0].includes('-->') ? 0 : 1
+    const timingIdx = lines[0].includes('-->') ? 0 : 1
     if (timingIdx >= lines.length) continue
     const timing = lines[timingIdx].match(
       /(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{1,3})/,

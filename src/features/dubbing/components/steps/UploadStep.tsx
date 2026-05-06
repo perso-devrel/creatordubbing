@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, ExternalLink, Check, RotateCcw, Upload, Loader2, Volume2 } from 'lucide-react'
+import { Download, Check, RotateCcw, Upload, Loader2, Volume2 } from 'lucide-react'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Card, CardTitle, Badge, Progress } from '@/components/ui'
@@ -66,12 +66,22 @@ export function UploadStep() {
   // 실패해도 fallback으로 원문이 들어가도록 처리되어 업로드를 막지 않는다.
   const [translations, setTranslations] = useState<Record<string, MetadataTranslation>>({})
   const translatePromiseRef = useRef<Promise<Record<string, MetadataTranslation>> | null>(null)
+  const translationCacheKeyRef = useRef<string | null>(null)
   const ensureTranslations = useCallback(async (): Promise<Record<string, MetadataTranslation>> => {
-    if (Object.keys(translations).length > 0) return translations
+    const cacheKey = JSON.stringify({
+      title: settingsTitle?.trim() || videoMeta?.title || '',
+      description: settingsDescription || '',
+      metadataLanguage,
+      selectedLanguages,
+    })
+    if (translationCacheKeyRef.current === cacheKey && Object.keys(translations).length > 0) {
+      return translations
+    }
     if (translatePromiseRef.current) return translatePromiseRef.current
 
     const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
     if (!baseTitle || selectedLanguages.length === 0) return {}
+    translationCacheKeyRef.current = cacheKey
 
     const p = (async () => {
       try {
@@ -104,12 +114,6 @@ export function UploadStep() {
     return p
   }, [translations, settingsTitle, videoMeta?.title, settingsDescription, metadataLanguage, selectedLanguages, addToast])
 
-  // 사용자가 제목/설명을 다시 만지면 캐시 무효화.
-  useEffect(() => {
-    setTranslations({})
-    translatePromiseRef.current = null
-  }, [settingsTitle, settingsDescription, metadataLanguage])
-
   // Original video upload state (for upload + originalWithMultiAudio)
   const [originalUploadState, setOriginalUploadState] = useState<{
     status: 'idle' | 'uploading' | 'done' | 'skipped'
@@ -130,16 +134,6 @@ export function UploadStep() {
       return desc
     },
     [attachOriginalLink, originalYouTubeUrl],
-  )
-
-  const buildDescription = useCallback(
-    (langName: string) => {
-      const base = settingsDescription?.trim()
-        ? settingsDescription
-        : `${videoMeta?.title || 'Video'} - ${langName} 더빙 by Dubtube AI\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.`
-      return applyDescriptionFooter(base)
-    },
-    [settingsDescription, videoMeta?.title, applyDescriptionFooter],
   )
 
   const handleNewDubbing = () => reset()
@@ -182,7 +176,7 @@ export function UploadStep() {
       addToast({ type: 'error', title: '원본 영상 업로드 실패', message: msg })
       return null
     }
-  }, [isAuthenticated, originalVideoUrl, settingsTitle, settingsDescription, settingsTags, privacyStatus, videoMeta?.title, addToast, ensureTranslations, selectedLanguages, metadataLanguage])
+  }, [isAuthenticated, originalVideoUrl, settingsTitle, settingsDescription, settingsTags, privacyStatus, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage])
 
   // ─── Audio → Studio helper ──────────────────────────────────────────
   const handleAudioToStudio = useCallback(async (langCode: string, targetVideoId?: string) => {
