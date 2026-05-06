@@ -36,7 +36,7 @@ const readDefaultLanguage = (): string => {
 }
 
 const buildDefaultUploadSettings = (): UploadSettings => ({
-  autoUpload: true,
+  autoUpload: false,
   uploadAsShort: false,
   attachOriginalLink: true,
   title: '',
