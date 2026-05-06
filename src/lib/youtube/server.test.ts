@@ -107,9 +107,12 @@ describe('fetchChannelStatistics', () => {
     })
   })
 
-  it('returns null on non-ok response', async () => {
+  it('throws on non-ok response', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({}, 401))
-    expect(await fetchChannelStatistics('tok')).toBeNull()
+    await expect(fetchChannelStatistics('tok')).rejects.toMatchObject({
+      status: 401,
+      code: 'CHANNEL_FETCH_FAILED',
+    })
   })
 
   it('returns null when no channel items', async () => {

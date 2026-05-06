@@ -6,10 +6,13 @@ import {
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
+  updateJobLanguageProjects,
   createYouTubeUpload,
   updateJobLanguageYouTube,
   deductUserMinutes,
-  addUserCredits,
+  reserveJobCredits,
+  releaseJobCredits,
+  finalizeJobCredits,
   deleteDubbingJob,
   createUploadQueueItem,
 } from '@/lib/db/queries'
@@ -99,6 +102,11 @@ export async function POST(req: NextRequest) {
         await updateJobLanguageYouTube(jobId, langCode, youtubeVideoId)
         return apiOk({ jobId, langCode })
       }
+      case 'updateJobLanguageProjects': {
+        const { jobId, languages } = action.payload
+        await updateJobLanguageProjects(jobId, languages)
+        return apiOk({ jobId })
+      }
       case 'deductUserMinutes': {
         const { userId, jobId: deductJobId, minutes: clientMinutes } = action.payload
         const deductDb = getDb()
@@ -112,10 +120,20 @@ export async function POST(req: NextRequest) {
         await deductUserMinutes(userId, minutes)
         return apiOk({ userId, minutes })
       }
-      case 'addCredits': {
-        const { userId, minutes } = action.payload
-        await addUserCredits(userId, minutes)
-        return apiOk({ userId, minutes })
+      case 'reserveJobCredits': {
+        const { jobId: reserveJobId } = action.payload
+        const result = await reserveJobCredits(auth.session.uid, reserveJobId)
+        return apiOk(result)
+      }
+      case 'releaseJobCredits': {
+        const { jobId: releaseJobId, reason } = action.payload
+        const result = await releaseJobCredits(auth.session.uid, releaseJobId, reason)
+        return apiOk(result)
+      }
+      case 'finalizeJobCredits': {
+        const { jobId: finalizeJobId } = action.payload
+        const result = await finalizeJobCredits(auth.session.uid, finalizeJobId)
+        return apiOk(result)
       }
       case 'queueYouTubeUpload': {
         const id = await createUploadQueueItem(action.payload)

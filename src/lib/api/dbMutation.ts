@@ -19,3 +19,19 @@ export async function dbMutation<T = unknown>(
     return null
   }
 }
+
+export async function dbMutationStrict<T = unknown>(
+  action: { type: string; payload: Record<string, unknown> },
+): Promise<T> {
+  const res = await fetch('/api/dashboard/mutations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(action),
+    cache: 'no-store',
+  })
+  const body = await res.json().catch(() => null)
+  if (!body || !body.ok) {
+    throw new Error(body?.error?.message || `${action.type} failed with ${res.status}`)
+  }
+  return body.data as T
+}

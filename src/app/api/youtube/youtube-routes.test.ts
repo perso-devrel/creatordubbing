@@ -27,6 +27,7 @@ vi.mock('@/lib/youtube/route-helpers', async (importOriginal) => {
         )
       }
     }),
+    withTokenRetry: vi.fn(async (_req: Request, fn: (accessToken: string) => Promise<unknown>) => fn('mock-token')),
     ytOk: vi.fn(),
     ytFail: vi.fn(),
   }
