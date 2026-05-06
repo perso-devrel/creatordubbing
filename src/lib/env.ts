@@ -24,6 +24,7 @@ const serverSchema = z.object({
   GEMINI_API_KEY: z.string().min(1).optional(),
   TOSS_SECRET_KEY: z.string().min(1).optional(),
   TOSS_API_BASE_URL: z.string().url().optional(),
+  CRON_SECRET: z.string().min(1).optional(),
 });
 
 const clientSchema = z.object({
@@ -66,6 +67,7 @@ export function getServerEnv(): ServerEnv {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     TOSS_SECRET_KEY: process.env.TOSS_SECRET_KEY,
     TOSS_API_BASE_URL: process.env.TOSS_API_BASE_URL,
+    CRON_SECRET: process.env.CRON_SECRET,
   });
 
   if (!parsed.success) {
