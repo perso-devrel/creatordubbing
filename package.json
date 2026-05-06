@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node scripts/migrate.mjs",
     "analyze": "node -e \"process.env.ANALYZE='true';require('child_process').execSync('next build --webpack',{stdio:'inherit',env:process.env})\"",
     "start": "next start",
     "start:test": "next start -p 3100",

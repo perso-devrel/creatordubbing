@@ -30,7 +30,7 @@ async function importKey(secret: string): Promise<CryptoKey> {
     enc.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ['sign', 'verify'],
+    ['sign'],
   )
 }
 
@@ -38,12 +38,6 @@ function toHex(buf: ArrayBuffer): string {
   return Array.from(new Uint8Array(buf))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('')
-}
-
-function fromHex(hex: string): Uint8Array {
-  const pairs = hex.match(/.{2}/g)
-  if (!pairs || pairs.length !== hex.length / 2) return new Uint8Array(0)
-  return new Uint8Array(pairs.map((b) => parseInt(b, 16)))
 }
 
 function base64UrlEncode(value: string): string {
@@ -69,13 +63,22 @@ async function sign(value: string): Promise<string> {
   return toHex(sig)
 }
 
+function timingSafeEqualHex(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+
+  let diff = 0
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  }
+  return diff === 0
+}
+
 async function verify(value: string, sigHex: string): Promise<boolean> {
-  if (sigHex.length === 0 || sigHex.length % 2 !== 0) return false
-  const sigBytes = fromHex(sigHex)
-  if (sigBytes.length === 0) return false
+  if (!/^[a-f0-9]{64}$/i.test(sigHex)) return false
+
   try {
-    const key = await importKey(getSecret())
-    return crypto.subtle.verify('HMAC', key, sigBytes.buffer as ArrayBuffer, enc.encode(value))
+    const expected = await sign(value)
+    return timingSafeEqualHex(expected, sigHex.toLowerCase())
   } catch {
     return false
   }
