@@ -1,12 +1,13 @@
 'use client'
 
 import Image from 'next/image'
-import { Moon, Sun, Bell, LogOut } from 'lucide-react'
+import { Moon, Sun, LogOut } from 'lucide-react'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 import { signOut } from '@/lib/google-auth'
 import { Button } from '@/components/ui'
 import { useRouter } from 'next/navigation'
+import { OpsAlertButton } from '@/features/ops/components/OpsAlertButton'
 
 export function Topbar() {
   const { mode, toggle } = useThemeStore()
@@ -28,9 +29,7 @@ export function Topbar() {
         <Button variant="ghost" size="sm" onClick={toggle} aria-label="테마 전환">
           {mode === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
         </Button>
-        <Button variant="ghost" size="sm" aria-label="알림">
-          <Bell className="h-4.5 w-4.5" />
-        </Button>
+        <OpsAlertButton />
 
         {user && (
           <div className="ml-2 flex items-center gap-3">

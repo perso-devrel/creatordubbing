@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { getDb } from '@/lib/db/client'
+import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
 export type QueueStatus = 'pending' | 'processing' | 'done' | 'failed'
 
@@ -211,10 +212,30 @@ export async function failQueueItem(id: number, error: string): Promise<boolean>
               retries = retries + 1,
               updated_at = datetime('now')
           WHERE id = ? AND status = 'processing'
-          RETURNING id`,
+          RETURNING id, user_id, job_id, lang_code, retries`,
     args: [error, id],
   })
-  return Boolean(result.rows[0])
+  const row = result.rows[0]
+  if (row) {
+    const retries = Number(row.retries ?? 0)
+    await recordOperationalEventSafe({
+      category: 'upload_queue',
+      eventType: 'upload_queue_failed',
+      severity: retries >= 3 ? 'error' : 'warning',
+      userId: String(row.user_id),
+      referenceType: 'upload_queue',
+      referenceId: Number(row.id),
+      message: 'YouTube upload queue item failed',
+      metadata: {
+        jobId: Number(row.job_id),
+        langCode: String(row.lang_code),
+        retries,
+        error,
+      },
+      idempotencyKey: `upload_queue_failed:${row.id}:${retries}`,
+    })
+  }
+  return Boolean(row)
 }
 
 export async function updateQueueItemStatus(
