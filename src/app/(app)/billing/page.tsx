@@ -5,31 +5,36 @@ import { CreditCard, Coins, ArrowRight, Loader2, Check } from 'lucide-react'
 import { Card, CardTitle, Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { CREDIT_PACKS } from '@/features/billing/constants/plans'
-import { formatCurrency } from '@/utils/formatters'
+import { formatKrw } from '@/utils/formatters'
 import { useDashboardSummary } from '@/hooks/useDashboardData'
-import { useQueryClient } from '@tanstack/react-query'
-import { useAuthStore } from '@/stores/authStore'
-import { dbMutation } from '@/lib/api/dbMutation'
 
 export default function BillingPage() {
   const [selectedPack, setSelectedPack] = useState<number | null>(null)
   const [isCharging, setIsCharging] = useState(false)
   const [charged, setCharged] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { data: summary, isLoading } = useDashboardSummary()
-  const queryClient = useQueryClient()
-  const user = useAuthStore((s) => s.user)
 
   const handleCharge = async () => {
-    if (!selectedPack || !user) return
+    if (!selectedPack) return
     setIsCharging(true)
+    setError(null)
     try {
-      await dbMutation({ type: 'addCredits', payload: { userId: user.uid, minutes: selectedPack } })
-      await queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+      const res = await fetch('/api/billing/toss/create-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minutes: selectedPack }),
+        cache: 'no-store',
+      })
+      const body = await res.json().catch(() => null)
+      if (!body?.ok || !body.data?.checkoutUrl) {
+        throw new Error(body?.error?.message || '결제창 생성에 실패했습니다.')
+      }
       setCharged(true)
-      setTimeout(() => {
-        setCharged(false)
-        setSelectedPack(null)
-      }, 2000)
+      window.location.href = body.data.checkoutUrl
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '결제창 생성에 실패했습니다.')
+      setCharged(false)
     } finally {
       setIsCharging(false)
     }
@@ -62,7 +67,7 @@ export default function BillingPage() {
               )}
             </div>
           </div>
-          <p className="text-sm text-surface-400">1분 = $1</p>
+          <p className="text-sm text-surface-400">국내 결제는 KRW 기준으로 처리됩니다</p>
         </div>
       </Card>
 
@@ -73,7 +78,7 @@ export default function BillingPage() {
           <CardTitle>시간 충전</CardTitle>
         </div>
         <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">
-          1분 더빙 = $1. 만료 없음.
+          충전한 시간은 만료 없이 사용할 수 있습니다.
         </p>
 
         <div className="grid gap-3 sm:grid-cols-4">
@@ -91,11 +96,17 @@ export default function BillingPage() {
               <p className="text-2xl font-bold text-surface-900 dark:text-white">{pack.minutes}분</p>
               <p className="text-xs text-surface-500 mb-2">{pack.label}</p>
               <p className="text-lg font-semibold text-surface-900 dark:text-white">
-                {formatCurrency(pack.price)}
+                {formatKrw(pack.priceKrw)}
               </p>
             </button>
           ))}
         </div>
+
+        {error && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+            {error}
+          </div>
+        )}
 
         {selectedPack && (
           <Button className="mt-4" onClick={handleCharge} disabled={isCharging || charged}>
@@ -106,7 +117,7 @@ export default function BillingPage() {
             ) : (
               <CreditCard className="h-4 w-4" />
             )}
-            {charged ? '충전 완료!' : `${selectedPack}분 충전 (${formatCurrency(selectedPack)})`}
+            {charged ? '결제창으로 이동 중...' : `${selectedPack}분 충전`}
             {!isCharging && !charged && <ArrowRight className="h-4 w-4" />}
           </Button>
         )}
