@@ -3,7 +3,9 @@ import type {
   MyVideoItem,
   VideoAnalytics,
   VideoStats,
+  YouTubeLocalization,
   YouTubeUploadResult,
+  YouTubeVideoMetadata,
 } from '@/lib/youtube/types'
 import { json } from './shared'
 
@@ -85,6 +87,27 @@ export async function ytFetchMyVideos(
   maxResults = 10,
 ): Promise<MyVideoItem[]> {
   const res = await fetch(`${YT}/videos?maxResults=${maxResults}`, { cache: 'no-store' })
+  return json(res)
+}
+
+export async function ytFetchVideoMetadata(videoId: string): Promise<YouTubeVideoMetadata> {
+  const params = new URLSearchParams({ videoId })
+  const res = await fetch(`${YT}/metadata?${params}`, { cache: 'no-store' })
+  return json(res)
+}
+
+export async function ytUpdateVideoLocalizations(params: {
+  videoId: string
+  sourceLang: string
+  title: string
+  description: string
+  localizations: Record<string, YouTubeLocalization>
+}): Promise<YouTubeVideoMetadata> {
+  const res = await fetch(`${YT}/metadata`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
   return json(res)
 }
 

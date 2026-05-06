@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/utils/cn'
+import { useI18nStore } from '@/stores/i18nStore'
 import {
   LayoutDashboard,
   Languages,
@@ -11,19 +12,22 @@ import {
   Layers,
   Settings,
   Upload,
+  Globe2,
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/dashboard', label: '대시보드', icon: LayoutDashboard },
-  { to: '/dubbing', label: '새 더빙', icon: Languages },
-  { to: '/batch', label: '배치 큐', icon: Layers },
-  { to: '/uploads', label: 'YouTube 업로드', icon: Upload },
-  { to: '/youtube', label: 'YouTube', icon: Video },
-  { to: '/billing', label: '결제', icon: CreditCard },
+  { to: '/dashboard', label: { ko: '대시보드', en: 'Dashboard' }, icon: LayoutDashboard },
+  { to: '/dubbing', label: { ko: '새 더빙', en: 'New dubbing' }, icon: Languages },
+  { to: '/metadata', label: { ko: '메타데이터 번역', en: 'Metadata' }, icon: Globe2 },
+  { to: '/batch', label: { ko: '배치 큐', en: 'Batch queue' }, icon: Layers },
+  { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, icon: Upload },
+  { to: '/youtube', label: { ko: 'YouTube', en: 'YouTube' }, icon: Video },
+  { to: '/billing', label: { ko: '결제', en: 'Billing' }, icon: CreditCard },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const appLocale = useI18nStore((state) => state.appLocale)
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900">
@@ -51,7 +55,7 @@ export function Sidebar() {
               )}
             >
               <Icon className="h-5 w-5" />
-              {label}
+              {label[appLocale]}
             </Link>
           )
         })}
@@ -63,7 +67,7 @@ export function Sidebar() {
           className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800"
         >
           <Settings className="h-5 w-5" />
-          설정
+          {appLocale === 'en' ? 'Settings' : '설정'}
         </Link>
       </div>
     </aside>

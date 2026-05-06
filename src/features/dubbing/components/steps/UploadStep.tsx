@@ -164,7 +164,7 @@ export function UploadStep() {
       const localizations: Record<string, { title: string; description: string }> = {}
       for (const code of selectedLanguages) {
         const t = allTranslations[code]
-        if (t) localizations[code] = { title: t.title, description: t.description }
+        if (t) localizations[toBcp47(code)] = { title: t.title, description: t.description }
       }
 
       const result = await ytUploadVideo({
@@ -175,7 +175,7 @@ export function UploadStep() {
         privacyStatus,
         selfDeclaredMadeForKids,
         containsSyntheticMedia,
-        language: metadataLanguage,
+        language: toBcp47(metadataLanguage),
         localizations: Object.keys(localizations).length > 0 ? localizations : undefined,
       })
       setOriginalUploadState({ status: 'done', videoId: result.videoId })

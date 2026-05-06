@@ -1,14 +1,9 @@
 import 'server-only'
 
-import type { YouTubeUploadResult } from '@/lib/youtube/types'
+import type { YouTubeLocalization, YouTubeUploadResult } from '@/lib/youtube/types'
 import { YouTubeError } from '@/lib/youtube/error'
 
 const YOUTUBE_UPLOAD_BASE = 'https://www.googleapis.com/upload/youtube/v3'
-
-export interface YouTubeLocalization {
-  title: string
-  description: string
-}
 
 export interface YouTubeUploadInput {
   accessToken: string

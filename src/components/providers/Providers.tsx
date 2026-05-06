@@ -6,6 +6,7 @@ import { queryClient } from '@/services/queryClient'
 import { ToastContainer } from '@/components/feedback/Toast'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18nStore } from '@/stores/i18nStore'
 import { restoreSession } from '@/lib/google-auth'
 
 function ThemeHydrator() {
@@ -45,11 +46,24 @@ function AuthHydrator() {
   return null
 }
 
+function I18nHydrator() {
+  useEffect(() => {
+    useI18nStore.persist.rehydrate()
+    const unsubscribe = useI18nStore.subscribe((state) => {
+      document.documentElement.lang = state.appLocale
+    })
+    document.documentElement.lang = useI18nStore.getState().appLocale
+    return unsubscribe
+  }, [])
+  return null
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(() => queryClient)
   return (
     <QueryClientProvider client={client}>
       <ThemeHydrator />
+      <I18nHydrator />
       <AuthHydrator />
       {children}
       <ToastContainer />

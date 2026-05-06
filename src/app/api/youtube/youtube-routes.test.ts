@@ -51,6 +51,24 @@ vi.mock('@/lib/youtube/server', () => ({
     title: 'My Channel',
     thumbnail: '',
   })),
+  fetchVideoMetadata: vi.fn(async () => ({
+    videoId: 'yt-123',
+    title: 'Original title',
+    description: 'Original description',
+    categoryId: '22',
+    tags: ['tag'],
+    defaultLanguage: 'ko',
+    localizations: {},
+  })),
+  updateVideoLocalizations: vi.fn(async () => ({
+    videoId: 'yt-123',
+    title: 'Original title',
+    description: 'Original description',
+    categoryId: '22',
+    tags: ['tag'],
+    defaultLanguage: 'ko',
+    localizations: { en: { title: 'English title', description: 'English description' } },
+  })),
   YouTubeError: class YouTubeError extends Error {
     constructor(
       public status: number,
@@ -224,6 +242,57 @@ describe('GET /api/youtube/stats', () => {
     const body = await res.json()
     expect(body.ok).toBe(true)
     expect(vi.mocked(fetchVideoStatistics)).toHaveBeenCalledWith('mock-token', [])
+  })
+})
+
+describe('/api/youtube/metadata', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('fetches current video metadata', async () => {
+    const { GET } = await import('./metadata/route')
+    const { fetchVideoMetadata } = await import('@/lib/youtube/server')
+    const req = new NextRequest('http://localhost/api/youtube/metadata?videoId=yt-123')
+
+    const res = await GET(req)
+    const body = await res.json()
+
+    expect(body.ok).toBe(true)
+    expect(body.data.videoId).toBe('yt-123')
+    expect(fetchVideoMetadata).toHaveBeenCalledWith('mock-token', 'yt-123')
+  })
+
+  it('updates localizations without uploading media', async () => {
+    const { POST } = await import('./metadata/route')
+    const { updateVideoLocalizations } = await import('@/lib/youtube/server')
+    const req = new NextRequest('http://localhost/api/youtube/metadata', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        videoId: 'yt-123',
+        sourceLang: 'ko',
+        title: 'Original title',
+        description: 'Original description',
+        localizations: {
+          en: { title: 'English title', description: 'English description' },
+        },
+      }),
+    })
+
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(body.ok).toBe(true)
+    expect(updateVideoLocalizations).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accessToken: 'mock-token',
+        videoId: 'yt-123',
+        localizations: {
+          en: { title: 'English title', description: 'English description' },
+        },
+      }),
+    )
   })
 })
 
