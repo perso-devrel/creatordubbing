@@ -46,6 +46,9 @@ export {
 
 export {
   createUploadQueueItem,
+  claimPendingUploads,
+  completeQueueItem,
+  failQueueItem,
   getPendingUploads,
   updateQueueItemStatus,
   getUserQueueItems,

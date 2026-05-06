@@ -1,24 +1,35 @@
 import 'server-only'
 
-import { getPendingUploads, updateQueueItemStatus } from '@/lib/db/queries/upload-queue'
+import {
+  claimPendingUploads,
+  completeQueueItem,
+  failQueueItem,
+} from '@/lib/db/queries/upload-queue'
 import { createYouTubeUpload, updateJobLanguageYouTube } from '@/lib/db/queries'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 import { uploadVideoToYouTube } from '@/lib/youtube/upload'
 import { logger } from '@/lib/logger'
 
-export async function processUploadQueue() {
-  const items = await getPendingUploads(50)
+export interface ProcessUploadQueueOptions {
+  limit?: number
+  userId?: string
+  queueId?: number
+}
+
+export async function processUploadQueue(options: ProcessUploadQueueOptions = {}) {
+  const items = await claimPendingUploads(options.limit ?? 50, {
+    userId: options.userId,
+    queueId: options.queueId,
+  })
   if (items.length === 0) return { processed: 0, results: [] }
 
   const results: { id: number; status: string; videoId?: string; error?: string }[] = []
 
   for (const item of items) {
-    await updateQueueItemStatus(item.id, 'processing')
-
     try {
       const accessToken = await getOrRefreshAccessToken(item.userId)
       if (!accessToken) {
-        await updateQueueItemStatus(item.id, 'failed', { error: 'No valid access token — user may need to re-login' })
+        await failQueueItem(item.id, 'No valid access token - user may need to re-login')
         results.push({ id: item.id, status: 'failed', error: 'no_token' })
         continue
       }
@@ -27,14 +38,14 @@ export async function processUploadQueue() {
       const urlHost = new URL(item.videoUrl).hostname
       const isAllowed = allowed.some((d) => urlHost === d || urlHost.endsWith(d))
       if (!isAllowed) {
-        await updateQueueItemStatus(item.id, 'failed', { error: 'Video URL domain not allowed' })
+        await failQueueItem(item.id, 'Video URL domain not allowed')
         results.push({ id: item.id, status: 'failed', error: 'invalid_domain' })
         continue
       }
 
       const videoRes = await fetch(item.videoUrl)
       if (!videoRes.ok) {
-        await updateQueueItemStatus(item.id, 'failed', { error: `Failed to fetch video: ${videoRes.status}` })
+        await failQueueItem(item.id, `Failed to fetch video: ${videoRes.status}`)
         results.push({ id: item.id, status: 'failed', error: 'fetch_failed' })
         continue
       }
@@ -50,7 +61,7 @@ export async function processUploadQueue() {
         language: item.language || undefined,
       })
 
-      await updateQueueItemStatus(item.id, 'done', { youtubeVideoId: result.videoId })
+      await completeQueueItem(item.id, result.videoId)
 
       try {
         await createYouTubeUpload({
@@ -70,7 +81,7 @@ export async function processUploadQueue() {
       logger.info('queue upload success', { queueId: item.id, videoId: result.videoId })
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unknown error'
-      await updateQueueItemStatus(item.id, 'failed', { error: msg })
+      await failQueueItem(item.id, msg)
       results.push({ id: item.id, status: 'failed', error: msg })
       logger.error('queue upload failed', { queueId: item.id, error: msg })
     }

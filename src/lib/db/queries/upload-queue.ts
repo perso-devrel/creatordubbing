@@ -23,6 +23,11 @@ export interface UploadQueueItem {
   createdAt: string
 }
 
+export interface ClaimUploadQueueOptions {
+  userId?: string
+  queueId?: number
+}
+
 let tableEnsured = false
 
 async function ensureTable() {
@@ -94,6 +99,76 @@ export async function getPendingUploads(limit = 5): Promise<UploadQueueItem[]> {
     args: [limit],
   })
   return result.rows.map(rowToItem)
+}
+
+export async function claimPendingUploads(
+  limit = 5,
+  options: ClaimUploadQueueOptions = {},
+): Promise<UploadQueueItem[]> {
+  await ensureTable()
+  const db = getDb()
+  const filters = [`(status = 'pending' OR (status = 'failed' AND retries < 3))`]
+  const args: (string | number)[] = []
+
+  if (options.userId) {
+    filters.push('user_id = ?')
+    args.push(options.userId)
+  }
+
+  if (options.queueId !== undefined) {
+    filters.push('id = ?')
+    args.push(options.queueId)
+  }
+
+  const result = await db.execute({
+    sql: `UPDATE upload_queue
+          SET status = 'processing',
+              error = NULL,
+              updated_at = datetime('now')
+          WHERE id IN (
+            SELECT id
+            FROM upload_queue
+            WHERE ${filters.join(' AND ')}
+            ORDER BY created_at ASC
+            LIMIT ?
+          )
+          AND (status = 'pending' OR (status = 'failed' AND retries < 3))
+          RETURNING *`,
+    args: [...args, limit],
+  })
+  return result.rows.map(rowToItem)
+}
+
+export async function completeQueueItem(id: number, youtubeVideoId: string): Promise<boolean> {
+  await ensureTable()
+  const db = getDb()
+  const result = await db.execute({
+    sql: `UPDATE upload_queue
+          SET status = 'done',
+              youtube_video_id = ?,
+              error = NULL,
+              updated_at = datetime('now')
+          WHERE id = ? AND status = 'processing'
+          RETURNING id`,
+    args: [youtubeVideoId, id],
+  })
+  return Boolean(result.rows[0])
+}
+
+export async function failQueueItem(id: number, error: string): Promise<boolean> {
+  await ensureTable()
+  const db = getDb()
+  const result = await db.execute({
+    sql: `UPDATE upload_queue
+          SET status = 'failed',
+              error = ?,
+              retries = retries + 1,
+              updated_at = datetime('now')
+          WHERE id = ? AND status = 'processing'
+          RETURNING id`,
+    args: [error, id],
+  })
+  return Boolean(result.rows[0])
 }
 
 export async function updateQueueItemStatus(
