@@ -46,6 +46,12 @@ function fromHex(hex: string): Uint8Array {
   return new Uint8Array(pairs.map((b) => parseInt(b, 16)))
 }
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  return copy.buffer
+}
+
 function base64UrlEncode(value: string): string {
   return btoa(value)
     .replace(/\+/g, '-')
@@ -75,7 +81,7 @@ async function verify(value: string, sigHex: string): Promise<boolean> {
   if (sigBytes.length === 0) return false
   try {
     const key = await importKey(getSecret())
-    return crypto.subtle.verify('HMAC', key, sigBytes.buffer as ArrayBuffer, enc.encode(value))
+    return crypto.subtle.verify('HMAC', key, toArrayBuffer(sigBytes), enc.encode(value))
   } catch {
     return false
   }
