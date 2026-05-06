@@ -25,6 +25,9 @@ interface UploadSettings {
   tags: string
   privacyStatus: PrivacyStatus
   shortsMode: ShortsMode
+  uploadCaptions: boolean
+  selfDeclaredMadeForKids: boolean
+  containsSyntheticMedia: boolean
 }
 
 const PRIVACY_OPTIONS = [
@@ -53,6 +56,9 @@ function buildDefaultSettings(item: CompletedJobLanguage, langName: string): Upl
     tags: `Dubtube, AI dubbing, ${langName}, dubbed`,
     privacyStatus: 'private',
     shortsMode: 'regular',
+    uploadCaptions: true,
+    selfDeclaredMadeForKids: false,
+    containsSyntheticMedia: true,
   }
 }
 
@@ -104,6 +110,36 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
           onChange={(e) => onChange({ ...settings, privacyStatus: e.target.value as PrivacyStatus })}
           options={PRIVACY_OPTIONS}
         />
+
+        <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
+            checked={settings.uploadCaptions}
+            onChange={(e) => onChange({ ...settings, uploadCaptions: e.target.checked })}
+          />
+          <span>Upload translated SRT captions with the video</span>
+        </label>
+
+        <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
+            checked={settings.selfDeclaredMadeForKids}
+            onChange={(e) => onChange({ ...settings, selfDeclaredMadeForKids: e.target.checked })}
+          />
+          <span>Made for kids</span>
+        </label>
+
+        <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
+            checked={settings.containsSyntheticMedia}
+            onChange={(e) => onChange({ ...settings, containsSyntheticMedia: e.target.checked })}
+          />
+          <span>Disclose AI-generated or synthetic media</span>
+        </label>
 
         <div>
           <label className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
@@ -237,6 +273,8 @@ function UploadRow({ item, userId }: UploadRowProps) {
           description: settings.description,
           tags: v.tags,
           privacyStatus: settings.privacyStatus,
+          selfDeclaredMadeForKids: settings.selfDeclaredMadeForKids,
+          containsSyntheticMedia: settings.containsSyntheticMedia,
           language: item.language_code,
         })
 
@@ -262,7 +300,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
         const r = await uploadOnce(v)
         results.push({ variant: v, videoId: r.videoId })
 
-        if (srtUrl) {
+        if (settings.uploadCaptions && srtUrl) {
           try {
             const srtRes = await fetch(srtUrl)
             const srtText = await srtRes.text()

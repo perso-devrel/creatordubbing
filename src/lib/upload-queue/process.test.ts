@@ -7,7 +7,7 @@ import {
 } from '@/lib/db/queries/upload-queue'
 import { createYouTubeUpload, updateJobLanguageYouTube } from '@/lib/db/queries'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
-import { uploadVideoToYouTube } from '@/lib/youtube/upload'
+import { uploadCaptionToYouTube, uploadVideoToYouTube } from '@/lib/youtube/upload'
 
 vi.mock('@/lib/db/queries/upload-queue', () => ({
   claimPendingUploads: vi.fn(),
@@ -26,6 +26,7 @@ vi.mock('@/lib/auth/token-refresh', () => ({
 
 vi.mock('@/lib/youtube/upload', () => ({
   uploadVideoToYouTube: vi.fn(),
+  uploadCaptionToYouTube: vi.fn(),
 }))
 
 vi.mock('@/lib/logger', () => ({
@@ -47,6 +48,12 @@ const queueItem = {
   privacyStatus: 'private',
   language: 'en',
   isShort: false,
+  uploadCaptions: true,
+  captionLanguage: 'en',
+  captionName: 'English subtitles',
+  srtContent: '1\n00:00:00,000 --> 00:00:01,000\nHello',
+  selfDeclaredMadeForKids: false,
+  containsSyntheticMedia: true,
   status: 'processing' as const,
   retries: 0,
   error: null,
@@ -96,8 +103,17 @@ describe('processUploadQueue', () => {
         accessToken: 'access-token',
         title: 'Translated title',
         tags: ['dubtube', 'english'],
+        selfDeclaredMadeForKids: false,
+        containsSyntheticMedia: true,
       }),
     )
+    expect(uploadCaptionToYouTube).toHaveBeenCalledWith({
+      accessToken: 'access-token',
+      videoId: 'yt-123',
+      language: 'en',
+      name: 'English subtitles',
+      srtContent: queueItem.srtContent,
+    })
     expect(completeQueueItem).toHaveBeenCalledWith(10, 'yt-123')
     expect(createYouTubeUpload).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-1', youtubeVideoId: 'yt-123' }),

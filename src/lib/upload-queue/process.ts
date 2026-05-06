@@ -7,7 +7,7 @@ import {
 } from '@/lib/db/queries/upload-queue'
 import { createYouTubeUpload, updateJobLanguageYouTube } from '@/lib/db/queries'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
-import { uploadVideoToYouTube } from '@/lib/youtube/upload'
+import { uploadCaptionToYouTube, uploadVideoToYouTube } from '@/lib/youtube/upload'
 import { logger } from '@/lib/logger'
 
 export interface ProcessUploadQueueOptions {
@@ -58,8 +58,27 @@ export async function processUploadQueue(options: ProcessUploadQueueOptions = {}
         description: item.description,
         tags: item.tags ? item.tags.split(',') : [],
         privacyStatus: item.privacyStatus as 'public' | 'unlisted' | 'private',
+        selfDeclaredMadeForKids: item.selfDeclaredMadeForKids,
+        containsSyntheticMedia: item.containsSyntheticMedia,
         language: item.language || undefined,
       })
+
+      if (item.uploadCaptions && item.srtContent?.trim()) {
+        try {
+          await uploadCaptionToYouTube({
+            accessToken,
+            videoId: result.videoId,
+            language: item.captionLanguage || item.langCode,
+            name: item.captionName || `${item.language || item.langCode} subtitles`,
+            srtContent: item.srtContent,
+          })
+        } catch (err) {
+          logger.warn('queue caption upload failed', {
+            queueId: item.id,
+            error: err instanceof Error ? err.message : 'Unknown error',
+          })
+        }
+      }
 
       await completeQueueItem(item.id, result.videoId)
 

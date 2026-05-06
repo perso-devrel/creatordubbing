@@ -17,6 +17,8 @@ export async function ytUploadVideo(params: {
   tags: string[]
   categoryId?: string
   privacyStatus?: 'public' | 'unlisted' | 'private'
+  selfDeclaredMadeForKids?: boolean
+  containsSyntheticMedia?: boolean
   language?: string
   /** BCP-47 language code → { title, description } 맵. snippet.localizations로 전달. */
   localizations?: Record<string, { title: string; description: string }>
@@ -32,6 +34,12 @@ export async function ytUploadVideo(params: {
   form.append('tags', params.tags.join(','))
   if (params.categoryId) form.append('categoryId', params.categoryId)
   if (params.privacyStatus) form.append('privacyStatus', params.privacyStatus)
+  if (params.selfDeclaredMadeForKids !== undefined) {
+    form.append('selfDeclaredMadeForKids', String(params.selfDeclaredMadeForKids))
+  }
+  if (params.containsSyntheticMedia !== undefined) {
+    form.append('containsSyntheticMedia', String(params.containsSyntheticMedia))
+  }
   if (params.language) form.append('language', params.language)
   if (params.localizations && Object.keys(params.localizations).length > 0) {
     form.append('localizations', JSON.stringify(params.localizations))

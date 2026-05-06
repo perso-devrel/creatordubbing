@@ -277,8 +277,16 @@ describe('uploadVideoToYouTube', () => {
       title: 'My Vid',
       description: 'Desc',
       tags: ['tag1'],
+      selfDeclaredMadeForKids: true,
+      containsSyntheticMedia: true,
     })
     expect(result).toEqual({ videoId: 'yt-abc', title: 'My Vid', status: 'uploaded' })
+    const initBody = JSON.parse(mockFetch.mock.calls[0][1]?.body as string)
+    expect(initBody.status).toMatchObject({
+      privacyStatus: 'private',
+      selfDeclaredMadeForKids: true,
+      containsSyntheticMedia: true,
+    })
   })
 
   it('throws on init failure', async () => {

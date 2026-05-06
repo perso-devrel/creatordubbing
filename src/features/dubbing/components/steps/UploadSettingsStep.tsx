@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useRef } from 'react'
-import { ArrowLeft, ArrowRight, Languages, Link2, Upload, Zap } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Captions, Languages, Link2, ShieldCheck, Sparkles, Upload, Zap } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { extractVideoId } from '@/utils/validators'
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/utils/languages'
+import { useAuthStore } from '@/stores/authStore'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
@@ -33,6 +34,7 @@ export function UploadSettingsStep() {
     prevStep,
     nextStep,
   } = useDubbingStore()
+  const user = useAuthStore((s) => s.user)
 
   // YouTube 설정 페이지의 기본값과 동기화 (사용자 override 없을 때만).
   useEffect(() => {
@@ -92,12 +94,18 @@ export function UploadSettingsStep() {
     setUploadSettings({ tags: parsed })
   }
 
-  const canContinue =
+  const isMultiAudio = deliverableMode === 'originalWithMultiAudio'
+  const uploadsVideoToYouTube =
+    deliverableMode === 'newDubbedVideos' ||
+    (isMultiAudio && videoSource?.type === 'upload')
+  const needsAutoUploadReview = uploadSettings.autoUpload
+  const baseCanContinue =
     deliverableMode === 'originalWithMultiAudio'
       ? true
       : uploadSettings.title.trim().length > 0
-
-  const isMultiAudio = deliverableMode === 'originalWithMultiAudio'
+  const canContinue = baseCanContinue && (!needsAutoUploadReview || uploadSettings.uploadReviewConfirmed)
+  const privacyLabel = PRIVACY_OPTIONS.find((o) => o.value === uploadSettings.privacyStatus)?.label ?? uploadSettings.privacyStatus
+  const targetChannelLabel = user?.email ?? 'Google 로그인 후 연결된 YouTube 채널'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -258,6 +266,42 @@ export function UploadSettingsStep() {
             />
           )}
 
+          {(deliverableMode === 'newDubbedVideos' || isMultiAudio) && (
+            <ToggleRow
+              icon={<Captions className="h-4 w-4 text-surface-400" />}
+              label={isMultiAudio ? '자막(SRT) 업로드' : '더빙 영상에 자막(SRT) 첨부'}
+              description={isMultiAudio ? '완료된 언어의 번역 자막을 대상 영상에 업로드합니다.' : '즉시 업로드와 예약 업로드 모두 번역 자막을 함께 처리합니다.'}
+              active={uploadSettings.uploadCaptions}
+              activeLabel="ON"
+              inactiveLabel="OFF"
+              onToggle={() => setUploadSettings({ uploadCaptions: !uploadSettings.uploadCaptions })}
+            />
+          )}
+
+          {uploadsVideoToYouTube && (
+            <>
+              <ToggleRow
+                icon={<ShieldCheck className="h-4 w-4 text-surface-400" />}
+                label="아동용으로 제작됨"
+                description="YouTube의 아동용 콘텐츠 신고값입니다. 기본값은 아니오입니다."
+                active={uploadSettings.selfDeclaredMadeForKids}
+                activeLabel="예"
+                inactiveLabel="아니오"
+                onToggle={() => setUploadSettings({ selfDeclaredMadeForKids: !uploadSettings.selfDeclaredMadeForKids })}
+              />
+
+              <ToggleRow
+                icon={<Sparkles className="h-4 w-4 text-amber-500" />}
+                label="AI 합성/변형 콘텐츠 공개"
+                description="AI 더빙 음성이 포함되므로 기본값은 공개 ON입니다."
+                active={uploadSettings.containsSyntheticMedia}
+                activeLabel="ON"
+                inactiveLabel="OFF"
+                onToggle={() => setUploadSettings({ containsSyntheticMedia: !uploadSettings.containsSyntheticMedia })}
+              />
+            </>
+          )}
+
           {/* 다국어 오디오 트랙: 자막 모드에서만 노출. 실서비스 검증 전이라 비활성. */}
           {isMultiAudio && (
             <ToggleRow
@@ -273,6 +317,39 @@ export function UploadSettingsStep() {
           )}
         </div>
       </Card>
+
+      {uploadSettings.autoUpload && (
+        <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/10">
+          <CardTitle>자동 업로드 최종 확인</CardTitle>
+          <div className="mt-4 grid gap-2 text-xs text-surface-600 dark:text-surface-300 sm:grid-cols-2">
+            <ReviewItem label="채널" value={targetChannelLabel} />
+            <ReviewItem label="공개 범위" value={privacyLabel} />
+            <ReviewItem label="Shorts" value={uploadSettings.uploadAsShort ? 'ON' : 'OFF'} />
+            <ReviewItem label="자막" value={uploadSettings.uploadCaptions ? '업로드' : '업로드 안 함'} />
+            <ReviewItem label="아동용" value={uploadSettings.selfDeclaredMadeForKids ? '예' : '아니오'} />
+            <ReviewItem label="AI 합성 공개" value={uploadSettings.containsSyntheticMedia ? 'ON' : 'OFF'} />
+            <ReviewItem
+              label="제목/설명 번역"
+              value={`${getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage} 기준 → ${selectedLanguages.length}개 언어`}
+            />
+            <ReviewItem
+              label="localizations"
+              value={deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload' ? 'YouTube localizations 포함' : '언어별 제목/설명 적용'}
+            />
+          </div>
+          <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-amber-200 bg-white/70 p-3 text-sm text-surface-700 dark:border-amber-900/70 dark:bg-surface-900/50 dark:text-surface-200">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
+              checked={uploadSettings.uploadReviewConfirmed}
+              onChange={(e) => setUploadSettings({ uploadReviewConfirmed: e.target.checked })}
+            />
+            <span>
+              위 채널, 공개 범위, 제목/설명 번역, 자막, Shorts, 아동용, AI 합성 공개 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.
+            </span>
+          </label>
+        </Card>
+      )}
 
       {/* Preview — only for newDubbedVideos */}
       {deliverableMode === 'newDubbedVideos' && firstLangName && (
@@ -349,6 +426,15 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
       >
         {active ? activeLabel : inactiveLabel}
       </button>
+    </div>
+  )
+}
+
+function ReviewItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-white/70 px-3 py-2 dark:bg-surface-900/50">
+      <p className="text-[11px] font-medium text-surface-400">{label}</p>
+      <p className="mt-0.5 truncate text-surface-700 dark:text-surface-200">{value}</p>
     </div>
   )
 }

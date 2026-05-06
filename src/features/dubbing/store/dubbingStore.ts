@@ -43,8 +43,26 @@ const buildDefaultUploadSettings = (): UploadSettings => ({
   description: '',
   tags: ['Dubtube', 'AI더빙', 'dubbed'],
   privacyStatus: readDefaultPrivacy(),
+  uploadCaptions: true,
+  selfDeclaredMadeForKids: false,
+  containsSyntheticMedia: true,
+  uploadReviewConfirmed: false,
   metadataLanguage: readDefaultLanguage(),
 })
+
+const REVIEW_RESET_FIELDS: Array<keyof UploadSettings> = [
+  'autoUpload',
+  'uploadAsShort',
+  'attachOriginalLink',
+  'title',
+  'description',
+  'tags',
+  'privacyStatus',
+  'metadataLanguage',
+  'uploadCaptions',
+  'selfDeclaredMadeForKids',
+  'containsSyntheticMedia',
+]
 
 interface DubbingState {
   // Wizard navigation
@@ -237,28 +255,36 @@ export const useDubbingStore = create<DubbingState>((set) => ({
     // 사용자가 토글을 직접 만진 적이 있으면 그 선택을 보존한다.
     uploadSettings: s.uploadAsShortOverridden
       ? s.uploadSettings
-      : { ...s.uploadSettings, uploadAsShort: v },
+      : { ...s.uploadSettings, uploadAsShort: v, uploadReviewConfirmed: false },
   })),
 
   setDeliverableMode: (mode) => set({ deliverableMode: mode }),
   setCopyrightAcknowledged: (v) => set({ copyrightAcknowledged: v }),
 
-  setUploadSettings: (patch) => set((s) => ({
-    uploadSettings: { ...s.uploadSettings, ...patch },
-    privacyOverridden:
-      patch.privacyStatus !== undefined ? true : s.privacyOverridden,
-    metadataLanguageOverridden:
-      patch.metadataLanguage !== undefined ? true : s.metadataLanguageOverridden,
-    uploadAsShortOverridden:
-      patch.uploadAsShort !== undefined ? true : s.uploadAsShortOverridden,
-  })),
+  setUploadSettings: (patch) => set((s) => {
+    const shouldResetReview = REVIEW_RESET_FIELDS.some((field) => patch[field] !== undefined)
+    return {
+      uploadSettings: {
+        ...s.uploadSettings,
+        ...patch,
+        uploadReviewConfirmed:
+          patch.uploadReviewConfirmed ?? (shouldResetReview ? false : s.uploadSettings.uploadReviewConfirmed),
+      },
+      privacyOverridden:
+        patch.privacyStatus !== undefined ? true : s.privacyOverridden,
+      metadataLanguageOverridden:
+        patch.metadataLanguage !== undefined ? true : s.metadataLanguageOverridden,
+      uploadAsShortOverridden:
+        patch.uploadAsShort !== undefined ? true : s.uploadAsShortOverridden,
+    }
+  }),
 
   syncPrivacyFromGlobalDefault: () => set((s) => {
     if (s.privacyOverridden) return s
     const next = readDefaultPrivacy()
     if (s.uploadSettings.privacyStatus === next) return s
     return {
-      uploadSettings: { ...s.uploadSettings, privacyStatus: next },
+      uploadSettings: { ...s.uploadSettings, privacyStatus: next, uploadReviewConfirmed: false },
     }
   }),
 
@@ -267,7 +293,7 @@ export const useDubbingStore = create<DubbingState>((set) => ({
     const next = readDefaultLanguage()
     if (s.uploadSettings.metadataLanguage === next) return s
     return {
-      uploadSettings: { ...s.uploadSettings, metadataLanguage: next },
+      uploadSettings: { ...s.uploadSettings, metadataLanguage: next, uploadReviewConfirmed: false },
     }
   }),
 
