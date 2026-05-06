@@ -16,3 +16,8 @@ export {
   fetchVideoAnalytics,
   fetchMultiVideoAnalytics,
 } from '@/lib/youtube/analytics'
+export {
+  fetchVideoMetadata,
+  updateVideoLocalizations,
+} from '@/lib/youtube/metadata'
+export type { YouTubeVideoMetadata } from '@/lib/youtube/types'

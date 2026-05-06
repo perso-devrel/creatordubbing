@@ -8,6 +8,21 @@ export interface YouTubeUploadResult {
   status: string
 }
 
+export interface YouTubeLocalization {
+  title: string
+  description: string
+}
+
+export interface YouTubeVideoMetadata {
+  videoId: string
+  title: string
+  description: string
+  categoryId: string
+  tags: string[]
+  defaultLanguage: string
+  localizations: Record<string, YouTubeLocalization>
+}
+
 export interface VideoStats {
   videoId: string
   viewCount: number

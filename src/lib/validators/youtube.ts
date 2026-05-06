@@ -40,6 +40,24 @@ export const videosQuerySchema = z.object({
     .pipe(z.number().int().min(1).max(50)),
 })
 
+export const metadataQuerySchema = z.object({
+  videoId: z.string().min(1),
+})
+
+export const metadataUpdateBodySchema = z.object({
+  videoId: z.string().min(1),
+  sourceLang: z.string().min(1),
+  title: z.string().min(1).max(2000),
+  description: z.string().max(20000).default(''),
+  localizations: z.record(
+    z.string().min(1),
+    z.object({
+      title: z.string().min(1).max(2000),
+      description: z.string().max(20000).default(''),
+    }),
+  ),
+})
+
 const localizationsRecordSchema = z.record(
   z.string().min(1),
   z.object({
