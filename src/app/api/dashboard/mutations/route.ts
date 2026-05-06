@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
       }
       case 'queueYouTubeUpload': {
         const id = await createUploadQueueItem(action.payload)
-        processUploadQueue().catch(() => {})
+        processUploadQueue({ userId: auth.session.uid, queueId: id, limit: 1 }).catch(() => {})
         return apiOk({ queueId: id })
       }
       case 'deleteDubbingJob': {
