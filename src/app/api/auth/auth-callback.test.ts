@@ -2,11 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/db/queries', () => ({
   upsertUser: vi.fn(),
+  createUserSession: vi.fn(),
 }))
 
 vi.mock('@/lib/auth/session-cookie', () => ({
   SESSION_COOKIE: 'dubtube_session',
-  signSessionCookie: vi.fn((uid: string) => `${uid}.fakesig`),
+  SESSION_TTL_SECONDS: 604800,
+  createSessionCookie: vi.fn((uid: string) => ({
+    cookie: `${uid}.fakesig`,
+    sessionId: `sid-${uid}`,
+    expiresAt: new Date('2030-01-01T00:00:00.000Z'),
+  })),
 }))
 
 vi.mock('@/lib/env', () => ({
@@ -24,7 +30,7 @@ vi.mock('@/lib/env', () => ({
 }))
 
 import { POST } from './callback/route'
-import { upsertUser } from '@/lib/db/queries'
+import { createUserSession, upsertUser } from '@/lib/db/queries'
 import { getServerEnv } from '@/lib/env'
 import { NextRequest } from 'next/server'
 
@@ -141,10 +147,15 @@ describe('POST /api/auth/callback', () => {
         refreshToken: 'rt-456',
       }),
     )
+    expect(createUserSession).toHaveBeenCalledWith({
+      sessionId: 'sid-user-1',
+      userId: 'user-1',
+      expiresAt: new Date('2030-01-01T00:00:00.000Z'),
+    })
 
     const setCookies = res.headers.getSetCookie()
     expect(setCookies.find((c: string) => c.startsWith('dubtube_session='))).toBeDefined()
-    expect(setCookies.find((c: string) => c.startsWith('google_access_token='))).toBeDefined()
+    expect(setCookies.find((c: string) => c.startsWith('google_access_token='))).toBeUndefined()
   })
 
   it('handles missing refresh_token gracefully', async () => {

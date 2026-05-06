@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
-import { upsertUser } from '@/lib/db/queries'
-import { SESSION_COOKIE, signSessionCookie, verifySessionCookie } from '@/lib/auth/session-cookie'
+import { createUserSession, upsertUser } from '@/lib/db/queries'
+import { createSessionCookie, SESSION_COOKIE, SESSION_TTL_SECONDS, verifySessionCookie } from '@/lib/auth/session-cookie'
 import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 import { syncBodySchema } from '@/lib/validators/auth'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
@@ -83,16 +83,22 @@ export async function POST(req: NextRequest) {
       accessToken,
     })
 
+    const session = await createSessionCookie(uid)
+    await createUserSession({
+      sessionId: session.sessionId,
+      userId: uid,
+      expiresAt: session.expiresAt,
+    })
+
     const cookieOpts = {
       path: '/',
       httpOnly: true,
       sameSite: 'lax' as const,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: SESSION_TTL_SECONDS,
     }
     const res = apiOk({ id: uid })
-    res.cookies.set(SESSION_COOKIE, await signSessionCookie(uid), cookieOpts)
-    res.cookies.set('google_access_token', accessToken, cookieOpts)
+    res.cookies.set(SESSION_COOKIE, session.cookie, cookieOpts)
     return res
   } catch (err) {
     return apiFailFromError(err)

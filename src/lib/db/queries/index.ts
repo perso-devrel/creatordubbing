@@ -9,6 +9,12 @@ export {
 } from './users'
 
 export {
+  createUserSession,
+  revokeUserSession,
+  isUserSessionActive,
+} from './sessions'
+
+export {
   ensureCreditTables,
   getUserAvailableCredits,
   createPaymentOrder,

@@ -2,9 +2,9 @@ import 'server-only'
 
 import { NextRequest } from 'next/server'
 import { apiFail } from '@/lib/api/response'
-import { verifySessionCookie } from '@/lib/auth/session-cookie'
+import { verifySessionCookiePayload } from '@/lib/auth/session-cookie'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
-import { getUser } from '@/lib/db/queries'
+import { getUser, isUserSessionActive } from '@/lib/db/queries'
 import { logger } from '@/lib/logger'
 
 export interface Session {
@@ -61,8 +61,19 @@ export async function requireSession(
   // 2) Cookie expired or invalid — try refreshing via session cookie
   const sessionCookie = req.cookies.get('dubtube_session')?.value
   if (sessionCookie) {
-    const uid = await verifySessionCookie(sessionCookie)
-    if (uid) {
+    const verified = await verifySessionCookiePayload(sessionCookie)
+    if (verified) {
+      const uid = verified.uid
+      if (!verified.legacy) {
+        const active = await isUserSessionActive(verified.sid, uid)
+        if (!active) {
+          return {
+            ok: false,
+            response: apiFail('UNAUTHORIZED', 'Session has expired or was revoked', 401),
+          }
+        }
+      }
+
       const refreshedToken = await getOrRefreshAccessToken(uid)
       if (refreshedToken) {
         const info = await verifyTokenWithGoogle(refreshedToken)
