@@ -7,7 +7,7 @@ export interface Settings {
 }
 
 const DEFAULTS: Settings = {
-  uploadMode: 'auto',
+  uploadMode: 'assisted',
 }
 
 export async function getSettings(): Promise<Settings> {
