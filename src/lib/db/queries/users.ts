@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { getDb } from '@/lib/db/client'
+import { decryptToken, encryptToken } from '@/lib/auth/token-crypto'
 
 export async function upsertUser(user: {
   id: string
@@ -12,6 +13,8 @@ export async function upsertUser(user: {
   tokenExpiresAt?: string | null
 }) {
   const db = getDb()
+  const accessToken = await encryptToken(user.accessToken)
+  const refreshToken = await encryptToken(user.refreshToken)
   await db.execute({
     sql: `INSERT INTO users (id, email, display_name, photo_url, google_access_token, google_refresh_token, token_expires_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
@@ -28,8 +31,8 @@ export async function upsertUser(user: {
       user.email,
       user.displayName,
       user.photoURL,
-      user.accessToken,
-      user.refreshToken ?? null,
+      accessToken,
+      refreshToken,
       user.tokenExpiresAt ?? null,
     ],
   })
@@ -44,8 +47,8 @@ export async function getUserTokens(userId: string) {
   const row = result.rows[0]
   if (!row) return null
   return {
-    accessToken: row.google_access_token as string | null,
-    refreshToken: row.google_refresh_token as string | null,
+    accessToken: await decryptToken(row.google_access_token as string | null),
+    refreshToken: await decryptToken(row.google_refresh_token as string | null),
     tokenExpiresAt: row.token_expires_at as string | null,
   }
 }
@@ -56,9 +59,10 @@ export async function updateUserTokens(
   tokenExpiresAt: string,
 ) {
   const db = getDb()
+  const encryptedAccessToken = await encryptToken(accessToken)
   await db.execute({
     sql: `UPDATE users SET google_access_token = ?, token_expires_at = ?, updated_at = datetime('now') WHERE id = ?`,
-    args: [accessToken, tokenExpiresAt, userId],
+    args: [encryptedAccessToken, tokenExpiresAt, userId],
   })
 }
 

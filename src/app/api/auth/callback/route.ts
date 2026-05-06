@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
-import { upsertUser } from '@/lib/db/queries'
-import { SESSION_COOKIE, signSessionCookie } from '@/lib/auth/session-cookie'
+import { createUserSession, upsertUser } from '@/lib/db/queries'
+import { createSessionCookie, SESSION_COOKIE, SESSION_TTL_SECONDS } from '@/lib/auth/session-cookie'
 import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 import { callbackBodySchema } from '@/lib/validators/auth'
 import { getServerEnv } from '@/lib/env'
@@ -76,12 +76,19 @@ export async function POST(req: NextRequest) {
       tokenExpiresAt: expiresAt,
     })
 
+    const session = await createSessionCookie(info.sub)
+    await createUserSession({
+      sessionId: session.sessionId,
+      userId: info.sub,
+      expiresAt: session.expiresAt,
+    })
+
     const cookieOpts = {
       path: '/',
       httpOnly: true,
       sameSite: 'lax' as const,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: SESSION_TTL_SECONDS,
     }
 
     const res = apiOk({
@@ -90,11 +97,7 @@ export async function POST(req: NextRequest) {
       displayName: info.name ?? null,
       photoURL: info.picture ?? null,
     })
-    res.cookies.set(SESSION_COOKIE, await signSessionCookie(info.sub), cookieOpts)
-    res.cookies.set('google_access_token', tokens.access_token, {
-      ...cookieOpts,
-      maxAge: tokens.expires_in,
-    })
+    res.cookies.set(SESSION_COOKIE, session.cookie, cookieOpts)
     return res
   } catch (err) {
     return apiFailFromError(err)

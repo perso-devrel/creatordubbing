@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { signSessionCookie, verifySessionCookie, SESSION_COOKIE } from './session-cookie'
+import {
+  signSessionCookie,
+  verifySessionCookie,
+  verifySessionCookiePayload,
+  SESSION_COOKIE,
+} from './session-cookie'
 
 describe('session-cookie', () => {
   it('exports SESSION_COOKIE constant', () => {
@@ -7,19 +12,19 @@ describe('session-cookie', () => {
   })
 
   describe('signSessionCookie', () => {
-    it('produces uid.signature format', async () => {
+    it('produces encoded-payload.signature format', async () => {
       const signed = await signSessionCookie('user123')
-      expect(signed).toMatch(/^user123\.[a-f0-9]{64}$/)
+      expect(signed).toMatch(/^[A-Za-z0-9_-]+\.[a-f0-9]{64}$/)
     })
 
-    it('produces different signatures for different uids', async () => {
+    it('produces different cookies for different uids', async () => {
       const a = await signSessionCookie('alice')
       const b = await signSessionCookie('bob')
-      expect(a.split('.').pop()).not.toBe(b.split('.').pop())
+      expect(a).not.toBe(b)
     })
 
-    it('produces deterministic output', async () => {
-      expect(await signSessionCookie('uid1')).toBe(await signSessionCookie('uid1'))
+    it('produces non-deterministic output for the same uid', async () => {
+      expect(await signSessionCookie('uid1')).not.toBe(await signSessionCookie('uid1'))
     })
   })
 
@@ -31,7 +36,13 @@ describe('session-cookie', () => {
 
     it('returns null for tampered uid', async () => {
       const signed = await signSessionCookie('user123')
-      const tampered = 'hacker' + signed.slice(signed.indexOf('.'))
+      const [encoded, sig] = signed.split('.')
+      const payload = JSON.parse(atob(encoded))
+      const tamperedPayload = btoa(JSON.stringify({ ...payload, uid: 'hacker' }))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '')
+      const tampered = `${tamperedPayload}.${sig}`
       expect(await verifySessionCookie(tampered)).toBeNull()
     })
 
@@ -62,6 +73,17 @@ describe('session-cookie', () => {
     it('handles uid containing dots', async () => {
       const signed = await signSessionCookie('user.with.dots')
       expect(await verifySessionCookie(signed)).toBe('user.with.dots')
+    })
+
+    it('returns v2 payload metadata for valid signed cookie', async () => {
+      const signed = await signSessionCookie('user123')
+      const verified = await verifySessionCookiePayload(signed)
+      expect(verified).toMatchObject({
+        uid: 'user123',
+        legacy: false,
+      })
+      expect(verified?.sid).toEqual(expect.any(String))
+      expect(verified?.exp).toEqual(expect.any(Number))
     })
   })
 

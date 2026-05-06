@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
-const LAST_UPDATED = '2026-04-29'
+const LAST_UPDATED = '2026-05-07'
 
 export default function PrivacyPolicyPage() {
   return (
@@ -94,6 +94,9 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Turso (libSQL)</strong> — 사용자 계정·작업 기록 데이터베이스 호스팅.
           </li>
+          <li>
+            <strong>Toss Payments</strong> — 크레딧 결제 승인, 결제 결과 확인, 환불 및 정산 기록 처리.
+          </li>
         </ul>
         <p className="mt-4">
           위 외의 제3자에게는 사용자의 명시적 동의 없이 제공하지 않습니다.
@@ -130,17 +133,15 @@ export default function PrivacyPolicyPage() {
       <Section title="7. 보안">
         <ul className="mt-2 list-disc space-y-1 pl-6">
           <li>모든 통신은 HTTPS(TLS 1.2 이상)로 암호화됩니다.</li>
-          <li>OAuth 액세스 토큰은 HttpOnly·Secure 쿠키로만 저장되며, 클라이언트 JavaScript에서 직접 접근할 수 없습니다.</li>
-          <li>리프레시 토큰은 서버 측 데이터베이스에서 암호화 저장됩니다.</li>
-          <li>세션은 HMAC-SHA256으로 서명된 쿠키를 사용합니다.</li>
+          <li>OAuth 액세스 토큰과 리프레시 토큰은 서버 측 데이터베이스에서 암호화 저장됩니다.</li>
+          <li>세션은 HMAC-SHA256으로 서명된 HttpOnly 쿠키와 서버 측 세션 레코드로 관리됩니다.</li>
         </ul>
       </Section>
 
       <Section title="8. 쿠키">
         <p>
           본 서비스는 사용자 인증과 환경 설정을 위해 다음 쿠키를 사용합니다:
-          {' '}<code>dubtube_session</code> (세션 식별), <code>google_access_token</code> (YouTube
-          API 호출용 단기 토큰), <code>dubtube-theme</code> (라이트/다크 모드 설정),
+          {' '}<code>dubtube_session</code> (세션 식별), <code>dubtube-theme</code> (라이트/다크 모드 설정),
           <code> dubtube-youtube-settings</code> (사용자 기본 업로드 설정).
         </p>
       </Section>
