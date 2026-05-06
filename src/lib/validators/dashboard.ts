@@ -161,6 +161,12 @@ const queueYouTubeUploadSchema = z.object({
     privacyStatus: z.string().min(1),
     language: z.string(),
     isShort: z.boolean(),
+    uploadCaptions: z.boolean().optional(),
+    captionLanguage: z.string().nullable().optional(),
+    captionName: z.string().nullable().optional(),
+    srtContent: z.string().nullable().optional(),
+    selfDeclaredMadeForKids: z.boolean().optional(),
+    containsSyntheticMedia: z.boolean().optional(),
   }),
 })
 

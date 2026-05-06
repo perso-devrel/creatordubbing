@@ -49,7 +49,20 @@ export function UploadStep() {
     ? `https://www.youtube.com/watch?v=${originalYouTubeId}`
     : null
 
-  const { autoUpload, uploadAsShort, attachOriginalLink, title: settingsTitle, description: settingsDescription, tags: settingsTags, privacyStatus, metadataLanguage } = uploadSettings
+  const {
+    autoUpload,
+    uploadAsShort,
+    attachOriginalLink,
+    title: settingsTitle,
+    description: settingsDescription,
+    tags: settingsTags,
+    privacyStatus,
+    metadataLanguage,
+    uploadCaptions: shouldUploadCaptions,
+    selfDeclaredMadeForKids,
+    containsSyntheticMedia,
+    uploadReviewConfirmed,
+  } = uploadSettings
 
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
@@ -160,6 +173,8 @@ export function UploadStep() {
         description: settingsDescription || '',
         tags: settingsTags,
         privacyStatus,
+        selfDeclaredMadeForKids,
+        containsSyntheticMedia,
         language: metadataLanguage,
         localizations: Object.keys(localizations).length > 0 ? localizations : undefined,
       })
@@ -176,7 +191,7 @@ export function UploadStep() {
       addToast({ type: 'error', title: '원본 영상 업로드 실패', message: msg })
       return null
     }
-  }, [isAuthenticated, originalVideoUrl, settingsTitle, settingsDescription, settingsTags, privacyStatus, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage])
+  }, [isAuthenticated, originalVideoUrl, settingsTitle, settingsDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, containsSyntheticMedia, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage])
 
   // ─── Audio → Studio helper ──────────────────────────────────────────
   const handleAudioToStudio = useCallback(async (langCode: string, targetVideoId?: string) => {
@@ -300,26 +315,30 @@ export function UploadStep() {
         description: ytDescription,
         tags: langTags,
         privacyStatus,
+        selfDeclaredMadeForKids,
+        containsSyntheticMedia,
         language: langCode,
       })
       setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 90 } }))
 
       // Upload SRT caption — use Perso's official translated SRT (audioScript target)
       setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 92 } }))
-      try {
-        const pSeq = projectMap[langCode]
-        if (pSeq && spaceSeq) {
-          const srtText = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
-          if (srtText.trim().length > 0) {
-            await ytUploadCaption({
-              videoId: result.videoId,
-              language: toBcp47(langCode),
-              name: `${lang.name} subtitles`,
-              srtContent: srtText,
-            })
+      if (shouldUploadCaptions) {
+        try {
+          const pSeq = projectMap[langCode]
+          if (pSeq && spaceSeq) {
+            const srtText = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
+            if (srtText.trim().length > 0) {
+              await ytUploadCaption({
+                videoId: result.videoId,
+                language: toBcp47(langCode),
+                name: `${lang.name} subtitles`,
+                srtContent: srtText,
+              })
+            }
           }
-        }
-      } catch { /* caption upload is optional */ }
+        } catch { /* caption upload is optional */ }
+      }
 
       setYtUploads((prev) => ({
         ...prev,
@@ -362,7 +381,7 @@ export function UploadStep() {
       }))
       addToast({ type: 'error', title: `${lang?.name} 업로드 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsDescription, settingsTags, privacyStatus, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, containsSyntheticMedia, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter])
 
   // ─── Queue upload (background — survives tab close) ─────────────────
   const queueYouTubeUpload = useCallback(async (langCode: string) => {
@@ -389,6 +408,16 @@ export function UploadStep() {
         lang.name,
         ...(uploadAsShort ? ['Shorts'] : []),
       ]))
+      let srtContent: string | null = null
+      if (shouldUploadCaptions) {
+        const pSeq = projectMap[langCode]
+        if (pSeq && spaceSeq) {
+          try {
+            const srtText = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
+            srtContent = srtText.trim().length > 0 ? srtText : null
+          } catch { /* queue caption is optional */ }
+        }
+      }
 
       await dbMutation({
         type: 'queueYouTubeUpload',
@@ -403,6 +432,12 @@ export function UploadStep() {
           privacyStatus,
           language: langCode,
           isShort: uploadAsShort,
+          uploadCaptions: shouldUploadCaptions,
+          captionLanguage: toBcp47(langCode),
+          captionName: `${lang.name} subtitles`,
+          srtContent,
+          selfDeclaredMadeForKids,
+          containsSyntheticMedia,
         },
       })
 
@@ -423,7 +458,7 @@ export function UploadStep() {
       }))
       addToast({ type: 'error', title: `${lang?.name} 큐 등록 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, settingsTitle, settingsDescription, settingsTags, privacyStatus, ensureTranslations, applyDescriptionFooter])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, settingsTitle, settingsDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, containsSyntheticMedia, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter])
 
   const completedLangs = selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)
@@ -494,6 +529,7 @@ export function UploadStep() {
   useEffect(() => {
     if (deliverableMode !== 'originalWithMultiAudio') return
     if (!autoUpload || !isAuthenticated) return
+    if (!uploadReviewConfirmed) return
     if (completedLangs.length === 0) return
     if (autoChainTriggered.current) return
     autoChainTriggered.current = true
@@ -507,23 +543,24 @@ export function UploadStep() {
         targetVideoId = await uploadOriginalToYouTube()
       }
 
-      if (targetVideoId) {
+      if (targetVideoId && shouldUploadCaptions) {
         await uploadCaptions(targetVideoId, completedLangs)
       }
     }
 
     chain()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [deliverableMode, autoUpload, isAuthenticated, completedLangs.length])
+  }, [deliverableMode, autoUpload, isAuthenticated, uploadReviewConfirmed, completedLangs.length])
 
   // ─── Auto-upload: newDubbedVideos ────────────────────────────────────
   useEffect(() => {
     if (deliverableMode !== 'newDubbedVideos') return
+    if (!uploadReviewConfirmed) return
     if (autoUpload && isAuthenticated && completedLangs.length > 0 && !autoUploadTriggered.current && !anyUploading) {
       autoUploadTriggered.current = true
       handleUploadAll()
     }
-  }, [deliverableMode, autoUpload, isAuthenticated, completedLangs.length, anyUploading, handleUploadAll])
+  }, [deliverableMode, autoUpload, isAuthenticated, uploadReviewConfirmed, completedLangs.length, anyUploading, handleUploadAll])
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -805,6 +842,13 @@ export function UploadStep() {
                   Shorts: <span className="font-medium text-surface-700 dark:text-surface-300">{uploadAsShort ? 'ON' : 'OFF'}</span>
                   {' · '}
                   공개: <span className="font-medium text-surface-700 dark:text-surface-300">{privacyStatus === 'public' ? '공개' : privacyStatus === 'unlisted' ? '일부 공개' : '비공개'}</span>
+                </p>
+                <p>
+                  자막: <span className="font-medium text-surface-700 dark:text-surface-300">{shouldUploadCaptions ? 'ON' : 'OFF'}</span>
+                  {' · '}
+                  아동용: <span className="font-medium text-surface-700 dark:text-surface-300">{selfDeclaredMadeForKids ? '예' : '아니오'}</span>
+                  {' · '}
+                  AI 합성 공개: <span className="font-medium text-surface-700 dark:text-surface-300">{containsSyntheticMedia ? 'ON' : 'OFF'}</span>
                 </p>
                 {attachOriginalLink && originalYouTubeUrl && (
                   <p className="truncate">원본 링크 첨부: {originalYouTubeUrl}</p>
