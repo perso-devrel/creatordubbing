@@ -5,6 +5,7 @@ import { PersoError } from '@/lib/perso/errors'
 import { handle, parseBody, requireIntParam } from '@/lib/perso/route-helpers'
 import { translateBodySchema } from '@/lib/validators/perso'
 import type { TranslateResponse } from '@/lib/perso/types'
+import { assertPersoMediaOwner } from '@/lib/perso/ownership'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
     const url = new URL(req.url)
     const spaceSeq = requireIntParam(url, 'spaceSeq')
     const body = await parseBody(req, translateBodySchema)
+    await assertPersoMediaOwner(auth.session.uid, body.mediaSeq)
 
     try {
       await persoFetch<unknown>(

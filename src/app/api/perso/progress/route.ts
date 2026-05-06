@@ -3,6 +3,7 @@ import { requireSession } from '@/lib/auth/session'
 import { persoFetch } from '@/lib/perso/client'
 import { ok, fail, requireIntParam } from '@/lib/perso/route-helpers'
 import type { ProgressResponse } from '@/lib/perso/types'
+import { assertPersoProjectOwner } from '@/lib/perso/ownership'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url)
     const projectSeq = requireIntParam(url, 'projectSeq')
     const spaceSeq = requireIntParam(url, 'spaceSeq')
+    await assertPersoProjectOwner(auth.session.uid, projectSeq)
 
     const data = await persoFetch<ProgressResponse>(
       `/video-translator/api/v1/projects/${projectSeq}/space/${spaceSeq}/progress`,

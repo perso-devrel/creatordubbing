@@ -4,6 +4,7 @@ import { persoFetch } from '@/lib/perso/client'
 import { handle, parseBody } from '@/lib/perso/route-helpers'
 import { externalUploadBodySchema } from '@/lib/validators/perso'
 import type { UploadVideoResponse } from '@/lib/perso/types'
+import { recordPersoMediaOwner } from '@/lib/perso/ownership'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,7 +16,7 @@ export async function PUT(req: NextRequest) {
 
   return handle(async () => {
     const { spaceSeq, url, lang = 'ko' } = await parseBody(req, externalUploadBodySchema)
-    return persoFetch<UploadVideoResponse>(
+    const media = await persoFetch<UploadVideoResponse>(
       '/file/api/upload/video/external',
       {
         method: 'PUT',
@@ -24,5 +25,7 @@ export async function PUT(req: NextRequest) {
         timeoutMs: 300_000,
       },
     )
+    await recordPersoMediaOwner({ userId: auth.session.uid, spaceSeq, media, sourceType: 'external', fileUrl: url })
+    return media
   })
 }

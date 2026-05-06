@@ -16,6 +16,12 @@ vi.mock('@/lib/perso/client', () => ({
   persoFetch: vi.fn(async () => ({ ok: true })),
 }))
 
+vi.mock('@/lib/perso/ownership', () => ({
+  assertPersoMediaOwner: vi.fn(),
+  assertPersoProjectOwner: vi.fn(),
+  recordPersoMediaOwner: vi.fn(),
+}))
+
 import { requireSession } from '@/lib/auth/session'
 
 const mockSession = vi.mocked(requireSession)
