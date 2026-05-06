@@ -4,6 +4,7 @@ import { persoFetch } from '@/lib/perso/client'
 import { fail, requireIntParam } from '@/lib/perso/route-helpers'
 import { getPersoFileUrl } from '@/lib/api-client/perso'
 import type { DownloadResponse } from '@/lib/perso/types'
+import { assertPersoProjectOwner } from '@/lib/perso/ownership'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
     const projectSeq = requireIntParam(url, 'projectSeq')
     const spaceSeq = requireIntParam(url, 'spaceSeq')
     const kind = url.searchParams.get('kind') === 'original' ? 'original' : 'translated'
+    await assertPersoProjectOwner(auth.session.uid, projectSeq)
 
     const data = await persoFetch<DownloadResponse>(
       `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/download`,

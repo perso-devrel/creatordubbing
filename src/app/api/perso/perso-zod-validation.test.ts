@@ -12,6 +12,12 @@ vi.mock('@/lib/perso/client', () => ({
   persoFetch: vi.fn(async () => ({ ok: true })),
 }))
 
+vi.mock('@/lib/perso/ownership', () => ({
+  assertPersoMediaOwner: vi.fn(),
+  assertPersoProjectOwner: vi.fn(),
+  recordPersoMediaOwner: vi.fn(),
+}))
+
 describe('Perso routes — zod body validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()

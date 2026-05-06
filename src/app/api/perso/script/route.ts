@@ -4,6 +4,7 @@ import { persoFetch } from '@/lib/perso/client'
 import { handle, parseBody, requireIntParam } from '@/lib/perso/route-helpers'
 import { scriptPatchBodySchema } from '@/lib/validators/perso'
 import type { ScriptSentence } from '@/lib/perso/types'
+import { assertPersoProjectOwner } from '@/lib/perso/ownership'
 
 interface RawSentence {
   seq: number
@@ -37,6 +38,7 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url)
     const projectSeq = requireIntParam(url, 'projectSeq')
     const spaceSeq = requireIntParam(url, 'spaceSeq')
+    await assertPersoProjectOwner(auth.session.uid, projectSeq)
     const raw = await persoFetch<{ sentences?: RawSentence[] } | RawSentence[]>(
       `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/script`,
       { baseURL: 'api' },
@@ -58,6 +60,7 @@ export async function PATCH(req: NextRequest) {
     const url = new URL(req.url)
     const projectSeq = requireIntParam(url, 'projectSeq')
     const sentenceSeq = requireIntParam(url, 'sentenceSeq')
+    await assertPersoProjectOwner(auth.session.uid, projectSeq)
     const body = await parseBody(req, scriptPatchBodySchema)
     return persoFetch<unknown>(
       `/video-translator/api/v1/project/${projectSeq}/audio-sentence/${sentenceSeq}`,
