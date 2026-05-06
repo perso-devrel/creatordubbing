@@ -70,3 +70,12 @@ const BCP47_MAP: Record<string, string> = {
 export function toBcp47(persoCode: string): string {
   return BCP47_MAP[persoCode] || persoCode
 }
+
+export function fromBcp47(languageCode: string): string {
+  const lower = languageCode.toLowerCase()
+  const mapped = Object.entries(BCP47_MAP).find(
+    ([, bcp47]) => bcp47.toLowerCase() === lower,
+  )
+  if (mapped) return mapped[0]
+  return lower.split('-')[0]
+}

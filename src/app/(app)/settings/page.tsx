@@ -1,5 +1,4 @@
-import { Card, CardTitle } from '@/components/ui'
-import { Settings } from 'lucide-react'
+import { SettingsClient } from '@/features/settings/components/SettingsClient'
 
 export default function SettingsPage() {
   return (
@@ -9,12 +8,7 @@ export default function SettingsPage() {
         <p className="text-surface-500 dark:text-surface-400">계정 및 앱 설정을 관리하세요</p>
       </div>
 
-      <Card>
-        <div className="flex items-center gap-3 py-8 text-surface-400">
-          <Settings className="h-5 w-5" />
-          <CardTitle>준비 중</CardTitle>
-        </div>
-      </Card>
+      <SettingsClient />
     </div>
   )
 }
