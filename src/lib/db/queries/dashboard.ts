@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { getDb } from '@/lib/db/client'
+import { ensureCreditTables } from './credits'
 import type {
   DashboardSummary,
   DubbingJob,
@@ -38,13 +39,20 @@ export async function getUserDubbingJobs(userId: string, limit = 10): Promise<Du
 }
 
 export async function getUserSummary(userId: string): Promise<DashboardSummary | null> {
+  await ensureCreditTables()
   const db = getDb()
   const result = await db.execute({
     sql: `SELECT
           COUNT(DISTINCT dj.id) as total_jobs,
           COALESCE(SUM(dj.video_duration_ms), 0) / 60000 as total_minutes,
           COUNT(DISTINCT CASE WHEN dj.status = 'processing' THEN dj.id END) as active_jobs,
-          (SELECT credits_remaining FROM users WHERE id = ?) as credits_remaining
+          (SELECT MAX(
+            0,
+            COALESCE(u.credits_remaining, 0) -
+              COALESCE((SELECT SUM(ct.reserved_delta_minutes)
+                        FROM credit_transactions ct
+                        WHERE ct.user_id = u.id), 0)
+          ) FROM users u WHERE u.id = ?) as credits_remaining
           FROM dubbing_jobs dj
           WHERE dj.user_id = ?`,
     args: [userId, userId],

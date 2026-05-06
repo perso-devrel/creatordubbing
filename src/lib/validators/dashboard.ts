@@ -103,13 +103,33 @@ const deductUserMinutesSchema = z.object({
   }),
 })
 
-const CREDIT_PACK_MAX = 120 // must match max value in CREDIT_PACKS
-
-const addCreditsSchema = z.object({
-  type: z.literal('addCredits'),
+const reserveJobCreditsSchema = z.object({
+  type: z.literal('reserveJobCredits'),
   payload: z.object({
-    userId: z.string().min(1),
-    minutes: z.number().int().positive().max(CREDIT_PACK_MAX),
+    jobId: z.number().int(),
+  }),
+})
+
+const releaseJobCreditsSchema = z.object({
+  type: z.literal('releaseJobCredits'),
+  payload: z.object({
+    jobId: z.number().int(),
+    reason: z.string().min(1).max(80).default('manual_release'),
+  }),
+})
+
+const finalizeJobCreditsSchema = z.object({
+  type: z.literal('finalizeJobCredits'),
+  payload: z.object({
+    jobId: z.number().int(),
+  }),
+})
+
+const updateJobLanguageProjectsSchema = z.object({
+  type: z.literal('updateJobLanguageProjects'),
+  payload: z.object({
+    jobId: z.number().int(),
+    languages: z.array(z.object({ code: z.string().min(1), projectSeq: z.number().int() })).min(1),
   }),
 })
 
@@ -154,7 +174,10 @@ export const mutationActionSchema = z.discriminatedUnion('type', [
   createYouTubeUploadSchema,
   updateJobLanguageYouTubeSchema,
   deductUserMinutesSchema,
-  addCreditsSchema,
+  reserveJobCreditsSchema,
+  releaseJobCreditsSchema,
+  finalizeJobCreditsSchema,
+  updateJobLanguageProjectsSchema,
   deleteDubbingJobSchema,
   queueYouTubeUploadSchema,
 ])
@@ -178,8 +201,6 @@ export function getUserIdFromAction(action: MutationAction): string | null {
       return action.payload.userId
     case 'deductUserMinutes':
       return action.payload.userId
-    case 'addCredits':
-      return action.payload.userId
     default:
       return null
   }
@@ -201,6 +222,14 @@ export function getJobIdFromAction(action: MutationAction): number | null {
     case 'deleteDubbingJob':
       return action.payload.jobId
     case 'deductUserMinutes':
+      return action.payload.jobId
+    case 'reserveJobCredits':
+      return action.payload.jobId
+    case 'releaseJobCredits':
+      return action.payload.jobId
+    case 'finalizeJobCredits':
+      return action.payload.jobId
+    case 'updateJobLanguageProjects':
       return action.payload.jobId
     case 'queueYouTubeUpload':
       return action.payload.jobId

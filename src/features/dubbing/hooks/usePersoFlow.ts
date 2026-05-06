@@ -18,7 +18,7 @@ import {
 } from '@/lib/api-client'
 import type { DownloadTarget } from '@/lib/perso/types'
 import type { LanguageProgress } from '../types/dubbing.types'
-import { dbMutation } from '@/lib/api/dbMutation'
+import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
 
 const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
@@ -66,13 +66,13 @@ async function saveJobToDb(
   projectMap: Record<string, number>,
   lipSyncEnabled: boolean,
   sourceLanguage: string,
-): Promise<number | null> {
+): Promise<number> {
   const userId = useAuthStore.getState().user?.uid
   const videoMeta = store.getState().videoMeta
   const isShort = store.getState().isShort
-  if (!userId) return null
+  if (!userId) throw new Error('로그인이 필요합니다')
 
-  const result = await dbMutation<{ jobId: number }>({
+  const result = await dbMutationStrict<{ jobId: number }>({
     type: 'createDubbingJobWithLanguages',
     payload: {
       job: {
@@ -89,8 +89,6 @@ async function saveJobToDb(
       languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
     },
   })
-  if (!result?.jobId) return null
-
   store.getState().setDbJobId(result.jobId)
   return result.jobId
 }
@@ -181,9 +179,7 @@ async function pollLanguage(
 
   const userId = useAuthStore.getState().user?.uid
   if (userId && dbJobId && !alreadyFinalized) {
-    const durationMs = store.getState().videoMeta?.durationMs || 0
-    const minutesUsed = Math.max(1, Math.ceil(durationMs / 60_000))
-    await dbMutation({ type: 'deductUserMinutes', payload: { userId, minutes: minutesUsed, jobId: dbJobId } })
+    await dbMutationStrict({ type: 'finalizeJobCredits', payload: { jobId: dbJobId } })
   }
   if (dbJobId) {
     await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: newStatus } })
@@ -226,6 +222,7 @@ async function cancelAllProjects(
 
   const dbJobId = store.getState().dbJobId
   if (dbJobId) {
+    dbMutation({ type: 'releaseJobCredits', payload: { jobId: dbJobId, reason: 'user_cancelled' } }).catch(() => {})
     dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: 'failed' } }).catch(() => {})
   }
   store.getState().setJobStatus('failed')
@@ -322,26 +319,6 @@ export function usePersoFlow() {
     const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, sourceLanguage, numberOfSpeakers } = store.getState()
     if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
 
-    // Credit check before starting
-    const currentUser = useAuthStore.getState().user
-    if (currentUser) {
-      const res = await fetch(`/api/dashboard/summary?uid=${currentUser.uid}`)
-      const json = await res.json()
-      if (json.ok) {
-        const creditsRemaining = Number(json.data.credits_remaining) || 0
-        const durationMs = store.getState().videoMeta?.durationMs || 0
-        const estimatedMinutes = Math.max(1, Math.ceil(durationMs / 60_000))
-        if (estimatedMinutes > creditsRemaining) {
-          addToast({
-            type: 'error',
-            title: '크레딧 부족',
-            message: `필요: ${estimatedMinutes}분, 잔여: ${creditsRemaining}분. 충전 후 다시 시도하세요.`,
-          })
-          throw new Error('Insufficient credits')
-        }
-      }
-    }
-
     addToast({ type: 'info', title: 'Submitting dubbing job...', message: `${selectedLanguages.length} languages` })
 
     try {
@@ -350,6 +327,17 @@ export function usePersoFlow() {
       } catch {
         // Already initialized
       }
+
+      const pendingProjectMap = Object.fromEntries(selectedLanguages.map((lang) => [lang, 0]))
+      const dbJobId = await saveJobToDb(
+        mediaSeq,
+        spaceSeq,
+        selectedLanguages,
+        pendingProjectMap,
+        lipSyncEnabled,
+        sourceLanguage,
+      )
+      await dbMutationStrict({ type: 'reserveJobCredits', payload: { jobId: dbJobId } })
 
       const result = await submitTranslation(spaceSeq, {
         mediaSeq,
@@ -380,17 +368,24 @@ export function usePersoFlow() {
       store.getState().setLanguageProgress(initialProgress)
       store.getState().setJobStatus('transcribing')
 
-      try {
-        await saveJobToDb(mediaSeq, spaceSeq, selectedLanguages, projectMap, lipSyncEnabled, sourceLanguage)
-      } catch {
-        // DB save is best-effort
-      }
+      await dbMutationStrict({
+        type: 'updateJobLanguageProjects',
+        payload: {
+          jobId: dbJobId,
+          languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
+        },
+      })
 
       addToast({ type: 'success', title: '더빙 시작됨', message: `${projectIds.length}개 프로젝트 생성` })
       return projectMap
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Submission failed'
       addToast({ type: 'error', title: 'Dubbing Error', message: msg })
+      const dbJobId = store.getState().dbJobId
+      if (dbJobId) {
+        dbMutation({ type: 'releaseJobCredits', payload: { jobId: dbJobId, reason: 'submission_failed' } }).catch(() => {})
+        dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: 'failed' } }).catch(() => {})
+      }
       store.getState().setJobStatus('failed')
       throw err
     }

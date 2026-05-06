@@ -69,6 +69,20 @@ export async function createDubbingJobWithLanguages(
   return Number(results[0].lastInsertRowid)
 }
 
+export async function updateJobLanguageProjects(
+  jobId: number,
+  languages: { code: string; projectSeq: number }[],
+) {
+  if (languages.length === 0) return
+  const db = getDb()
+  await db.batch(
+    languages.map((lang) => ({
+      sql: 'UPDATE job_languages SET project_seq = ? WHERE job_id = ? AND language_code = ?',
+      args: [lang.projectSeq, jobId, lang.code],
+    })),
+  )
+}
+
 export async function updateJobLanguageProgress(
   jobId: number,
   langCode: string,

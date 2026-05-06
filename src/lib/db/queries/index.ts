@@ -9,9 +9,23 @@ export {
 } from './users'
 
 export {
+  ensureCreditTables,
+  getUserAvailableCredits,
+  createPaymentOrder,
+  updatePaymentOrderCheckout,
+  updatePaymentOrderStatus,
+  getPaymentOrderByOrderId,
+  grantPaidCredits,
+  reserveJobCredits,
+  releaseJobCredits,
+  finalizeJobCredits,
+} from './credits'
+
+export {
   createDubbingJob,
   createJobLanguages,
   createDubbingJobWithLanguages,
+  updateJobLanguageProjects,
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
