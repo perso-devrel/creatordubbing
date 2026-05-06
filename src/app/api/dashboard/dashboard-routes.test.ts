@@ -34,6 +34,10 @@ vi.mock('@/lib/db/client', () => ({
   })),
 }))
 
+vi.mock('@/lib/ops/observability', () => ({
+  recordOperationalEventSafe: vi.fn(async () => undefined),
+}))
+
 vi.mock('@/lib/youtube/server', () => ({
   fetchVideoStatistics: vi.fn(async () => []),
   YouTubeError: class YouTubeError extends Error {

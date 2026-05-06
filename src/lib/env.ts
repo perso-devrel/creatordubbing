@@ -25,6 +25,7 @@ const serverSchema = z.object({
   TOSS_SECRET_KEY: z.string().min(1).optional(),
   TOSS_API_BASE_URL: z.string().url().optional(),
   CRON_SECRET: z.string().min(1).optional(),
+  OPERATIONS_ADMIN_EMAILS: z.string().optional(),
 });
 
 const clientSchema = z.object({
@@ -68,6 +69,7 @@ export function getServerEnv(): ServerEnv {
     TOSS_SECRET_KEY: process.env.TOSS_SECRET_KEY,
     TOSS_API_BASE_URL: process.env.TOSS_API_BASE_URL,
     CRON_SECRET: process.env.CRON_SECRET,
+    OPERATIONS_ADMIN_EMAILS: process.env.OPERATIONS_ADMIN_EMAILS,
   });
 
   if (!parsed.success) {

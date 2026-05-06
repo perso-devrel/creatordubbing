@@ -6,6 +6,10 @@ vi.mock('@/lib/db/client', () => ({
   getDb: vi.fn(),
 }))
 
+vi.mock('@/lib/ops/observability', () => ({
+  recordOperationalEventSafe: vi.fn(async () => undefined),
+}))
+
 const execute = vi.fn()
 
 beforeEach(() => {
@@ -39,7 +43,9 @@ describe('upload queue queries', () => {
   })
 
   it('only fails items currently held in processing status and increments retries', async () => {
-    execute.mockResolvedValueOnce({ rows: [{ id: 10 }] })
+    execute.mockResolvedValueOnce({
+      rows: [{ id: 10, user_id: 'user-1', job_id: 5, lang_code: 'ko', retries: 1 }],
+    })
 
     const failed = await failQueueItem(10, 'upload failed')
     const call = execute.mock.calls.at(-1)?.[0]

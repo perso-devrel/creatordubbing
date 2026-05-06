@@ -13,6 +13,7 @@ import {
   Settings,
   Upload,
   Globe2,
+  Activity,
 } from 'lucide-react'
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/metadata', label: { ko: '메타데이터 번역', en: 'Metadata' }, icon: Globe2 },
   { to: '/batch', label: { ko: '배치 큐', en: 'Batch queue' }, icon: Layers },
   { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, icon: Upload },
+  { to: '/ops', label: { ko: '운영 관측', en: 'Operations' }, icon: Activity },
   { to: '/youtube', label: { ko: 'YouTube', en: 'YouTube' }, icon: Video },
   { to: '/billing', label: { ko: '결제', en: 'Billing' }, icon: CreditCard },
 ]

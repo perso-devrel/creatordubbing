@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Client, Transaction } from '@libsql/client'
 import { getDb } from '@/lib/db/client'
+import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
 type DbExecutor = Pick<Client | Transaction, 'execute'>
 
@@ -330,7 +331,7 @@ export async function reserveJobCredits(userId: string, jobId: number) {
 }
 
 export async function releaseJobCredits(userId: string, jobId: number, reason: string) {
-  return withWriteTransaction(async (tx) => {
+  const result = await withWriteTransaction(async (tx) => {
     const reserved = await getReservedForJob(jobId, tx)
     if (reserved <= 0) {
       return { released: 0, idempotent: true }
@@ -350,10 +351,24 @@ export async function releaseJobCredits(userId: string, jobId: number, reason: s
     })
     return { released: reserved, idempotent: false }
   })
+  if (!result.idempotent && result.released > 0) {
+    await recordOperationalEventSafe({
+      category: 'credit',
+      eventType: 'credit_released',
+      severity: 'info',
+      userId,
+      referenceType: 'dubbing_job',
+      referenceId: jobId,
+      message: 'Reserved credits were released',
+      metadata: { releasedMinutes: result.released, reason },
+      idempotencyKey: `ops:credit_released:${jobId}:${reason}`,
+    })
+  }
+  return result
 }
 
 export async function finalizeJobCredits(userId: string, jobId: number) {
-  return withWriteTransaction(async (tx) => {
+  const result = await withWriteTransaction(async (tx) => {
     const key = `finalize:job:${jobId}`
     if (await hasCreditTransaction(key, tx)) {
       return { consumed: 0, released: 0, idempotent: true }
@@ -401,4 +416,18 @@ export async function finalizeJobCredits(userId: string, jobId: number) {
     })
     return { consumed, released: reserved - consumed, idempotent: false }
   })
+  if (!result.idempotent && result.released > 0) {
+    await recordOperationalEventSafe({
+      category: 'credit',
+      eventType: 'credit_released_after_finalize',
+      severity: 'info',
+      userId,
+      referenceType: 'dubbing_job',
+      referenceId: jobId,
+      message: 'Unused reserved credits were released after finalization',
+      metadata: { consumedMinutes: result.consumed, releasedMinutes: result.released },
+      idempotencyKey: `ops:credit_finalize_release:${jobId}`,
+    })
+  }
+  return result
 }

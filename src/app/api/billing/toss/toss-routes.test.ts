@@ -34,6 +34,10 @@ vi.mock('@/lib/toss/client', () => ({
   })),
 }))
 
+vi.mock('@/lib/ops/observability', () => ({
+  recordOperationalEventSafe: vi.fn(async () => undefined),
+}))
+
 import { requireSession } from '@/lib/auth/session'
 import {
   createPaymentOrder,
