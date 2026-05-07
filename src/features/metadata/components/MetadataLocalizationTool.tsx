@@ -45,6 +45,8 @@ export function MetadataLocalizationTool() {
   const [mode, setMode] = useState<Mode>('existing')
   const [videoId, setVideoId] = useState('')
   const [videoFile, setVideoFile] = useState<File | null>(null)
+  /** 내 영상 모드에서 "불러오기"가 한 번이라도 성공했는지 — 하단 번역 카드 노출 게이트. */
+  const [metadataLoaded, setMetadataLoaded] = useState(false)
   const [sourceLang, setSourceLang] = useState(defaultLanguage)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -81,6 +83,7 @@ export function MetadataLocalizationTool() {
     setDescription('')
     setTranslations({})
     setExistingLocalizationLangs(new Set())
+    setMetadataLoaded(false)
     setTargetLangs(buildInitialTargets(metadataTargetPreset, sourceLang))
   }
 
@@ -119,6 +122,7 @@ export function MetadataLocalizationTool() {
 
       // 이미 번역된 언어는 picker 기본 선택에서 제외 — 사용자는 추가하고 싶은 것만 선택.
       setTargetLangs(buildInitialTargets(metadataTargetPreset, nextSourceLang, existingPersoCodes))
+      setMetadataLoaded(true)
 
       addToast({ type: 'success', title: 'YouTube 메타데이터를 불러왔습니다' })
     } catch (err) {
@@ -308,7 +312,13 @@ export function MetadataLocalizationTool() {
                 onChange={(event) => {
                   const selected = videos.find((video) => video.videoId === event.target.value)
                   setVideoId(event.target.value)
-                  if (selected && !title) setTitle(selected.title)
+                  // 다른 영상으로 바꾸면 이전 로드 결과는 무효 — 다시 "불러오기" 눌러야 함.
+                  setMetadataLoaded(false)
+                  setTitle('')
+                  setDescription('')
+                  setTranslations({})
+                  setExistingLocalizationLangs(new Set())
+                  if (selected) setTitle(selected.title)
                 }}
                 options={[
                   { value: '', label: loadingVideos ? '불러오는 중...' : '영상을 선택하세요' },
@@ -388,6 +398,7 @@ export function MetadataLocalizationTool() {
         </Card>
       )}
 
+      {((mode === 'existing' && metadataLoaded) || (mode === 'new' && videoFile)) && (
       <Card>
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300">
@@ -527,6 +538,7 @@ export function MetadataLocalizationTool() {
           )}
         </div>
       </Card>
+      )}
 
       {Object.keys(translations).length > 0 && (
         <Card>
