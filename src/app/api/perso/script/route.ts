@@ -64,7 +64,7 @@ export async function PATCH(req: NextRequest) {
     const body = await parseBody(req, scriptPatchBodySchema)
     return persoFetch<unknown>(
       `/video-translator/api/v1/project/${projectSeq}/audio-sentence/${sentenceSeq}`,
-      { method: 'PATCH', baseURL: 'api', body },
+      { method: 'PATCH', baseURL: 'api', body: { targetText: body.translatedText } },
     )
   })
 }

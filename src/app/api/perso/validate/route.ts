@@ -13,12 +13,13 @@ export async function POST(req: NextRequest) {
 
   return handle(async () => {
     const body = await parseBody(req, mediaValidateBodySchema)
+    const extension = body.extension.startsWith('.') ? body.extension : `.${body.extension}`
     return persoFetch<{ valid?: boolean } | null>(
       '/file/api/v1/media/validate',
       {
         method: 'POST',
         baseURL: 'file',
-        body,
+        body: { ...body, extension },
       },
     )
   })

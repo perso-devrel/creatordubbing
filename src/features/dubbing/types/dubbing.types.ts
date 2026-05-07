@@ -6,7 +6,6 @@ export type PrivacyStatus = 'public' | 'unlisted' | 'private'
 
 export interface UploadSettings {
   autoUpload: boolean
-  uploadAsShort: boolean
   attachOriginalLink: boolean
   title: string
   description: string
@@ -67,6 +66,15 @@ export interface LanguageProgress {
   audioUrl?: string
   srtUrl?: string
   dubbingVideoUrl?: string
+}
+
+export type YouTubeUploadStatus = 'uploading' | 'done' | 'error'
+
+export interface YouTubeUploadState {
+  status: YouTubeUploadStatus
+  progress: number
+  videoId?: string
+  error?: string
 }
 
 export interface DubbingJob {

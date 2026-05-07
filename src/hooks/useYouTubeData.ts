@@ -11,23 +11,23 @@ async function fetchJson<T>(url: string): Promise<T> {
   return json.data as T
 }
 
-export function useChannelStats() {
+export function useChannelStats(enabled = true) {
   const user = useAuthStore((s) => s.user)
   return useQuery<ChannelStats | null>({
     queryKey: ['channel-stats', user?.uid],
     queryFn: () => fetchJson<ChannelStats | null>('/api/youtube/stats?channel=true'),
-    enabled: !!user,
+    enabled: !!user && enabled,
     staleTime: 5 * 60_000,
     retry: false,
   })
 }
 
-export function useMyVideos(maxResults = 10) {
+export function useMyVideos(maxResults = 10, enabled = true) {
   const user = useAuthStore((s) => s.user)
   return useQuery<MyVideoItem[]>({
     queryKey: ['my-videos', user?.uid, maxResults],
     queryFn: () => fetchJson<MyVideoItem[]>(`/api/youtube/videos?maxResults=${maxResults}`),
-    enabled: !!user,
+    enabled: !!user && enabled,
     staleTime: 2 * 60_000,
     retry: false,
   })

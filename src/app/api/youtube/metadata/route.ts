@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
         sourceLang: body.sourceLang,
         title: body.title,
         description: body.description,
+        tags: body.tags,
         localizations: body.localizations,
       }),
     )

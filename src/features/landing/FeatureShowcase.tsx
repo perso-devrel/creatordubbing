@@ -1,4 +1,4 @@
-import { Mic, Subtitles, Clock, BarChart3, Wand2 } from 'lucide-react'
+import { Mic, Subtitles, Clock, BarChart3 } from 'lucide-react'
 
 const features = [
   {
@@ -11,11 +11,12 @@ const features = [
     title: '번역 에디터',
     description: '문장 단위로 번역을 검토하고 수정할 수 있습니다. 브랜드명, 고유명사 보호 기능.',
   },
-  {
-    icon: Wand2,
-    title: '립싱크',
-    description: '선택적 AI 립싱크로 실사 영상에 최적화. 입 모양이 더빙 오디오와 완벽하게 맞습니다.',
-  },
+  // Lip sync feature is temporarily hidden from the landing page.
+  // {
+  //   icon: Wand2,
+  //   title: '립싱크',
+  //   description: '선택적 AI 립싱크로 실사 영상에 최적화. 입 모양이 더빙 오디오와 완벽하게 맞습니다.',
+  // },
   {
     icon: Clock,
     title: '롱폼 지원',

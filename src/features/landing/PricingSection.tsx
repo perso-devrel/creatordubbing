@@ -9,7 +9,7 @@ const INCLUDED_FEATURES = [
   `${SUPPORTED_LANGUAGE_COUNT}개 언어 지원`,
   '1080p 출력',
   '워터마크 없음',
-  '립싱크',
+  // '립싱크',
   'YouTube 자동 업로드',
   '크레딧 만료 없음',
 ]

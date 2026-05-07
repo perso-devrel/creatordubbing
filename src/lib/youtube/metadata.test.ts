@@ -110,4 +110,54 @@ describe('youtube metadata', () => {
     })
     expect(result.localizations.en.title).toBe('Updated')
   })
+
+  it('updates tags when provided', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          items: [
+            {
+              id: 'v1',
+              snippet: {
+                title: '원문',
+                description: '설명',
+                categoryId: '22',
+                tags: ['keep'],
+                defaultLanguage: 'ko',
+              },
+              localizations: {},
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          id: 'v1',
+          snippet: {
+            title: '원문',
+            description: '설명',
+            categoryId: '22',
+            tags: ['keep', 'Dubtube'],
+            defaultLanguage: 'ko',
+          },
+          localizations: {},
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await updateVideoLocalizations({
+      accessToken: 'token',
+      videoId: 'v1',
+      sourceLang: 'ko',
+      title: '원문',
+      description: '설명',
+      tags: ['keep', 'Dubtube'],
+      localizations: {},
+    })
+
+    const updateBody = JSON.parse(fetchMock.mock.calls[1][1].body as string)
+    expect(updateBody.snippet.tags).toEqual(['keep', 'Dubtube'])
+    expect(result.tags).toEqual(['keep', 'Dubtube'])
+  })
 })

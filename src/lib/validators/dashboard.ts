@@ -94,6 +94,22 @@ const updateJobLanguageYouTubeSchema = z.object({
   }),
 })
 
+const startJobLanguageYouTubeUploadSchema = z.object({
+  type: z.literal('startJobLanguageYouTubeUpload'),
+  payload: z.object({
+    jobId: z.number().int(),
+    langCode: z.string().min(1),
+  }),
+})
+
+const failJobLanguageYouTubeUploadSchema = z.object({
+  type: z.literal('failJobLanguageYouTubeUpload'),
+  payload: z.object({
+    jobId: z.number().int(),
+    langCode: z.string().min(1),
+  }),
+})
+
 const deductUserMinutesSchema = z.object({
   type: z.literal('deductUserMinutes'),
   payload: z.object({
@@ -179,6 +195,8 @@ export const mutationActionSchema = z.discriminatedUnion('type', [
   updateJobStatusSchema,
   createYouTubeUploadSchema,
   updateJobLanguageYouTubeSchema,
+  startJobLanguageYouTubeUploadSchema,
+  failJobLanguageYouTubeUploadSchema,
   deductUserMinutesSchema,
   reserveJobCreditsSchema,
   releaseJobCreditsSchema,
@@ -224,6 +242,10 @@ export function getJobIdFromAction(action: MutationAction): number | null {
     case 'updateJobStatus':
       return action.payload.jobId
     case 'updateJobLanguageYouTube':
+      return action.payload.jobId
+    case 'startJobLanguageYouTubeUpload':
+      return action.payload.jobId
+    case 'failJobLanguageYouTubeUpload':
       return action.payload.jobId
     case 'deleteDubbingJob':
       return action.payload.jobId

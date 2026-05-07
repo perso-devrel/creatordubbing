@@ -24,6 +24,8 @@ const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
 const POLL_BACKOFF = 1.5          // 매 폴링마다 1.5배씩 증가
 const POLL_FINALIZING = 2_000     // 100%인데 COMPLETED 아직 안 온 경우 빠르게 재확인
+const DEFAULT_SOURCE_LANGUAGE = 'auto'
+const DEFAULT_SPEAKER_COUNT = 1
 
 function mapProgressReasonToStatus(reason: string) {
   switch (reason) {
@@ -289,9 +291,8 @@ export function usePersoFlow() {
       duration: 8000,
     })
 
-    const sourceLanguage = store.getState().sourceLanguage
     try {
-      const meta = await getExternalMetadata(spaceSeq!, url, sourceLanguage)
+      const meta = await getExternalMetadata(spaceSeq!, url, DEFAULT_SOURCE_LANGUAGE)
       store.getState().setVideoMeta({
         id: url,
         title: meta.originalName || (isYouTube ? 'YouTube Video' : 'External Video'),
@@ -303,7 +304,7 @@ export function usePersoFlow() {
         height: meta.height,
       })
 
-      const result = await uploadExternalVideo(spaceSeq!, url, sourceLanguage)
+      const result = await uploadExternalVideo(spaceSeq!, url, DEFAULT_SOURCE_LANGUAGE)
       store.getState().setMediaSeq(result.seq)
 
       addToast({ type: 'success', title: '영상 가져오기 완료' })
@@ -316,10 +317,11 @@ export function usePersoFlow() {
   }, [initSpace, addToast])
 
   const submitDubbing = useCallback(async () => {
-    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, sourceLanguage, numberOfSpeakers } = store.getState()
+    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, videoMeta } = store.getState()
     if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
+    const targetLanguages = Array.from(new Set(selectedLanguages))
 
-    addToast({ type: 'info', title: 'Submitting dubbing job...', message: `${selectedLanguages.length} languages` })
+    addToast({ type: 'info', title: 'Submitting dubbing job...', message: `${targetLanguages.length} languages` })
 
     try {
       try {
@@ -328,37 +330,39 @@ export function usePersoFlow() {
         // Already initialized
       }
 
-      const pendingProjectMap = Object.fromEntries(selectedLanguages.map((lang) => [lang, 0]))
+      const pendingProjectMap = Object.fromEntries(targetLanguages.map((lang) => [lang, 0]))
       const dbJobId = await saveJobToDb(
         mediaSeq,
         spaceSeq,
-        selectedLanguages,
+        targetLanguages,
         pendingProjectMap,
         lipSyncEnabled,
-        sourceLanguage,
+        DEFAULT_SOURCE_LANGUAGE,
       )
       await dbMutationStrict({ type: 'reserveJobCredits', payload: { jobId: dbJobId } })
 
       const result = await submitTranslation(spaceSeq, {
         mediaSeq,
         isVideoProject: true,
-        sourceLanguageCode: sourceLanguage,
-        targetLanguageCodes: selectedLanguages,
-        numberOfSpeakers: Math.max(1, Math.min(10, numberOfSpeakers || 1)),
+        sourceLanguageCode: DEFAULT_SOURCE_LANGUAGE,
+        targetLanguageCodes: targetLanguages,
+        numberOfSpeakers: DEFAULT_SPEAKER_COUNT,
         withLipSync: lipSyncEnabled,
         preferredSpeedType: 'GREEN',
+        ttsModel: 'ELEVEN_V2',
+        title: videoMeta?.title?.trim() || `Dubtube project ${mediaSeq}`,
       })
 
       const projectIds = result.startGenerateProjectIdList || []
       const projectMap: Record<string, number> = {}
-      selectedLanguages.forEach((lang, i) => {
+      targetLanguages.forEach((lang, i) => {
         if (projectIds[i]) {
           projectMap[lang] = projectIds[i]
         }
       })
       store.getState().setProjectMap(projectMap)
 
-      const initialProgress: LanguageProgress[] = selectedLanguages.map((code) => ({
+      const initialProgress: LanguageProgress[] = targetLanguages.map((code) => ({
         langCode: code,
         projectSeq: projectMap[code] || 0,
         status: 'transcribing',
@@ -372,7 +376,7 @@ export function usePersoFlow() {
         type: 'updateJobLanguageProjects',
         payload: {
           jobId: dbJobId,
-          languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
+          languages: targetLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
         },
       })
 

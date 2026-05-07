@@ -2,6 +2,11 @@ import 'server-only'
 
 import { getDb } from '@/lib/db/client'
 
+export interface JobLanguageYouTubeUploadReservation {
+  status: 'reserved' | 'already_uploaded' | 'already_uploading' | 'not_found'
+  youtubeVideoId?: string | null
+}
+
 export async function createYouTubeUpload(upload: {
   userId: string
   jobLanguageId?: number
@@ -26,6 +31,66 @@ export async function createYouTubeUpload(upload: {
     ],
   })
   return Number(result.lastInsertRowid)
+}
+
+export async function startJobLanguageYouTubeUpload(
+  jobId: number,
+  langCode: string,
+): Promise<JobLanguageYouTubeUploadReservation> {
+  const db = getDb()
+  const current = await db.execute({
+    sql: `SELECT youtube_video_id, youtube_upload_status
+          FROM job_languages
+          WHERE job_id = ? AND language_code = ?
+          LIMIT 1`,
+    args: [jobId, langCode],
+  })
+  const row = current.rows[0]
+  if (!row) return { status: 'not_found' }
+
+  const youtubeVideoId = row.youtube_video_id ? String(row.youtube_video_id) : null
+  if (youtubeVideoId) return { status: 'already_uploaded', youtubeVideoId }
+  if (row.youtube_upload_status === 'uploading') {
+    return { status: 'already_uploading' }
+  }
+
+  const reserved = await db.execute({
+    sql: `UPDATE job_languages
+          SET youtube_upload_status = 'uploading', updated_at = datetime('now')
+          WHERE job_id = ? AND language_code = ?
+            AND youtube_video_id IS NULL
+            AND COALESCE(youtube_upload_status, '') != 'uploading'`,
+    args: [jobId, langCode],
+  })
+  if (Number(reserved.rowsAffected ?? 0) > 0) {
+    return { status: 'reserved' }
+  }
+
+  const latest = await db.execute({
+    sql: `SELECT youtube_video_id, youtube_upload_status
+          FROM job_languages
+          WHERE job_id = ? AND language_code = ?
+          LIMIT 1`,
+    args: [jobId, langCode],
+  })
+  const latestRow = latest.rows[0]
+  const latestVideoId = latestRow?.youtube_video_id ? String(latestRow.youtube_video_id) : null
+  if (latestVideoId) return { status: 'already_uploaded', youtubeVideoId: latestVideoId }
+  if (latestRow?.youtube_upload_status === 'uploading') return { status: 'already_uploading' }
+  return { status: 'not_found' }
+}
+
+export async function failJobLanguageYouTubeUpload(
+  jobId: number,
+  langCode: string,
+) {
+  const db = getDb()
+  await db.execute({
+    sql: `UPDATE job_languages
+          SET youtube_upload_status = 'failed', updated_at = datetime('now')
+          WHERE job_id = ? AND language_code = ? AND youtube_video_id IS NULL`,
+    args: [jobId, langCode],
+  })
 }
 
 export async function updateYouTubeStats(
