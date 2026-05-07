@@ -24,7 +24,6 @@ export function UploadSettingsStep() {
     videoMeta,
     videoSource,
     isShort,
-    selectedLanguages,
     deliverableMode,
     uploadSettings,
     setUploadSettings,
