@@ -6,9 +6,9 @@ import { ROICalculator } from '@/features/landing/ROICalculator'
 import { Testimonials } from '@/features/landing/Testimonials'
 import { PricingSection } from '@/features/landing/PricingSection'
 import { CTASection } from '@/features/landing/CTASection'
+import { SUPPORTED_LANGUAGE_COUNT } from '@/utils/languages'
 
-const description =
-  'Perso.ai + YouTube API 기반 크리에이터 전용 10개 언어 자동 더빙. 한 번 클릭으로 영상 글로벌화.'
+const description = `Perso.ai + YouTube API 기반 크리에이터 전용 ${SUPPORTED_LANGUAGE_COUNT}개 언어 자동 더빙. 한 번 클릭으로 영상 글로벌화.`
 
 export const metadata: Metadata = {
   title: 'Dubtube — AI Dubbing for YouTube Creators',
