@@ -1,12 +1,20 @@
 'use client'
 
 import { ArrowLeft, ArrowRight, Info } from 'lucide-react'
-import { Button, Card, Badge, Toggle } from '@/components/ui'
+import { Button, Card, CardTitle, Badge, Toggle } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { getLanguageByCode } from '@/utils/languages'
+import { useAuthStore } from '@/stores/authStore'
 import { useDubbingStore } from '../../store/dubbingStore'
+import type { PrivacyStatus } from '../../types/dubbing.types'
 
 const MAX_SPEAKERS = 10
+
+const PRIVACY_LABELS: Record<PrivacyStatus, string> = {
+  private: '비공개 (권장)',
+  unlisted: '일부 공개',
+  public: '공개',
+}
 
 export function TranslationEditStep() {
   const {
@@ -17,14 +25,22 @@ export function TranslationEditStep() {
     numberOfSpeakers,
     setNumberOfSpeakers,
     videoMeta,
+    videoSource,
     deliverableMode,
     uploadSettings,
+    setUploadSettings,
     prevStep,
     nextStep,
   } = useDubbingStore()
+  const user = useAuthStore((s) => s.user)
 
   const sourceLang = getLanguageByCode(sourceLanguage)
   const isAutoSource = sourceLanguage === 'auto'
+
+  const needsAutoUploadReview = uploadSettings.autoUpload
+  const canStart = !needsAutoUploadReview || uploadSettings.uploadReviewConfirmed
+  const privacyLabel = PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus
+  const targetChannelLabel = user?.email ?? 'Google 로그인 후 연결된 YouTube 채널'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -153,16 +169,59 @@ export function TranslationEditStep() {
         </div>
       </Card>
 
+      {/* 자동 업로드 최종 확인 — 자동 업로드 ON일 때만 노출. 더빙 시작 전 마지막 사용자 동의 게이트. */}
+      {needsAutoUploadReview && (
+        <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/10">
+          <CardTitle>자동 업로드 최종 확인</CardTitle>
+          <div className="mt-4 grid gap-2 text-xs text-surface-600 dark:text-surface-300 sm:grid-cols-2">
+            <ReviewItem label="채널" value={targetChannelLabel} />
+            <ReviewItem label="공개 범위" value={privacyLabel} />
+            <ReviewItem label="Shorts tag" value={uploadSettings.uploadAsShort ? 'ON' : 'OFF'} />
+            <ReviewItem label="자막" value={uploadSettings.uploadCaptions ? '업로드' : '업로드 안 함'} />
+            <ReviewItem label="아동용" value={uploadSettings.selfDeclaredMadeForKids ? '예' : '아니오'} />
+            <ReviewItem label="AI 합성 공개" value={uploadSettings.containsSyntheticMedia ? 'ON' : 'OFF'} />
+            <ReviewItem
+              label="제목/설명 번역"
+              value={`${getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage} 기준 → ${selectedLanguages.length}개 언어`}
+            />
+            <ReviewItem
+              label="localizations"
+              value={deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload' ? 'YouTube localizations 포함' : '언어별 제목/설명 적용'}
+            />
+          </div>
+          <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-amber-200 bg-white/70 p-3 text-sm text-surface-700 dark:border-amber-900/70 dark:bg-surface-900/50 dark:text-surface-200">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
+              checked={uploadSettings.uploadReviewConfirmed}
+              onChange={(e) => setUploadSettings({ uploadReviewConfirmed: e.target.checked })}
+            />
+            <span>
+              위 채널, 공개 범위, 제목/설명 번역, 자막, Shorts tag, 아동용, AI 합성 공개 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.
+            </span>
+          </label>
+        </Card>
+      )}
+
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
           이전
         </Button>
-        <Button onClick={nextStep}>
+        <Button onClick={nextStep} disabled={!canStart}>
           더빙 시작
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
+    </div>
+  )
+}
+
+function ReviewItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md bg-white/70 px-3 py-2 dark:bg-surface-900/50">
+      <p className="text-[11px] font-medium text-surface-400">{label}</p>
+      <p className="mt-0.5 truncate text-surface-700 dark:text-surface-200">{value}</p>
     </div>
   )
 }

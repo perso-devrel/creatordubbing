@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Captions, Languages, Link2, ShieldCheck, Sparkles, Upload, Zap } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { extractVideoId } from '@/utils/validators'
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/utils/languages'
-import { useAuthStore } from '@/stores/authStore'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
@@ -25,7 +24,6 @@ export function UploadSettingsStep() {
     videoMeta,
     videoSource,
     isShort,
-    selectedLanguages,
     deliverableMode,
     uploadSettings,
     setUploadSettings,
@@ -34,7 +32,6 @@ export function UploadSettingsStep() {
     prevStep,
     nextStep,
   } = useDubbingStore()
-  const user = useAuthStore((s) => s.user)
 
   // YouTube 설정 페이지의 기본값과 동기화 (사용자 override 없을 때만).
   useEffect(() => {
@@ -66,24 +63,6 @@ export function UploadSettingsStep() {
     if (Object.keys(patch).length > 0) setUploadSettings(patch)
   }, [videoMeta?.id, videoMeta?.title, setUploadSettings])
 
-  const firstLangName = useMemo(() => {
-    const first = selectedLanguages[0]
-    if (!first) return null
-    return getLanguageByCode(first)?.name || first
-  }, [selectedLanguages])
-
-  const previewTitle = firstLangName && deliverableMode === 'newDubbedVideos'
-    ? `${uploadSettings.uploadAsShort ? '#Shorts ' : ''}[${firstLangName}] ${uploadSettings.title || '(제목 없음)'}`
-    : uploadSettings.title || '(제목 없음)'
-
-  const previewDescription = (() => {
-    const base = uploadSettings.description || '(설명 없음)'
-    if (uploadSettings.attachOriginalLink && originalYouTubeUrl) {
-      return `${base}\n\n원본 영상: ${originalYouTubeUrl}`
-    }
-    return base
-  })()
-
   const tagsString = uploadSettings.tags.join(', ')
 
   const handleTagsChange = (value: string) => {
@@ -98,14 +77,10 @@ export function UploadSettingsStep() {
   const uploadsVideoToYouTube =
     deliverableMode === 'newDubbedVideos' ||
     (isMultiAudio && videoSource?.type === 'upload')
-  const needsAutoUploadReview = uploadSettings.autoUpload
-  const baseCanContinue =
+  const canContinue =
     deliverableMode === 'originalWithMultiAudio'
       ? true
       : uploadSettings.title.trim().length > 0
-  const canContinue = baseCanContinue && (!needsAutoUploadReview || uploadSettings.uploadReviewConfirmed)
-  const privacyLabel = PRIVACY_OPTIONS.find((o) => o.value === uploadSettings.privacyStatus)?.label ?? uploadSettings.privacyStatus
-  const targetChannelLabel = user?.email ?? 'Google 로그인 후 연결된 YouTube 채널'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -318,56 +293,6 @@ export function UploadSettingsStep() {
         </div>
       </Card>
 
-      {uploadSettings.autoUpload && (
-        <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/10">
-          <CardTitle>자동 업로드 최종 확인</CardTitle>
-          <div className="mt-4 grid gap-2 text-xs text-surface-600 dark:text-surface-300 sm:grid-cols-2">
-            <ReviewItem label="채널" value={targetChannelLabel} />
-            <ReviewItem label="공개 범위" value={privacyLabel} />
-            <ReviewItem label="Shorts" value={uploadSettings.uploadAsShort ? 'ON' : 'OFF'} />
-            <ReviewItem label="자막" value={uploadSettings.uploadCaptions ? '업로드' : '업로드 안 함'} />
-            <ReviewItem label="아동용" value={uploadSettings.selfDeclaredMadeForKids ? '예' : '아니오'} />
-            <ReviewItem label="AI 합성 공개" value={uploadSettings.containsSyntheticMedia ? 'ON' : 'OFF'} />
-            <ReviewItem
-              label="제목/설명 번역"
-              value={`${getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage} 기준 → ${selectedLanguages.length}개 언어`}
-            />
-            <ReviewItem
-              label="localizations"
-              value={deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload' ? 'YouTube localizations 포함' : '언어별 제목/설명 적용'}
-            />
-          </div>
-          <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-amber-200 bg-white/70 p-3 text-sm text-surface-700 dark:border-amber-900/70 dark:bg-surface-900/50 dark:text-surface-200">
-            <input
-              type="checkbox"
-              className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
-              checked={uploadSettings.uploadReviewConfirmed}
-              onChange={(e) => setUploadSettings({ uploadReviewConfirmed: e.target.checked })}
-            />
-            <span>
-              위 채널, 공개 범위, 제목/설명 번역, 자막, Shorts, 아동용, AI 합성 공개 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.
-            </span>
-          </label>
-        </Card>
-      )}
-
-      {/* Preview — only for newDubbedVideos */}
-      {deliverableMode === 'newDubbedVideos' && firstLangName && (
-        <Card className="border-brand-200 bg-brand-50/40 dark:border-brand-800 dark:bg-brand-900/10">
-          <CardTitle>미리보기 ({firstLangName})</CardTitle>
-          <div className="mt-3 space-y-2">
-            <div>
-              <p className="text-xs text-surface-500">제목</p>
-              <p className="mt-0.5 text-sm font-medium text-surface-900 dark:text-white break-all">{previewTitle}</p>
-            </div>
-            <div>
-              <p className="text-xs text-surface-500">설명</p>
-              <p className="mt-0.5 whitespace-pre-line text-sm text-surface-700 dark:text-surface-300">{previewDescription}</p>
-            </div>
-          </div>
-        </Card>
-      )}
-
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
@@ -430,11 +355,3 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
   )
 }
 
-function ReviewItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md bg-white/70 px-3 py-2 dark:bg-surface-900/50">
-      <p className="text-[11px] font-medium text-surface-400">{label}</p>
-      <p className="mt-0.5 truncate text-surface-700 dark:text-surface-200">{value}</p>
-    </div>
-  )
-}
