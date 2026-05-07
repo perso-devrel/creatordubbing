@@ -12,6 +12,8 @@ interface DeliverableOption {
   icon: typeof Film
   title: string
   description: string
+  disabled?: boolean
+  badge?: string
 }
 
 function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
@@ -20,7 +22,7 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
       value: 'newDubbedVideos',
       icon: Film,
       title: '새 더빙 영상 업로드',
-      description: '더빙된 영상을 언어별 새 YouTube 영상으로 업로드합니다.',
+      description: '더빙된 영상을 YouTube에 업로드합니다.',
     },
   ]
 
@@ -29,14 +31,14 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
       value: 'originalWithMultiAudio',
       icon: Subtitles,
       title: '기존 영상에 자막 추가',
-      description: '내 YouTube 영상에 번역 자막을 자동 업로드합니다.',
+      description: '번역된 자막을 기존 YouTube 영상에 업로드합니다.',
     })
   } else if (sourceType === 'upload') {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
       title: '원본 업로드 + 자막 추가',
-      description: '원본 영상을 YouTube에 업로드한 뒤, 번역 자막을 자동 추가합니다.',
+      description: '원본 영상과 번역된 자막을 YouTube에 업로드합니다.',
     })
   }
 
@@ -44,7 +46,7 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
     value: 'downloadOnly',
     icon: Download,
     title: '다운로드만',
-    description: '더빙 파일을 다운로드만 합니다. YouTube에 업로드하지 않습니다.',
+    description: 'YouTube에 업로드하지 않고 관련 파일을 다운로드합니다.',
   })
 
   return options
@@ -57,7 +59,7 @@ export function OutputModeStep() {
   const isExternalUrl = videoSource?.type === 'url'
 
   useEffect(() => {
-    if (!options.some((o) => o.value === deliverableMode)) {
+    if (!options.some((o) => o.value === deliverableMode && !o.disabled)) {
       setDeliverableMode('newDubbedVideos')
     }
   }, [sourceType, options, deliverableMode, setDeliverableMode])
@@ -84,18 +86,25 @@ export function OutputModeStep() {
       )}
 
       <div className={cn('grid gap-4', options.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
-        {options.map(({ value, icon: Icon, title, description }) => {
-          const selected = deliverableMode === value
+        {options.map(({ value, icon: Icon, title, description, disabled, badge }) => {
+          const selected = deliverableMode === value && !disabled
           return (
             <button
               key={value}
               type="button"
-              onClick={() => setDeliverableMode(value)}
+              disabled={disabled}
+              onClick={() => {
+                if (!disabled) setDeliverableMode(value)
+              }}
               className={cn(
-                'flex flex-col items-center gap-4 rounded-xl border-2 p-6 text-center transition-all cursor-pointer',
+                'flex flex-col items-center gap-4 rounded-xl border-2 p-6 text-center transition-all',
+                disabled && 'cursor-not-allowed opacity-60',
+                !disabled && 'cursor-pointer',
                 selected
                   ? 'border-brand-500 bg-brand-50 shadow-lg shadow-brand-500/10 dark:bg-brand-900/10'
-                  : 'border-surface-200 bg-white hover:border-surface-300 dark:border-surface-700 dark:bg-surface-800 dark:hover:border-surface-600',
+                  : disabled
+                    ? 'border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/60'
+                    : 'border-surface-200 bg-white hover:border-surface-300 dark:border-surface-700 dark:bg-surface-800 dark:hover:border-surface-600',
               )}
             >
               <div
@@ -109,12 +118,19 @@ export function OutputModeStep() {
                 <Icon className="h-7 w-7" />
               </div>
               <div>
-                <p className={cn(
-                  'text-lg font-semibold',
-                  selected ? 'text-brand-700 dark:text-brand-300' : 'text-surface-900 dark:text-white',
-                )}>
-                  {title}
-                </p>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <p className={cn(
+                    'text-lg font-semibold',
+                    selected ? 'text-brand-700 dark:text-brand-300' : 'text-surface-900 dark:text-white',
+                  )}>
+                    {title}
+                  </p>
+                  {badge && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                      {badge}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-2 text-sm text-surface-500">{description}</p>
               </div>
             </button>

@@ -39,7 +39,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, data: { translations } })
   } catch (err) {
     if (err instanceof TranslateError) {
-      const status = err.code === 'GEMINI_NOT_CONFIGURED' ? 503 : 502
+      const isConfigError =
+        err.code === 'GEMINI_NOT_CONFIGURED' ||
+        err.code === 'VERTEX_NOT_CONFIGURED' ||
+        err.code === 'VERTEX_INVALID_CREDENTIALS'
+      const status = isConfigError ? 503 : 502
       return NextResponse.json(
         { ok: false, error: { code: err.code, message: err.message } },
         { status },

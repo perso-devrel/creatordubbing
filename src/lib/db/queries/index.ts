@@ -9,9 +9,29 @@ export {
 } from './users'
 
 export {
+  createUserSession,
+  revokeUserSession,
+  isUserSessionActive,
+} from './sessions'
+
+export {
+  ensureCreditTables,
+  getUserAvailableCredits,
+  createPaymentOrder,
+  updatePaymentOrderCheckout,
+  updatePaymentOrderStatus,
+  getPaymentOrderByOrderId,
+  grantPaidCredits,
+  reserveJobCredits,
+  releaseJobCredits,
+  finalizeJobCredits,
+} from './credits'
+
+export {
   createDubbingJob,
   createJobLanguages,
   createDubbingJobWithLanguages,
+  updateJobLanguageProjects,
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
@@ -20,12 +40,17 @@ export {
 
 export {
   createYouTubeUpload,
+  startJobLanguageYouTubeUpload,
+  failJobLanguageYouTubeUpload,
   updateYouTubeStats,
   updateJobLanguageYouTube,
 } from './youtube'
 
 export {
   createUploadQueueItem,
+  claimPendingUploads,
+  completeQueueItem,
+  failQueueItem,
   getPendingUploads,
   updateQueueItemStatus,
   getUserQueueItems,

@@ -4,6 +4,7 @@ import { persoFetch } from '@/lib/perso/client'
 import { fail, requireIntParam } from '@/lib/perso/route-helpers'
 import { getPersoFileUrl } from '@/lib/api-client/perso'
 import type { DownloadResponse } from '@/lib/perso/types'
+import { assertPersoProjectOwner } from '@/lib/perso/ownership'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -34,16 +35,30 @@ export async function GET(req: NextRequest) {
     const projectSeq = requireIntParam(url, 'projectSeq')
     const spaceSeq = requireIntParam(url, 'spaceSeq')
     const kind = url.searchParams.get('kind') === 'original' ? 'original' : 'translated'
+    await assertPersoProjectOwner(auth.session.uid, projectSeq)
 
-    const data = await persoFetch<DownloadResponse>(
-      `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/download`,
-      { baseURL: 'api', query: { target: 'audioScript' } },
-    )
+    const downloadPath = `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/download`
+    const preferredTarget = kind === 'translated' ? 'translatedSubtitle' : 'originalSubtitle'
+    let data = await persoFetch<DownloadResponse>(downloadPath, {
+      baseURL: 'api',
+      query: { target: preferredTarget },
+    }).catch(() => null)
 
-    const path =
+    let path =
       kind === 'translated'
-        ? data.srtFile?.translatedSubtitleDownloadLink
-        : data.srtFile?.originalSubtitleDownloadLink
+        ? data?.srtFile?.translatedSubtitleDownloadLink
+        : data?.srtFile?.originalSubtitleDownloadLink
+
+    if (!path) {
+      data = await persoFetch<DownloadResponse>(downloadPath, {
+        baseURL: 'api',
+        query: { target: 'audioScript' },
+      })
+      path =
+        kind === 'translated'
+          ? data.srtFile?.translatedSubtitleDownloadLink
+          : data.srtFile?.originalSubtitleDownloadLink
+    }
 
     if (!path) {
       throw Object.assign(new Error(`No ${kind} subtitle link in audioScript response`), {

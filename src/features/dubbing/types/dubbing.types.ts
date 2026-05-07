@@ -6,12 +6,15 @@ export type PrivacyStatus = 'public' | 'unlisted' | 'private'
 
 export interface UploadSettings {
   autoUpload: boolean
-  uploadAsShort: boolean
   attachOriginalLink: boolean
   title: string
   description: string
   tags: string[]
   privacyStatus: PrivacyStatus
+  uploadCaptions: boolean
+  selfDeclaredMadeForKids: boolean
+  containsSyntheticMedia: boolean
+  uploadReviewConfirmed: boolean
   /**
    * 사용자가 작성한 제목/설명의 언어. 다른 대상 언어로 자동 번역하는 기준.
    * 마이페이지의 `defaultLanguage`로 초기화되며 더빙별로 override 가능.
@@ -63,6 +66,15 @@ export interface LanguageProgress {
   audioUrl?: string
   srtUrl?: string
   dubbingVideoUrl?: string
+}
+
+export type YouTubeUploadStatus = 'uploading' | 'done' | 'error'
+
+export interface YouTubeUploadState {
+  status: YouTubeUploadStatus
+  progress: number
+  videoId?: string
+  error?: string
 }
 
 export interface DubbingJob {

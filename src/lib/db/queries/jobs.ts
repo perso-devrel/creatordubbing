@@ -50,23 +50,51 @@ export async function createDubbingJobWithLanguages(
   languages: { code: string; projectSeq: number }[],
 ): Promise<number> {
   const db = getDb()
-  const jobArgs = [
-    job.userId, job.videoTitle, job.videoDurationMs, job.videoThumbnail,
-    job.sourceLanguage, job.mediaSeq, job.spaceSeq,
-    job.lipSyncEnabled ? 1 : 0, job.isShort ? 1 : 0,
-  ]
-  const results = await db.batch([
-    {
-      sql: `INSERT INTO dubbing_jobs (user_id, video_title, video_duration_ms, video_thumbnail, source_language, media_seq, space_seq, lip_sync_enabled, is_short, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'processing')`,
-      args: jobArgs,
-    },
-    ...languages.map((lang) => ({
-      sql: 'INSERT INTO job_languages (job_id, language_code, project_seq) VALUES (last_insert_rowid(), ?, ?)',
-      args: [lang.code, lang.projectSeq],
-    })),
-  ])
-  return Number(results[0].lastInsertRowid)
+  const result = await db.execute({
+    sql: `INSERT INTO dubbing_jobs (user_id, video_title, video_duration_ms, video_thumbnail, source_language, media_seq, space_seq, lip_sync_enabled, is_short, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'processing')`,
+    args: [
+      job.userId,
+      job.videoTitle,
+      job.videoDurationMs,
+      job.videoThumbnail,
+      job.sourceLanguage,
+      job.mediaSeq,
+      job.spaceSeq,
+      job.lipSyncEnabled ? 1 : 0,
+      job.isShort ? 1 : 0,
+    ],
+  })
+  const jobId = Number(result.lastInsertRowid)
+  await createJobLanguages(jobId, languages)
+  return jobId
+}
+
+export async function updateJobLanguageProjects(
+  jobId: number,
+  languages: { code: string; projectSeq: number }[],
+) {
+  if (languages.length === 0) return
+  const db = getDb()
+  for (const lang of languages) {
+    const existing = await db.execute({
+      sql: 'SELECT id FROM job_languages WHERE job_id = ? AND language_code = ? ORDER BY id LIMIT 1',
+      args: [jobId, lang.code],
+    })
+    const id = existing.rows[0]?.id
+    if (id !== undefined && id !== null) {
+      await db.execute({
+        sql: 'UPDATE job_languages SET project_seq = ? WHERE id = ?',
+        args: [lang.projectSeq, id],
+      })
+    } else {
+      await db.execute({
+        sql: `INSERT INTO job_languages (job_id, language_code, project_seq, status, progress_reason)
+              VALUES (?, ?, ?, 'pending', 'PENDING')`,
+        args: [jobId, lang.code, lang.projectSeq],
+      })
+    }
+  }
 }
 
 export async function updateJobLanguageProgress(

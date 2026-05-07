@@ -5,6 +5,8 @@ import { PersoError } from '@/lib/perso/errors'
 import { handle, parseBody, requireIntParam } from '@/lib/perso/route-helpers'
 import { translateBodySchema } from '@/lib/validators/perso'
 import type { TranslateResponse } from '@/lib/perso/types'
+import { assertPersoMediaOwner } from '@/lib/perso/ownership'
+import { logger } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -17,6 +19,7 @@ export async function POST(req: NextRequest) {
     const url = new URL(req.url)
     const spaceSeq = requireIntParam(url, 'spaceSeq')
     const body = await parseBody(req, translateBodySchema)
+    await assertPersoMediaOwner(auth.session.uid, body.mediaSeq)
 
     try {
       await persoFetch<unknown>(
@@ -29,13 +32,41 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return persoFetch<TranslateResponse>(
-      `/video-translator/api/v1/projects/spaces/${spaceSeq}/translate`,
-      {
-        method: 'POST',
-        baseURL: 'api',
-        body,
-      },
-    )
+    const title = body.title?.trim() || `Dubtube project ${body.mediaSeq}`
+    const customDictionaryBlobPath = body.customDictionaryBlobPath?.trim()
+    const srtBlobPath = body.srtBlobPath?.trim()
+    const persoBody = {
+      mediaSeq: body.mediaSeq,
+      isVideoProject: body.isVideoProject,
+      sourceLanguageCode: body.sourceLanguageCode.trim() || 'auto',
+      targetLanguageCodes: body.targetLanguageCodes.map((code) => code.trim()),
+      numberOfSpeakers: body.numberOfSpeakers,
+      withLipSync: body.withLipSync ?? false,
+      preferredSpeedType: body.preferredSpeedType,
+      ttsModel: body.ttsModel ?? 'ELEVEN_V2',
+      title,
+      ...(customDictionaryBlobPath ? { customDictionaryBlobPath } : {}),
+      ...(srtBlobPath ? { srtBlobPath } : {}),
+    }
+
+    try {
+      return await persoFetch<TranslateResponse>(
+        `/video-translator/api/v1/projects/spaces/${spaceSeq}/translate`,
+        {
+          method: 'POST',
+          baseURL: 'api',
+          body: persoBody,
+        },
+      )
+    } catch (err) {
+      if (err instanceof PersoError && err.status === 400) {
+        logger.warn('perso translate rejected', {
+          code: err.code,
+          message: err.message,
+          body: persoBody,
+        })
+      }
+      throw err
+    }
   })
 }

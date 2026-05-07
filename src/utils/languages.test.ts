@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SUPPORTED_LANGUAGES, getLanguageByCode } from './languages'
+import { SUPPORTED_LANGUAGES, fromBcp47, getLanguageByCode, toBcp47 } from './languages'
 
 describe('SUPPORTED_LANGUAGES', () => {
   it('contains expected languages', () => {
@@ -35,5 +35,19 @@ describe('getLanguageByCode', () => {
 
   it('returns undefined for unknown code', () => {
     expect(getLanguageByCode('xx')).toBeUndefined()
+  })
+})
+
+describe('language code mapping', () => {
+  it('maps Perso language codes to YouTube BCP-47 codes', () => {
+    expect(toBcp47('pt')).toBe('pt-BR')
+    expect(toBcp47('zh')).toBe('zh-Hans')
+    expect(toBcp47('ko')).toBe('ko')
+  })
+
+  it('maps YouTube BCP-47 codes back to Perso language codes', () => {
+    expect(fromBcp47('pt-BR')).toBe('pt')
+    expect(fromBcp47('zh-Hans')).toBe('zh')
+    expect(fromBcp47('en-US')).toBe('en')
   })
 })

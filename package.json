@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node scripts/migrate.mjs",
     "analyze": "node -e \"process.env.ANALYZE='true';require('child_process').execSync('next build --webpack',{stdio:'inherit',env:process.env})\"",
     "start": "next start",
     "start:test": "next start -p 3100",
@@ -27,21 +29,22 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",
-    "@tanstack/react-query": "^5.100.6",
+    "@tanstack/react-query": "^5.100.9",
     "clsx": "^2.1.1",
+    "google-auth-library": "^10.6.2",
     "lucide-react": "^1.14.0",
-    "next": "16.2.4",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "next": "16.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "recharts": "^3.8.1",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.5.0",
-    "zod": "^4.4.1",
-    "zustand": "^5.0.12"
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.2.4",
-    "@next/eslint-plugin-next": "^16.2.4",
+    "@next/bundle-analyzer": "^16.2.5",
+    "@next/eslint-plugin-next": "^16.2.5",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.2.4",
     "@testing-library/dom": "^10.4.1",
@@ -51,15 +54,18 @@
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^4.1.5",
-    "eslint": "^10.2.1",
-    "eslint-config-next": "16.2.4",
+    "eslint": "^10.3.0",
+    "eslint-config-next": "16.2.5",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^17.5.0",
+    "globals": "^17.6.0",
     "jsdom": "^29.1.1",
-    "lighthouse": "^13.1.0",
+    "lighthouse": "^13.2.0",
     "tailwindcss": "^4.2.3",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.1",
+    "typescript-eslint": "^8.59.2",
     "vitest": "^4.1.4"
+  },
+  "overrides": {
+    "postcss": "8.5.14"
   }
 }

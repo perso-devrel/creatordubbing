@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Search, X } from 'lucide-react'
-import { Button, Card, Toggle, Tooltip } from '@/components/ui'
+import { Button, Card } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import {
   REGION_LABELS,
@@ -26,8 +26,6 @@ export function LanguageSelectStep() {
   const {
     selectedLanguages,
     toggleLanguage,
-    lipSyncEnabled,
-    setLipSync,
     deliverableMode,
     prevStep,
     nextStep,
@@ -36,12 +34,13 @@ export function LanguageSelectStep() {
   const [region, setRegion] = useState<RegionFilter>('popular')
   const [query, setQuery] = useState('')
 
-  // 원본 영상에 자막/오디오 트랙만 추가하는 모드는 비디오 픽셀을 건드리지 않으므로
-  // 립싱크가 적용될 곳이 없다. 스텝을 오가며 stale 상태가 남는 것을 막기 위해 강제 reset.
-  const lipSyncApplicable = deliverableMode !== 'originalWithMultiAudio'
-  useEffect(() => {
-    if (!lipSyncApplicable && lipSyncEnabled) setLipSync(false)
-  }, [lipSyncApplicable, lipSyncEnabled, setLipSync])
+  // Lip sync UI is temporarily hidden. Keep the state/reset logic here for easy restore.
+  // const lipSyncEnabled = useDubbingStore((s) => s.lipSyncEnabled)
+  // const setLipSync = useDubbingStore((s) => s.setLipSync)
+  // const lipSyncApplicable = deliverableMode !== 'originalWithMultiAudio'
+  // useEffect(() => {
+  //   if (!lipSyncApplicable && lipSyncEnabled) setLipSync(false)
+  // }, [lipSyncApplicable, lipSyncEnabled, setLipSync])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -57,14 +56,18 @@ export function LanguageSelectStep() {
     })
   }, [region, query])
 
-  const estimatedCredits = selectedLanguages.length * 15 + (lipSyncEnabled ? selectedLanguages.length * 8 : 0)
+  const estimatedCredits = selectedLanguages.length * 15
+  // const estimatedCredits = selectedLanguages.length * 15 + (lipSyncEnabled ? selectedLanguages.length * 8 : 0)
+  const selectionDescription = deliverableMode === 'originalWithMultiAudio'
+    ? '자막을 생성할 언어를 선택하세요'
+    : '더빙할 언어를 선택하세요'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">대상 언어 선택</h2>
         <p className="mt-1 text-surface-500">
-          더빙할 언어를 선택하세요 ({selectedLanguages.length}개 선택됨)
+          {selectionDescription} ({selectedLanguages.length}개 선택됨)
         </p>
       </div>
 
@@ -166,6 +169,7 @@ export function LanguageSelectStep() {
 
       {/* Dub options */}
       <Card>
+        {/*
         <p className="mb-3 text-sm font-semibold text-surface-900 dark:text-white">더빙 옵션</p>
         {lipSyncApplicable && (
           <div className="flex items-center justify-between">
@@ -181,8 +185,9 @@ export function LanguageSelectStep() {
             <Toggle checked={lipSyncEnabled} onChange={setLipSync} />
           </div>
         )}
+        */}
 
-        <div className={cn('rounded-lg bg-surface-50 p-3 dark:bg-surface-800', lipSyncApplicable && 'mt-4')}>
+        <div className="rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
           <div className="flex items-center justify-between text-sm">
             <span className="text-surface-600 dark:text-surface-400">예상 크레딧</span>
             <span className="font-bold text-surface-900 dark:text-white">{estimatedCredits} 크레딧</span>

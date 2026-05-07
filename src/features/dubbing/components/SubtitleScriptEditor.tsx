@@ -90,7 +90,7 @@ function ScriptRow({
     if (dirty) await handleSave()
     setRegenerating(true)
     try {
-      await regenerateSentenceAudio(projectSeq, sentence.audioSentenceSeq)
+      await regenerateSentenceAudio(projectSeq, sentence.audioSentenceSeq, sentence.editedTranslatedText)
       addToast({
         type: 'success',
         title: '재생성 요청됨',
@@ -101,7 +101,7 @@ function ScriptRow({
     } finally {
       setRegenerating(false)
     }
-  }, [dirty, handleSave, projectSeq, sentence.audioSentenceSeq, addToast])
+  }, [dirty, handleSave, projectSeq, sentence.audioSentenceSeq, sentence.editedTranslatedText, addToast])
 
   return (
     <div className="space-y-2 rounded-lg border border-surface-200 p-3 dark:border-surface-800">

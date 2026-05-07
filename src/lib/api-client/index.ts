@@ -28,6 +28,8 @@ export {
   ytFetchChannelStats,
   ytFetchVideoStats,
   ytFetchMyVideos,
+  ytFetchVideoMetadata,
+  ytUpdateVideoLocalizations,
   ytFetchAnalytics,
 } from './youtube'
 export { translateMetadata, type MetadataTranslation } from './translate'

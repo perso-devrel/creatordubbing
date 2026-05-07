@@ -1,14 +1,9 @@
 import 'server-only'
 
-import type { YouTubeUploadResult } from '@/lib/youtube/types'
+import type { YouTubeLocalization, YouTubeUploadResult } from '@/lib/youtube/types'
 import { YouTubeError } from '@/lib/youtube/error'
 
 const YOUTUBE_UPLOAD_BASE = 'https://www.googleapis.com/upload/youtube/v3'
-
-export interface YouTubeLocalization {
-  title: string
-  description: string
-}
 
 export interface YouTubeUploadInput {
   accessToken: string
@@ -18,6 +13,8 @@ export interface YouTubeUploadInput {
   tags: string[]
   categoryId?: string
   privacyStatus?: 'public' | 'unlisted' | 'private'
+  selfDeclaredMadeForKids?: boolean
+  containsSyntheticMedia?: boolean
   language?: string
   /**
    * BCP-47 언어 코드를 키로 한 추가 번역 맵.
@@ -37,6 +34,8 @@ export async function uploadVideoToYouTube(
     tags,
     categoryId = '22',
     privacyStatus = 'private',
+    selfDeclaredMadeForKids = false,
+    containsSyntheticMedia = false,
     language = 'en',
     localizations,
   } = input
@@ -53,7 +52,8 @@ export async function uploadVideoToYouTube(
     },
     status: {
       privacyStatus,
-      selfDeclaredMadeForKids: false,
+      selfDeclaredMadeForKids,
+      containsSyntheticMedia,
     },
   }
   if (hasLocalizations) {

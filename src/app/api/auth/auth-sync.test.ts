@@ -2,11 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/db/queries', () => ({
   upsertUser: vi.fn(),
+  createUserSession: vi.fn(),
 }))
 
 vi.mock('@/lib/auth/session-cookie', () => ({
   SESSION_COOKIE: 'dubtube_session',
-  signSessionCookie: vi.fn((uid: string) => `${uid}.fakesig`),
+  SESSION_TTL_SECONDS: 604800,
+  createSessionCookie: vi.fn((uid: string) => ({
+    cookie: `${uid}.fakesig`,
+    sessionId: `sid-${uid}`,
+    expiresAt: new Date('2030-01-01T00:00:00.000Z'),
+  })),
   verifySessionCookie: vi.fn(),
 }))
 
@@ -15,7 +21,7 @@ vi.mock('@/lib/auth/token-refresh', () => ({
 }))
 
 import { POST } from './sync/route'
-import { upsertUser } from '@/lib/db/queries'
+import { createUserSession, upsertUser } from '@/lib/db/queries'
 import { NextRequest } from 'next/server'
 
 const mockFetch = vi.fn()
@@ -83,17 +89,31 @@ describe('POST /api/auth/sync', () => {
       photoURL: null,
       accessToken: 'tok-valid',
     })
+    expect(createUserSession).toHaveBeenCalledWith({
+      sessionId: 'sid-u1',
+      userId: 'u1',
+      expiresAt: new Date('2030-01-01T00:00:00.000Z'),
+    })
 
     const setCookie = res.headers.getSetCookie()
     expect(setCookie.some((c: string) => c.startsWith('dubtube_session=u1.fakesig'))).toBe(true)
   })
 
-  it('sets google_access_token cookie when provided', async () => {
+  it('does not expose google_access_token as a cookie', async () => {
     mockGoogleUserinfo('u1', 'a@b.com')
     const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com', accessToken: 'tok123' }))
     expect(res.status).toBe(200)
     const setCookie = res.headers.getSetCookie()
-    expect(setCookie.some((c: string) => c.includes('google_access_token=tok123'))).toBe(true)
+    expect(setCookie.some((c: string) => c.includes('google_access_token='))).toBe(false)
+  })
+
+  it('ignores body email and uses Google-verified email when storing user', async () => {
+    mockGoogleUserinfo('u1', 'real@user.com')
+    const res = await POST(makeReq({ uid: 'u1', email: 'admin@spoofed.com', accessToken: 'tok-valid' }))
+    expect(res.status).toBe(200)
+    expect(upsertUser).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'u1', email: 'real@user.com' }),
+    )
   })
 
   it('returns 500 on DB error', async () => {

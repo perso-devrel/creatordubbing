@@ -3,7 +3,9 @@ import type {
   MyVideoItem,
   VideoAnalytics,
   VideoStats,
+  YouTubeLocalization,
   YouTubeUploadResult,
+  YouTubeVideoMetadata,
 } from '@/lib/youtube/types'
 import { json } from './shared'
 
@@ -17,6 +19,8 @@ export async function ytUploadVideo(params: {
   tags: string[]
   categoryId?: string
   privacyStatus?: 'public' | 'unlisted' | 'private'
+  selfDeclaredMadeForKids?: boolean
+  containsSyntheticMedia?: boolean
   language?: string
   /** BCP-47 language code → { title, description } 맵. snippet.localizations로 전달. */
   localizations?: Record<string, { title: string; description: string }>
@@ -32,6 +36,12 @@ export async function ytUploadVideo(params: {
   form.append('tags', params.tags.join(','))
   if (params.categoryId) form.append('categoryId', params.categoryId)
   if (params.privacyStatus) form.append('privacyStatus', params.privacyStatus)
+  if (params.selfDeclaredMadeForKids !== undefined) {
+    form.append('selfDeclaredMadeForKids', String(params.selfDeclaredMadeForKids))
+  }
+  if (params.containsSyntheticMedia !== undefined) {
+    form.append('containsSyntheticMedia', String(params.containsSyntheticMedia))
+  }
   if (params.language) form.append('language', params.language)
   if (params.localizations && Object.keys(params.localizations).length > 0) {
     form.append('localizations', JSON.stringify(params.localizations))
@@ -77,6 +87,28 @@ export async function ytFetchMyVideos(
   maxResults = 10,
 ): Promise<MyVideoItem[]> {
   const res = await fetch(`${YT}/videos?maxResults=${maxResults}`, { cache: 'no-store' })
+  return json(res)
+}
+
+export async function ytFetchVideoMetadata(videoId: string): Promise<YouTubeVideoMetadata> {
+  const params = new URLSearchParams({ videoId })
+  const res = await fetch(`${YT}/metadata?${params}`, { cache: 'no-store' })
+  return json(res)
+}
+
+export async function ytUpdateVideoLocalizations(params: {
+  videoId: string
+  sourceLang: string
+  title: string
+  description: string
+  tags?: string[]
+  localizations: Record<string, YouTubeLocalization>
+}): Promise<YouTubeVideoMetadata> {
+  const res = await fetch(`${YT}/metadata`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  })
   return json(res)
 }
 

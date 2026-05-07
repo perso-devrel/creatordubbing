@@ -46,11 +46,12 @@ export interface MediaValidateRequest {
   spaceSeq: number
   durationMs: number
   originalName: string
-  mediaType: string
+  mediaType: 'video' | 'audio'
   extension: string
-  size: number
-  width: number
-  height: number
+  size?: number
+  width?: number
+  height?: number
+  thumbnailFilePath?: string | null
 }
 
 export interface TranslateRequest {
@@ -63,6 +64,8 @@ export interface TranslateRequest {
   preferredSpeedType: 'GREEN' | 'RED'
   customDictionaryBlobPath?: string
   srtBlobPath?: string
+  ttsModel?: 'ELEVEN_V2' | 'ELEVEN_V3'
+  title?: string
 }
 
 export interface TranslateResponse {
@@ -144,11 +147,17 @@ export type DownloadTarget =
   | 'lipSyncVideo'
   | 'originalSubtitle'
   | 'translatedSubtitle'
+  | 'originalVoiceAudio'
   /** Perso가 생성한 SRT(원본/번역)와 부가 산출물 링크를 묶어 반환한다. */
   | 'audioScript'
   | 'voiceAudio'
   | 'backgroundAudio'
+  | 'voicewithBackgroundAudio'
+  | 'translatedAudio'
   | 'all'
+  | 'originalVoiceSpeakers'
+  | 'speakerSegmentExcel'
+  | 'speakerSegmentWithTranslationExcel'
 
 export interface ScriptSentence {
   sentenceSeq: number

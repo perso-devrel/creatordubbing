@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { getDb } from '@/lib/db/client'
+import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
 export type QueueStatus = 'pending' | 'processing' | 'done' | 'failed'
 
@@ -16,11 +17,22 @@ export interface UploadQueueItem {
   privacyStatus: string
   language: string
   isShort: boolean
+  uploadCaptions: boolean
+  captionLanguage: string | null
+  captionName: string | null
+  srtContent: string | null
+  selfDeclaredMadeForKids: boolean
+  containsSyntheticMedia: boolean
   status: QueueStatus
   retries: number
   error: string | null
   youtubeVideoId: string | null
   createdAt: string
+}
+
+export interface ClaimUploadQueueOptions {
+  userId?: string
+  queueId?: number
 }
 
 let tableEnsured = false
@@ -41,6 +53,12 @@ async function ensureTable() {
       privacy_status TEXT NOT NULL DEFAULT 'private',
       language TEXT NOT NULL DEFAULT '',
       is_short INTEGER NOT NULL DEFAULT 0,
+      upload_captions INTEGER NOT NULL DEFAULT 1,
+      caption_language TEXT,
+      caption_name TEXT,
+      srt_content TEXT,
+      self_declared_made_for_kids INTEGER NOT NULL DEFAULT 0,
+      contains_synthetic_media INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'pending',
       retries INTEGER NOT NULL DEFAULT 0,
       error TEXT,
@@ -50,6 +68,24 @@ async function ensureTable() {
     )`,
     args: [],
   })
+  const columns = await db.execute({
+    sql: 'PRAGMA table_info(upload_queue)',
+    args: [],
+  })
+  const existing = new Set(columns.rows.map((row) => String(row.name)))
+  const addColumn = async (name: string, definition: string) => {
+    if (existing.has(name)) return
+    await db.execute({
+      sql: `ALTER TABLE upload_queue ADD COLUMN ${name} ${definition}`,
+      args: [],
+    })
+  }
+  await addColumn('upload_captions', 'INTEGER NOT NULL DEFAULT 1')
+  await addColumn('caption_language', 'TEXT')
+  await addColumn('caption_name', 'TEXT')
+  await addColumn('srt_content', 'TEXT')
+  await addColumn('self_declared_made_for_kids', 'INTEGER NOT NULL DEFAULT 0')
+  await addColumn('contains_synthetic_media', 'INTEGER NOT NULL DEFAULT 0')
   tableEnsured = true
 }
 
@@ -64,12 +100,22 @@ export async function createUploadQueueItem(item: {
   privacyStatus: string
   language: string
   isShort: boolean
+  uploadCaptions?: boolean
+  captionLanguage?: string | null
+  captionName?: string | null
+  srtContent?: string | null
+  selfDeclaredMadeForKids?: boolean
+  containsSyntheticMedia?: boolean
 }): Promise<number> {
   await ensureTable()
   const db = getDb()
   const result = await db.execute({
-    sql: `INSERT INTO upload_queue (user_id, job_id, lang_code, video_url, title, description, tags, privacy_status, language, is_short)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO upload_queue (
+            user_id, job_id, lang_code, video_url, title, description, tags,
+            privacy_status, language, is_short, upload_captions, caption_language,
+            caption_name, srt_content, self_declared_made_for_kids, contains_synthetic_media
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       item.userId,
       item.jobId,
@@ -81,6 +127,12 @@ export async function createUploadQueueItem(item: {
       item.privacyStatus,
       item.language,
       item.isShort ? 1 : 0,
+      (item.uploadCaptions ?? true) ? 1 : 0,
+      item.captionLanguage ?? null,
+      item.captionName ?? null,
+      item.srtContent ?? null,
+      item.selfDeclaredMadeForKids ? 1 : 0,
+      item.containsSyntheticMedia ? 1 : 0,
     ],
   })
   return Number(result.lastInsertRowid)
@@ -94,6 +146,96 @@ export async function getPendingUploads(limit = 5): Promise<UploadQueueItem[]> {
     args: [limit],
   })
   return result.rows.map(rowToItem)
+}
+
+export async function claimPendingUploads(
+  limit = 5,
+  options: ClaimUploadQueueOptions = {},
+): Promise<UploadQueueItem[]> {
+  await ensureTable()
+  const db = getDb()
+  const filters = [`(status = 'pending' OR (status = 'failed' AND retries < 3))`]
+  const args: (string | number)[] = []
+
+  if (options.userId) {
+    filters.push('user_id = ?')
+    args.push(options.userId)
+  }
+
+  if (options.queueId !== undefined) {
+    filters.push('id = ?')
+    args.push(options.queueId)
+  }
+
+  const result = await db.execute({
+    sql: `UPDATE upload_queue
+          SET status = 'processing',
+              error = NULL,
+              updated_at = datetime('now')
+          WHERE id IN (
+            SELECT id
+            FROM upload_queue
+            WHERE ${filters.join(' AND ')}
+            ORDER BY created_at ASC
+            LIMIT ?
+          )
+          AND (status = 'pending' OR (status = 'failed' AND retries < 3))
+          RETURNING *`,
+    args: [...args, limit],
+  })
+  return result.rows.map(rowToItem)
+}
+
+export async function completeQueueItem(id: number, youtubeVideoId: string): Promise<boolean> {
+  await ensureTable()
+  const db = getDb()
+  const result = await db.execute({
+    sql: `UPDATE upload_queue
+          SET status = 'done',
+              youtube_video_id = ?,
+              error = NULL,
+              updated_at = datetime('now')
+          WHERE id = ? AND status = 'processing'
+          RETURNING id`,
+    args: [youtubeVideoId, id],
+  })
+  return Boolean(result.rows[0])
+}
+
+export async function failQueueItem(id: number, error: string): Promise<boolean> {
+  await ensureTable()
+  const db = getDb()
+  const result = await db.execute({
+    sql: `UPDATE upload_queue
+          SET status = 'failed',
+              error = ?,
+              retries = retries + 1,
+              updated_at = datetime('now')
+          WHERE id = ? AND status = 'processing'
+          RETURNING id, user_id, job_id, lang_code, retries`,
+    args: [error, id],
+  })
+  const row = result.rows[0]
+  if (row) {
+    const retries = Number(row.retries ?? 0)
+    await recordOperationalEventSafe({
+      category: 'upload_queue',
+      eventType: 'upload_queue_failed',
+      severity: retries >= 3 ? 'error' : 'warning',
+      userId: String(row.user_id),
+      referenceType: 'upload_queue',
+      referenceId: Number(row.id),
+      message: 'YouTube upload queue item failed',
+      metadata: {
+        jobId: Number(row.job_id),
+        langCode: String(row.lang_code),
+        retries,
+        error,
+      },
+      idempotencyKey: `upload_queue_failed:${row.id}:${retries}`,
+    })
+  }
+  return Boolean(row)
 }
 
 export async function updateQueueItemStatus(
@@ -144,6 +286,12 @@ function rowToItem(row: Record<string, unknown>): UploadQueueItem {
     privacyStatus: String(row.privacy_status),
     language: String(row.language),
     isShort: Boolean(row.is_short),
+    uploadCaptions: Boolean(row.upload_captions),
+    captionLanguage: row.caption_language ? String(row.caption_language) : null,
+    captionName: row.caption_name ? String(row.caption_name) : null,
+    srtContent: row.srt_content ? String(row.srt_content) : null,
+    selfDeclaredMadeForKids: Boolean(row.self_declared_made_for_kids),
+    containsSyntheticMedia: Boolean(row.contains_synthetic_media),
     status: String(row.status) as QueueStatus,
     retries: Number(row.retries),
     error: row.error ? String(row.error) : null,

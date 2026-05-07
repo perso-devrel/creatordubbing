@@ -58,6 +58,9 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', region: 'middle-east' },
 ]
 
+/** 마케팅 카피와 메타데이터 등에서 참조하는 단일 출처. SUPPORTED_LANGUAGES 변경 시 자동 동기. */
+export const SUPPORTED_LANGUAGE_COUNT = SUPPORTED_LANGUAGES.length
+
 export function getLanguageByCode(code: string): Language | undefined {
   return SUPPORTED_LANGUAGES.find((l) => l.code === code)
 }
@@ -69,4 +72,13 @@ const BCP47_MAP: Record<string, string> = {
 
 export function toBcp47(persoCode: string): string {
   return BCP47_MAP[persoCode] || persoCode
+}
+
+export function fromBcp47(languageCode: string): string {
+  const lower = languageCode.toLowerCase()
+  const mapped = Object.entries(BCP47_MAP).find(
+    ([, bcp47]) => bcp47.toLowerCase() === lower,
+  )
+  if (mapped) return mapped[0]
+  return lower.split('-')[0]
 }

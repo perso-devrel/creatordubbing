@@ -40,6 +40,25 @@ export const videosQuerySchema = z.object({
     .pipe(z.number().int().min(1).max(50)),
 })
 
+export const metadataQuerySchema = z.object({
+  videoId: z.string().min(1),
+})
+
+export const metadataUpdateBodySchema = z.object({
+  videoId: z.string().min(1),
+  sourceLang: z.string().min(1),
+  title: z.string().min(1).max(2000),
+  description: z.string().max(20000).default(''),
+  tags: z.array(z.string().min(1)).optional(),
+  localizations: z.record(
+    z.string().min(1),
+    z.object({
+      title: z.string().min(1).max(2000),
+      description: z.string().max(20000).default(''),
+    }),
+  ),
+})
+
 const localizationsRecordSchema = z.record(
   z.string().min(1),
   z.object({
@@ -47,6 +66,15 @@ const localizationsRecordSchema = z.record(
     description: z.string().max(20000).default(''),
   }),
 )
+
+const formBooleanSchema = z
+  .union([z.boolean(), z.string()])
+  .optional()
+  .transform((v) => {
+    if (v === undefined) return undefined
+    if (typeof v === 'boolean') return v
+    return v === 'true'
+  })
 
 export const uploadFormSchema = z.object({
   title: z.string().default(''),
@@ -57,6 +85,8 @@ export const uploadFormSchema = z.object({
     .transform((v) => (v ? v.split(',').map((t) => t.trim()).filter(Boolean) : [])),
   categoryId: z.string().optional(),
   privacyStatus: z.enum(['public', 'unlisted', 'private']).optional(),
+  selfDeclaredMadeForKids: formBooleanSchema,
+  containsSyntheticMedia: formBooleanSchema,
   language: z.string().optional(),
   /** form에서는 JSON 문자열로 전달. */
   localizations: z

@@ -6,6 +6,7 @@ import {
   mediaValidateBodySchema,
   translateBodySchema,
   scriptPatchBodySchema,
+  generateAudioBodySchema,
   downloadTargetSchema,
 } from './perso'
 
@@ -61,7 +62,7 @@ describe('uploadRegisterBodySchema', () => {
 describe('mediaValidateBodySchema', () => {
   const valid = {
     spaceSeq: 1, durationMs: 5000, originalName: 'test.mp4',
-    mediaType: 'video', extension: 'mp4', size: 1000, width: 1920, height: 1080,
+    mediaType: 'video' as const, extension: 'mp4', size: 1000, width: 1920, height: 1080,
   }
   it('accepts valid body', () => {
     expect(mediaValidateBodySchema.safeParse(valid).success).toBe(true)
@@ -74,6 +75,15 @@ describe('mediaValidateBodySchema', () => {
   it('rejects negative size', () => {
     expect(mediaValidateBodySchema.safeParse({ ...valid, size: -1 }).success).toBe(false)
   })
+  it('accepts audio without dimensions', () => {
+    expect(mediaValidateBodySchema.safeParse({
+      spaceSeq: 1,
+      durationMs: 5000,
+      originalName: 'voice.mp3',
+      mediaType: 'audio',
+      extension: '.mp3',
+    }).success).toBe(true)
+  })
 })
 
 describe('translateBodySchema', () => {
@@ -85,13 +95,25 @@ describe('translateBodySchema', () => {
     expect(translateBodySchema.safeParse(valid).success).toBe(true)
   })
   it('accepts optional fields', () => {
-    expect(translateBodySchema.safeParse({ ...valid, withLipSync: true, srtBlobPath: '/p' }).success).toBe(true)
+    expect(translateBodySchema.safeParse({
+      ...valid,
+      withLipSync: true,
+      srtBlobPath: '/p',
+      ttsModel: 'ELEVEN_V2',
+      title: 'Project title',
+    }).success).toBe(true)
+  })
+  it('rejects empty title when present', () => {
+    expect(translateBodySchema.safeParse({ ...valid, title: '' }).success).toBe(false)
   })
   it('rejects empty targetLanguageCodes', () => {
     expect(translateBodySchema.safeParse({ ...valid, targetLanguageCodes: [] }).success).toBe(false)
   })
   it('rejects invalid preferredSpeedType', () => {
     expect(translateBodySchema.safeParse({ ...valid, preferredSpeedType: 'BLUE' }).success).toBe(false)
+  })
+  it('rejects invalid ttsModel', () => {
+    expect(translateBodySchema.safeParse({ ...valid, ttsModel: 'OTHER' }).success).toBe(false)
   })
 })
 
@@ -107,10 +129,22 @@ describe('scriptPatchBodySchema', () => {
   })
 })
 
+describe('generateAudioBodySchema', () => {
+  it('accepts targetText', () => {
+    expect(generateAudioBodySchema.safeParse({ targetText: 'hello' }).success).toBe(true)
+  })
+  it('rejects empty targetText', () => {
+    expect(generateAudioBodySchema.safeParse({ targetText: '' }).success).toBe(false)
+  })
+})
+
 describe('downloadTargetSchema', () => {
   it.each([
     'video', 'dubbingVideo', 'lipSyncVideo', 'originalSubtitle',
-    'translatedSubtitle', 'voiceAudio', 'backgroundAudio', 'all',
+    'translatedSubtitle', 'originalVoiceAudio', 'voiceAudio',
+    'backgroundAudio', 'voicewithBackgroundAudio', 'translatedAudio',
+    'all', 'originalVoiceSpeakers', 'speakerSegmentExcel',
+    'speakerSegmentWithTranslationExcel', 'audioScript',
   ])('accepts "%s"', (target) => {
     expect(downloadTargetSchema.safeParse(target).success).toBe(true)
   })

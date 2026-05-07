@@ -6,10 +6,15 @@ import {
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
+  updateJobLanguageProjects,
   createYouTubeUpload,
   updateJobLanguageYouTube,
+  startJobLanguageYouTubeUpload,
+  failJobLanguageYouTubeUpload,
   deductUserMinutes,
-  addUserCredits,
+  reserveJobCredits,
+  releaseJobCredits,
+  finalizeJobCredits,
   deleteDubbingJob,
   createUploadQueueItem,
 } from '@/lib/db/queries'
@@ -19,6 +24,7 @@ import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 import { getDb } from '@/lib/db/client'
 import { persoFetch } from '@/lib/perso/client'
 import { processUploadQueue } from '@/lib/upload-queue/process'
+import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -78,6 +84,24 @@ export async function POST(req: NextRequest) {
       case 'updateJobLanguageProgress': {
         const { jobId, langCode, status, progress, progressReason } = action.payload
         await updateJobLanguageProgress(jobId, langCode, status, progress, progressReason)
+        if (
+          status === 'failed' ||
+          progressReason === 'FAILED' ||
+          progressReason === 'Failed' ||
+          progressReason === 'CANCELED'
+        ) {
+          await recordOperationalEventSafe({
+            category: 'perso',
+            eventType: 'perso_language_failed',
+            severity: progressReason === 'CANCELED' ? 'warning' : 'error',
+            userId: auth.session.uid,
+            referenceType: 'dubbing_job',
+            referenceId: jobId,
+            message: 'Perso language processing failed',
+            metadata: { langCode, status, progress, progressReason },
+            idempotencyKey: `perso_language_failed:${jobId}:${langCode}:${progressReason}`,
+          })
+        }
         return apiOk({ jobId, langCode })
       }
       case 'updateJobLanguageCompleted': {
@@ -88,6 +112,19 @@ export async function POST(req: NextRequest) {
       case 'updateJobStatus': {
         const { jobId, status } = action.payload
         await updateJobStatus(jobId, status)
+        if (status === 'failed') {
+          await recordOperationalEventSafe({
+            category: 'perso',
+            eventType: 'perso_job_failed',
+            severity: 'error',
+            userId: auth.session.uid,
+            referenceType: 'dubbing_job',
+            referenceId: jobId,
+            message: 'Dubbing job failed',
+            metadata: { status },
+            idempotencyKey: `perso_job_failed:${jobId}`,
+          })
+        }
         return apiOk({ jobId })
       }
       case 'createYouTubeUpload': {
@@ -98,6 +135,21 @@ export async function POST(req: NextRequest) {
         const { jobId, langCode, youtubeVideoId } = action.payload
         await updateJobLanguageYouTube(jobId, langCode, youtubeVideoId)
         return apiOk({ jobId, langCode })
+      }
+      case 'startJobLanguageYouTubeUpload': {
+        const { jobId, langCode } = action.payload
+        const reservation = await startJobLanguageYouTubeUpload(jobId, langCode)
+        return apiOk(reservation)
+      }
+      case 'failJobLanguageYouTubeUpload': {
+        const { jobId, langCode } = action.payload
+        await failJobLanguageYouTubeUpload(jobId, langCode)
+        return apiOk({ jobId, langCode })
+      }
+      case 'updateJobLanguageProjects': {
+        const { jobId, languages } = action.payload
+        await updateJobLanguageProjects(jobId, languages)
+        return apiOk({ jobId })
       }
       case 'deductUserMinutes': {
         const { userId, jobId: deductJobId, minutes: clientMinutes } = action.payload
@@ -112,14 +164,24 @@ export async function POST(req: NextRequest) {
         await deductUserMinutes(userId, minutes)
         return apiOk({ userId, minutes })
       }
-      case 'addCredits': {
-        const { userId, minutes } = action.payload
-        await addUserCredits(userId, minutes)
-        return apiOk({ userId, minutes })
+      case 'reserveJobCredits': {
+        const { jobId: reserveJobId } = action.payload
+        const result = await reserveJobCredits(auth.session.uid, reserveJobId)
+        return apiOk(result)
+      }
+      case 'releaseJobCredits': {
+        const { jobId: releaseJobId, reason } = action.payload
+        const result = await releaseJobCredits(auth.session.uid, releaseJobId, reason)
+        return apiOk(result)
+      }
+      case 'finalizeJobCredits': {
+        const { jobId: finalizeJobId } = action.payload
+        const result = await finalizeJobCredits(auth.session.uid, finalizeJobId)
+        return apiOk(result)
       }
       case 'queueYouTubeUpload': {
         const id = await createUploadQueueItem(action.payload)
-        processUploadQueue().catch(() => {})
+        processUploadQueue({ userId: auth.session.uid, queueId: id, limit: 1 }).catch(() => {})
         return apiOk({ queueId: id })
       }
       case 'deleteDubbingJob': {
