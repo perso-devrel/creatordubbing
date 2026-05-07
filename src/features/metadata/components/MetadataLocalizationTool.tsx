@@ -91,8 +91,17 @@ export function MetadataLocalizationTool() {
       const metadata = await ytFetchVideoMetadata(videoId)
       setTitle(metadata.title)
       setDescription(metadata.description)
-      const nextSourceLang = fromBcp47(metadata.defaultLanguage || defaultLanguage)
+      // YouTube에 defaultLanguage가 명시되어 있지 않으면 빈 문자열이 옴 — 사용자 설정 기본값으로 fallback.
+      const ytDefaultLang = metadata.defaultLanguage?.trim() ?? ''
+      const nextSourceLang = ytDefaultLang ? fromBcp47(ytDefaultLang) : defaultLanguage
       setSourceLang(nextSourceLang)
+      if (!ytDefaultLang) {
+        addToast({
+          type: 'warning',
+          title: '원문 언어가 YouTube에 설정되어 있지 않습니다',
+          message: `사용자 기본 언어(${nextSourceLang})로 설정했습니다. 실제와 다르면 위 "원문 언어" 드롭다운에서 변경하세요.`,
+        })
+      }
 
       // YouTube의 localizations은 BCP-47 키. 내부에서는 Perso 코드로 표준화.
       const existingPersoCodes = new Set(

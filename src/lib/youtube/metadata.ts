@@ -63,7 +63,9 @@ export async function fetchVideoMetadata(
     description: item.snippet.description || '',
     categoryId: item.snippet.categoryId || '22',
     tags: item.snippet.tags || [],
-    defaultLanguage: item.snippet.defaultLanguage || 'ko',
+    // YouTube가 defaultLanguage를 비워두면 빈 문자열로 전달 — 클라이언트에서 사용자 기본값으로 fallback.
+    // 'ko' 같은 임의 값을 박으면 영문 영상의 원문 언어가 한국어로 잘못 잡혀 picker 비활성화 로직이 망가진다.
+    defaultLanguage: item.snippet.defaultLanguage || '',
     localizations: normalizeLocalizationMap(item.localizations),
   }
 }
