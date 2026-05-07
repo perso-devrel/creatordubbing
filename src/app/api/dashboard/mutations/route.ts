@@ -9,6 +9,8 @@ import {
   updateJobLanguageProjects,
   createYouTubeUpload,
   updateJobLanguageYouTube,
+  startJobLanguageYouTubeUpload,
+  failJobLanguageYouTubeUpload,
   deductUserMinutes,
   reserveJobCredits,
   releaseJobCredits,
@@ -132,6 +134,16 @@ export async function POST(req: NextRequest) {
       case 'updateJobLanguageYouTube': {
         const { jobId, langCode, youtubeVideoId } = action.payload
         await updateJobLanguageYouTube(jobId, langCode, youtubeVideoId)
+        return apiOk({ jobId, langCode })
+      }
+      case 'startJobLanguageYouTubeUpload': {
+        const { jobId, langCode } = action.payload
+        const reservation = await startJobLanguageYouTubeUpload(jobId, langCode)
+        return apiOk(reservation)
+      }
+      case 'failJobLanguageYouTubeUpload': {
+        const { jobId, langCode } = action.payload
+        await failJobLanguageYouTubeUpload(jobId, langCode)
         return apiOk({ jobId, langCode })
       }
       case 'updateJobLanguageProjects': {

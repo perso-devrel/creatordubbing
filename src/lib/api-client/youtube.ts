@@ -101,6 +101,7 @@ export async function ytUpdateVideoLocalizations(params: {
   sourceLang: string
   title: string
   description: string
+  tags?: string[]
   localizations: Record<string, YouTubeLocalization>
 }): Promise<YouTubeVideoMetadata> {
   const res = await fetch(`${YT}/metadata`, {

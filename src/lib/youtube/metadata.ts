@@ -76,6 +76,7 @@ export async function updateVideoLocalizations(input: {
   sourceLang: string
   title: string
   description: string
+  tags?: string[]
   localizations: Record<string, YouTubeLocalization>
 }): Promise<YouTubeVideoMetadata> {
   const current = await fetchVideoMetadata(input.accessToken, input.videoId)
@@ -91,7 +92,7 @@ export async function updateVideoLocalizations(input: {
       title: input.title || current.title,
       description: input.description,
       categoryId: current.categoryId || '22',
-      tags: current.tags,
+      tags: input.tags ?? current.tags,
       defaultLanguage,
     },
     localizations: mergedLocalizations,

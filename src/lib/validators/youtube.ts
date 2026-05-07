@@ -49,6 +49,7 @@ export const metadataUpdateBodySchema = z.object({
   sourceLang: z.string().min(1),
   title: z.string().min(1).max(2000),
   description: z.string().max(20000).default(''),
+  tags: z.array(z.string().min(1)).optional(),
   localizations: z.record(
     z.string().min(1),
     z.object({

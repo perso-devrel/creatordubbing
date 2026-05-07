@@ -40,6 +40,8 @@ export {
 
 export {
   createYouTubeUpload,
+  startJobLanguageYouTubeUpload,
+  failJobLanguageYouTubeUpload,
   updateYouTubeStats,
   updateJobLanguageYouTube,
 } from './youtube'

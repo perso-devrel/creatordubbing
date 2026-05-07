@@ -31,10 +31,13 @@ export function VideoInputStep() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const initialTab = searchParams.get('url') ? 'url' : 'upload'
+  const [activeTab, setActiveTab] = useState(initialTab)
 
-  const { data: channel, isLoading: channelLoading } = useChannelStats()
+  const channelTabActive = activeTab === 'channel'
+  const { data: channel, isLoading: channelLoading, error: channelError } = useChannelStats(channelTabActive)
   const isConnected = !!channel
-  const { data: myVideos = [], isLoading: myVideosLoading } = useMyVideos(50)
+  const { data: myVideos = [], isLoading: myVideosLoading, error: myVideosError } = useMyVideos(50, channelTabActive && isConnected)
   const [videoSearch, setVideoSearch] = useState('')
 
   const publicVideos = useMemo(
@@ -123,8 +126,11 @@ export function VideoInputStep() {
       </div>
 
       <Tabs
-        defaultValue={searchParams.get('url') ? 'url' : 'upload'}
-        onChange={() => setError(null)}
+        defaultValue={initialTab}
+        onChange={(value) => {
+          setError(null)
+          setActiveTab(value)
+        }}
       >
         <TabsList className="mx-auto w-fit">
           <TabsTrigger value="upload">
@@ -214,6 +220,13 @@ export function VideoInputStep() {
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-400" />
               <p className="mt-3 text-sm text-surface-500">채널 정보 불러오는 중...</p>
             </Card>
+          ) : channelError ? (
+            <Card className="py-12 text-center">
+              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <p className="mt-3 text-sm text-red-500">
+                {channelError instanceof Error ? channelError.message : 'YouTube 채널 정보를 불러오지 못했습니다.'}
+              </p>
+            </Card>
           ) : !isConnected ? (
             <Card className="py-12 text-center">
               <Film className="mx-auto h-10 w-10 text-surface-400" />
@@ -224,6 +237,13 @@ export function VideoInputStep() {
             <Card className="py-12 text-center">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-400" />
               <p className="mt-3 text-sm text-surface-500">영상 목록 불러오는 중...</p>
+            </Card>
+          ) : myVideosError ? (
+            <Card className="py-12 text-center">
+              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <p className="mt-3 text-sm text-red-500">
+                {myVideosError instanceof Error ? myVideosError.message : 'YouTube 영상 목록을 불러오지 못했습니다.'}
+              </p>
             </Card>
           ) : myVideos.length === 0 ? (
             <Card className="py-12 text-center">

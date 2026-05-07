@@ -19,9 +19,9 @@ export default function YouTubeSettingsPage() {
   const defaultLanguage = useYouTubeSettingsStore((s) => s.defaultLanguage)
   const setDefaultLanguage = useYouTubeSettingsStore((s) => s.setDefaultLanguage)
 
-  const { data: channel, isLoading: channelLoading } = useChannelStats()
+  const { data: channel, isLoading: channelLoading, error: channelError } = useChannelStats()
   const isConnected = !!channel
-  const { data: videos = [], isLoading: videosLoading } = useMyVideos(10)
+  const { data: videos = [], isLoading: videosLoading, error: videosError } = useMyVideos(10, isConnected)
 
   return (
     <div className="space-y-6">
@@ -37,6 +37,13 @@ export default function YouTubeSettingsPage() {
           <div className="mt-4 flex items-center gap-2 text-surface-400">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm">채널 정보 불러오는 중...</span>
+          </div>
+        ) : channelError ? (
+          <div className="mt-4 flex flex-col items-center gap-3 py-8">
+            <Video className="h-12 w-12 text-surface-300" />
+            <p className="text-sm text-red-500">
+              {channelError instanceof Error ? channelError.message : 'YouTube 채널 정보를 불러오지 못했습니다.'}
+            </p>
           </div>
         ) : isConnected ? (
           <div className="mt-4 flex items-center justify-between">
@@ -168,6 +175,10 @@ export default function YouTubeSettingsPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-sm">영상 목록 불러오는 중...</span>
             </div>
+          ) : videosError ? (
+            <p className="py-4 text-center text-sm text-red-500">
+              {videosError instanceof Error ? videosError.message : 'YouTube 영상 목록을 불러오지 못했습니다.'}
+            </p>
           ) : videos.length === 0 ? (
             <p className="py-4 text-center text-sm text-surface-400">영상이 없습니다</p>
           ) : (

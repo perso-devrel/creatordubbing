@@ -87,6 +87,34 @@ describe('Perso routes — resource ownership', () => {
 
     expect(res.status).toBe(200)
     expect(mockAssertMediaOwner).toHaveBeenCalledWith('user1', 10)
+    expect(mockPersoFetch).toHaveBeenLastCalledWith(
+      '/video-translator/api/v1/projects/spaces/3/translate',
+      expect.objectContaining({
+        body: expect.objectContaining({
+          title: 'Dubtube project 10',
+          ttsModel: 'ELEVEN_V2',
+          withLipSync: false,
+        }),
+      }),
+    )
+  })
+
+  it('does not forward auto as external upload lang', async () => {
+    const { PUT } = await import('./external/upload/route')
+    const req = new NextRequest('http://localhost/api/perso/external/upload', {
+      method: 'PUT',
+      body: JSON.stringify({ spaceSeq: 3, url: 'https://youtube.com/watch?v=abc', lang: 'auto' }),
+    })
+
+    const res = await PUT(req)
+
+    expect(res.status).toBe(200)
+    expect(mockPersoFetch).toHaveBeenCalledWith(
+      '/file/api/upload/video/external',
+      expect.objectContaining({
+        body: { space_seq: 3, url: 'https://youtube.com/watch?v=abc' },
+      }),
+    )
   })
 
   it('records media ownership after external upload', async () => {
@@ -105,5 +133,40 @@ describe('Perso routes — resource ownership', () => {
       sourceType: 'external',
       fileUrl: 'https://youtube.com/watch?v=abc',
     }))
+  })
+
+  it('maps script text edits to Perso targetText', async () => {
+    const { PATCH } = await import('./script/route')
+    const req = new NextRequest('http://localhost/api/perso/script?projectSeq=7&sentenceSeq=9', {
+      method: 'PATCH',
+      body: JSON.stringify({ translatedText: 'updated text' }),
+    })
+
+    const res = await PATCH(req)
+
+    expect(res.status).toBe(200)
+    expect(mockPersoFetch).toHaveBeenCalledWith(
+      '/video-translator/api/v1/project/7/audio-sentence/9',
+      expect.objectContaining({
+        body: { targetText: 'updated text' },
+      }),
+    )
+  })
+
+  it('requests lip sync with the required speed body', async () => {
+    const { POST } = await import('./lipsync/route')
+    const req = new NextRequest('http://localhost/api/perso/lipsync?projectSeq=7&spaceSeq=3', {
+      method: 'POST',
+    })
+
+    const res = await POST(req)
+
+    expect(res.status).toBe(200)
+    expect(mockPersoFetch).toHaveBeenCalledWith(
+      '/video-translator/api/v1/projects/7/spaces/3/lip-sync',
+      expect.objectContaining({
+        body: { preferredSpeedType: 'GREEN' },
+      }),
+    )
   })
 })

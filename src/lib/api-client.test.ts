@@ -30,6 +30,7 @@ import {
   ytFetchVideoStats,
   ytFetchChannelStats,
   ytFetchMyVideos,
+  ytUpdateVideoLocalizations,
 } from './api-client'
 
 function okResponse<T>(data: T) {
@@ -63,6 +64,7 @@ describe('getPersoFileUrl', () => {
 
   it('prepends base URL for relative path with leading slash', () => {
     const result = getPersoFileUrl('/files/video.mp4')
+    expect(result).toContain('https://portal-media.perso.ai')
     expect(result).toContain('/files/video.mp4')
   })
 
@@ -220,11 +222,18 @@ describe('Perso mutation endpoints', () => {
     expect(mockFetch.mock.calls[0][1].method).toBe('POST')
   })
 
-  it('getExternalMetadata uses default lang ko', async () => {
+  it('getExternalMetadata omits lang by default', async () => {
     mockFetch.mockResolvedValueOnce(okResponse({ title: 'T' }))
     await getExternalMetadata(1, 'https://youtube.com/watch?v=abc')
     const body = JSON.parse(mockFetch.mock.calls[0][1].body)
-    expect(body.lang).toBe('ko')
+    expect(body.lang).toBeUndefined()
+  })
+
+  it('getExternalMetadata omits lang when source is auto', async () => {
+    mockFetch.mockResolvedValueOnce(okResponse({ title: 'T' }))
+    await getExternalMetadata(1, 'https://youtube.com/watch?v=abc', 'auto')
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+    expect(body.lang).toBeUndefined()
   })
 
   it('uploadExternalVideo puts to external/upload', async () => {
@@ -268,11 +277,12 @@ describe('Perso mutation endpoints', () => {
     expect(mockFetch.mock.calls[0][0]).toContain('sentenceSeq=20')
   })
 
-  it('regenerateSentenceAudio patches with params', async () => {
+  it('regenerateSentenceAudio patches with params and targetText', async () => {
     mockFetch.mockResolvedValueOnce(okResponse(null))
-    await regenerateSentenceAudio(10, 30)
+    await regenerateSentenceAudio(10, 30, 'translated')
     expect(mockFetch.mock.calls[0][1].method).toBe('PATCH')
     expect(mockFetch.mock.calls[0][0]).toContain('audioSentenceSeq=30')
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body)).toEqual({ targetText: 'translated' })
   })
 
   it('requestLipSync posts with params', async () => {
@@ -345,6 +355,26 @@ describe('ytUploadCaption', () => {
   })
 })
 
+describe('ytUpdateVideoLocalizations', () => {
+  it('sends tags to metadata update API', async () => {
+    mockFetch.mockResolvedValueOnce(okResponse({ videoId: 'v1', tags: ['a'] }))
+    await ytUpdateVideoLocalizations({
+      videoId: 'v1',
+      sourceLang: 'ko',
+      title: 'Title',
+      description: 'Description',
+      tags: ['a'],
+      localizations: {},
+    })
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/youtube/metadata')
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body as string)).toMatchObject({
+      videoId: 'v1',
+      tags: ['a'],
+    })
+  })
+})
+
 // ── uploadFileToBlob (XHR) ─────────────────────────────────
 
 describe('uploadFileToBlob', () => {
@@ -372,7 +402,7 @@ describe('uploadFileToBlob', () => {
     const xhr = xhrInstances[0]
     expect(xhr.open).toHaveBeenCalledWith('PUT', 'https://blob.example/sas')
     expect(xhr.setRequestHeader).toHaveBeenCalledWith('x-ms-blob-type', 'BlockBlob')
-    expect(xhr.setRequestHeader).toHaveBeenCalledWith('Content-Type', 'video/mp4')
+    expect(xhr.setRequestHeader).toHaveBeenCalledWith('Content-Type', 'application/octet-stream')
 
     xhr.status = 200
     ;(xhr.onload as () => void)()

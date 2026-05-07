@@ -37,7 +37,7 @@ const clientSchema = z.object({
   NEXT_PUBLIC_PERSO_FILE_BASE_URL: z
     .string()
     .url()
-    .default("https://perso.ai"),
+    .default("https://portal-media.perso.ai"),
   NEXT_PUBLIC_GOOGLE_CLIENT_ID: z
     .string()
     .min(1, "NEXT_PUBLIC_GOOGLE_CLIENT_ID is required"),

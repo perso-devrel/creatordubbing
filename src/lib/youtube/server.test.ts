@@ -141,35 +141,82 @@ describe('fetchMyVideos', () => {
     mockFetch
       .mockResolvedValueOnce(
         jsonResponse({
+          items: [{ contentDetails: { relatedPlaylists: { uploads: 'UU1' } } }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
           items: [{
-            id: { videoId: 'v1' },
-            snippet: { title: 'T1', publishedAt: '2026-01-01', thumbnails: { medium: { url: 'http://thumb' } } },
+            snippet: {
+              title: 'T1',
+              publishedAt: '2026-01-01',
+              thumbnails: { medium: { url: 'http://thumb' } },
+              resourceId: { videoId: 'v1' },
+            },
           }],
         }),
       )
       .mockResolvedValueOnce(
         jsonResponse({ items: [{ id: 'v1', status: { privacyStatus: 'public' } }] }),
-      )
+    )
     const vids = await fetchMyVideos('tok', 5)
     expect(vids).toEqual([{ videoId: 'v1', title: 'T1', thumbnail: 'http://thumb', publishedAt: '2026-01-01', privacyStatus: 'public' }])
+    expect(String(mockFetch.mock.calls[0][0])).toContain('/youtube/v3/channels?part=contentDetails&mine=true')
+    expect(String(mockFetch.mock.calls[1][0])).toContain('/youtube/v3/playlistItems?part=snippet&playlistId=UU1&maxResults=5')
   })
 
-  it('returns empty array on non-ok response', async () => {
+  it('throws YouTubeError on non-ok channel response', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({}, 500))
+    await expect(fetchMyVideos('tok')).rejects.toMatchObject({
+      status: 500,
+      code: 'MY_VIDEOS_CHANNEL_FAILED',
+    })
+  })
+
+  it('returns empty array when uploads playlist is missing', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({ items: [{}] }))
     expect(await fetchMyVideos('tok')).toEqual([])
   })
 
   it('handles undefined items in response', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse({}))
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse({ items: [{ contentDetails: { relatedPlaylists: { uploads: 'UU1' } } }] }),
+      )
+      .mockResolvedValueOnce(jsonResponse({}))
     expect(await fetchMyVideos('tok')).toEqual([])
   })
 
   it('defaults missing snippet fields and unknown privacy', async () => {
     mockFetch
-      .mockResolvedValueOnce(jsonResponse({ items: [{ id: { videoId: 'v1' } }] }))
+      .mockResolvedValueOnce(
+        jsonResponse({ items: [{ contentDetails: { relatedPlaylists: { uploads: 'UU1' } } }] }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ items: [{ snippet: { resourceId: { videoId: 'v1' } } }] }))
       .mockResolvedValueOnce(jsonResponse({ items: [] }))
     const vids = await fetchMyVideos('tok')
     expect(vids).toEqual([{ videoId: 'v1', title: '', thumbnail: '', publishedAt: '', privacyStatus: 'unknown' }])
+  })
+
+  it('throws quotaExceeded message for playlist response', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse({ items: [{ contentDetails: { relatedPlaylists: { uploads: 'UU1' } } }] }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          error: {
+            message: 'quota exceeded',
+            errors: [{ reason: 'quotaExceeded' }],
+          },
+        }, 403),
+      )
+    const promise = fetchMyVideos('tok')
+    await expect(promise).rejects.toMatchObject({
+      status: 403,
+      code: 'MY_VIDEOS_FAILED',
+    })
+    await expect(promise).rejects.toThrow(/quota/)
   })
 })
 
@@ -282,6 +329,11 @@ describe('uploadVideoToYouTube', () => {
     })
     expect(result).toEqual({ videoId: 'yt-abc', title: 'My Vid', status: 'uploaded' })
     const initBody = JSON.parse(mockFetch.mock.calls[0][1]?.body as string)
+    expect(initBody.snippet).toMatchObject({
+      title: 'My Vid',
+      description: 'Desc',
+      tags: ['tag1'],
+    })
     expect(initBody.status).toMatchObject({
       privacyStatus: 'private',
       selfDeclaredMadeForKids: true,

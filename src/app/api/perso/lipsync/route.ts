@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     await assertPersoProjectOwner(auth.session.uid, projectSeq)
     return persoFetch<unknown>(
       `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/lip-sync`,
-      { method: 'POST', baseURL: 'api' },
+      { method: 'POST', baseURL: 'api', body: { preferredSpeedType: 'GREEN' } },
     )
   })
 }

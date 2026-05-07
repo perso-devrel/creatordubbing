@@ -1,7 +1,7 @@
 'use client'
 
 import { Download, Check, RotateCcw, Upload, Loader2, Volume2 } from 'lucide-react'
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, Card, CardTitle, Badge, Progress } from '@/components/ui'
 import { getLanguageByCode } from '@/utils/languages'
@@ -13,29 +13,36 @@ import { useAuthStore } from '@/stores/authStore'
 import {
   ytUploadVideo,
   ytUploadCaption,
+  ytFetchVideoMetadata,
+  ytUpdateVideoLocalizations,
   getPersoFileUrl,
   getTranslatedSrt,
   translateMetadata,
   type MetadataTranslation,
 } from '@/lib/api-client'
 import { toBcp47 } from '@/utils/languages'
-import { dbMutation } from '@/lib/api/dbMutation'
+import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
 import { SubtitleScriptEditor } from '../SubtitleScriptEditor'
 import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
+import { appendAiDisclosureFooter, appendTextFooter, stripAiDisclosureFooter } from '../../utils/aiDisclosure'
+import type { YouTubeUploadState } from '../../types/dubbing.types'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
-interface LangUploadState {
-  status: UploadStatus
-  progress: number
-  videoId?: string
-  error?: string
+function isYouTubeUploadLocked(state: YouTubeUploadState | undefined) {
+  return state?.status === 'uploading' || state?.status === 'done'
+}
+
+interface YouTubeUploadReservation {
+  status: 'reserved' | 'already_uploaded' | 'already_uploading' | 'not_found'
+  youtubeVideoId?: string | null
 }
 
 export function UploadStep() {
   const {
     selectedLanguages, videoMeta, videoSource, languageProgress, dbJobId,
-    spaceSeq, projectMap, uploadSettings, deliverableMode, originalVideoUrl, reset,
+    spaceSeq, projectMap, youtubeUploads: ytUploads, setYouTubeUploadState,
+    uploadSettings, deliverableMode, originalVideoUrl, isShort, reset,
   } = useDubbingStore()
   const { fetchDownloads } = usePersoFlow()
   const addToast = useNotificationStore((s) => s.addToast)
@@ -51,31 +58,34 @@ export function UploadStep() {
 
   const {
     autoUpload,
-    uploadAsShort,
     attachOriginalLink,
     title: settingsTitle,
     description: settingsDescription,
     tags: settingsTags,
     privacyStatus,
     metadataLanguage,
-    uploadCaptions: shouldUploadCaptions,
+    uploadCaptions: uploadCaptionsEnabled,
     selfDeclaredMadeForKids,
     containsSyntheticMedia,
     uploadReviewConfirmed,
   } = uploadSettings
+  const editableDescription = stripAiDisclosureFooter(settingsDescription || '')
+  const shouldUploadCaptions = autoUpload && uploadCaptionsEnabled
+  const shouldApplyAiDisclosure = deliverableMode === 'newDubbedVideos' && containsSyntheticMedia
+  const videoMetaTitle = videoMeta?.title
 
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
-  const [ytUploads, setYtUploads] = useState<Record<string, LangUploadState>>({})
   const [captionUploads, setCaptionUploads] = useState<Record<string, UploadStatus>>({})
   const [audioTrackEnabled, setAudioTrackEnabled] = useState(false)
   const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
-  const autoUploadTriggered = useRef(false)
   const autoChainTriggered = useRef(false)
+  const existingVideoTagSyncRef = useRef<Set<string>>(new Set())
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   // ─── Metadata translations (Gemini) ─────────────────────────────────
   // Upload Step에 진입한 시점의 (title, description, metadataLanguage, selectedLanguages) 조합으로
   // 한 번 번역해두고 캐시. 모든 언어별 업로드와 localizations에서 공용으로 쓴다.
+  // AI 고지 문구는 Gemini에 보내지 않고, 번역 후 로컬 문구 목록에서 언어별로 붙인다.
   // 실패해도 fallback으로 원문이 들어가도록 처리되어 업로드를 막지 않는다.
   const [translations, setTranslations] = useState<Record<string, MetadataTranslation>>({})
   const translatePromiseRef = useRef<Promise<Record<string, MetadataTranslation>> | null>(null)
@@ -83,7 +93,7 @@ export function UploadStep() {
   const ensureTranslations = useCallback(async (): Promise<Record<string, MetadataTranslation>> => {
     const cacheKey = JSON.stringify({
       title: settingsTitle?.trim() || videoMeta?.title || '',
-      description: settingsDescription || '',
+      description: editableDescription,
       metadataLanguage,
       selectedLanguages,
     })
@@ -100,7 +110,7 @@ export function UploadStep() {
       try {
         const result = await translateMetadata({
           title: baseTitle,
-          description: settingsDescription || '',
+          description: editableDescription,
           sourceLang: metadataLanguage || 'ko',
           targetLangs: selectedLanguages,
         })
@@ -110,7 +120,7 @@ export function UploadStep() {
         // 실패 시 모든 언어를 원문으로 fallback. 사용자에게는 toast로 1회 안내.
         const fallback: Record<string, MetadataTranslation> = {}
         for (const code of selectedLanguages) {
-          fallback[code] = { title: baseTitle, description: settingsDescription || '' }
+          fallback[code] = { title: baseTitle, description: editableDescription }
         }
         setTranslations(fallback)
         addToast({
@@ -125,7 +135,7 @@ export function UploadStep() {
     })()
     translatePromiseRef.current = p
     return p
-  }, [translations, settingsTitle, videoMeta?.title, settingsDescription, metadataLanguage, selectedLanguages, addToast])
+  }, [translations, settingsTitle, videoMeta?.title, editableDescription, metadataLanguage, selectedLanguages, addToast])
 
   // Original video upload state (for upload + originalWithMultiAudio)
   const [originalUploadState, setOriginalUploadState] = useState<{
@@ -138,16 +148,52 @@ export function UploadStep() {
   const multiAudioVideoId =
     originalUploadState.videoId || channelVideoId || null
 
-  /** 번역되었거나 원문인 description에 공통 footer(원본 링크)를 붙여 준다. */
+  /** 번역되었거나 원문인 description에 공통 footer를 붙여 준다. AI 고지는 더빙 영상 업로드에만 붙인다. */
   const applyDescriptionFooter = useCallback(
-    (desc: string) => {
+    (desc: string, languageCode: string) => {
+      let next = stripAiDisclosureFooter(desc)
       if (attachOriginalLink && originalYouTubeUrl) {
-        return `${desc}\n\n원본 영상: ${originalYouTubeUrl}`
+        next = appendTextFooter(next, `원본 영상: ${originalYouTubeUrl}`)
       }
-      return desc
+      return appendAiDisclosureFooter(next, languageCode, shouldApplyAiDisclosure)
     },
-    [attachOriginalLink, originalYouTubeUrl],
+    [attachOriginalLink, originalYouTubeUrl, shouldApplyAiDisclosure],
   )
+
+  const applyTagsToExistingVideo = useCallback(async (targetVideoId: string) => {
+    const requestedTags = Array.from(new Set(settingsTags.map((tag) => tag.trim()).filter(Boolean)))
+    if (!isAuthenticated || requestedTags.length === 0) return
+
+    const syncKey = `${targetVideoId}:${requestedTags.join('\n')}`
+    if (existingVideoTagSyncRef.current.has(syncKey)) return
+    existingVideoTagSyncRef.current.add(syncKey)
+
+    try {
+      const metadata = await ytFetchVideoMetadata(targetVideoId)
+      const mergedTags = Array.from(new Set([...metadata.tags, ...requestedTags]))
+      if (
+        mergedTags.length === metadata.tags.length &&
+        mergedTags.every((tag, index) => tag === metadata.tags[index])
+      ) {
+        return
+      }
+
+      await ytUpdateVideoLocalizations({
+        videoId: targetVideoId,
+        sourceLang: metadata.defaultLanguage || toBcp47(metadataLanguage),
+        title: metadata.title || settingsTitle?.trim() || videoMetaTitle || 'Untitled',
+        description: metadata.description,
+        tags: mergedTags,
+        localizations: metadata.localizations,
+      })
+    } catch (err) {
+      addToast({
+        type: 'warning',
+        title: 'YouTube 태그 적용 실패',
+        message: err instanceof Error ? err.message : '자막 업로드는 계속 진행합니다.',
+      })
+    }
+  }, [addToast, isAuthenticated, metadataLanguage, settingsTags, settingsTitle, videoMetaTitle])
 
   const handleNewDubbing = () => reset()
   const handleGoToDashboard = () => { reset(); router.push('/dashboard') }
@@ -164,17 +210,22 @@ export function UploadStep() {
       const localizations: Record<string, { title: string; description: string }> = {}
       for (const code of selectedLanguages) {
         const t = allTranslations[code]
-        if (t) localizations[toBcp47(code)] = { title: t.title, description: t.description }
+        if (t) {
+          localizations[toBcp47(code)] = {
+            title: t.title,
+            description: applyDescriptionFooter(t.description, code),
+          }
+        }
       }
 
       const result = await ytUploadVideo({
         videoUrl: originalVideoUrl,
         title: settingsTitle?.trim() || videoMeta?.title || 'Original Video',
-        description: settingsDescription || '',
+        description: applyDescriptionFooter(editableDescription, metadataLanguage),
         tags: settingsTags,
         privacyStatus,
         selfDeclaredMadeForKids,
-        containsSyntheticMedia,
+        containsSyntheticMedia: shouldApplyAiDisclosure,
         language: toBcp47(metadataLanguage),
         localizations: Object.keys(localizations).length > 0 ? localizations : undefined,
       })
@@ -191,7 +242,7 @@ export function UploadStep() {
       addToast({ type: 'error', title: '원본 영상 업로드 실패', message: msg })
       return null
     }
-  }, [isAuthenticated, originalVideoUrl, settingsTitle, settingsDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, containsSyntheticMedia, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage])
+  }, [isAuthenticated, originalVideoUrl, settingsTitle, editableDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, shouldApplyAiDisclosure, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage, applyDescriptionFooter])
 
   // ─── Audio → Studio helper ──────────────────────────────────────────
   const handleAudioToStudio = useCallback(async (langCode: string, targetVideoId?: string) => {
@@ -279,6 +330,9 @@ export function UploadStep() {
 
   // ─── Upload dubbed video to YouTube (newDubbedVideos mode) ──────────
   const handleYouTubeUpload = useCallback(async (langCode: string) => {
+    const existingUpload = useDubbingStore.getState().youtubeUploads[langCode]
+    if (isYouTubeUploadLocked(existingUpload)) return
+
     if (!isAuthenticated) {
       addToast({ type: 'error', title: 'YouTube에 먼저 로그인해주세요' })
       return
@@ -287,27 +341,48 @@ export function UploadStep() {
     const lang = getLanguageByCode(langCode)
     if (!lang) return
 
-    setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 0 } }))
+    setYouTubeUploadState(langCode, { status: 'uploading', progress: 0 })
+    let uploadReserved = false
 
     try {
+      if (dbJobId) {
+        const reservation = await dbMutationStrict<YouTubeUploadReservation>({
+          type: 'startJobLanguageYouTubeUpload',
+          payload: { jobId: dbJobId, langCode },
+        })
+        if (reservation.status === 'already_uploaded') {
+          setYouTubeUploadState(langCode, {
+            status: 'done',
+            progress: 100,
+            videoId: reservation.youtubeVideoId || undefined,
+          })
+          return
+        }
+        if (reservation.status === 'already_uploading') {
+          setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
+          return
+        }
+        if (reservation.status !== 'reserved') {
+          throw new Error('YouTube 업로드 상태를 확인할 수 없습니다.')
+        }
+        uploadReserved = true
+      }
+
       const downloads = await fetchDownloads(langCode, 'dubbingVideo')
       const rawVideoUrl = downloads?.videoFile?.videoDownloadLink
       if (!rawVideoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
       const videoUrl = rawVideoUrl.startsWith('http') ? rawVideoUrl : getPersoFileUrl(rawVideoUrl)
 
-      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 20 } }))
-      const titlePrefix = uploadAsShort ? '#Shorts ' : ''
-
+      setYouTubeUploadState(langCode, { status: 'uploading', progress: 20 })
       // 번역된 제목·설명을 가져와 그 언어 영상의 메타로 사용한다.
       const allTranslations = await ensureTranslations()
       const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
-      const translated = allTranslations[langCode] ?? { title: baseTitle, description: settingsDescription || '' }
-      const ytTitle = `${titlePrefix}${translated.title}`
-      const ytDescription = applyDescriptionFooter(translated.description)
+      const translated = allTranslations[langCode] ?? { title: baseTitle, description: editableDescription }
+      const ytTitle = translated.title
+      const ytDescription = applyDescriptionFooter(translated.description, langCode)
       const langTags = Array.from(new Set([
         ...settingsTags,
         lang.name,
-        ...(uploadAsShort ? ['Shorts'] : []),
       ]))
       const result = await ytUploadVideo({
         videoUrl,
@@ -316,13 +391,13 @@ export function UploadStep() {
         tags: langTags,
         privacyStatus,
         selfDeclaredMadeForKids,
-        containsSyntheticMedia,
+        containsSyntheticMedia: shouldApplyAiDisclosure,
         language: langCode,
       })
-      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 90 } }))
+      setYouTubeUploadState(langCode, { status: 'uploading', progress: 90 })
 
       // Upload SRT caption — use Perso's official translated SRT (audioScript target)
-      setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 92 } }))
+      setYouTubeUploadState(langCode, { status: 'uploading', progress: 92 })
       if (shouldUploadCaptions) {
         try {
           const pSeq = projectMap[langCode]
@@ -340,12 +415,15 @@ export function UploadStep() {
         } catch { /* caption upload is optional */ }
       }
 
-      setYtUploads((prev) => ({
-        ...prev,
-        [langCode]: { status: 'done', progress: 100, videoId: result.videoId },
-      }))
+      setYouTubeUploadState(langCode, { status: 'done', progress: 100, videoId: result.videoId })
 
       try {
+        if (dbJobId) {
+          await dbMutationStrict({
+            type: 'updateJobLanguageYouTube',
+            payload: { jobId: dbJobId, langCode, youtubeVideoId: result.videoId },
+          })
+        }
         if (userId) {
           await dbMutation({
             type: 'createYouTubeUpload',
@@ -355,15 +433,9 @@ export function UploadStep() {
               title: ytTitle,
               languageCode: langCode,
               privacyStatus,
-              isShort: uploadAsShort,
+              isShort,
             },
           })
-          if (dbJobId) {
-            await dbMutation({
-              type: 'updateJobLanguageYouTube',
-              payload: { jobId: dbJobId, langCode, youtubeVideoId: result.videoId },
-            })
-          }
         }
       } catch { /* DB save best-effort */ }
 
@@ -375,38 +447,64 @@ export function UploadStep() {
       })
     } catch (err) {
       const msg = err instanceof Error ? err.message : '업로드 실패'
-      setYtUploads((prev) => ({
-        ...prev,
-        [langCode]: { status: 'error', progress: 0, error: msg },
-      }))
+      if (uploadReserved && dbJobId) {
+        await dbMutation({
+          type: 'failJobLanguageYouTubeUpload',
+          payload: { jobId: dbJobId, langCode },
+        })
+      }
+      setYouTubeUploadState(langCode, { status: 'error', progress: 0, error: msg })
       addToast({ type: 'error', title: `${lang?.name} 업로드 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, isAuthenticated, settingsTitle, settingsDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, containsSyntheticMedia, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, isShort, isAuthenticated, settingsTitle, editableDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, shouldApplyAiDisclosure, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter, setYouTubeUploadState])
 
   // ─── Queue upload (background — survives tab close) ─────────────────
   const queueYouTubeUpload = useCallback(async (langCode: string) => {
+    const existingUpload = useDubbingStore.getState().youtubeUploads[langCode]
+    if (isYouTubeUploadLocked(existingUpload)) return
+
     if (!userId || !dbJobId) return
 
     const lang = getLanguageByCode(langCode)
     if (!lang) return
 
-    setYtUploads((prev) => ({ ...prev, [langCode]: { status: 'uploading', progress: 10 } }))
+    setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
+    let uploadReserved = false
 
     try {
+      const reservation = await dbMutationStrict<YouTubeUploadReservation>({
+        type: 'startJobLanguageYouTubeUpload',
+        payload: { jobId: dbJobId, langCode },
+      })
+      if (reservation.status === 'already_uploaded') {
+        setYouTubeUploadState(langCode, {
+          status: 'done',
+          progress: 100,
+          videoId: reservation.youtubeVideoId || undefined,
+        })
+        return
+      }
+      if (reservation.status === 'already_uploading') {
+        setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
+        return
+      }
+      if (reservation.status !== 'reserved') {
+        throw new Error('YouTube 업로드 상태를 확인할 수 없습니다.')
+      }
+      uploadReserved = true
+
       const downloads = await fetchDownloads(langCode, 'dubbingVideo')
       const rawVideoUrl = downloads?.videoFile?.videoDownloadLink
       if (!rawVideoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
       const videoUrl = rawVideoUrl.startsWith('http') ? rawVideoUrl : getPersoFileUrl(rawVideoUrl)
 
-      const titlePrefix = uploadAsShort ? '#Shorts ' : ''
       const allTranslations = await ensureTranslations()
       const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
-      const translated = allTranslations[langCode] ?? { title: baseTitle, description: settingsDescription || '' }
-      const ytTitle = `${titlePrefix}${translated.title}`
+      const translated = allTranslations[langCode] ?? { title: baseTitle, description: editableDescription }
+      const ytTitle = translated.title
       const langTags = Array.from(new Set([
         ...settingsTags,
         lang.name,
-        ...(uploadAsShort ? ['Shorts'] : []),
       ]))
       let srtContent: string | null = null
       if (shouldUploadCaptions) {
@@ -427,25 +525,22 @@ export function UploadStep() {
           langCode,
           videoUrl,
           title: ytTitle,
-          description: applyDescriptionFooter(translated.description),
+          description: applyDescriptionFooter(translated.description, langCode),
           tags: langTags,
           privacyStatus,
           language: langCode,
-          isShort: uploadAsShort,
+          isShort,
           uploadCaptions: shouldUploadCaptions,
           captionLanguage: toBcp47(langCode),
           // 빈 문자열로 두면 YouTube가 시청자 로케일에 맞춰 언어 이름 자동 표시.
           captionName: '',
           srtContent,
           selfDeclaredMadeForKids,
-          containsSyntheticMedia,
+          containsSyntheticMedia: shouldApplyAiDisclosure,
         },
       })
 
-      setYtUploads((prev) => ({
-        ...prev,
-        [langCode]: { status: 'done', progress: 100 },
-      }))
+      setYouTubeUploadState(langCode, { status: 'done', progress: 100 })
       addToast({
         type: 'success',
         title: `${lang.name} 업로드 예약됨`,
@@ -453,28 +548,33 @@ export function UploadStep() {
       })
     } catch (err) {
       const msg = err instanceof Error ? err.message : '큐 등록 실패'
-      setYtUploads((prev) => ({
-        ...prev,
-        [langCode]: { status: 'error', progress: 0, error: msg },
-      }))
+      if (uploadReserved) {
+        await dbMutation({
+          type: 'failJobLanguageYouTubeUpload',
+          payload: { jobId: dbJobId, langCode },
+        })
+      }
+      setYouTubeUploadState(langCode, { status: 'error', progress: 0, error: msg })
       addToast({ type: 'error', title: `${lang?.name} 큐 등록 실패`, message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, uploadAsShort, settingsTitle, settingsDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, containsSyntheticMedia, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter])
+  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, isShort, settingsTitle, editableDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, shouldApplyAiDisclosure, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter, setYouTubeUploadState])
 
-  const completedLangs = selectedLanguages.filter((code) => {
+  const completedLangs = useMemo(() => selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)
     return lp?.progressReason === 'COMPLETED' || lp?.progressReason === 'Completed'
-  })
+  }), [languageProgress, selectedLanguages])
 
-  const failedLangs = selectedLanguages.filter((code) => {
+  const failedLangs = useMemo(() => selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)
     return lp?.progressReason === 'FAILED' || lp?.progressReason === 'Failed' || lp?.progressReason === 'CANCELED'
-  })
+  }), [languageProgress, selectedLanguages])
 
   const anyUploading = Object.values(ytUploads).some((s) => s.status === 'uploading')
+  const hasPendingYouTubeUploads = completedLangs.some((code) => !isYouTubeUploadLocked(ytUploads[code]))
+  const hasAutoUploadCandidates = completedLangs.some((code) => !ytUploads[code])
 
   const handleUploadAll = useCallback(async () => {
-    const pending = completedLangs.filter((code) => ytUploads[code]?.status !== 'done')
+    const pending = completedLangs.filter((code) => !isYouTubeUploadLocked(ytUploads[code]))
     const CONCURRENCY = 2
     for (let i = 0; i < pending.length; i += CONCURRENCY) {
       const batch = pending.slice(i, i + CONCURRENCY)
@@ -483,7 +583,7 @@ export function UploadStep() {
   }, [completedLangs, ytUploads, handleYouTubeUpload])
 
   const handleQueueAll = useCallback(async () => {
-    const pending = completedLangs.filter((code) => ytUploads[code]?.status !== 'done')
+    const pending = completedLangs.filter((code) => !isYouTubeUploadLocked(ytUploads[code]))
     for (const code of pending) {
       await queueYouTubeUpload(code)
     }
@@ -520,10 +620,17 @@ export function UploadStep() {
     }
   }, [projectMap, spaceSeq, addToast])
 
+  const uploadCaptionsWithMetadata = useCallback(async (targetVideoId: string, langs: string[]) => {
+    if (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'channel') {
+      await applyTagsToExistingVideo(targetVideoId)
+    }
+    await uploadCaptions(targetVideoId, langs)
+  }, [applyTagsToExistingVideo, deliverableMode, uploadCaptions, videoSource?.type])
+
   const handleUploadCaptionsToVideo = useCallback(async (targetVideoId: string) => {
     const pending = completedLangs.filter((code) => captionUploads[code] !== 'done')
-    await uploadCaptions(targetVideoId, pending)
-  }, [completedLangs, captionUploads, uploadCaptions])
+    await uploadCaptionsWithMetadata(targetVideoId, pending)
+  }, [completedLangs, captionUploads, uploadCaptionsWithMetadata])
 
   // ─── Auto-chain: originalWithMultiAudio ──────────────────────────────
   // 1. Upload original (if file upload) → 2. Auto-upload captions → 3. Extension for audio tracks
@@ -544,8 +651,12 @@ export function UploadStep() {
         targetVideoId = await uploadOriginalToYouTube()
       }
 
+      if (targetVideoId && videoSource?.type === 'channel') {
+        await applyTagsToExistingVideo(targetVideoId)
+      }
+
       if (targetVideoId && shouldUploadCaptions) {
-        await uploadCaptions(targetVideoId, completedLangs)
+        await uploadCaptionsWithMetadata(targetVideoId, completedLangs)
       }
     }
 
@@ -557,11 +668,10 @@ export function UploadStep() {
   useEffect(() => {
     if (deliverableMode !== 'newDubbedVideos') return
     if (!uploadReviewConfirmed) return
-    if (autoUpload && isAuthenticated && completedLangs.length > 0 && !autoUploadTriggered.current && !anyUploading) {
-      autoUploadTriggered.current = true
+    if (autoUpload && isAuthenticated && hasAutoUploadCandidates && !anyUploading) {
       handleUploadAll()
     }
-  }, [deliverableMode, autoUpload, isAuthenticated, uploadReviewConfirmed, completedLangs.length, anyUploading, handleUploadAll])
+  }, [deliverableMode, autoUpload, isAuthenticated, uploadReviewConfirmed, hasAutoUploadCandidates, anyUploading, handleUploadAll])
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -692,7 +802,7 @@ export function UploadStep() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => uploadCaptions(multiAudioVideoId, [code])}
+                          onClick={() => uploadCaptionsWithMetadata(multiAudioVideoId, [code])}
                           disabled={!isAuthenticated}
                         >
                           <Upload className="h-3.5 w-3.5" />
@@ -840,8 +950,6 @@ export function UploadStep() {
                 <p>
                   자동 업로드: <span className="font-medium text-surface-700 dark:text-surface-300">{autoUpload ? 'ON' : 'OFF'}</span>
                   {' · '}
-                  Shorts: <span className="font-medium text-surface-700 dark:text-surface-300">{uploadAsShort ? 'ON' : 'OFF'}</span>
-                  {' · '}
                   공개: <span className="font-medium text-surface-700 dark:text-surface-300">{privacyStatus === 'public' ? '공개' : privacyStatus === 'unlisted' ? '일부 공개' : '비공개'}</span>
                 </p>
                 <p>
@@ -849,10 +957,10 @@ export function UploadStep() {
                   {' · '}
                   아동용: <span className="font-medium text-surface-700 dark:text-surface-300">{selfDeclaredMadeForKids ? '예' : '아니오'}</span>
                   {' · '}
-                  AI 합성 공개: <span className="font-medium text-surface-700 dark:text-surface-300">{containsSyntheticMedia ? 'ON' : 'OFF'}</span>
+                  AI 합성 고지: <span className="font-medium text-surface-700 dark:text-surface-300">{shouldApplyAiDisclosure ? '설명에 추가' : '추가 안 함'}</span>
                 </p>
                 {attachOriginalLink && originalYouTubeUrl && (
-                  <p className="truncate">원본 링크 첨부: {originalYouTubeUrl}</p>
+                  <p className="break-words">원본 링크 첨부: {originalYouTubeUrl}</p>
                 )}
               </div>
 
@@ -900,7 +1008,7 @@ export function UploadStep() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleYouTubeUpload(code)}
-                            disabled={anyUploading}
+                            disabled={anyUploading || isYouTubeUploadLocked(state)}
                           >
                             <Upload className="h-3.5 w-3.5" />
                             즉시
@@ -909,7 +1017,7 @@ export function UploadStep() {
                             variant="ghost"
                             size="sm"
                             onClick={() => queueYouTubeUpload(code)}
-                            disabled={anyUploading}
+                            disabled={anyUploading || isYouTubeUploadLocked(state)}
                           >
                             예약
                           </Button>
@@ -925,7 +1033,7 @@ export function UploadStep() {
                   <Button
                     className="flex-1"
                     onClick={handleUploadAll}
-                    disabled={anyUploading}
+                    disabled={anyUploading || !hasPendingYouTubeUploads}
                     loading={anyUploading}
                   >
                     <Upload className="h-4 w-4" />
@@ -935,7 +1043,7 @@ export function UploadStep() {
                     variant="secondary"
                     className="flex-1"
                     onClick={handleQueueAll}
-                    disabled={anyUploading}
+                    disabled={anyUploading || !hasPendingYouTubeUploads}
                   >
                     <Upload className="h-4 w-4" />
                     예약 (탭 닫아도 OK)

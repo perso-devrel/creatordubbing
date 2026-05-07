@@ -5,6 +5,38 @@ import { YouTubeError } from '@/lib/youtube/error'
 
 const YOUTUBE_API_BASE = 'https://www.googleapis.com'
 
+async function youtubeResponseError(
+  res: Response,
+  fallbackMessage: string,
+  code: string,
+): Promise<YouTubeError> {
+  const body = await res.text().catch(() => '')
+  let message = fallbackMessage
+
+  if (body) {
+    try {
+      const parsed = JSON.parse(body) as {
+        error?: {
+          message?: string
+          errors?: Array<{ reason?: string }>
+        }
+      }
+      const reason = parsed.error?.errors?.[0]?.reason
+      const googleMessage = parsed.error?.message
+      if (reason === 'quotaExceeded') {
+        message =
+          'YouTube API quota가 초과되어 내 영상을 불러올 수 없습니다. quota가 리셋된 뒤 다시 시도해주세요.'
+      } else if (googleMessage) {
+        message = fallbackMessage
+      }
+    } catch {
+      message = fallbackMessage
+    }
+  }
+
+  return new YouTubeError(res.status, message, code)
+}
+
 export async function fetchVideoStatistics(
   accessToken: string,
   videoIds: string[],
@@ -43,10 +75,9 @@ export async function fetchChannelStatistics(
     { headers: { Authorization: `Bearer ${accessToken}` } },
   )
   if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new YouTubeError(
-      res.status,
-      `Channel fetch failed: ${body}`,
+    throw await youtubeResponseError(
+      res,
+      'YouTube 채널 정보를 불러오지 못했습니다',
       'CHANNEL_FETCH_FAILED',
     )
   }
@@ -78,31 +109,67 @@ export async function fetchMyVideos(
   accessToken: string,
   maxResults = 10,
 ): Promise<MyVideoItem[]> {
-  const res = await fetch(
-    `${YOUTUBE_API_BASE}/youtube/v3/search?forMine=true&type=video&part=snippet&order=date&maxResults=${maxResults}`,
+  const channelRes = await fetch(
+    `${YOUTUBE_API_BASE}/youtube/v3/channels?part=contentDetails&mine=true`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   )
-  if (!res.ok) return []
+  if (!channelRes.ok) {
+    throw await youtubeResponseError(
+      channelRes,
+      'YouTube 채널 정보를 불러오지 못했습니다',
+      'MY_VIDEOS_CHANNEL_FAILED',
+    )
+  }
+
+  const channelData = (await channelRes.json()) as {
+    items?: Array<{
+      contentDetails?: {
+        relatedPlaylists?: {
+          uploads?: string
+        }
+      }
+    }>
+  }
+  const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
+  if (!uploadsPlaylistId) return []
+
+  const res = await fetch(
+    `${YOUTUBE_API_BASE}/youtube/v3/playlistItems?part=snippet&playlistId=${encodeURIComponent(uploadsPlaylistId)}&maxResults=${maxResults}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  if (!res.ok) {
+    throw await youtubeResponseError(
+      res,
+      'YouTube 영상 목록을 불러오지 못했습니다',
+      'MY_VIDEOS_FAILED',
+    )
+  }
 
   const data = (await res.json()) as {
     items?: Array<{
-      id: { videoId: string }
       snippet?: {
         title?: string
         publishedAt?: string
         thumbnails?: { medium?: { url?: string } }
+        resourceId?: { videoId?: string }
       }
     }>
   }
 
-  const base = (data.items || []).map((item) => ({
-    videoId: item.id.videoId,
-    title: item.snippet?.title || '',
-    thumbnail: item.snippet?.thumbnails?.medium?.url || '',
-    publishedAt: item.snippet?.publishedAt || '',
-  }))
+  const base = (data.items || [])
+    .map((item) => {
+      const videoId = item.snippet?.resourceId?.videoId
+      if (!videoId) return null
+      return {
+        videoId,
+        title: item.snippet?.title || '',
+        thumbnail: item.snippet?.thumbnails?.medium?.url || '',
+        publishedAt: item.snippet?.publishedAt || '',
+      }
+    })
+    .filter((item): item is Omit<MyVideoItem, 'privacyStatus'> => item !== null)
 
-  // search.list는 status를 안 돌려주므로 videos.list로 privacyStatus 보강.
+  // playlistItems.list does not include privacy status, so fetch it separately.
   const privacyById = await fetchPrivacyStatuses(accessToken, base.map((v) => v.videoId))
 
   return base.map((v) => ({
@@ -122,7 +189,13 @@ async function fetchPrivacyStatuses(
     `${YOUTUBE_API_BASE}/youtube/v3/videos?part=status&id=${videoIds.join(',')}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   )
-  if (!res.ok) return result
+  if (!res.ok) {
+    throw await youtubeResponseError(
+      res,
+      'YouTube 영상 공개 상태를 불러오지 못했습니다',
+      'MY_VIDEOS_STATUS_FAILED',
+    )
+  }
 
   const data = (await res.json()) as {
     items?: Array<{ id: string; status?: { privacyStatus?: string } }>

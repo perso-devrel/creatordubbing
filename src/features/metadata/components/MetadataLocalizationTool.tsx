@@ -40,9 +40,9 @@ export function MetadataLocalizationTool() {
   const addToast = useNotificationStore((state) => state.addToast)
   const { metadataTargetPreset, setMetadataTargetPreset } = useI18nStore()
   const { defaultLanguage } = useYouTubeSettingsStore()
-  const { data: videos = [], isLoading: loadingVideos } = useMyVideos(50)
 
   const [mode, setMode] = useState<Mode>('existing')
+  const { data: videos = [], isLoading: loadingVideos, error: videosError } = useMyVideos(50, mode === 'existing')
   const [videoId, setVideoId] = useState('')
   const [videoFile, setVideoFile] = useState<File | null>(null)
   /** 내 영상 모드에서 "불러오기"가 한 번이라도 성공했는지 — 하단 번역 카드 노출 게이트. */
@@ -328,6 +328,11 @@ export function MetadataLocalizationTool() {
                   })),
                 ]}
               />
+              {videosError && (
+                <p className="text-sm text-red-500">
+                  {videosError instanceof Error ? videosError.message : 'YouTube 영상 목록을 불러오지 못했습니다.'}
+                </p>
+              )}
             </div>
             <div className="flex items-end">
               <Button

@@ -25,7 +25,7 @@ vi.mock('@/lib/env', () => ({
   })),
   getClientEnv: vi.fn(() => ({
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: 'test-client-id',
-    NEXT_PUBLIC_PERSO_FILE_BASE_URL: 'https://perso.ai',
+    NEXT_PUBLIC_PERSO_FILE_BASE_URL: 'https://portal-media.perso.ai',
   })),
 }))
 

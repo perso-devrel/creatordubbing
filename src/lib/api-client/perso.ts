@@ -17,6 +17,15 @@ import { getJson, sendJson } from './shared'
 
 const PERSO = '/api/perso'
 
+function withExternalLang(
+  body: { spaceSeq: number; url: string },
+  lang?: string,
+) {
+  const normalizedLang = lang?.trim()
+  if (!normalizedLang || normalizedLang === 'auto') return body
+  return { ...body, lang: normalizedLang }
+}
+
 // ─── Spaces & Languages ───────────────────────────────────────
 
 export function getSpaces() {
@@ -32,21 +41,17 @@ export function getLanguages() {
 export function getExternalMetadata(
   spaceSeq: number,
   url: string,
-  lang = 'ko',
+  lang?: string,
 ): Promise<ExternalMetadataResponse> {
-  return sendJson(`${PERSO}/external/metadata`, 'POST', {
-    spaceSeq,
-    url,
-    lang,
-  })
+  return sendJson(`${PERSO}/external/metadata`, 'POST', withExternalLang({ spaceSeq, url }, lang))
 }
 
 export function uploadExternalVideo(
   spaceSeq: number,
   url: string,
-  lang = 'ko',
+  lang?: string,
 ): Promise<UploadVideoResponse> {
-  return sendJson(`${PERSO}/external/upload`, 'PUT', { spaceSeq, url, lang })
+  return sendJson(`${PERSO}/external/upload`, 'PUT', withExternalLang({ spaceSeq, url }, lang))
 }
 
 // ─── Direct file upload (SAS → Blob → register) ──────────────
@@ -65,10 +70,7 @@ export async function uploadFileToBlob(
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', sasUrl)
     xhr.setRequestHeader('x-ms-blob-type', 'BlockBlob')
-    xhr.setRequestHeader(
-      'Content-Type',
-      file.type || 'application/octet-stream',
-    )
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream')
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
         onProgress(Math.round((e.loaded / e.total) * 100))
@@ -185,10 +187,12 @@ export function updateSentenceTranslation(
 export function regenerateSentenceAudio(
   projectSeq: number,
   audioSentenceSeq: number,
+  targetText: string,
 ) {
   return sendJson<unknown>(
     `${PERSO}/script/regenerate?projectSeq=${projectSeq}&audioSentenceSeq=${audioSentenceSeq}`,
     'PATCH',
+    { targetText },
   )
 }
 
@@ -241,7 +245,7 @@ export async function getTranslatedSrt(
 // ─── Helper: resolve Perso file path to full URL ──────────────
 
 const PERSO_FILE_BASE =
-  process.env.NEXT_PUBLIC_PERSO_FILE_BASE_URL || 'https://perso.ai'
+  process.env.NEXT_PUBLIC_PERSO_FILE_BASE_URL || 'https://portal-media.perso.ai'
 
 export function getPersoFileUrl(path: string): string {
   if (!path) return ''

@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 20
     env:
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: test-google-client-id
-      NEXT_PUBLIC_PERSO_FILE_BASE_URL: https://perso.ai
+      NEXT_PUBLIC_PERSO_FILE_BASE_URL: https://portal-media.perso.ai
       PERSO_API_KEY: test-perso-key
       PERSO_API_BASE_URL: https://api.perso.ai
       TURSO_URL: http://localhost
