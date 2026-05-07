@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       return apiFail('BAD_REQUEST', 'uid and email required', 400)
     }
 
-    const { uid, email, displayName, photoURL, accessToken: bodyToken } = parsed.data
+    const { uid, displayName, photoURL, accessToken: bodyToken } = parsed.data
 
     // Resolve access token: body → httpOnly cookie → DB (refresh if expired)
     const cookieToken = req.cookies.get('google_access_token')?.value
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     await upsertUser({
       id: uid,
-      email,
+      email: googleUser.email,
       displayName: displayName ?? null,
       photoURL: photoURL ?? null,
       accessToken,
