@@ -58,6 +58,9 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦', region: 'middle-east' },
 ]
 
+/** 마케팅 카피와 메타데이터 등에서 참조하는 단일 출처. SUPPORTED_LANGUAGES 변경 시 자동 동기. */
+export const SUPPORTED_LANGUAGE_COUNT = SUPPORTED_LANGUAGES.length
+
 export function getLanguageByCode(code: string): Language | undefined {
   return SUPPORTED_LANGUAGES.find((l) => l.code === code)
 }

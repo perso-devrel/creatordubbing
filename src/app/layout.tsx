@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
+import { SUPPORTED_LANGUAGE_COUNT } from "@/utils/languages";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | Dubtube",
   },
   description:
-    "Perso.ai + YouTube API 기반 크리에이터 전용 10개 언어 자동 더빙 SaaS",
+    `Perso.ai + YouTube API 기반 크리에이터 전용 ${SUPPORTED_LANGUAGE_COUNT}개 언어 자동 더빙 SaaS`,
 };
 
 const themeInitScript = `try{if(localStorage.getItem('dubtube-theme')==='dark'||(!localStorage.getItem('dubtube-theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;

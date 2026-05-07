@@ -3,9 +3,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui'
 import { CREDIT_PACKS } from '@/features/billing/constants/plans'
 import { formatCurrency } from '@/utils/formatters'
+import { SUPPORTED_LANGUAGE_COUNT } from '@/utils/languages'
 
 const INCLUDED_FEATURES = [
-  '10개 언어 지원',
+  `${SUPPORTED_LANGUAGE_COUNT}개 언어 지원`,
   '1080p 출력',
   '워터마크 없음',
   '립싱크',
