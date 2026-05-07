@@ -307,7 +307,9 @@ function UploadRow({ item, userId }: UploadRowProps) {
             await ytUploadCaption({
               videoId: r.videoId,
               language: item.language_code,
-              name: `${langName} subtitles`,
+              // name 비워두면 YouTube가 시청자 로케일에 맞춰 언어 이름 자동 표시.
+              // "X subtitles" 같은 영어 고정 문구를 박으면 일본 시청자에게도 그대로 노출.
+              name: '',
               srtContent: srtText,
             })
           } catch {

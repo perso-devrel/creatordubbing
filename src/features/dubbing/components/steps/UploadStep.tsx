@@ -434,7 +434,8 @@ export function UploadStep() {
           isShort: uploadAsShort,
           uploadCaptions: shouldUploadCaptions,
           captionLanguage: toBcp47(langCode),
-          captionName: `${lang.name} subtitles`,
+          // 빈 문자열로 두면 YouTube가 시청자 로케일에 맞춰 언어 이름 자동 표시.
+          captionName: '',
           srtContent,
           selfDeclaredMadeForKids,
           containsSyntheticMedia,
