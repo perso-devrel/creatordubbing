@@ -31,18 +31,14 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
       value: 'originalWithMultiAudio',
       icon: Subtitles,
       title: '기존 영상에 자막 추가',
-      description: '검증이 끝나면 내 YouTube 영상에 번역 자막을 자동 업로드할 수 있습니다.',
-      disabled: true,
-      badge: '출시 예정',
+      description: '내 YouTube 영상에 번역 자막을 자동 업로드합니다.',
     })
   } else if (sourceType === 'upload') {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
       title: '원본 업로드 + 자막 추가',
-      description: '검증이 끝나면 원본 업로드 뒤 번역 자막을 자동 추가할 수 있습니다.',
-      disabled: true,
-      badge: '출시 예정',
+      description: '원본 영상을 YouTube에 업로드한 뒤, 번역 자막을 자동 추가합니다.',
     })
   }
 
