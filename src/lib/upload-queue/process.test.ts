@@ -50,7 +50,7 @@ const queueItem = {
   isShort: false,
   uploadCaptions: true,
   captionLanguage: 'en',
-  captionName: 'English subtitles',
+  captionName: '',
   srtContent: '1\n00:00:00,000 --> 00:00:01,000\nHello',
   selfDeclaredMadeForKids: false,
   containsSyntheticMedia: true,
@@ -111,7 +111,7 @@ describe('processUploadQueue', () => {
       accessToken: 'access-token',
       videoId: 'yt-123',
       language: 'en',
-      name: 'English subtitles',
+      name: '',
       srtContent: queueItem.srtContent,
     })
     expect(completeQueueItem).toHaveBeenCalledWith(10, 'yt-123')
