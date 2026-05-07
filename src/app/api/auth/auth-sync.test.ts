@@ -107,6 +107,15 @@ describe('POST /api/auth/sync', () => {
     expect(setCookie.some((c: string) => c.includes('google_access_token='))).toBe(false)
   })
 
+  it('ignores body email and uses Google-verified email when storing user', async () => {
+    mockGoogleUserinfo('u1', 'real@user.com')
+    const res = await POST(makeReq({ uid: 'u1', email: 'admin@spoofed.com', accessToken: 'tok-valid' }))
+    expect(res.status).toBe(200)
+    expect(upsertUser).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'u1', email: 'real@user.com' }),
+    )
+  })
+
   it('returns 500 on DB error', async () => {
     mockGoogleUserinfo('u1', 'a@b.com')
     vi.mocked(upsertUser).mockRejectedValueOnce(new Error('DB down'))

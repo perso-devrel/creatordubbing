@@ -22,14 +22,15 @@ const navItems = [
   { to: '/metadata', label: { ko: '메타데이터 번역', en: 'Metadata' }, icon: Globe2 },
   { to: '/batch', label: { ko: '배치 큐', en: 'Batch queue' }, icon: Layers },
   { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, icon: Upload },
-  { to: '/ops', label: { ko: '운영 관측', en: 'Operations' }, icon: Activity },
+  { to: '/ops', label: { ko: '운영 관측', en: 'Operations' }, icon: Activity, opsAdminOnly: true },
   { to: '/youtube', label: { ko: 'YouTube', en: 'YouTube' }, icon: Video },
   { to: '/billing', label: { ko: '결제', en: 'Billing' }, icon: CreditCard },
 ]
 
-export function Sidebar() {
+export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
   const pathname = usePathname()
   const appLocale = useI18nStore((state) => state.appLocale)
+  const visibleItems = navItems.filter((item) => !item.opsAdminOnly || isOpsAdmin)
 
   return (
     <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900">
@@ -43,7 +44,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
-        {navItems.map(({ to, label, icon: Icon }) => {
+        {visibleItems.map(({ to, label, icon: Icon }) => {
           const isActive = pathname === to || pathname?.startsWith(to + '/')
           return (
             <Link
