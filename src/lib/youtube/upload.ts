@@ -23,12 +23,32 @@ export interface YouTubeUploadInput {
   localizations?: Record<string, YouTubeLocalization>
 }
 
-export async function uploadVideoToYouTube(
-  input: YouTubeUploadInput,
-): Promise<YouTubeUploadResult> {
+export interface YouTubeUploadSessionInput {
+  accessToken: string
+  contentLength: number
+  contentType: string
+  title: string
+  description: string
+  tags: string[]
+  categoryId?: string
+  privacyStatus?: 'public' | 'unlisted' | 'private'
+  selfDeclaredMadeForKids?: boolean
+  containsSyntheticMedia?: boolean
+  language?: string
+  localizations?: Record<string, YouTubeLocalization>
+}
+
+/**
+ * YouTube resumable upload 세션을 시작하고 Location 헤더의 session URI를 반환한다.
+ * 반환된 URI로 PUT하면 YouTube에 영상 바이너리가 직접 업로드된다 — Vercel 함수 body 한도(4.5MB)와 무관.
+ */
+export async function initYouTubeResumableUpload(
+  input: YouTubeUploadSessionInput,
+): Promise<{ uploadUrl: string }> {
   const {
     accessToken,
-    videoBlob,
+    contentLength,
+    contentType,
     title,
     description,
     tags,
@@ -59,7 +79,6 @@ export async function uploadVideoToYouTube(
   if (hasLocalizations) {
     metadata.localizations = localizations
   }
-  // localizations가 있으면 part에 포함되도록 아래 URL에서 동적으로 합친다.
   const parts = ['snippet', 'status', ...(hasLocalizations ? ['localizations'] : [])].join(',')
 
   const initRes = await fetch(
@@ -69,8 +88,8 @@ export async function uploadVideoToYouTube(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json; charset=UTF-8',
-        'X-Upload-Content-Length': String(videoBlob.size),
-        'X-Upload-Content-Type': videoBlob.type || 'video/mp4',
+        'X-Upload-Content-Length': String(contentLength),
+        'X-Upload-Content-Type': contentType || 'video/mp4',
       },
       body: JSON.stringify(metadata),
     },
@@ -93,6 +112,29 @@ export async function uploadVideoToYouTube(
       'NO_UPLOAD_URL',
     )
   }
+
+  return { uploadUrl }
+}
+
+export async function uploadVideoToYouTube(
+  input: YouTubeUploadInput,
+): Promise<YouTubeUploadResult> {
+  const { accessToken, videoBlob, title } = input
+
+  const { uploadUrl } = await initYouTubeResumableUpload({
+    accessToken,
+    contentLength: videoBlob.size,
+    contentType: videoBlob.type || 'video/mp4',
+    title,
+    description: input.description,
+    tags: input.tags,
+    categoryId: input.categoryId,
+    privacyStatus: input.privacyStatus,
+    selfDeclaredMadeForKids: input.selfDeclaredMadeForKids,
+    containsSyntheticMedia: input.containsSyntheticMedia,
+    language: input.language,
+    localizations: input.localizations,
+  })
 
   const putRes = await fetch(uploadUrl, {
     method: 'PUT',

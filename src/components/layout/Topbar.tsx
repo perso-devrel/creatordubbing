@@ -9,7 +9,11 @@ import { Button } from '@/components/ui'
 import { useRouter } from 'next/navigation'
 import { OpsAlertButton } from '@/features/ops/components/OpsAlertButton'
 
-export function Topbar() {
+interface TopbarProps {
+  isOpsAdmin?: boolean
+}
+
+export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
   const { mode, toggle } = useThemeStore()
   const { user, clear } = useAuthStore()
   const router = useRouter()
@@ -29,7 +33,7 @@ export function Topbar() {
         <Button variant="ghost" size="sm" onClick={toggle} aria-label="테마 전환">
           {mode === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
         </Button>
-        <OpsAlertButton />
+        {isOpsAdmin && <OpsAlertButton />}
 
         {user && (
           <div className="ml-2 flex items-center gap-3">

@@ -25,33 +25,78 @@ export async function ytUploadVideo(params: {
   /** BCP-47 language code → { title, description } 맵. snippet.localizations로 전달. */
   localizations?: Record<string, { title: string; description: string }>
 }): Promise<YouTubeUploadResult> {
-  const form = new FormData()
+  // 1. 영상 URL이 있으면 서버가 fetch + 업로드 (더빙 흐름).
   if (params.videoUrl) {
+    const form = new FormData()
     form.append('videoUrl', params.videoUrl)
-  } else if (params.video) {
-    form.append('video', params.video)
-  }
-  form.append('title', params.title)
-  form.append('description', params.description)
-  form.append('tags', params.tags.join(','))
-  if (params.categoryId) form.append('categoryId', params.categoryId)
-  if (params.privacyStatus) form.append('privacyStatus', params.privacyStatus)
-  if (params.selfDeclaredMadeForKids !== undefined) {
-    form.append('selfDeclaredMadeForKids', String(params.selfDeclaredMadeForKids))
-  }
-  if (params.containsSyntheticMedia !== undefined) {
-    form.append('containsSyntheticMedia', String(params.containsSyntheticMedia))
-  }
-  if (params.language) form.append('language', params.language)
-  if (params.localizations && Object.keys(params.localizations).length > 0) {
-    form.append('localizations', JSON.stringify(params.localizations))
+    form.append('title', params.title)
+    form.append('description', params.description)
+    form.append('tags', params.tags.join(','))
+    if (params.categoryId) form.append('categoryId', params.categoryId)
+    if (params.privacyStatus) form.append('privacyStatus', params.privacyStatus)
+    if (params.selfDeclaredMadeForKids !== undefined) {
+      form.append('selfDeclaredMadeForKids', String(params.selfDeclaredMadeForKids))
+    }
+    if (params.containsSyntheticMedia !== undefined) {
+      form.append('containsSyntheticMedia', String(params.containsSyntheticMedia))
+    }
+    if (params.language) form.append('language', params.language)
+    if (params.localizations && Object.keys(params.localizations).length > 0) {
+      form.append('localizations', JSON.stringify(params.localizations))
+    }
+
+    const res = await fetch(`${YT}/upload`, {
+      method: 'POST',
+      body: form,
+    })
+    return json<YouTubeUploadResult>(res)
   }
 
-  const res = await fetch(`${YT}/upload`, {
+  // 2. 로컬 영상 파일은 브라우저 → YouTube 직접 resumable upload로 보낸다.
+  //    Vercel 함수의 4.5MB 본문 한도를 우회하고, 서버는 session URI 발급만 책임진다.
+  if (!params.video) {
+    throw new Error('영상 파일 또는 videoUrl이 필요합니다')
+  }
+  const video = params.video
+
+  const sessionRes = await fetch(`${YT}/upload-session`, {
     method: 'POST',
-    body: form,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contentType: video.type || 'video/mp4',
+      contentLength: video.size,
+      title: params.title,
+      description: params.description,
+      tags: params.tags,
+      categoryId: params.categoryId,
+      privacyStatus: params.privacyStatus,
+      selfDeclaredMadeForKids: params.selfDeclaredMadeForKids,
+      containsSyntheticMedia: params.containsSyntheticMedia,
+      language: params.language,
+      localizations: params.localizations,
+    }),
   })
-  return json<YouTubeUploadResult>(res)
+  const session = await json<{ uploadUrl: string }>(sessionRes)
+
+  const putRes = await fetch(session.uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': video.type || 'video/mp4' },
+    body: video,
+  })
+  if (!putRes.ok) {
+    const errText = await putRes.text().catch(() => '')
+    throw new Error(`YouTube 업로드 실패: ${putRes.status} ${errText}`)
+  }
+  const data = (await putRes.json()) as {
+    id: string
+    snippet?: { title?: string }
+    status?: { uploadStatus?: string }
+  }
+  return {
+    videoId: data.id,
+    title: data.snippet?.title || params.title,
+    status: data.status?.uploadStatus || 'uploaded',
+  }
 }
 
 export async function ytUploadCaption(params: {
