@@ -76,6 +76,20 @@ const formBooleanSchema = z
     return v === 'true'
   })
 
+export const uploadSessionBodySchema = z.object({
+  contentType: z.string().min(1).max(200),
+  contentLength: z.number().int().positive(),
+  title: z.string().default(''),
+  description: z.string().default(''),
+  tags: z.array(z.string()).default([]),
+  categoryId: z.string().optional(),
+  privacyStatus: z.enum(['public', 'unlisted', 'private']).optional(),
+  selfDeclaredMadeForKids: z.boolean().optional(),
+  containsSyntheticMedia: z.boolean().optional(),
+  language: z.string().optional(),
+  localizations: localizationsRecordSchema.optional(),
+})
+
 export const uploadFormSchema = z.object({
   title: z.string().default(''),
   description: z.string().default(''),
