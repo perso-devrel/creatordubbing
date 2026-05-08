@@ -53,7 +53,7 @@ export function SettingsClient() {
     value: preset.id,
     label: t(preset.labelKey),
   }))
-  const defaultTagsString = defaultTags.join(', ')
+  const [defaultTagsInput, setDefaultTagsInput] = useState(() => defaultTags.join(', '))
   const youtubeSectionRef = useRef<HTMLDivElement>(null)
 
   const selectedPreset = MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === metadataTargetPreset)
@@ -71,8 +71,15 @@ export function SettingsClient() {
     return () => window.cancelAnimationFrame(frame)
   }, [])
 
-  const handleDefaultTagsChange = (value: string) => {
-    const parsed = value
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDefaultTagsInput(defaultTags.join(', '))
+    }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [defaultTags])
+
+  const commitDefaultTags = () => {
+    const parsed = defaultTagsInput
       .split(',')
       .map((tag) => tag.trim())
       .filter(Boolean)
@@ -133,8 +140,9 @@ export function SettingsClient() {
           />
           <Input
             label={t('app.app.youtube.page.defaultTags')}
-            value={defaultTagsString}
-            onChange={(event) => handleDefaultTagsChange(event.target.value)}
+            value={defaultTagsInput}
+            onChange={(event) => setDefaultTagsInput(event.target.value)}
+            onBlur={commitDefaultTags}
             placeholder={t('app.app.youtube.page.commaSeparatedEGDubtubeAIDubbingVlog')}
           />
           <Select

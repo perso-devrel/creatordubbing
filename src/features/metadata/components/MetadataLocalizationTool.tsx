@@ -57,6 +57,22 @@ export function MetadataLocalizationTool() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [tags, setTags] = useState<string[]>(() => [...defaultTags])
+  // 입력 도중엔 원시 문자열을 유지해 콤마/공백을 자유롭게 입력 가능.
+  // blur 시점에만 배열로 정규화한다.
+  const [tagsInput, setTagsInput] = useState(() => defaultTags.join(', '))
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setTagsInput(tags.join(', '))
+    }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [tags])
+  const commitTags = () => {
+    const parsed = tagsInput
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+    setTags(parsed)
+  }
   const [targetLangs, setTargetLangs] = useState<string[]>(
     () => buildInitialTargets(metadataTargetPreset, defaultLanguage),
   )
@@ -514,14 +530,9 @@ export function MetadataLocalizationTool() {
             <div>
               <Input
                 label={t('features.metadata.components.metadataLocalizationTool.tags')}
-                value={tags.join(', ')}
-                onChange={(event) => {
-                  const parsed = event.target.value
-                    .split(',')
-                    .map((t) => t.trim())
-                    .filter(Boolean)
-                  setTags(parsed)
-                }}
+                value={tagsInput}
+                onChange={(event) => setTagsInput(event.target.value)}
+                onBlur={commitTags}
                 placeholder={t('features.metadata.components.metadataLocalizationTool.commaSeparatedEGGamingVlog')}
               />
               <p className="mt-1.5 text-xs text-surface-500 dark:text-surface-300">

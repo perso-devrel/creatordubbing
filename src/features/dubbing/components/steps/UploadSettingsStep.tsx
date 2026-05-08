@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactNode, useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Captions, Languages, Link2, ShieldCheck, Sparkles, Upload } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
@@ -80,10 +80,18 @@ export function UploadSettingsStep() {
     if (Object.keys(patch).length > 0) setUploadSettings(patch)
   }, [locale, t, videoMeta?.id, videoMeta?.title, setUploadSettings])
 
-  const tagsString = uploadSettings.tags.join(', ')
+  // 입력 도중엔 원시 문자열을 유지해 콤마/공백을 자유롭게 입력 가능.
+  // blur 시점에만 배열로 정규화해 store에 반영한다.
+  const [tagsInput, setTagsInput] = useState(() => uploadSettings.tags.join(', '))
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setTagsInput(uploadSettings.tags.join(', '))
+    }, 0)
+    return () => window.clearTimeout(timeout)
+  }, [uploadSettings.tags])
 
-  const handleTagsChange = (value: string) => {
-    const parsed = value
+  const commitTags = () => {
+    const parsed = tagsInput
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean)
@@ -166,8 +174,9 @@ export function UploadSettingsStep() {
 
             <Input
               label={t('features.dubbing.components.steps.uploadSettingsStep.tagsCommaSeparated')}
-              value={tagsString}
-              onChange={(e) => handleTagsChange(e.target.value)}
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              onBlur={commitTags}
               placeholder={t('features.dubbing.components.steps.uploadSettingsStep.dubtubeAIDubbingReview')}
             />
             <p className="-mt-2 text-xs text-surface-500 dark:text-surface-300">
@@ -225,8 +234,9 @@ export function UploadSettingsStep() {
 
             <Input
               label={t('features.dubbing.components.steps.uploadSettingsStep.tagsCommaSeparated2')}
-              value={tagsString}
-              onChange={(e) => handleTagsChange(e.target.value)}
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              onBlur={commitTags}
               placeholder={t('features.dubbing.components.steps.uploadSettingsStep.dubtubeAIDubbingCaptions')}
             />
             <p className="-mt-2 text-xs text-surface-500 dark:text-surface-300">
