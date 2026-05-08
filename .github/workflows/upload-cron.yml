@@ -1,0 +1,47 @@
+name: Process upload queue
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upload-cron
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate config
+        run: |
+          if [ -z "${{ vars.PROD_BASE_URL }}" ]; then
+            echo "::error::Missing repo variable PROD_BASE_URL (Settings → Secrets and variables → Actions → Variables)"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "::error::Missing repo secret CRON_SECRET"
+            exit 1
+          fi
+
+      - name: Hit upload-queue endpoint
+        env:
+          BASE_URL: ${{ vars.PROD_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          URL="${BASE_URL%/}/api/cron/process-uploads"
+          echo "Calling $URL"
+          HTTP_CODE=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 280)
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/body.txt
+          echo
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            exit 1
+          fi
