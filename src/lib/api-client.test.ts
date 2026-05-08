@@ -296,8 +296,15 @@ describe('Perso mutation endpoints', () => {
 // ── YouTube upload/caption wrappers ─────────────────────────
 
 describe('ytUploadVideo', () => {
-  it('sends FormData with all fields', async () => {
-    mockFetch.mockResolvedValueOnce(okResponse({ videoId: 'yt1' }))
+  it('binary 모드: /upload-session에 메타데이터 JSON을 보내고 받은 URL로 영상 PUT', async () => {
+    // 1) /upload-session 응답
+    mockFetch.mockResolvedValueOnce(okResponse({ uploadUrl: 'https://upload.googleapis.com/x/y' }))
+    // 2) YouTube로의 직접 PUT 응답 (envelope 아님 — 실제 YouTube 응답 형태)
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 'yt1', snippet: { title: 'Test' }, status: { uploadStatus: 'uploaded' } }),
+    } as unknown as Response)
+
     const blob = new Blob(['fake'], { type: 'video/mp4' })
     const result = await ytUploadVideo({
       video: blob,
@@ -311,19 +318,34 @@ describe('ytUploadVideo', () => {
       language: 'ko',
     })
     expect(result.videoId).toBe('yt1')
-    expect(mockFetch.mock.calls[0][0]).toBe('/api/youtube/upload')
-    const body = mockFetch.mock.calls[0][1].body as FormData
-    expect(body.get('title')).toBe('Test')
-    expect(body.get('tags')).toBe('a,b')
-    expect(body.get('categoryId')).toBe('22')
-    expect(body.get('privacyStatus')).toBe('unlisted')
-    expect(body.get('selfDeclaredMadeForKids')).toBe('false')
-    expect(body.get('containsSyntheticMedia')).toBe('true')
-    expect(body.get('language')).toBe('ko')
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/youtube/upload-session')
+    const sessionBody = JSON.parse(mockFetch.mock.calls[0][1].body as string)
+    expect(sessionBody).toMatchObject({
+      contentType: 'video/mp4',
+      title: 'Test',
+      description: 'desc',
+      tags: ['a', 'b'],
+      categoryId: '22',
+      privacyStatus: 'unlisted',
+      selfDeclaredMadeForKids: false,
+      containsSyntheticMedia: true,
+      language: 'ko',
+    })
+    expect(sessionBody.contentLength).toBeGreaterThan(0)
+
+    expect(mockFetch.mock.calls[1][0]).toBe('https://upload.googleapis.com/x/y')
+    expect(mockFetch.mock.calls[1][1].method).toBe('PUT')
+    expect(mockFetch.mock.calls[1][1].body).toBe(blob)
   })
 
-  it('omits optional fields when not provided', async () => {
-    mockFetch.mockResolvedValueOnce(okResponse({ videoId: 'yt2' }))
+  it('binary 모드: 선택 필드는 정의되지 않은 채로 메타데이터 JSON에 포함', async () => {
+    mockFetch.mockResolvedValueOnce(okResponse({ uploadUrl: 'https://upload.googleapis.com/x/y' }))
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 'yt2' }),
+    } as unknown as Response)
+
     const blob = new Blob(['fake'], { type: 'video/mp4' })
     await ytUploadVideo({
       video: blob,
@@ -331,12 +353,28 @@ describe('ytUploadVideo', () => {
       description: '',
       tags: [],
     })
+    const sessionBody = JSON.parse(mockFetch.mock.calls[0][1].body as string)
+    expect(sessionBody.categoryId).toBeUndefined()
+    expect(sessionBody.privacyStatus).toBeUndefined()
+    expect(sessionBody.selfDeclaredMadeForKids).toBeUndefined()
+    expect(sessionBody.containsSyntheticMedia).toBeUndefined()
+    expect(sessionBody.language).toBeUndefined()
+  })
+
+  it('videoUrl 모드: FormData로 /upload에 POST (서버가 fetch + 업로드)', async () => {
+    mockFetch.mockResolvedValueOnce(okResponse({ videoId: 'yt3' }))
+    const result = await ytUploadVideo({
+      videoUrl: 'https://example.blob.core.windows.net/x/y.mp4',
+      title: 'URL Mode',
+      description: 'd',
+      tags: ['x'],
+    })
+    expect(result.videoId).toBe('yt3')
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/youtube/upload')
     const body = mockFetch.mock.calls[0][1].body as FormData
-    expect(body.get('categoryId')).toBeNull()
-    expect(body.get('privacyStatus')).toBeNull()
-    expect(body.get('selfDeclaredMadeForKids')).toBeNull()
-    expect(body.get('containsSyntheticMedia')).toBeNull()
-    expect(body.get('language')).toBeNull()
+    expect(body.get('videoUrl')).toBe('https://example.blob.core.windows.net/x/y.mp4')
+    expect(body.get('title')).toBe('URL Mode')
+    expect(body.get('tags')).toBe('x')
   })
 })
 

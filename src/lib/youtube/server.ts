@@ -4,7 +4,9 @@ export { YouTubeError } from '@/lib/youtube/error'
 export {
   uploadVideoToYouTube,
   uploadCaptionToYouTube,
+  initYouTubeResumableUpload,
   type YouTubeUploadInput,
+  type YouTubeUploadSessionInput,
   type CaptionUploadInput,
 } from '@/lib/youtube/upload'
 export {
