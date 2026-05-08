@@ -1,9 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, FileVideo, Languages, Loader2, RefreshCw, Search, Send, Upload } from 'lucide-react'
-import { Badge, Button, Card, CardTitle, Input, Select } from '@/components/ui'
-import { useMyVideos } from '@/hooks/useYouTubeData'
+import { Badge, Button, Card, CardTitle, Input, Modal, Select, Toggle } from '@/components/ui'
+import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { translateMetadata } from '@/lib/api-client/translate'
 import {
   ytFetchVideoMetadata,
@@ -15,6 +15,7 @@ import { getMarketLanguagePreset, MARKET_LANGUAGE_PRESETS } from '@/lib/i18n/con
 import { useI18nStore } from '@/stores/i18nStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
+import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
 import { SUPPORTED_LANGUAGES, fromBcp47, getLanguageByCode, toBcp47 } from '@/utils/languages'
 import { cn } from '@/utils/cn'
 
@@ -39,7 +40,8 @@ function buildInitialTargets(presetId: string, sourceLang: string, exclude: Set<
 export function MetadataLocalizationTool() {
   const addToast = useNotificationStore((state) => state.addToast)
   const { metadataTargetPreset, setMetadataTargetPreset } = useI18nStore()
-  const { defaultLanguage, defaultTags } = useYouTubeSettingsStore()
+  const { defaultLanguage, defaultTags, defaultPrivacy } = useYouTubeSettingsStore()
+  const { data: channel } = useChannelStats()
 
   const [mode, setMode] = useState<Mode>('existing')
   const { data: videos = [], isLoading: loadingVideos, error: videosError } = useMyVideos(50, mode === 'existing')
@@ -62,6 +64,25 @@ export function MetadataLocalizationTool() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [query, setQuery] = useState('')
+
+  // 새 영상 업로드 확인 모달 상태. 채널·태그·대상 언어는 읽기전용으로 보여주고,
+  // 공개 범위(기본: 사용자 설정)와 유아용 여부(기본: false)만 모달에서 조정한다.
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [uploadPrivacy, setUploadPrivacy] = useState<PrivacyStatus>(defaultPrivacy)
+  const [uploadMadeForKids, setUploadMadeForKids] = useState(false)
+  const [uploadConfirmed, setUploadConfirmed] = useState(false)
+  useEffect(() => {
+    // 사용자가 /youtube에서 기본 공개 설정을 바꾸면 모달 미열림 상태에서 동기화.
+    if (!showUploadModal) setUploadPrivacy(defaultPrivacy)
+  }, [defaultPrivacy, showUploadModal])
+
+  const openUploadModal = () => {
+    setUploadPrivacy(defaultPrivacy)
+    setUploadMadeForKids(false)
+    setUploadConfirmed(false)
+    setShowUploadModal(true)
+  }
+  const closeUploadModal = () => setShowUploadModal(false)
 
   const filteredVideos = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -199,14 +220,19 @@ export function MetadataLocalizationTool() {
         title: title.trim(),
         description,
         tags,
-        privacyStatus: 'private',
+        privacyStatus: uploadPrivacy,
+        selfDeclaredMadeForKids: uploadMadeForKids,
         language: toBcp47(sourceLang),
         localizations,
       })
+      const privacyLabel =
+        uploadPrivacy === 'public' ? '공개'
+          : uploadPrivacy === 'unlisted' ? '일부 공개'
+            : '비공개'
       addToast({
         type: 'success',
         title: 'YouTube 업로드 완료',
-        message: `videoId: ${result.videoId} (비공개로 업로드되었습니다)`,
+        message: `videoId: ${result.videoId} (${privacyLabel}로 업로드되었습니다)`,
       })
       // 업로드 후 폼 초기화 — 같은 파일 중복 업로드 방지.
       setVideoFile(null)
@@ -214,6 +240,7 @@ export function MetadataLocalizationTool() {
       setDescription('')
       setTags([...defaultTags])
       setTranslations({})
+      setShowUploadModal(false)
     } catch (err) {
       addToast({
         type: 'error',
@@ -555,7 +582,7 @@ export function MetadataLocalizationTool() {
             </Button>
           ) : (
             <Button
-              onClick={handleUploadNew}
+              onClick={openUploadModal}
               loading={uploading}
               disabled={!canUpload || uploading}
             >
@@ -591,7 +618,7 @@ export function MetadataLocalizationTool() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleUploadNew}
+                onClick={openUploadModal}
                 loading={uploading}
                 disabled={!canUpload || uploading}
               >
@@ -640,6 +667,93 @@ export function MetadataLocalizationTool() {
             })}
           </div>
         </Card>
+      )}
+
+      {mode === 'new' && (
+        <Modal
+          open={showUploadModal}
+          onClose={closeUploadModal}
+          title="YouTube 업로드 확인"
+          size="lg"
+        >
+          <div className="space-y-5">
+            <div className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">채널</p>
+              <p className="mt-1 text-sm text-surface-900 dark:text-surface-100">
+                {channel ? `${channel.title} · 구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}` : '연결된 채널 정보 없음'}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">대상 언어 ({Object.keys(translations).length}개)</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {Object.keys(translations).map((code) => {
+                  const lang = getLanguageByCode(code) ?? getLanguageByCode(code.split('-')[0])
+                  return (
+                    <Badge key={code} variant="brand">
+                      {lang ? `${lang.flag} ${lang.name}` : code}
+                    </Badge>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">태그</p>
+              <p className="mt-1 text-sm text-surface-900 dark:text-surface-100">
+                {tags.length > 0 ? tags.join(', ') : <span className="text-surface-400">없음</span>}
+              </p>
+            </div>
+
+            <Select
+              label="공개 범위"
+              value={uploadPrivacy}
+              onChange={(e) => setUploadPrivacy(e.target.value as PrivacyStatus)}
+              options={[
+                { value: 'private', label: '비공개 (private)' },
+                { value: 'unlisted', label: '일부 공개 (unlisted)' },
+                { value: 'public', label: '공개 (public)' },
+              ]}
+            />
+            <p className="-mt-3 text-xs text-surface-400">
+              YouTube 설정 페이지의 기본값으로 채워져 있습니다. 이 영상에만 적용할 값으로 변경 가능.
+            </p>
+
+            <div className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+              <div>
+                <p className="text-sm font-medium text-surface-900 dark:text-white">아동용 영상</p>
+                <p className="text-xs text-surface-500">YouTube의 아동용 콘텐츠 정책(COPPA)에 따라 표시. 일반 영상은 끄세요.</p>
+              </div>
+              <Toggle checked={uploadMadeForKids} onChange={setUploadMadeForKids} />
+            </div>
+
+            <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+              <input
+                type="checkbox"
+                checked={uploadConfirmed}
+                onChange={(e) => setUploadConfirmed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus-ring"
+              />
+              <span className="text-sm text-surface-700 dark:text-surface-300">
+                위 채널, 공개 범위, 태그, 아동용 등 설정들을 확인했으며 업로드는 진행합니다.
+              </span>
+            </label>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="outline" onClick={closeUploadModal} disabled={uploading}>
+              취소
+            </Button>
+            <Button
+              onClick={handleUploadNew}
+              loading={uploading}
+              disabled={!uploadConfirmed || uploading}
+            >
+              <Upload className="h-4 w-4" />
+              업로드
+            </Button>
+          </div>
+        </Modal>
       )}
     </div>
   )
