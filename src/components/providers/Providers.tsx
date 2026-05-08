@@ -8,6 +8,7 @@ import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18nStore } from '@/stores/i18nStore'
 import { restoreSession } from '@/lib/google-auth'
+import { useUserPreferencesSync } from '@/hooks/useUserPreferencesSync'
 
 function ThemeHydrator() {
   useEffect(() => {
@@ -58,6 +59,12 @@ function I18nHydrator() {
   return null
 }
 
+/** youtubeSettingsStore ↔ /api/user/preferences 양방향 동기화. QueryClientProvider 안쪽에서 mount되어야 함. */
+function UserPreferencesSync() {
+  useUserPreferencesSync()
+  return null
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [client] = useState(() => queryClient)
   return (
@@ -65,6 +72,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <ThemeHydrator />
       <I18nHydrator />
       <AuthHydrator />
+      <UserPreferencesSync />
       {children}
       <ToastContainer />
     </QueryClientProvider>

@@ -6,6 +6,8 @@ export {
   updateUserCredits,
   deductUserMinutes,
   addUserCredits,
+  getUserPreferencesRaw,
+  setUserPreferencesRaw,
 } from './users'
 
 export {

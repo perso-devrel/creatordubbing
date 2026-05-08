@@ -1,7 +1,6 @@
 'use client'
 
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
 
 interface YouTubeSettingsState {
@@ -19,18 +18,30 @@ interface YouTubeSettingsState {
   setDefaultPrivacy: (v: PrivacyStatus) => void
   setDefaultLanguage: (v: string) => void
   setDefaultTags: (v: string[]) => void
+  reset: () => void
 }
 
-export const useYouTubeSettingsStore = create<YouTubeSettingsState>()(
-  persist(
-    (set) => ({
-      defaultPrivacy: 'private',
-      defaultLanguage: 'ko',
-      defaultTags: ['Dubtube', 'AI더빙', 'dubbed'],
-      setDefaultPrivacy: (v) => set({ defaultPrivacy: v }),
-      setDefaultLanguage: (v) => set({ defaultLanguage: v }),
-      setDefaultTags: (v) => set({ defaultTags: v }),
-    }),
-    { name: 'dubtube-youtube-settings' },
-  ),
+const INITIAL_YOUTUBE_SETTINGS = {
+  defaultPrivacy: 'private' as PrivacyStatus,
+  defaultLanguage: 'ko',
+  defaultTags: ['Dubtube', 'AI더빙', 'dubbed'],
+}
+
+/**
+ * 인메모리 캐시. 서버(/api/user/preferences)가 source of truth이며,
+ * 로그인 직후 useUserPreferencesSync 훅이 hydrate한다.
+ * 사용자가 값을 바꾸면 동일 훅이 debounced PUT으로 서버에 반영한다.
+ *
+ * localStorage 영속화는 일부러 사용하지 않는다 — 다른 사용자가 같은 브라우저로
+ * 로그인했을 때 이전 사용자의 설정이 새는 것을 방지하기 위함.
+ */
+export const useYouTubeSettingsStore = create<YouTubeSettingsState>(
+  (set) => ({
+    ...INITIAL_YOUTUBE_SETTINGS,
+    setDefaultPrivacy: (v) => set({ defaultPrivacy: v }),
+    setDefaultLanguage: (v) => set({ defaultLanguage: v }),
+    setDefaultTags: (v) => set({ defaultTags: v }),
+    // 계정 전환 직후 서버에서 새 값을 받기 전, 이전 사용자 설정이 잠시 노출되지 않도록 초기값으로 되돌린다.
+    reset: () => set({ ...INITIAL_YOUTUBE_SETTINGS, defaultTags: [...INITIAL_YOUTUBE_SETTINGS.defaultTags] }),
+  }),
 )
