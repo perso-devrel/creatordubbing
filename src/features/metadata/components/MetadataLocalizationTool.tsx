@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Check, FileVideo, Languages, Loader2, RefreshCw, Search, Send, Upload } from 'lucide-react'
+import { Check, FileVideo, Languages, Loader2, RefreshCw, Search, Upload } from 'lucide-react'
 import { Badge, Button, Card, CardTitle, Input, Modal, Select, Toggle } from '@/components/ui'
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { translateMetadata } from '@/lib/api-client/translate'
@@ -95,6 +95,14 @@ export function MetadataLocalizationTool() {
   const canTranslate = title.trim().length > 0 && targetLangs.length > 0
   const canApply = mode === 'existing' && videoId && title.trim().length > 0 && Object.keys(translations).length > 0
   const canUpload = mode === 'new' && videoFile && title.trim().length > 0 && Object.keys(translations).length > 0
+  /**
+   * 사용자가 선택한 대상 언어 모두에 대해 번역(title 채워짐)이 준비됐는지.
+   * 이 값이 true면 "업로드/적용" 버튼만, false면 "번역 생성" 버튼만 노출한다.
+   * 사용자가 새 언어를 추가하면 자연스럽게 false가 되어 다시 번역 생성으로 돌아간다.
+   */
+  const allTargetsTranslated =
+    targetLangs.length > 0 &&
+    targetLangs.every((code) => translations[code]?.title?.trim().length)
 
   const switchMode = (next: Mode) => {
     if (next === mode) return
@@ -562,16 +570,16 @@ export function MetadataLocalizationTool() {
         </div>
 
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={handleTranslate}
-            loading={translating}
-            disabled={!canTranslate || translating}
-          >
-            <Languages className="h-4 w-4" />
-            번역 생성
-          </Button>
-          {mode === 'existing' ? (
+          {!allTargetsTranslated ? (
+            <Button
+              onClick={handleTranslate}
+              loading={translating}
+              disabled={!canTranslate || translating}
+            >
+              <Languages className="h-4 w-4" />
+              번역 생성
+            </Button>
+          ) : mode === 'existing' ? (
             <Button
               onClick={handleApply}
               loading={saving}
@@ -583,7 +591,6 @@ export function MetadataLocalizationTool() {
           ) : (
             <Button
               onClick={openUploadModal}
-              loading={uploading}
               disabled={!canUpload || uploading}
             >
               <Upload className="h-4 w-4" />
@@ -596,36 +603,11 @@ export function MetadataLocalizationTool() {
 
       {Object.keys(translations).length > 0 && (
         <Card>
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <CardTitle>번역 검토</CardTitle>
-              <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
-                적용 전에 언어별 제목과 설명을 직접 수정할 수 있습니다.
-              </p>
-            </div>
-            {mode === 'existing' ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleApply}
-                loading={saving}
-                disabled={!canApply || saving}
-              >
-                <Send className="h-4 w-4" />
-                적용
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={openUploadModal}
-                loading={uploading}
-                disabled={!canUpload || uploading}
-              >
-                <Send className="h-4 w-4" />
-                업로드
-              </Button>
-            )}
+          <div className="mb-5">
+            <CardTitle>번역 검토</CardTitle>
+            <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
+              적용 전에 언어별 제목과 설명을 직접 수정할 수 있습니다.
+            </p>
           </div>
 
           <div className="space-y-4">
