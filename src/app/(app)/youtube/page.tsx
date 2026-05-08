@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Video, ExternalLink, Unlink, AlertTriangle, Settings, Globe, Loader2 } from 'lucide-react'
-import { Card, CardTitle, CardDescription, Button, Badge, Select, Toggle } from '@/components/ui'
+import { Video, Unlink, Settings, Globe, Loader2 } from 'lucide-react'
+import { Card, CardTitle, CardDescription, Button, Badge, Input, Select } from '@/components/ui'
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { formatNumber } from '@/utils/formatters'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
@@ -14,10 +14,19 @@ export default function YouTubeSettingsPage() {
   const router = useRouter()
   const defaultVisibility = useYouTubeSettingsStore((s) => s.defaultPrivacy)
   const setDefaultVisibility = useYouTubeSettingsStore((s) => s.setDefaultPrivacy)
-  const autoSubtitles = useYouTubeSettingsStore((s) => s.autoSubtitles)
-  const setAutoSubtitles = useYouTubeSettingsStore((s) => s.setAutoSubtitles)
   const defaultLanguage = useYouTubeSettingsStore((s) => s.defaultLanguage)
   const setDefaultLanguage = useYouTubeSettingsStore((s) => s.setDefaultLanguage)
+  const defaultTags = useYouTubeSettingsStore((s) => s.defaultTags)
+  const setDefaultTags = useYouTubeSettingsStore((s) => s.setDefaultTags)
+  const defaultTagsString = defaultTags.join(', ')
+
+  const handleDefaultTagsChange = (value: string) => {
+    const parsed = value
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+    setDefaultTags(parsed)
+  }
 
   const { data: channel, isLoading: channelLoading, error: channelError } = useChannelStats()
   const isConnected = !!channel
@@ -90,33 +99,6 @@ export default function YouTubeSettingsPage() {
         )}
       </Card>
 
-      {/* Multi-Audio Eligibility */}
-      <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-900/10">
-        <div className="flex gap-3">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
-          <div>
-            <p className="font-medium text-amber-900 dark:text-amber-300">Multi-Audio Track 요구사항</p>
-            <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
-              YouTube Multi-Audio Track 업로드는 구독자 수, 커뮤니티 가이드라인 준수 등 채널 자격 요건을 충족해야 합니다. YouTube Studio에서 자격 여부를 확인하세요.
-            </p>
-            <a
-              href={
-                channel?.channelId
-                  ? `https://studio.youtube.com/channel/${channel.channelId}/editing/details`
-                  : 'https://studio.youtube.com'
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="outline" size="sm" className="mt-3">
-                <ExternalLink className="h-3.5 w-3.5" />
-                YouTube Studio에서 확인
-              </Button>
-            </a>
-          </div>
-        </div>
-      </Card>
-
       {/* Default Upload Settings */}
       <Card>
         <div className="flex items-center gap-2 mb-4">
@@ -149,16 +131,18 @@ export default function YouTubeSettingsPage() {
             }))}
           />
           <p className="-mt-3 text-xs text-surface-400">
-            업로드 제목·설명을 이 언어로 작성한다고 간주합니다. 다른 대상 언어들은 Gemini로 자동 번역되어 함께 업로드됩니다. 더빙별로도 변경할 수 있습니다.
+            편한 언어를 선택해주세요. 작성하신 내용은 선택하신 언어로 자동 번역되어 함께 업로드됩니다. 더빙별로도 변경할 수 있습니다.
           </p>
 
-          <div className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-            <div>
-              <p className="text-sm font-medium text-surface-900 dark:text-white">자막(SRT) 자동 업로드</p>
-              <p className="text-xs text-surface-500">각 더빙 언어에 대해 SRT 파일을 자동 업로드합니다</p>
-            </div>
-            <Toggle checked={autoSubtitles} onChange={setAutoSubtitles} />
-          </div>
+          <Input
+            label="기본 태그"
+            value={defaultTagsString}
+            onChange={(e) => handleDefaultTagsChange(e.target.value)}
+            placeholder="콤마로 구분 (예: Dubtube, AI더빙, dubbed)"
+          />
+          <p className="-mt-3 text-xs text-surface-400">
+            새 더빙 시작 시 이 태그들이 기본값으로 채워집니다. 더빙별로도 변경할 수 있습니다.
+          </p>
         </div>
       </Card>
 

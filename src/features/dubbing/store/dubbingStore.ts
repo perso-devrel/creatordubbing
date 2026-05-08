@@ -36,12 +36,24 @@ const readDefaultLanguage = (): string => {
   }
 }
 
+const FALLBACK_DEFAULT_TAGS = ['Dubtube', 'AI더빙', 'dubbed']
+
+const readDefaultTags = (): string[] => {
+  if (typeof window === 'undefined') return [...FALLBACK_DEFAULT_TAGS]
+  try {
+    const stored = useYouTubeSettingsStore.getState().defaultTags
+    return Array.isArray(stored) ? [...stored] : [...FALLBACK_DEFAULT_TAGS]
+  } catch {
+    return [...FALLBACK_DEFAULT_TAGS]
+  }
+}
+
 const buildDefaultUploadSettings = (): UploadSettings => ({
   autoUpload: true,
   attachOriginalLink: true,
   title: '',
   description: '',
-  tags: ['Dubtube', 'AI더빙', 'dubbed'],
+  tags: readDefaultTags(),
   privacyStatus: readDefaultPrivacy(),
   uploadCaptions: true,
   selfDeclaredMadeForKids: false,
