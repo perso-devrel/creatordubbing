@@ -51,13 +51,15 @@ CREATE INDEX IF NOT EXISTS idx_app_sessions_user
   ON app_sessions (user_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS perso_media_resources (
-  media_seq INTEGER NOT NULL,
-  space_seq INTEGER,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id TEXT NOT NULL,
-  source TEXT NOT NULL,
+  space_seq INTEGER NOT NULL,
+  media_seq INTEGER NOT NULL UNIQUE,
+  source_type TEXT NOT NULL,
+  original_name TEXT,
+  file_url TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  PRIMARY KEY (media_seq, user_id)
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_perso_media_resources_user
