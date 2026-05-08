@@ -39,7 +39,7 @@ function buildInitialTargets(presetId: string, sourceLang: string, exclude: Set<
 export function MetadataLocalizationTool() {
   const addToast = useNotificationStore((state) => state.addToast)
   const { metadataTargetPreset, setMetadataTargetPreset } = useI18nStore()
-  const { defaultLanguage } = useYouTubeSettingsStore()
+  const { defaultLanguage, defaultTags } = useYouTubeSettingsStore()
 
   const [mode, setMode] = useState<Mode>('existing')
   const { data: videos = [], isLoading: loadingVideos, error: videosError } = useMyVideos(50, mode === 'existing')
@@ -50,6 +50,7 @@ export function MetadataLocalizationTool() {
   const [sourceLang, setSourceLang] = useState(defaultLanguage)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [tags, setTags] = useState<string[]>(() => [...defaultTags])
   const [targetLangs, setTargetLangs] = useState<string[]>(
     () => buildInitialTargets(metadataTargetPreset, defaultLanguage),
   )
@@ -81,6 +82,7 @@ export function MetadataLocalizationTool() {
     setVideoFile(null)
     setTitle('')
     setDescription('')
+    setTags([...defaultTags])
     setTranslations({})
     setExistingLocalizationLangs(new Set())
     setMetadataLoaded(false)
@@ -196,7 +198,7 @@ export function MetadataLocalizationTool() {
         video: videoFile,
         title: title.trim(),
         description,
-        tags: [],
+        tags,
         privacyStatus: 'private',
         language: toBcp47(sourceLang),
         localizations,
@@ -210,6 +212,7 @@ export function MetadataLocalizationTool() {
       setVideoFile(null)
       setTitle('')
       setDescription('')
+      setTags([...defaultTags])
       setTranslations({})
     } catch (err) {
       addToast({
@@ -462,6 +465,25 @@ export function MetadataLocalizationTool() {
               className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
             />
           </div>
+          {mode === 'new' && (
+            <div>
+              <Input
+                label="태그"
+                value={tags.join(', ')}
+                onChange={(event) => {
+                  const parsed = event.target.value
+                    .split(',')
+                    .map((t) => t.trim())
+                    .filter(Boolean)
+                  setTags(parsed)
+                }}
+                placeholder="콤마로 구분 (예: gaming, vlog)"
+              />
+              <p className="mt-1.5 text-xs text-surface-400">
+                YouTube 설정의 기본 태그가 채워져 있습니다. 이 영상에만 적용할 태그로 자유롭게 수정하세요.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/60">
