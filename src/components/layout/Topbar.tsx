@@ -8,6 +8,7 @@ import { signOut } from '@/lib/google-auth'
 import { Button } from '@/components/ui'
 import { useRouter } from 'next/navigation'
 import { OpsAlertButton } from '@/features/ops/components/OpsAlertButton'
+import { useChannelStats } from '@/hooks/useYouTubeData'
 
 interface TopbarProps {
   isOpsAdmin?: boolean
@@ -17,6 +18,11 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
   const { mode, toggle } = useThemeStore()
   const { user, clear } = useAuthStore()
   const router = useRouter()
+  const { data: channel } = useChannelStats()
+  const accountName = channel?.title || user?.displayName || '사용자'
+  const subscriberLabel = channel
+    ? `구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}`
+    : null
 
   const handleSignOut = async () => {
     signOut()
@@ -39,14 +45,16 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
           <div className="ml-2 flex items-center gap-3">
             <div className="hidden sm:block text-right">
               <p className="text-sm font-medium text-surface-900 dark:text-white leading-tight">
-                {user.displayName || '사용자'}
+                {accountName}
               </p>
-              <p className="text-xs text-surface-400 leading-tight">{user.email}</p>
+              {subscriberLabel && (
+                <p className="text-xs text-surface-400 leading-tight">{subscriberLabel}</p>
+              )}
             </div>
             {user.photoURL ? (
               <Image
                 src={user.photoURL}
-                alt={user.displayName || ''}
+                alt={accountName}
                 width={32}
                 height={32}
                 className="rounded-full object-cover"
@@ -54,7 +62,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
               />
             ) : (
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-600 text-sm font-bold text-white">
-                {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                {accountName[0].toUpperCase()}
               </div>
             )}
             <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label="로그아웃">
