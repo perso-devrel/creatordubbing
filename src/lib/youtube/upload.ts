@@ -37,6 +37,12 @@ export interface YouTubeUploadSessionInput {
   containsSyntheticMedia?: boolean
   language?: string
   localizations?: Record<string, YouTubeLocalization>
+  /**
+   * 브라우저에서 직접 session URI로 PUT할 경우, 그 origin을 init 요청 헤더에
+   * 포함해야 YouTube가 응답 URI에 Access-Control-Allow-Origin 헤더를 부여한다.
+   * 서버사이드에서 PUT까지 책임지는 경로는 생략해도 무방.
+   */
+  origin?: string
 }
 
 /**
@@ -59,6 +65,7 @@ export async function initYouTubeResumableUpload(
     containsSyntheticMedia = false,
     language = 'en',
     localizations,
+    origin,
   } = input
 
   const hasLocalizations = !!localizations && Object.keys(localizations).length > 0
@@ -82,16 +89,22 @@ export async function initYouTubeResumableUpload(
   }
   const parts = ['snippet', 'status', ...(hasLocalizations ? ['localizations'] : [])].join(',')
 
+  const initHeaders: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json; charset=UTF-8',
+    'X-Upload-Content-Length': String(contentLength),
+    'X-Upload-Content-Type': contentType || 'video/mp4',
+  }
+  if (origin) {
+    // YouTube는 init 시 Origin이 들어오면 응답 session URI에 CORS 헤더를 부여한다.
+    initHeaders.Origin = origin
+  }
+
   const initRes = await fetch(
     `${YOUTUBE_UPLOAD_BASE}/videos?uploadType=resumable&part=${parts}`,
     {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json; charset=UTF-8',
-        'X-Upload-Content-Length': String(contentLength),
-        'X-Upload-Content-Type': contentType || 'video/mp4',
-      },
+      headers: initHeaders,
       body: JSON.stringify(metadata),
     },
   )
