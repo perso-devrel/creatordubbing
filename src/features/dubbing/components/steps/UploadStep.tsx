@@ -79,7 +79,7 @@ export function UploadStep() {
   const [audioTrackEnabled, setAudioTrackEnabled] = useState(false)
   const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
   const autoChainTriggered = useRef(false)
-  const existingVideoTagSyncRef = useRef<Set<string>>(new Set())
+  const existingVideoMetadataSyncRef = useRef<Set<string>>(new Set())
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   // ─── Metadata translations (Gemini) ─────────────────────────────────
@@ -160,40 +160,73 @@ export function UploadStep() {
     [attachOriginalLink, originalYouTubeUrl, shouldApplyAiDisclosure],
   )
 
-  const applyTagsToExistingVideo = useCallback(async (targetVideoId: string) => {
-    const requestedTags = Array.from(new Set(settingsTags.map((tag) => tag.trim()).filter(Boolean)))
-    if (!isAuthenticated || requestedTags.length === 0) return
+  const applyMetadataToExistingVideo = useCallback(async (targetVideoId: string) => {
+    if (!isAuthenticated) return
 
-    const syncKey = `${targetVideoId}:${requestedTags.join('\n')}`
-    if (existingVideoTagSyncRef.current.has(syncKey)) return
-    existingVideoTagSyncRef.current.add(syncKey)
+    const requestedTags = Array.from(new Set(settingsTags.map((tag) => tag.trim()).filter(Boolean)))
+
+    // selectedLanguages별 번역을 localizations 맵으로 변환. 번역 캐시 사용.
+    // 원본 제목/설명은 건드리지 않고 localizations에만 추가한다.
+    const allTranslations = await ensureTranslations()
+    const newLocalizations: Record<string, { title: string; description: string }> = {}
+    for (const code of selectedLanguages) {
+      const t = allTranslations[code]
+      if (t) {
+        newLocalizations[toBcp47(code)] = {
+          title: t.title,
+          description: applyDescriptionFooter(t.description, code),
+        }
+      }
+    }
+
+    const localizationKey = Object.keys(newLocalizations).sort().join(',')
+    const syncKey = `${targetVideoId}:${requestedTags.join('\n')}:${localizationKey}`
+    if (existingVideoMetadataSyncRef.current.has(syncKey)) return
+    existingVideoMetadataSyncRef.current.add(syncKey)
 
     try {
       const metadata = await ytFetchVideoMetadata(targetVideoId)
-      const mergedTags = Array.from(new Set([...metadata.tags, ...requestedTags]))
-      if (
-        mergedTags.length === metadata.tags.length &&
-        mergedTags.every((tag, index) => tag === metadata.tags[index])
-      ) {
-        return
-      }
+      const mergedTags = requestedTags.length === 0
+        ? metadata.tags
+        : Array.from(new Set([...metadata.tags, ...requestedTags]))
+      const mergedLocalizations = { ...metadata.localizations, ...newLocalizations }
 
+      const tagsChanged =
+        mergedTags.length !== metadata.tags.length ||
+        mergedTags.some((tag, index) => tag !== metadata.tags[index])
+      const localizationsChanged = Object.entries(newLocalizations).some(([lang, next]) => {
+        const existing = metadata.localizations[lang]
+        return !existing || existing.title !== next.title || existing.description !== next.description
+      })
+      if (!tagsChanged && !localizationsChanged) return
+
+      // 원본 제목/설명은 그대로 유지 — localizations와 tags만 갱신.
       await ytUpdateVideoLocalizations({
         videoId: targetVideoId,
         sourceLang: metadata.defaultLanguage || toBcp47(metadataLanguage),
         title: metadata.title || settingsTitle?.trim() || videoMetaTitle || 'Untitled',
         description: metadata.description,
         tags: mergedTags,
-        localizations: metadata.localizations,
+        localizations: mergedLocalizations,
       })
     } catch (err) {
       addToast({
         type: 'warning',
-        title: 'YouTube 태그 적용 실패',
+        title: 'YouTube 메타데이터 적용 실패',
         message: err instanceof Error ? err.message : '자막 업로드는 계속 진행합니다.',
       })
     }
-  }, [addToast, isAuthenticated, metadataLanguage, settingsTags, settingsTitle, videoMetaTitle])
+  }, [
+    addToast,
+    applyDescriptionFooter,
+    ensureTranslations,
+    isAuthenticated,
+    metadataLanguage,
+    selectedLanguages,
+    settingsTags,
+    settingsTitle,
+    videoMetaTitle,
+  ])
 
   const handleNewDubbing = () => reset()
   const handleGoToDashboard = () => { reset(); router.push('/dashboard') }
@@ -622,10 +655,10 @@ export function UploadStep() {
 
   const uploadCaptionsWithMetadata = useCallback(async (targetVideoId: string, langs: string[]) => {
     if (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'channel') {
-      await applyTagsToExistingVideo(targetVideoId)
+      await applyMetadataToExistingVideo(targetVideoId)
     }
     await uploadCaptions(targetVideoId, langs)
-  }, [applyTagsToExistingVideo, deliverableMode, uploadCaptions, videoSource?.type])
+  }, [applyMetadataToExistingVideo, deliverableMode, uploadCaptions, videoSource?.type])
 
   const handleUploadCaptionsToVideo = useCallback(async (targetVideoId: string) => {
     const pending = completedLangs.filter((code) => captionUploads[code] !== 'done')
@@ -652,7 +685,7 @@ export function UploadStep() {
       }
 
       if (targetVideoId && videoSource?.type === 'channel') {
-        await applyTagsToExistingVideo(targetVideoId)
+        await applyMetadataToExistingVideo(targetVideoId)
       }
 
       if (targetVideoId && shouldUploadCaptions) {
