@@ -98,3 +98,22 @@ export async function addUserCredits(userId: string, minutes: number) {
     args: [minutes, userId],
   })
 }
+
+export async function getUserPreferencesRaw(userId: string): Promise<string | null> {
+  const db = getDb()
+  const result = await db.execute({
+    sql: 'SELECT preferences FROM users WHERE id = ?',
+    args: [userId],
+  })
+  const row = result.rows[0]
+  if (!row) return null
+  return (row.preferences as string | null) ?? null
+}
+
+export async function setUserPreferencesRaw(userId: string, preferences: string): Promise<void> {
+  const db = getDb()
+  await db.execute({
+    sql: `UPDATE users SET preferences = ?, updated_at = datetime('now') WHERE id = ?`,
+    args: [preferences, userId],
+  })
+}

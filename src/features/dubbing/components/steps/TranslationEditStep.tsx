@@ -6,6 +6,7 @@ import { Button, Card, Badge } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { getLanguageByCode } from '@/utils/languages'
 import { useAuthStore } from '@/stores/authStore'
+import { useChannelStats } from '@/hooks/useYouTubeData'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
@@ -26,11 +27,14 @@ export function TranslationEditStep() {
     nextStep,
   } = useDubbingStore()
   const user = useAuthStore((s) => s.user)
+  const { data: channel } = useChannelStats()
 
   const needsAutoUploadReview = uploadSettings.autoUpload
   const canStart = !needsAutoUploadReview || uploadSettings.uploadReviewConfirmed
   const privacyLabel = PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus
-  const targetChannelLabel = user?.email ?? 'Google 로그인 후 연결된 YouTube 채널'
+  const targetChannelLabel = channel
+    ? `${channel.title} · 구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}`
+    : user?.displayName ?? 'Google 로그인 후 연결된 YouTube 채널'
   const uploadsVideoToYouTube =
     deliverableMode === 'newDubbedVideos' ||
     (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload')
