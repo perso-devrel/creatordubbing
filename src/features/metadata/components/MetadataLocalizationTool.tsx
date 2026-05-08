@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Check, FileVideo, Languages, Loader2, RefreshCw, Search, Upload } from 'lucide-react'
 import { Badge, Button, Card, CardTitle, Input, Modal, Select, Toggle } from '@/components/ui'
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
@@ -71,12 +71,9 @@ export function MetadataLocalizationTool() {
   const [uploadPrivacy, setUploadPrivacy] = useState<PrivacyStatus>(defaultPrivacy)
   const [uploadMadeForKids, setUploadMadeForKids] = useState(false)
   const [uploadConfirmed, setUploadConfirmed] = useState(false)
-  useEffect(() => {
-    // 사용자가 /youtube에서 기본 공개 설정을 바꾸면 모달 미열림 상태에서 동기화.
-    if (!showUploadModal) setUploadPrivacy(defaultPrivacy)
-  }, [defaultPrivacy, showUploadModal])
 
   const openUploadModal = () => {
+    // 모달 열 때마다 최신 store 값을 가져와 초기화 — 별도의 sync effect 불필요.
     setUploadPrivacy(defaultPrivacy)
     setUploadMadeForKids(false)
     setUploadConfirmed(false)
