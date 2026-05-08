@@ -12,7 +12,7 @@ export default async function AppLayout({
     <div className="min-h-screen">
       <Sidebar isOpsAdmin={isOpsAdmin} />
       <div className="ml-64">
-        <Topbar />
+        <Topbar isOpsAdmin={isOpsAdmin} />
         <main className="p-6">{children}</main>
       </div>
     </div>
