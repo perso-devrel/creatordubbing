@@ -12,12 +12,18 @@ const variants = {
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: keyof typeof variants
+  truncate?: boolean
 }
 
-export function Badge({ className, variant = 'default', ...props }: BadgeProps) {
+export function Badge({ className, variant = 'default', truncate, ...props }: BadgeProps) {
   return (
     <span
-      className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium', variants[variant], className)}
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap',
+        truncate && 'max-w-full overflow-hidden text-ellipsis',
+        variants[variant],
+        className,
+      )}
       {...props}
     />
   )

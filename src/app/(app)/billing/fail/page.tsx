@@ -13,21 +13,20 @@ export default async function BillingFailPage({
 }) {
   const params = await searchParams
   const code = getParam(params.code)
-  const message = getParam(params.message)
 
   return (
     <div className="mx-auto max-w-xl">
       <Card>
         <div className="mb-4 flex items-center gap-3">
-          <div className="rounded-xl bg-red-50 p-3 dark:bg-red-950/30">
+          <div className="rounded-lg bg-red-50 p-3 dark:bg-red-950/30">
             <XCircle className="h-6 w-6 text-red-500" />
           </div>
           <div>
             <CardTitle>결제가 완료되지 않았습니다</CardTitle>
-            <p className="mt-1 text-sm text-surface-500">
-              {message || '결제가 취소되었거나 실패했습니다.'}
+            <p className="mt-1 text-sm text-surface-600 dark:text-surface-400">
+              결제가 취소되었거나 처리 중 문제가 발생했습니다. 다시 시도해 주세요.
             </p>
-            {code && <p className="mt-1 text-xs text-surface-400">오류 코드: {code}</p>}
+            {code && <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">문의 시 전달할 오류 코드: {code}</p>}
           </div>
         </div>
         <Link href="/billing">

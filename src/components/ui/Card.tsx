@@ -9,7 +9,7 @@ export function Card({ className, children, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'rounded-xl border border-surface-200 bg-white p-6 shadow-sm dark:border-surface-800 dark:bg-surface-900',
+        'rounded-lg border border-surface-200 bg-white p-6 shadow-sm dark:border-surface-800 dark:bg-surface-900',
         className,
       )}
       {...props}
@@ -37,7 +37,7 @@ export function CardTitle({ className, children, ...props }: HTMLAttributes<HTML
 
 export function CardDescription({ className, children, ...props }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn('text-sm text-surface-500 dark:text-surface-400', className)} {...props}>
+    <p className={cn('text-sm text-surface-600 dark:text-surface-400', className)} {...props}>
       {children}
     </p>
   )

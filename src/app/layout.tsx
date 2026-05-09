@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import "@fontsource/pretendard/400.css";
+import "@fontsource/pretendard/500.css";
+import "@fontsource/pretendard/600.css";
+import "@fontsource/pretendard/700.css";
+import "@fontsource/pretendard/800.css";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
-import { SUPPORTED_LANGUAGE_COUNT } from "@/utils/languages";
 
-const inter = Inter({
-  variable: "--font-sans",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-mono",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
 });
@@ -26,7 +30,7 @@ export const metadata: Metadata = {
     template: "%s | Dubtube",
   },
   description:
-    `Perso.ai + YouTube API 기반 크리에이터 전용 ${SUPPORTED_LANGUAGE_COUNT}개 언어 자동 더빙 SaaS`,
+    `YouTube 영상 더빙, 제목·설명 번역, 업로드까지 한 번에 준비하는 크리에이터 현지화 도구`,
 };
 
 const themeInitScript = `try{if(localStorage.getItem('dubtube-theme')==='dark'||(!localStorage.getItem('dubtube-theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;
@@ -39,7 +43,7 @@ export default function RootLayout({
   return (
     <html
       lang="ko"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

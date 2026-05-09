@@ -17,20 +17,20 @@ const APP_LOCALE_OPTIONS = APP_LOCALES.map((locale) => ({
   label: `${APP_LOCALE_LABELS[locale].nativeLabel} / ${APP_LOCALE_LABELS[locale].label}`,
 }))
 
-const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((language) => ({
-  value: language.code,
-  label: `${language.flag} ${language.name} (${language.nativeName})`,
-}))
-
-const PRESET_OPTIONS = MARKET_LANGUAGE_PRESETS.map((preset) => ({
-  value: preset.id,
-  label: `${preset.labelKo} / ${preset.labelEn}`,
-}))
-
 export function SettingsClient() {
   const { appLocale, metadataTargetPreset, setAppLocale, setMetadataTargetPreset } = useI18nStore()
   const { defaultLanguage, setDefaultLanguage } = useYouTubeSettingsStore()
   const isEnglish = appLocale === 'en'
+  const languageOptions = SUPPORTED_LANGUAGES.map((language) => ({
+    value: language.code,
+    label: isEnglish
+      ? `${language.flag} ${language.name} (${language.nativeName})`
+      : `${language.flag} ${language.nativeName} (${language.name})`,
+  }))
+  const presetOptions = MARKET_LANGUAGE_PRESETS.map((preset) => ({
+    value: preset.id,
+    label: isEnglish ? preset.labelEn : preset.labelKo,
+  }))
 
   const selectedPreset = MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === metadataTargetPreset)
   const presetLanguages = selectedPreset
@@ -45,11 +45,11 @@ export function SettingsClient() {
             <Globe2 className="h-5 w-5" />
           </div>
           <div>
-            <CardTitle>{isEnglish ? 'Language and localization' : '언어 및 현지화'}</CardTitle>
+            <CardTitle>{isEnglish ? 'Language and YouTube defaults' : '언어 및 YouTube 기본값'}</CardTitle>
             <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
               {isEnglish
-                ? 'Manage app locale and YouTube title/description translation defaults.'
-                : '앱 언어와 YouTube 제목·설명 번역 기본값을 관리합니다.'}
+                ? 'Set display language and title/description translation defaults.'
+                : '화면 언어와 제목·설명 번역 기본값을 정합니다.'}
             </p>
           </div>
         </div>
@@ -65,13 +65,13 @@ export function SettingsClient() {
             label={isEnglish ? 'Default metadata source language' : '제목·설명 작성 기본 언어'}
             value={defaultLanguage}
             onChange={(event) => setDefaultLanguage(event.target.value)}
-            options={LANGUAGE_OPTIONS}
+            options={languageOptions}
           />
           <Select
             label={isEnglish ? 'Recommended localization market' : '추천 번역 시장'}
             value={metadataTargetPreset}
             onChange={(event) => setMetadataTargetPreset(event.target.value)}
-            options={PRESET_OPTIONS}
+            options={presetOptions}
             className="md:col-span-2"
           />
         </div>
@@ -81,16 +81,16 @@ export function SettingsClient() {
             <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
               {isEnglish ? selectedPreset.labelEn : selectedPreset.labelKo}
             </p>
-            <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+            <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
               {isEnglish ? selectedPreset.descriptionEn : selectedPreset.descriptionKo}
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {presetLanguages.map((language) => language && (
                 <span
                   key={language.code}
-                  className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
+                  className="max-w-full rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
                 >
-                  {language.flag} {language.name}
+                  {language.flag} {isEnglish ? language.name : language.nativeName}
                 </span>
               ))}
             </div>

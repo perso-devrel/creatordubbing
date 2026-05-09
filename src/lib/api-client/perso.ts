@@ -230,7 +230,7 @@ export async function getTranslatedSrt(
     { cache: 'no-store' },
   )
   if (!res.ok) {
-    let msg = `SRT fetch failed (${res.status})`
+    let msg = '자막 파일을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
     try {
       const body = await res.json()
       if (body?.error?.message) msg = body.error.message

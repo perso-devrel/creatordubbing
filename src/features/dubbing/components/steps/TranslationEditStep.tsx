@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, Info } from 'lucide-react'
 import { Button, Card, Badge } from '@/components/ui'
 import { cn } from '@/utils/cn'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { getLanguageByCode } from '@/utils/languages'
 import { useAuthStore } from '@/stores/authStore'
 import { useChannelStats } from '@/hooks/useYouTubeData'
@@ -11,7 +12,7 @@ import { useDubbingStore } from '../../store/dubbingStore'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
 const PRIVACY_LABELS: Record<PrivacyStatus, string> = {
-  private: '비공개 (권장)',
+  private: '비공개',
   unlisted: '일부 공개',
   public: '공개',
 }
@@ -28,38 +29,50 @@ export function TranslationEditStep() {
   } = useDubbingStore()
   const user = useAuthStore((s) => s.user)
   const { data: channel } = useChannelStats()
+  const locale = useAppLocale()
+  const t = useLocaleText()
 
   const needsAutoUploadReview = uploadSettings.autoUpload
   const canStart = !needsAutoUploadReview || uploadSettings.uploadReviewConfirmed
-  const privacyLabel = PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus
+  const privacyLabel = locale === 'ko'
+    ? PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus
+    : uploadSettings.privacyStatus === 'public'
+      ? 'Public'
+      : uploadSettings.privacyStatus === 'unlisted'
+        ? 'Unlisted'
+        : 'Private'
   const targetChannelLabel = channel
-    ? `${channel.title} · 구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}`
-    : user?.displayName ?? 'Google 로그인 후 연결된 YouTube 채널'
+    ? locale === 'ko'
+      ? `${channel.title} · 구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}`
+      : `${channel.title} · ${channel.subscriberCount.toLocaleString('en-US')} subscribers`
+    : user?.displayName ?? t({ ko: '연결된 YouTube 채널 없음', en: 'No connected YouTube channel' })
   const uploadsVideoToYouTube =
     deliverableMode === 'newDubbedVideos' ||
     (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload')
   const showsAiDisclosureSetting = deliverableMode === 'newDubbedVideos'
   const showsCaptionSetting = deliverableMode === 'newDubbedVideos' || deliverableMode === 'originalWithMultiAudio'
   const deliverableModeLabel = deliverableMode === 'newDubbedVideos'
-    ? '새 더빙 영상 업로드'
+    ? t({ ko: '새 더빙 영상 업로드', en: 'Upload new dubbed videos' })
     : deliverableMode === 'originalWithMultiAudio'
-      ? '원본 영상에 자막 추가'
-      : '다운로드만'
+      ? t({ ko: '원본 영상에 자막 추가', en: 'Add captions to original video' })
+      : t({ ko: '파일만 다운로드', en: 'Download files only' })
   const metadataLanguageLabel =
-    getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage
-  const tagsLabel = uploadSettings.tags.length > 0 ? uploadSettings.tags.join(', ') : '없음'
+    (() => {
+      const language = getLanguageByCode(uploadSettings.metadataLanguage)
+      if (!language) return uploadSettings.metadataLanguage
+      return locale === 'ko' ? language.nativeName : language.name
+    })()
+  const tagsLabel = uploadSettings.tags.length > 0 ? uploadSettings.tags.join(', ') : t({ ko: '없음', en: 'None' })
   const autoUploadConfirmationText = uploadsVideoToYouTube
-    ? showsAiDisclosureSetting
-      ? '위 채널, 공개 범위, 작성 언어, 태그, 자막, 아동용, AI 합성 고지 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.'
-      : '위 채널, 공개 범위, 작성 언어, 태그, 자막, 아동용 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.'
-    : '위 대상 언어, 결과물 모드, 자동 업로드, 자막 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.'
+    ? t({ ko: '설정을 확인했으며 완료 후 YouTube 업로드를 진행합니다.', en: 'I reviewed the settings and want to upload to YouTube when complete.' })
+    : t({ ko: '설정을 확인했으며 완료 후 업로드를 진행합니다.', en: 'I reviewed the settings and want to upload when complete.' })
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">설정 확인</h2>
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '설정 확인', en: 'Review settings' })}</h2>
         <p className="mt-1 text-surface-500">
-          진행 전 설정을 확인하세요.
+          {t({ ko: '더빙을 시작하기 전에 업로드 설정을 확인하세요.', en: 'Review upload settings before starting dubbing.' })}
         </p>
       </div>
 
@@ -67,11 +80,11 @@ export function TranslationEditStep() {
       <Card>
         <div className="space-y-3">
           {uploadsVideoToYouTube && (
-            <SummaryRow label="채널" value={targetChannelLabel} />
+            <SummaryRow label={t({ ko: '채널', en: 'Channel' })} value={targetChannelLabel} />
           )}
 
           <SummaryRow
-            label={`대상 언어 (${selectedLanguages.length})`}
+            label={t({ ko: `대상 언어 (${selectedLanguages.length})`, en: `Target languages (${selectedLanguages.length})` })}
             value={(
               <div className="flex flex-wrap justify-end gap-2">
                 {selectedLanguages.map((code) => {
@@ -79,7 +92,7 @@ export function TranslationEditStep() {
                   if (!lang) return null
                   return (
                     <Badge key={code} variant="brand">
-                      {lang.flag} {lang.name}
+                      {lang.flag} {locale === 'ko' ? lang.nativeName : lang.name}
                     </Badge>
                   )
                 })}
@@ -103,19 +116,19 @@ export function TranslationEditStep() {
           */}
 
           {uploadsVideoToYouTube && (
-            <SummaryRow label="공개 범위" value={privacyLabel} />
+            <SummaryRow label={t({ ko: '공개 범위', en: 'Visibility' })} value={privacyLabel} />
           )}
 
-          <SummaryRow label="결과물 모드" value={deliverableModeLabel} />
+          <SummaryRow label={t({ ko: '결과물', en: 'Output' })} value={deliverableModeLabel} />
 
           <SummaryRow
-            label="자동 업로드"
+            label={t({ ko: '자동 업로드', en: 'Auto-upload' })}
             value={<StatusValue active={uploadSettings.autoUpload} />}
           />
 
           {showsCaptionSetting && (
             <SummaryRow
-              label="자막"
+              label={t({ ko: '자막', en: 'Captions' })}
               value={<StatusValue active={uploadSettings.autoUpload && uploadSettings.uploadCaptions} />}
             />
           )}
@@ -123,20 +136,20 @@ export function TranslationEditStep() {
           {uploadsVideoToYouTube && (
             <>
               <SummaryRow
-                label="작성 언어"
-                value={`${metadataLanguageLabel} 기준`}
+                label={t({ ko: '작성 언어', en: 'Writing language' })}
+                value={locale === 'ko' ? `${metadataLanguageLabel} 기준` : `Based on ${metadataLanguageLabel}`}
               />
               <SummaryRow
-                label="태그"
+                label={t({ ko: '태그', en: 'Tags' })}
                 value={tagsLabel}
               />
               <SummaryRow
-                label="아동용"
-                value={uploadSettings.selfDeclaredMadeForKids ? '예' : '아니오'}
+                label={t({ ko: '아동용 영상', en: 'Made for kids' })}
+                value={uploadSettings.selfDeclaredMadeForKids ? t({ ko: '예', en: 'Yes' }) : t({ ko: '아니오', en: 'No' })}
               />
               {showsAiDisclosureSetting && (
                 <SummaryRow
-                  label="AI 합성 고지"
+                  label={t({ ko: 'AI 보이스 고지', en: 'AI voice disclosure' })}
                   value={<StatusValue active={uploadSettings.containsSyntheticMedia} />}
                 />
               )}
@@ -163,11 +176,11 @@ export function TranslationEditStep() {
       <Card className="flex items-start gap-3 bg-blue-50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800">
         <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-medium text-blue-900 dark:text-blue-300">처리 과정</p>
+          <p className="text-sm font-medium text-blue-900 dark:text-blue-300">{t({ ko: '처리 과정', en: 'What happens next' })}</p>
           <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
             {deliverableMode === 'originalWithMultiAudio'
-              ? 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 자막을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'
-              : 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 보이스 클론으로 더빙 영상을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'}
+              ? t({ ko: 'AI가 영상을 전사하고 선택한 언어로 자막을 만듭니다. 처리 시간은 영상 길이에 따라 달라집니다.', en: 'AI transcribes the video and creates captions in the selected languages. Processing time depends on video length.' })
+              : t({ ko: 'AI가 영상을 전사하고 선택한 언어로 더빙 오디오를 만듭니다. 처리 시간은 영상 길이에 따라 달라집니다.', en: 'AI transcribes the video and creates dubbed audio in the selected languages. Processing time depends on video length.' })}
           </p>
         </div>
       </Card>
@@ -175,10 +188,10 @@ export function TranslationEditStep() {
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
-          이전
+          {t({ ko: '이전', en: 'Back' })}
         </Button>
         <Button onClick={nextStep} disabled={!canStart}>
-          더빙 시작
+          {t({ ko: '더빙 시작', en: 'Start dubbing' })}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
@@ -211,11 +224,13 @@ function SummaryRow({
 }
 
 function StatusValue({ active }: { active: boolean }) {
+  const t = useLocaleText()
+
   return (
     <span className={cn(
       active ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-500',
     )}>
-      {active ? 'ON' : 'OFF'}
+      {active ? t({ ko: '켜짐', en: 'On' }) : t({ ko: '꺼짐', en: 'Off' })}
     </span>
   )
 }

@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
           개인정보처리방침
         </h1>
-        <p className="mt-2 text-sm text-surface-500">최종 업데이트: {LAST_UPDATED}</p>
+        <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">최종 업데이트: {LAST_UPDATED}</p>
       </header>
 
       <Section title="1. 개요">
@@ -32,7 +32,11 @@ export default function PrivacyPolicyPage() {
           <ExternalA href="https://developers.google.com/terms/api-services-user-data-policy">
             Google API Services User Data Policy
           </ExternalA>
-          를 준수하며, 동 정책의 Limited Use 요구사항을 포함하여 적용됩니다.
+          와{' '}
+          <ExternalA href="https://policies.google.com/privacy">
+            Google 개인정보처리방침
+          </ExternalA>
+          을 준수하며, 동 정책의 Limited Use 요구사항을 포함하여 적용됩니다.
         </p>
       </Section>
 
@@ -58,7 +62,7 @@ export default function PrivacyPolicyPage() {
         </h3>
         <ul className="mt-2 list-disc space-y-1 pl-6">
           <li>더빙 작업 기록(원본 언어, 대상 언어, 처리 상태, 결과 URL)</li>
-          <li>크레딧 사용 내역</li>
+          <li>더빙 시간 사용 내역</li>
           <li>업로드 큐 상태</li>
         </ul>
       </Section>
@@ -67,7 +71,7 @@ export default function PrivacyPolicyPage() {
         <ul className="mt-2 list-disc space-y-1 pl-6">
           <li>더빙 영상·오디오·자막 생성 및 사용자 YouTube 채널로의 업로드</li>
           <li>다국어 자막 트랙 추가/교체(YouTube Captions API 사용)</li>
-          <li>크레딧 차감·결제·잔여량 표시</li>
+          <li>더빙 시간 차감·결제·잔여량 표시</li>
           <li>사용자 인증 및 세션 유지</li>
           <li>서비스 안정성 모니터링 및 오류 진단</li>
         </ul>
@@ -95,7 +99,7 @@ export default function PrivacyPolicyPage() {
             <strong>Turso (libSQL)</strong> — 사용자 계정·작업 기록 데이터베이스 호스팅.
           </li>
           <li>
-            <strong>Toss Payments</strong> — 크레딧 결제 승인, 결제 결과 확인, 환불 및 정산 기록 처리.
+            <strong>Toss Payments</strong> — 더빙 시간 결제 승인, 결제 결과 확인, 환불 및 정산 기록 처리.
           </li>
         </ul>
         <p className="mt-4">
@@ -107,7 +111,8 @@ export default function PrivacyPolicyPage() {
       <Section title="5. 보관 기간 및 파기">
         <ul className="mt-2 list-disc space-y-1 pl-6">
           <li>계정 정보: 회원 탈퇴 또는 계정 연결 해제 시 즉시 파기</li>
-          <li>OAuth 토큰: 사용자가 Google 계정 연결을 해제하거나 권한을 회수하면 즉시 폐기</li>
+          <li>OAuth 토큰: 사용자가 YouTube 연결을 해제하거나 Google 권한을 회수하면 서버 저장 토큰을 즉시 폐기</li>
+          <li>YouTube 채널/영상 캐시 데이터: 서비스 표시와 안정성을 위해 필요한 기간 동안 보관하며, 사용자 요청 시 삭제</li>
           <li>더빙 작업 기록: 작업 완료일로부터 12개월 보관 후 자동 파기 (사용자가 즉시 삭제 요청 가능)</li>
           <li>결제·과금 관련 기록: 관련 법령(전자상거래법 등)에 따라 5년간 보관</li>
         </ul>
@@ -124,6 +129,7 @@ export default function PrivacyPolicyPage() {
             </ExternalA>
             에서 직접 회수 가능
           </li>
+          <li>Dubtube 앱의 YouTube 설정 화면에서 YouTube 연결 해제 가능</li>
         </ul>
         <p className="mt-4">
           위 요청은 본 페이지 하단의 연락처로 이메일을 보내주시면 영업일 기준 7일 이내에 처리합니다.
@@ -133,7 +139,7 @@ export default function PrivacyPolicyPage() {
       <Section title="7. 보안">
         <ul className="mt-2 list-disc space-y-1 pl-6">
           <li>모든 통신은 HTTPS(TLS 1.2 이상)로 암호화됩니다.</li>
-          <li>OAuth 액세스 토큰과 리프레시 토큰은 서버 측 데이터베이스에서 암호화 저장됩니다.</li>
+          <li>OAuth 액세스 토큰과 리프레시 토큰은 서버 측 데이터베이스에서 전용 암호화 키로 암호화 저장됩니다.</li>
           <li>세션은 HMAC-SHA256으로 서명된 HttpOnly 쿠키와 서버 측 세션 레코드로 관리됩니다.</li>
         </ul>
       </Section>
@@ -183,6 +189,10 @@ export default function PrivacyPolicyPage() {
           ·{' '}
           <ExternalA href="https://developers.google.com/terms/api-services-user-data-policy">
             Google API Services User Data Policy
+          </ExternalA>{' '}
+          ·{' '}
+          <ExternalA href="https://policies.google.com/privacy">
+            Google Privacy Policy
           </ExternalA>{' '}
           ·{' '}
           <ExternalA href="https://www.youtube.com/t/terms">

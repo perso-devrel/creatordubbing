@@ -9,12 +9,46 @@ export { apiOk as ytOk }
 export function ytFail(err: unknown) {
   if (err instanceof YouTubeError) {
     const status = err.status || 500
-    if (status >= 500) {
-      logger.error('youtube api error', { status, code: err.code, message: err.message })
-    }
-    return apiFail(err.code, err.message, status)
+    const logPayload = { status, code: err.code, message: err.message }
+    if (status >= 500) logger.error('youtube api error', logPayload)
+    else logger.warn('youtube api error', logPayload)
+    return apiFail(err.code, toUserMessage(err.code, status), status)
   }
   return apiFailFromError(err)
+}
+
+function toUserMessage(code: string, status: number) {
+  if (code === 'MISSING_ACCESS_TOKEN') {
+    return 'YouTube 연결이 필요합니다. Google 계정으로 다시 연결해 주세요.'
+  }
+  if (code === 'VIDEO_NOT_FOUND') {
+    return 'YouTube 영상을 찾을 수 없습니다.'
+  }
+  if (code === 'QUOTA_EXCEEDED') {
+    return 'YouTube API 사용량 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.'
+  }
+  if (code === 'INVALID_QUERY' || code === 'INVALID_BODY') {
+    return '입력값을 확인해 주세요.'
+  }
+  if (code.includes('METADATA')) {
+    return 'YouTube 제목과 설명을 처리하지 못했습니다.'
+  }
+  if (code.includes('CAPTION')) {
+    return 'YouTube 자막을 처리하지 못했습니다.'
+  }
+  if (code.includes('UPLOAD')) {
+    return 'YouTube 업로드를 처리하지 못했습니다.'
+  }
+  if (code.includes('ANALYTICS')) {
+    return 'YouTube 분석 데이터를 불러오지 못했습니다.'
+  }
+  if (status === 401) {
+    return 'YouTube 연결이 만료되었습니다. 다시 연결해 주세요.'
+  }
+  if (status === 403) {
+    return 'YouTube 권한이 부족합니다. Google 계정 권한을 확인해 주세요.'
+  }
+  return 'YouTube 요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'
 }
 
 export async function ytHandle<T>(fn: () => Promise<T>): Promise<Response> {
@@ -82,14 +116,11 @@ import { verifySessionCookie } from '@/lib/auth/session-cookie'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 
 /**
- * Google 액세스 토큰을 가져온다. DB+세션 기반 리프레시 경로를 최우선으로 삼아
- * stale 쿠키를 자동으로 우회한다(getOrRefreshAccessToken이 만료 임박 시 자동 갱신).
- * - 1순위: dubtube_session 쿠키 → uid 검증 → DB의 refresh_token으로 fresh 토큰 확보
- * - 2순위: google_access_token 쿠키 (세션이 없는 짧은 흐름용 fallback)
- * - 3순위: Authorization Bearer / x-google-access-token 헤더
+ * Google 액세스 토큰을 가져온다. 앱 세션 쿠키로 사용자 uid를 검증한 뒤,
+ * 서버 DB에 암호화 저장된 Google 토큰만 사용한다.
  */
 export async function requireAccessToken(
-  req: Request,
+  _req: Request,
   opts: { forceRefresh?: boolean } = {},
 ): Promise<string> {
   const cookieStore = await cookies()
@@ -103,15 +134,6 @@ export async function requireAccessToken(
     }
   }
 
-  const cookieToken = cookieStore.get('google_access_token')?.value
-  if (cookieToken) return cookieToken
-
-  const auth = req.headers.get('authorization') || ''
-  if (auth.toLowerCase().startsWith('bearer ')) {
-    return auth.slice(7).trim()
-  }
-  const custom = req.headers.get('x-google-access-token')
-  if (custom) return custom
   throw new YouTubeError(
     401,
     'Missing Google access token',

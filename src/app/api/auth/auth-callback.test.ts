@@ -36,6 +36,7 @@ import { NextRequest } from 'next/server'
 
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
+const CALLBACK_REDIRECT_URI = 'http://localhost/auth/callback'
 
 function makeReq(body: unknown) {
   return new NextRequest('http://localhost/api/auth/callback', {
@@ -51,7 +52,7 @@ beforeEach(() => {
 
 describe('POST /api/auth/callback', () => {
   it('returns 400 for missing code', async () => {
-    const res = await POST(makeReq({ redirectUri: 'http://localhost' }))
+    const res = await POST(makeReq({ redirectUri: CALLBACK_REDIRECT_URI }))
     expect(res.status).toBe(400)
   })
 
@@ -65,6 +66,20 @@ describe('POST /api/auth/callback', () => {
     expect(res.status).toBe(400)
   })
 
+  it('returns 400 for an unapproved redirect origin', async () => {
+    const res = await POST(makeReq({ code: 'abc', redirectUri: 'https://evil.example/auth/callback' }))
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error.code).toBe('INVALID_REDIRECT_URI')
+  })
+
+  it('returns 400 for an unexpected redirect path', async () => {
+    const res = await POST(makeReq({ code: 'abc', redirectUri: 'http://localhost/other/callback' }))
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error.code).toBe('INVALID_REDIRECT_URI')
+  })
+
   it('returns 500 when GOOGLE_CLIENT_SECRET is not configured', async () => {
     vi.mocked(getServerEnv).mockReturnValueOnce({
       GOOGLE_CLIENT_SECRET: undefined,
@@ -73,7 +88,7 @@ describe('POST /api/auth/callback', () => {
       TURSO_URL: 'http://localhost',
       TURSO_AUTH_TOKEN: 'tok',
     })
-    const res = await POST(makeReq({ code: 'abc', redirectUri: 'http://localhost' }))
+    const res = await POST(makeReq({ code: 'abc', redirectUri: CALLBACK_REDIRECT_URI }))
     expect(res.status).toBe(500)
     const body = await res.json()
     expect(body.error.code).toBe('CONFIG_ERROR')
@@ -84,7 +99,7 @@ describe('POST /api/auth/callback', () => {
       ok: false,
       text: async () => 'invalid_grant',
     })
-    const res = await POST(makeReq({ code: 'bad-code', redirectUri: 'http://localhost' }))
+    const res = await POST(makeReq({ code: 'bad-code', redirectUri: CALLBACK_REDIRECT_URI }))
     expect(res.status).toBe(401)
     const body = await res.json()
     expect(body.error.code).toBe('TOKEN_EXCHANGE_FAILED')
@@ -104,7 +119,7 @@ describe('POST /api/auth/callback', () => {
       .mockResolvedValueOnce({
         ok: false,
       })
-    const res = await POST(makeReq({ code: 'good-code', redirectUri: 'http://localhost' }))
+    const res = await POST(makeReq({ code: 'good-code', redirectUri: CALLBACK_REDIRECT_URI }))
     expect(res.status).toBe(401)
     const body = await res.json()
     expect(body.error.code).toBe('USERINFO_FAILED')
@@ -131,7 +146,7 @@ describe('POST /api/auth/callback', () => {
         }),
       })
 
-    const res = await POST(makeReq({ code: 'good-code', redirectUri: 'http://localhost' }))
+    const res = await POST(makeReq({ code: 'good-code', redirectUri: CALLBACK_REDIRECT_URI }))
     expect(res.status).toBe(200)
 
     const body = await res.json()
@@ -152,6 +167,9 @@ describe('POST /api/auth/callback', () => {
       userId: 'user-1',
       expiresAt: new Date('2030-01-01T00:00:00.000Z'),
     })
+
+    const tokenRequestBody = mockFetch.mock.calls[0]?.[1]?.body as URLSearchParams
+    expect(tokenRequestBody.get('redirect_uri')).toBe(CALLBACK_REDIRECT_URI)
 
     const setCookies = res.headers.getSetCookie()
     expect(setCookies.find((c: string) => c.startsWith('dubtube_session='))).toBeDefined()
@@ -176,7 +194,7 @@ describe('POST /api/auth/callback', () => {
         }),
       })
 
-    const res = await POST(makeReq({ code: 'code-no-refresh', redirectUri: 'http://localhost' }))
+    const res = await POST(makeReq({ code: 'code-no-refresh', redirectUri: CALLBACK_REDIRECT_URI }))
     expect(res.status).toBe(200)
 
     expect(upsertUser).toHaveBeenCalledWith(

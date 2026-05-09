@@ -1,19 +1,21 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ArrowLeft, ArrowRight, Film, Subtitles, Download, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
+import { useLocaleText } from '@/hooks/useLocaleText'
+import type { LocalizedText } from '@/lib/i18n/text'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { DeliverableMode, VideoSourceType } from '../../types/dubbing.types'
 
 interface DeliverableOption {
   value: DeliverableMode
   icon: typeof Film
-  title: string
-  description: string
+  title: LocalizedText
+  description: LocalizedText
   disabled?: boolean
-  badge?: string
+  badge?: LocalizedText
 }
 
 function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
@@ -21,8 +23,8 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
     {
       value: 'newDubbedVideos',
       icon: Film,
-      title: '새 더빙 영상 업로드',
-      description: '더빙된 영상을 YouTube에 업로드합니다.',
+      title: { ko: '언어별 새 영상 만들기', en: 'Create new videos for each language' },
+      description: { ko: '언어별 더빙 영상을 새 YouTube 영상으로 준비합니다.', en: 'Prepare a separate dubbed YouTube video for each language.' },
     },
   ]
 
@@ -30,23 +32,23 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
-      title: '기존 영상에 자막 추가',
-      description: '번역된 자막을 기존 YouTube 영상에 업로드합니다.',
+      title: { ko: '기존 영상에 자막·제목 번역 추가', en: 'Add captions and localized metadata' },
+      description: { ko: '내 채널의 기존 YouTube 영상에 번역 자막과 제목·설명을 추가합니다.', en: 'Add translated captions, titles, and descriptions to an existing YouTube video.' },
     })
   } else if (sourceType === 'upload') {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
-      title: '원본 업로드 + 자막 추가',
-      description: '원본 영상과 번역된 자막을 YouTube에 업로드합니다.',
+      title: { ko: '원본 업로드 후 자막 추가', en: 'Upload original with captions' },
+      description: { ko: '원본 영상을 YouTube에 올리고 번역 자막을 함께 추가합니다.', en: 'Upload the original video to YouTube and add translated captions.' },
     })
   }
 
   options.push({
     value: 'downloadOnly',
     icon: Download,
-    title: '다운로드만',
-    description: 'YouTube에 업로드하지 않고 관련 파일을 다운로드합니다.',
+    title: { ko: '파일만 다운로드', en: 'Download files only' },
+    description: { ko: 'YouTube 업로드 없이 더빙 영상, 오디오, 자막 파일을 다운로드합니다.', en: 'Download dubbed video, audio, and caption files without uploading to YouTube.' },
   })
 
   return options
@@ -54,8 +56,9 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
 
 export function OutputModeStep() {
   const { deliverableMode, setDeliverableMode, videoSource, prevStep, nextStep } = useDubbingStore()
+  const t = useLocaleText()
   const sourceType = videoSource?.type ?? 'upload'
-  const options = getAvailableOptions(sourceType)
+  const options = useMemo(() => getAvailableOptions(sourceType), [sourceType])
   const isExternalUrl = videoSource?.type === 'url'
 
   useEffect(() => {
@@ -67,9 +70,9 @@ export function OutputModeStep() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">결과물 선택</h2>
-        <p className="mt-1 text-surface-500">
-          더빙 결과물을 어떻게 활용할지 선택하세요.
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '결과물 선택', en: 'Choose output' })}</h2>
+        <p className="mt-1 text-surface-600 dark:text-surface-400">
+          {t({ ko: '더빙이 끝난 뒤 어떤 형태로 받을지 선택하세요.', en: 'Choose what you want to do with the finished dubbing.' })}
         </p>
       </div>
 
@@ -77,9 +80,12 @@ export function OutputModeStep() {
         <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/10">
           <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-500 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-900 dark:text-amber-300">저작권 안내</p>
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-300">{t({ ko: '저작권 안내', en: 'Copyright notice' })}</p>
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-              타인의 영상을 무단으로 재업로드하면 저작권 위반이 될 수 있습니다. 저작권을 지켜주세요.
+              {t({
+                ko: '직접 소유하지 않은 영상을 재업로드하면 문제가 될 수 있습니다. 업로드 권한이 있는 영상만 사용하세요.',
+                en: 'Re-uploading videos you do not own can cause copyright issues. Only use videos you have permission to upload.',
+              })}
             </p>
           </div>
         </div>
@@ -97,11 +103,11 @@ export function OutputModeStep() {
                 if (!disabled) setDeliverableMode(value)
               }}
               className={cn(
-                'flex flex-col items-center gap-4 rounded-xl border-2 p-6 text-center transition-all',
+                'flex flex-col items-center gap-4 rounded-lg border-2 p-6 text-center transition-all',
                 disabled && 'cursor-not-allowed opacity-60',
                 !disabled && 'cursor-pointer',
                 selected
-                  ? 'border-brand-500 bg-brand-50 shadow-lg shadow-brand-500/10 dark:bg-brand-900/10'
+                  ? 'border-brand-600 bg-brand-50 shadow-sm dark:bg-brand-900/10'
                   : disabled
                     ? 'border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/60'
                     : 'border-surface-200 bg-white hover:border-surface-300 dark:border-surface-700 dark:bg-surface-800 dark:hover:border-surface-600',
@@ -111,7 +117,7 @@ export function OutputModeStep() {
                 className={cn(
                   'flex h-14 w-14 items-center justify-center rounded-full',
                   selected
-                    ? 'bg-brand-500 text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'bg-surface-100 text-surface-500 dark:bg-surface-700 dark:text-surface-400',
                 )}
               >
@@ -123,15 +129,15 @@ export function OutputModeStep() {
                     'text-lg font-semibold',
                     selected ? 'text-brand-700 dark:text-brand-300' : 'text-surface-900 dark:text-white',
                   )}>
-                    {title}
+                    {t(title)}
                   </p>
                   {badge && (
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                      {badge}
+                      {t(badge)}
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-surface-500">{description}</p>
+                <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">{t(description)}</p>
               </div>
             </button>
           )
@@ -141,10 +147,10 @@ export function OutputModeStep() {
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
-          이전
+          {t({ ko: '이전', en: 'Back' })}
         </Button>
         <Button onClick={nextStep}>
-          다음: 언어 선택
+          {t({ ko: '다음: 언어 선택', en: 'Next: Choose languages' })}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

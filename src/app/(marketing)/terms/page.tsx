@@ -18,7 +18,7 @@ export default function TermsPage() {
         <h1 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
           서비스 약관
         </h1>
-        <p className="mt-2 text-sm text-surface-500">최종 업데이트: {LAST_UPDATED}</p>
+        <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">최종 업데이트: {LAST_UPDATED}</p>
       </header>
 
       <Section title="1. 약관의 동의">
@@ -68,7 +68,7 @@ export default function TermsPage() {
           <li>YouTube 커뮤니티 가이드 및 저작권 정책에 위배되는 콘텐츠 생성</li>
           <li>딥페이크 등 타인의 명예를 훼손하거나 사기에 이용될 수 있는 콘텐츠 생성</li>
           <li>본 서비스의 API/시스템에 대한 비정상적·자동화된 호출(스크래핑, DDoS 등)</li>
-          <li>크레딧 시스템의 회피·부정 사용</li>
+          <li>더빙 시간 또는 결제 시스템의 회피·부정 사용</li>
         </ul>
       </Section>
 
@@ -94,17 +94,17 @@ export default function TermsPage() {
             않습니다.
           </li>
           <li>
-            본 서비스가 저장·캐시한 YouTube 데이터는 30일 이내에 갱신되거나, 사용자 요청 시
-            즉시 삭제됩니다.
+            본 서비스가 저장·캐시한 YouTube 채널/영상 데이터는 서비스 표시와 안정성을 위해 필요한
+            기간 동안 보관되며, 사용자 요청 또는 YouTube 연결 해제 시 삭제 또는 갱신 중단 처리됩니다.
           </li>
         </ul>
       </Section>
 
-      <Section title="6. 크레딧 및 결제">
+      <Section title="6. 더빙 시간 및 결제">
         <ul className="mt-2 list-disc space-y-1 pl-6">
-          <li>본 서비스는 1분 더빙당 크레딧 1을 차감하는 선불 크레딧 모델을 사용합니다.</li>
-          <li>구매한 크레딧은 환불되지 않으나, 만료 기한은 없습니다.</li>
-          <li>본 서비스 장애로 처리가 실패한 작업은 크레딧이 자동 환원됩니다.</li>
+          <li>본 서비스는 더빙 1분당 충전한 더빙 시간 1분을 차감하는 선불 모델을 사용합니다.</li>
+          <li>구매한 더빙 시간은 환불되지 않으나, 만료 기한은 없습니다.</li>
+          <li>본 서비스 장애로 처리가 실패한 작업은 차감된 더빙 시간이 자동 환원됩니다.</li>
         </ul>
       </Section>
 
@@ -196,6 +196,10 @@ export default function TermsPage() {
           ·{' '}
           <ExternalA href="https://developers.google.com/terms/api-services-user-data-policy">
             Google API Services User Data Policy
+          </ExternalA>
+          {' '}·{' '}
+          <ExternalA href="https://policies.google.com/privacy">
+            Google Privacy Policy
           </ExternalA>
         </p>
       </footer>

@@ -24,8 +24,11 @@ export default function GlobalError({
           </div>
           <h2 className="text-xl font-semibold">예상치 못한 오류가 발생했습니다</h2>
           <p className="max-w-md text-sm text-gray-500 dark:text-gray-400">
-            {error.digest ? `오류 코드: ${error.digest}` : error.message}
+            잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.
           </p>
+          {error.digest && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">문의 시 전달할 오류 코드: {error.digest}</p>
+          )}
           <button
             onClick={() => unstable_retry()}
             className="mt-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 transition-colors"

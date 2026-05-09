@@ -7,7 +7,7 @@ import { ToastContainer } from '@/components/feedback/Toast'
 import { useThemeStore } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18nStore } from '@/stores/i18nStore'
-import { restoreSession } from '@/lib/google-auth'
+import { restoreSession, signOut as clearStoredGoogleUser } from '@/lib/google-auth'
 import { useUserPreferencesSync } from '@/hooks/useUserPreferencesSync'
 
 function ThemeHydrator() {
@@ -22,7 +22,6 @@ function AuthHydrator() {
     const { user } = restoreSession()
     const auth = useAuthStore.getState()
     if (user) {
-      auth.setUser(user)
       fetch('/api/auth/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -34,12 +33,17 @@ function AuthHydrator() {
         }),
       })
         .then((res) => {
-          if (res.status === 401) {
-            // Token expired and refresh failed — clear session so user can re-login
+          if (res.ok) {
+            auth.setUser(user)
+          } else {
+            clearStoredGoogleUser()
             auth.clear()
           }
         })
-        .catch(() => {})
+        .catch(() => {
+          clearStoredGoogleUser()
+          auth.clear()
+        })
     } else {
       auth.setLoading(false)
     }

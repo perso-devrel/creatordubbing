@@ -24,7 +24,10 @@ export function LandingNavBar() {
       useAuthStore.getState().setUser(user)
       router.push('/dashboard')
     } catch (err) {
-      addToast({ type: 'error', title: '로그인 실패', message: err instanceof Error ? err.message : '' })
+      const message = err instanceof Error && err.message.includes('팝업')
+        ? '팝업 차단을 허용한 뒤 다시 로그인해 주세요.'
+        : '잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.'
+      addToast({ type: 'error', title: '로그인할 수 없습니다', message })
     } finally {
       setLoading(false)
     }
@@ -34,7 +37,7 @@ export function LandingNavBar() {
     <nav className="sticky top-0 z-50 border-b border-surface-200/50 bg-white/80 backdrop-blur-md dark:border-surface-800/50 dark:bg-surface-950/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-500">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
           <span className="text-lg font-bold text-surface-900 dark:text-surface-100">

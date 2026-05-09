@@ -3,12 +3,11 @@ import { Hero } from '@/features/landing/Hero'
 import { HowItWorks } from '@/features/landing/HowItWorks'
 import { FeatureShowcase } from '@/features/landing/FeatureShowcase'
 import { ROICalculator } from '@/features/landing/ROICalculator'
-import { Testimonials } from '@/features/landing/Testimonials'
 import { PricingSection } from '@/features/landing/PricingSection'
 import { CTASection } from '@/features/landing/CTASection'
 import { SUPPORTED_LANGUAGE_COUNT } from '@/utils/languages'
 
-const description = `Perso.ai + YouTube API 기반 크리에이터 전용 ${SUPPORTED_LANGUAGE_COUNT}개 언어 자동 더빙. 한 번 클릭으로 영상 글로벌화.`
+const description = `YouTube 크리에이터를 위한 ${SUPPORTED_LANGUAGE_COUNT}개 언어 AI 더빙 및 업로드 도구.`
 
 export const metadata: Metadata = {
   title: 'Dubtube — AI Dubbing for YouTube Creators',
@@ -38,7 +37,7 @@ const jsonLd = {
   offers: {
     '@type': 'Offer',
     price: '0',
-    priceCurrency: 'USD',
+    priceCurrency: 'KRW',
   },
 }
 
@@ -53,7 +52,6 @@ export default function LandingPage() {
       <HowItWorks />
       <FeatureShowcase />
       <ROICalculator />
-      <Testimonials />
       <PricingSection />
       <CTASection />
     </>

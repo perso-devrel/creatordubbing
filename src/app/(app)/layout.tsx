@@ -11,9 +11,9 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen">
       <Sidebar isOpsAdmin={isOpsAdmin} />
-      <div className="ml-64">
+      <div className="lg:ml-64">
         <Topbar isOpsAdmin={isOpsAdmin} />
-        <main className="p-6">{children}</main>
+        <main className="px-4 py-5 pb-24 sm:p-6 lg:pb-6">{children}</main>
       </div>
     </div>
   )

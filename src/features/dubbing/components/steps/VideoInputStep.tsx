@@ -14,6 +14,7 @@ function YouTubeLogo({ className }: { className?: string }) {
   )
 }
 import { Card, Button, Input, Badge, Tabs, TabsList, TabsTrigger, TabsContent, Progress } from '@/components/ui'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
@@ -24,6 +25,8 @@ import { getPersoFileUrl } from '@/lib/api-client'
 export function VideoInputStep() {
   const { videoMeta, setVideoSource, setIsShort, nextStep } = useDubbingStore()
   const { uploadLocalVideo, importVideoByUrl } = usePersoFlow()
+  const locale = useAppLocale()
+  const t = useLocaleText()
 
   const searchParams = useSearchParams()
   const [url, setUrl] = useState(searchParams.get('url') ?? '')
@@ -60,7 +63,7 @@ export function VideoInputStep() {
       setVideoSource({ type: 'channel', url: videoUrl, videoId })
       await importVideoByUrl(videoUrl)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import video')
+      setError(err instanceof Error ? err.message : t({ ko: '영상을 가져오지 못했습니다.', en: 'Failed to import the video.' }))
     } finally {
       setLoading(false)
     }
@@ -74,7 +77,7 @@ export function VideoInputStep() {
       setVideoSource({ type: 'url', url })
       await importVideoByUrl(url)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import video')
+      setError(err instanceof Error ? err.message : t({ ko: '영상을 가져오지 못했습니다.', en: 'Failed to import the video.' }))
     } finally {
       setLoading(false)
     }
@@ -90,7 +93,7 @@ export function VideoInputStep() {
       await uploadLocalVideo(file)
       setUploadProgress(100)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
+      setError(err instanceof Error ? err.message : t({ ko: '업로드하지 못했습니다.', en: 'Upload failed.' }))
     } finally {
       setLoading(false)
       setUploadProgress(0)
@@ -121,8 +124,12 @@ export function VideoInputStep() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">영상 선택</h2>
-        <p className="mt-1 text-surface-500">YouTube URL을 붙여넣거나 영상 파일을 업로드하세요</p>
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">
+          {t({ ko: '영상 선택', en: 'Choose a video' })}
+        </h2>
+        <p className="mt-1 text-surface-600 dark:text-surface-400">
+          {t({ ko: 'YouTube 링크를 붙여넣거나 영상 파일을 업로드하세요.', en: 'Paste a YouTube link or upload a video file.' })}
+        </p>
       </div>
 
       <Tabs
@@ -134,13 +141,13 @@ export function VideoInputStep() {
       >
         <TabsList className="mx-auto w-fit">
           <TabsTrigger value="upload">
-            <span className="flex items-center gap-1.5"><Upload className="h-4 w-4" /> 업로드</span>
+            <span className="flex items-center gap-1.5"><Upload className="h-4 w-4" /> {t({ ko: '업로드', en: 'Upload' })}</span>
           </TabsTrigger>
           <TabsTrigger value="channel">
-            <span className="flex items-center gap-1.5"><Film className="h-4 w-4" /> 내 영상</span>
+            <span className="flex items-center gap-1.5"><Film className="h-4 w-4" /> {t({ ko: '내 영상', en: 'My videos' })}</span>
           </TabsTrigger>
           <TabsTrigger value="url">
-            <span className="flex items-center gap-1.5"><Link2 className="h-4 w-4" /> 영상 URL</span>
+            <span className="flex items-center gap-1.5"><Link2 className="h-4 w-4" /> {t({ ko: '영상 URL', en: 'Video URL' })}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -148,24 +155,31 @@ export function VideoInputStep() {
           <Card>
             <div className="mb-3 flex items-start gap-2 rounded-lg bg-blue-50 p-2.5 text-xs text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
               <Info className="h-4 w-4 shrink-0 mt-0.5" />
-              <p>공개 영상만 가져올 수 있습니다. 비공개·일부공개 영상은 외부 다운로드가 막혀 있어 가져올 수 없으니, YouTube에서 공개로 변경하거나 영상 파일을 직접 업로드해 주세요.</p>
+              <p>
+                {t({
+                  ko: '공개 영상만 가져올 수 있습니다. 비공개 또는 일부 공개 영상은 파일로 직접 업로드해 주세요.',
+                  en: 'Only public videos can be imported. For private or unlisted videos, upload the video file directly.',
+                })}
+              </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
-                placeholder="YouTube URL 또는 영상 직접 링크 (.mp4, .mov, .webm)"
+                placeholder={t({ ko: 'YouTube 링크 또는 영상 파일 링크', en: 'YouTube link or direct video link' })}
                 value={url}
                 onChange={(e) => { setUrl(e.target.value); setError(null) }}
                 icon={<Play className="h-4 w-4" />}
                 onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
                 error={error && !loading ? error : undefined}
               />
-              <Button onClick={handleUrlSubmit} loading={loading} disabled={!isValid || loading} className="whitespace-nowrap">
-                {loading ? '가져오는 중...' : '가져오기'}
+              <Button onClick={handleUrlSubmit} loading={loading} disabled={!isValid || loading}>
+                {loading ? t({ ko: '가져오는 중...', en: 'Importing...' }) : t({ ko: '가져오기', en: 'Import' })}
               </Button>
             </div>
             {loading && (
-              <p className="mt-2 text-xs text-surface-400">
-                {isValidYouTubeUrl(url) ? 'YouTube에서' : '원격 서버에서'} 다운로드 중... 긴 영상은 몇 분 걸릴 수 있습니다.
+              <p className="mt-2 text-xs text-surface-500 dark:text-surface-400">
+                {isValidYouTubeUrl(url)
+                  ? t({ ko: 'YouTube에서 영상을 가져오는 중입니다. 긴 영상은 몇 분 걸릴 수 있습니다.', en: 'Importing from YouTube. Longer videos can take a few minutes.' })
+                  : t({ ko: '영상 파일을 가져오는 중입니다. 긴 영상은 몇 분 걸릴 수 있습니다.', en: 'Importing the video file. Longer videos can take a few minutes.' })}
               </p>
             )}
           </Card>
@@ -182,7 +196,7 @@ export function VideoInputStep() {
           <Card
             role="button"
             tabIndex={0}
-            aria-label="영상 파일 선택"
+            aria-label={t({ ko: '영상 파일 선택', en: 'Select video file' })}
             className="cursor-pointer border-2 border-dashed border-surface-300 text-center transition-colors hover:border-brand-400 focus-ring dark:border-surface-700"
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleFileDrop}
@@ -194,17 +208,19 @@ export function VideoInputStep() {
                 <>
                   <FileVideo className="mx-auto h-10 w-10 text-brand-500 animate-pulse" />
                   <p className="mt-3 text-sm font-medium text-surface-700 dark:text-surface-300">
-                    Perso.ai에 업로드 중...
+                    {t({ ko: '영상을 업로드하는 중...', en: 'Uploading video...' })}
                   </p>
                   <Progress value={uploadProgress} size="sm" className="mx-auto mt-3 max-w-xs" />
                 </>
               ) : (
                 <>
-                  <Upload className="mx-auto h-10 w-10 text-surface-400" />
+                  <Upload className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
                   <p className="mt-3 text-sm font-medium text-surface-700 dark:text-surface-300">
-                    영상을 드래그하거나 클릭해서 선택하세요
+                    {t({ ko: '영상을 드래그하거나 클릭해서 선택하세요.', en: 'Drag a video here or click to select one.' })}
                   </p>
-                  <p className="mt-1 text-xs text-surface-400">MP4, MOV, WebM — 최대 30분</p>
+                  <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+                    {t({ ko: 'MP4, MOV, WebM 지원 · 최대 30분', en: 'MP4, MOV, and WebM · up to 30 minutes' })}
+                  </p>
                 </>
               )}
             </div>
@@ -217,46 +233,48 @@ export function VideoInputStep() {
         <TabsContent value="channel" className="mt-6">
           {channelLoading ? (
             <Card className="py-12 text-center">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">채널 정보 불러오는 중...</p>
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-500 dark:text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">{t({ ko: '채널 정보를 불러오는 중...', en: 'Loading channel information...' })}</p>
             </Card>
           ) : channelError ? (
             <Card className="py-12 text-center">
-              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-red-500">
-                {channelError instanceof Error ? channelError.message : 'YouTube 채널 정보를 불러오지 못했습니다.'}
+                {channelError instanceof Error ? channelError.message : t({ ko: 'YouTube 채널 정보를 불러오지 못했습니다.', en: 'Could not load YouTube channel information.' })}
               </p>
             </Card>
           ) : !isConnected ? (
             <Card className="py-12 text-center">
-              <Film className="mx-auto h-10 w-10 text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">YouTube 채널을 연결하면 영상을 바로 선택할 수 있습니다</p>
-              <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/youtube'}>채널 연결</Button>
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">{t({ ko: 'YouTube 채널을 연결하면 내 영상을 바로 선택할 수 있습니다.', en: 'Connect your YouTube channel to choose from your videos.' })}</p>
+              <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/youtube'}>{t({ ko: '채널 연결', en: 'Connect channel' })}</Button>
             </Card>
           ) : myVideosLoading ? (
             <Card className="py-12 text-center">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">영상 목록 불러오는 중...</p>
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-500 dark:text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">{t({ ko: '영상 목록을 불러오는 중...', en: 'Loading videos...' })}</p>
             </Card>
           ) : myVideosError ? (
             <Card className="py-12 text-center">
-              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-red-500">
-                {myVideosError instanceof Error ? myVideosError.message : 'YouTube 영상 목록을 불러오지 못했습니다.'}
+                {myVideosError instanceof Error ? myVideosError.message : t({ ko: 'YouTube 영상 목록을 불러오지 못했습니다.', en: 'Could not load YouTube videos.' })}
               </p>
             </Card>
           ) : myVideos.length === 0 ? (
             <Card className="py-12 text-center">
-              <Film className="mx-auto h-10 w-10 text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">채널에 업로드된 영상이 없습니다</p>
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">{t({ ko: '채널에 업로드된 영상이 없습니다.', en: 'There are no uploaded videos on this channel.' })}</p>
             </Card>
           ) : publicVideos.length === 0 ? (
             <Card className="py-12 text-center">
-              <Lock className="mx-auto h-10 w-10 text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">공개된 영상이 없습니다</p>
-              <p className="mt-1 text-xs text-surface-400">
-                비공개·일부공개 영상은 외부 다운로드가 막혀 가져올 수 없습니다.<br />
-                YouTube에서 공개로 변경하거나 영상 파일을 직접 업로드해 주세요.
+              <Lock className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500">{t({ ko: '가져올 수 있는 공개 영상이 없습니다.', en: 'There are no public videos available to import.' })}</p>
+              <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+                {t({
+                  ko: '비공개 또는 일부 공개 영상은 파일로 직접 업로드해 주세요.',
+                  en: 'For private or unlisted videos, upload the video file directly.',
+                })}
               </p>
             </Card>
           ) : (
@@ -267,14 +285,14 @@ export function VideoInputStep() {
                   type="text"
                   value={videoSearch}
                   onChange={(e) => setVideoSearch(e.target.value)}
-                  placeholder="영상 제목으로 검색"
+                  placeholder={t({ ko: '영상 제목으로 검색', en: 'Search by video title' })}
                   className="w-full rounded-md border border-surface-300 bg-white py-2 pl-9 pr-3 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-surface-700 dark:bg-surface-900 dark:text-white"
                 />
               </div>
 
               <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
                 {filteredVideos.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-surface-500">검색 결과가 없습니다</p>
+                  <p className="py-8 text-center text-sm text-surface-500">{t({ ko: '검색 결과가 없습니다.', en: 'No matching videos.' })}</p>
                 ) : (
                   filteredVideos.map((video) => (
                     <div
@@ -298,7 +316,7 @@ export function VideoInputStep() {
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
                           <p className="text-xs text-surface-500">
-                            {new Date(video.publishedAt).toLocaleDateString('ko-KR')}
+                            {new Date(video.publishedAt).toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US')}
                           </p>
                         </div>
                       </div>
@@ -310,7 +328,7 @@ export function VideoInputStep() {
                         disabled={loading}
                         onClick={() => handleMyVideoSelect(video.videoId)}
                       >
-                        선택
+                        {t({ ko: '선택', en: 'Select' })}
                       </Button>
                     </div>
                   ))
@@ -318,8 +336,11 @@ export function VideoInputStep() {
               </div>
 
               {hiddenCount > 0 && !videoSearch && (
-                <p className="mt-3 text-xs text-surface-400">
-                  비공개·일부공개 영상 {hiddenCount}개는 외부 다운로드가 막혀 표시되지 않습니다.
+                  <p className="mt-3 text-xs text-surface-500 dark:text-surface-400">
+                  {t({
+                    ko: `비공개 또는 일부 공개 영상 ${hiddenCount}개는 파일로 직접 업로드해야 합니다.`,
+                    en: `${hiddenCount} private or unlisted videos must be uploaded as files.`,
+                  })}
                 </p>
               )}
               {error && !loading && (
@@ -353,13 +374,17 @@ export function VideoInputStep() {
                 <h3 className="font-semibold text-surface-900 dark:text-white truncate">{videoMeta.title}</h3>
                 {videoMeta.durationMs <= 180000 && (
                   <Badge variant="brand" className="shrink-0">
-                    <Zap className="h-3 w-3" /> Shorts
+                    <Zap className="h-3 w-3" /> {t({ ko: '쇼츠', en: 'Shorts' })}
                   </Badge>
                 )}
               </div>
               <p className="text-sm text-surface-500">{videoMeta.channelTitle}</p>
               {videoMeta.duration > 0 && (
-                <p className="text-xs text-surface-400 mt-1">{formatDuration(videoMeta.duration)} 길이</p>
+                <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+                  {locale === 'ko'
+                    ? `길이 ${formatDuration(videoMeta.duration)}`
+                    : `${formatDuration(videoMeta.duration)} long`}
+                </p>
               )}
             </div>
           </div>
@@ -368,7 +393,7 @@ export function VideoInputStep() {
 
       <div className="flex justify-end">
         <Button onClick={nextStep} disabled={!videoMeta || loading}>
-          다음: 결과물 선택
+          {t({ ko: '다음: 결과물 선택', en: 'Next: Choose output' })}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

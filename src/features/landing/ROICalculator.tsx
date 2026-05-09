@@ -42,10 +42,10 @@ export function ROICalculator() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            성장 가능성 시뮬레이터
+            예상 도달 범위 계산기
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            YouTube 공식 데이터 및 Jamie Oliver(3배 도달)·MrBeast 등 공개 사례 기반 추정치.
+            공개 사례와 업계 데이터를 바탕으로 한 참고용 추정치입니다.
             <br className="hidden sm:block" />
             실제 성과는 콘텐츠·썸네일·업로드 빈도·채널 규모에 따라 크게 달라집니다.
           </p>
@@ -70,24 +70,23 @@ export function ROICalculator() {
                 aria-label="더빙 언어 수"
                 className="w-full accent-brand-500"
               />
-              <div className="mt-1 flex justify-between text-xs text-surface-400"><span>1</span><span>10</span></div>
+              <div className="mt-1 flex justify-between text-xs text-surface-500 dark:text-surface-400"><span>1</span><span>10</span></div>
             </div>
 
-            <div className="rounded-xl bg-gradient-to-r from-brand-50 to-pink-50 p-6 dark:from-brand-900/20 dark:to-pink-900/20">
+            <div className="rounded-lg border border-brand-100 bg-brand-50 p-6 dark:border-brand-900/50 dark:bg-brand-900/20">
               <div className="flex items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-400">
                 <TrendingUp className="h-4 w-4" />
-                예상 도달 증가율
+                선택 언어 기준 참고치
               </div>
               <div className="mt-2 text-5xl font-extrabold text-surface-900 dark:text-white">
                 +{growthPct}%
               </div>
               <div className="mt-3 text-sm text-surface-600 dark:text-surface-400">
                 월 조회수 <span className="font-semibold">{formatNumber(BASE_VIEWS)}회</span> 기준{' '}
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatNumber(projectedViews)}회</span>까지 도달 가능
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatNumber(projectedViews)}회</span> 참고 예상
               </div>
               <p className="mt-3 text-xs text-surface-500 dark:text-surface-400">
-                * YouTube 공식 멀티오디오 통계(평균 +25% 시청시간)와 Jamie Oliver 3배 등
-                공개 사례를 언어별로 분배한 추정치입니다. 채널별 실측치는 아닙니다.
+                공개 사례를 언어별로 분배한 참고 추정치입니다. 채널별 실측치나 성과 보장이 아닙니다.
               </p>
             </div>
           </div>

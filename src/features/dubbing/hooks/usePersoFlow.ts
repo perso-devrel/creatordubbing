@@ -4,6 +4,9 @@ import { useCallback, useRef } from 'react'
 import { useDubbingStore } from '../store/dubbingStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import { countText, text } from '@/lib/i18n/text'
+import { useI18nStore } from '@/stores/i18nStore'
 import {
   getSpaces,
   uploadVideoFile as persoUploadVideoFile,
@@ -72,7 +75,9 @@ async function saveJobToDb(
   const userId = useAuthStore.getState().user?.uid
   const videoMeta = store.getState().videoMeta
   const isShort = store.getState().isShort
-  if (!userId) throw new Error('로그인이 필요합니다')
+  if (!userId) {
+    throw new Error(text(useI18nStore.getState().appLocale, { ko: '로그인이 필요합니다.', en: 'Please sign in first.' }))
+  }
 
   const result = await dbMutationStrict<{ jobId: number }>({
     type: 'createDubbingJobWithLanguages',
@@ -186,9 +191,12 @@ async function pollLanguage(
   if (dbJobId) {
     await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: newStatus } })
   }
+  const locale = useI18nStore.getState().appLocale
   addToast({
     type: anyFailed ? 'warning' : 'success',
-    title: anyFailed ? 'Dubbing completed with errors' : 'All dubbing complete!',
+    title: anyFailed
+      ? text(locale, { ko: '일부 언어 처리에 실패했습니다', en: 'Dubbing finished with some errors' })
+      : text(locale, { ko: '더빙이 완료되었습니다', en: 'Dubbing complete' }),
   })
   return true
 }
@@ -233,6 +241,8 @@ async function cancelAllProjects(
 
 export function usePersoFlow() {
   const addToast = useNotificationStore((s) => s.addToast)
+  const locale = useAppLocale()
+  const t = useLocaleText()
   const pollTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   const initSpace = useCallback(async () => {
@@ -243,19 +253,19 @@ export function usePersoFlow() {
         store.getState().setSpaceSeq(space.spaceSeq)
         return space.spaceSeq
       }
-      throw new Error('No spaces found. Check your API key.')
+      throw new Error(t({ ko: '작업 공간을 찾지 못했습니다. API 설정을 확인해 주세요.', en: 'No workspace was found. Check your API settings.' }))
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load spaces'
-      addToast({ type: 'error', title: 'Space Error', message: msg })
+      const msg = err instanceof Error ? err.message : t({ ko: '작업 공간을 불러오지 못했습니다.', en: 'Failed to load workspace.' })
+      addToast({ type: 'error', title: t({ ko: '작업 공간 오류', en: 'Workspace error' }), message: msg })
       throw err
     }
-  }, [addToast])
+  }, [addToast, t])
 
   const uploadLocalVideo = useCallback(async (file: File) => {
     let spaceSeq = store.getState().spaceSeq
     if (!spaceSeq) spaceSeq = await initSpace()
 
-    addToast({ type: 'info', title: 'Uploading video...', message: file.name })
+    addToast({ type: 'info', title: t({ ko: '영상을 업로드하는 중...', en: 'Uploading video...' }), message: file.name })
 
     try {
       const result = await persoUploadVideoFile(spaceSeq!, file)
@@ -269,16 +279,20 @@ export function usePersoFlow() {
         thumbnail: result.thumbnailFilePath ? getPersoFileUrl(result.thumbnailFilePath) : '',
         duration: Math.round(result.durationMs / 1000),
         durationMs: result.durationMs,
-        channelTitle: 'Local file',
+        channelTitle: t({ ko: '직접 업로드한 파일', en: 'Uploaded file' }),
       })
-      addToast({ type: 'success', title: 'Video uploaded', message: `${file.name} ready for dubbing` })
+      addToast({
+        type: 'success',
+        title: t({ ko: '영상 업로드 완료', en: 'Video uploaded' }),
+        message: t({ ko: `${file.name} 더빙을 준비했습니다.`, en: `${file.name} is ready for dubbing.` }),
+      })
       return result
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Upload failed'
-      addToast({ type: 'error', title: 'Upload Error', message: msg })
+      const msg = err instanceof Error ? err.message : t({ ko: '업로드하지 못했습니다.', en: 'Upload failed.' })
+      addToast({ type: 'error', title: t({ ko: '업로드 실패', en: 'Upload failed' }), message: msg })
       throw err
     }
-  }, [initSpace, addToast])
+  }, [initSpace, addToast, t])
 
   const importVideoByUrl = useCallback(async (url: string) => {
     let spaceSeq = store.getState().spaceSeq
@@ -287,7 +301,9 @@ export function usePersoFlow() {
     const isYouTube = /(?:youtube\.com|youtu\.be)/.test(url)
     addToast({
       type: 'info',
-      title: isYouTube ? 'YouTube에서 가져오는 중...' : '영상 URL 가져오는 중...',
+      title: isYouTube
+        ? t({ ko: 'YouTube에서 영상을 가져오는 중...', en: 'Importing from YouTube...' })
+        : t({ ko: '영상 URL을 가져오는 중...', en: 'Importing video URL...' }),
       duration: 8000,
     })
 
@@ -295,11 +311,11 @@ export function usePersoFlow() {
       const meta = await getExternalMetadata(spaceSeq!, url, DEFAULT_SOURCE_LANGUAGE)
       store.getState().setVideoMeta({
         id: url,
-        title: meta.originalName || (isYouTube ? 'YouTube Video' : 'External Video'),
+        title: meta.originalName || (isYouTube ? t({ ko: 'YouTube 영상', en: 'YouTube video' }) : t({ ko: '외부 영상', en: 'External video' })),
         thumbnail: meta.thumbnailFilePath ? getPersoFileUrl(meta.thumbnailFilePath) : '',
         duration: Math.round(meta.durationMs / 1000),
         durationMs: meta.durationMs,
-        channelTitle: isYouTube ? 'YouTube' : 'External',
+        channelTitle: isYouTube ? 'YouTube' : t({ ko: '외부 링크', en: 'External link' }),
         width: meta.width,
         height: meta.height,
       })
@@ -307,21 +323,27 @@ export function usePersoFlow() {
       const result = await uploadExternalVideo(spaceSeq!, url, DEFAULT_SOURCE_LANGUAGE)
       store.getState().setMediaSeq(result.seq)
 
-      addToast({ type: 'success', title: '영상 가져오기 완료' })
+      addToast({ type: 'success', title: t({ ko: '영상 가져오기 완료', en: 'Video imported' }) })
       return result
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '영상 가져오기 실패'
-      addToast({ type: 'error', title: 'Import Error', message: msg })
+      const msg = err instanceof Error ? err.message : t({ ko: '영상을 가져오지 못했습니다.', en: 'Failed to import video.' })
+      addToast({ type: 'error', title: t({ ko: '영상 가져오기 실패', en: 'Import failed' }), message: msg })
       throw err
     }
-  }, [initSpace, addToast])
+  }, [initSpace, addToast, t])
 
   const submitDubbing = useCallback(async () => {
     const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, videoMeta } = store.getState()
-    if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
+    if (!spaceSeq || !mediaSeq) {
+      throw new Error(t({ ko: '영상 정보를 찾지 못했습니다. 처음부터 다시 시도해 주세요.', en: 'Missing video information. Please start again.' }))
+    }
     const targetLanguages = Array.from(new Set(selectedLanguages))
 
-    addToast({ type: 'info', title: 'Submitting dubbing job...', message: `${targetLanguages.length} languages` })
+    addToast({
+      type: 'info',
+      title: t({ ko: '더빙 작업을 시작하는 중...', en: 'Starting dubbing job...' }),
+      message: countText(locale, targetLanguages.length, { ko: '개 언어', en: 'languages' }),
+    })
 
     try {
       try {
@@ -380,11 +402,15 @@ export function usePersoFlow() {
         },
       })
 
-      addToast({ type: 'success', title: '더빙 시작됨', message: `${projectIds.length}개 프로젝트 생성` })
+      addToast({
+        type: 'success',
+        title: t({ ko: '더빙을 시작했습니다', en: 'Dubbing started' }),
+        message: countText(locale, projectIds.length, { ko: '개 언어 처리 중', en: 'languages processing' }),
+      })
       return projectMap
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Submission failed'
-      addToast({ type: 'error', title: 'Dubbing Error', message: msg })
+      const msg = err instanceof Error ? err.message : t({ ko: '더빙 작업을 시작하지 못했습니다.', en: 'Failed to start dubbing.' })
+      addToast({ type: 'error', title: t({ ko: '더빙 시작 실패', en: 'Dubbing failed' }), message: msg })
       const dbJobId = store.getState().dbJobId
       if (dbJobId) {
         dbMutation({ type: 'releaseJobCredits', payload: { jobId: dbJobId, reason: 'submission_failed' } }).catch(() => {})
@@ -393,7 +419,7 @@ export function usePersoFlow() {
       store.getState().setJobStatus('failed')
       throw err
     }
-  }, [addToast])
+  }, [addToast, locale, t])
 
   const startPolling = useCallback(() => {
     const { spaceSeq, projectMap } = store.getState()
@@ -430,8 +456,8 @@ export function usePersoFlow() {
 
   const cancelAll = useCallback(async () => {
     stopPolling()
-    await cancelAllProjects(addToast, '더빙이 취소되었습니다.')
-  }, [stopPolling, addToast])
+    await cancelAllProjects(addToast, t({ ko: '더빙 작업을 취소했습니다', en: 'Dubbing job canceled' }))
+  }, [stopPolling, addToast, t])
 
   const fetchDownloads = useCallback(async (langCode: string, target: DownloadTarget = 'all') => {
     const { spaceSeq, projectMap } = store.getState()
@@ -441,11 +467,11 @@ export function usePersoFlow() {
     try {
       return await getDownloadLinks(projectSeq, spaceSeq, target)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Download failed'
-      addToast({ type: 'error', title: 'Download Error', message: msg })
+      const msg = err instanceof Error ? err.message : t({ ko: '파일을 다운로드하지 못했습니다.', en: 'Download failed.' })
+      addToast({ type: 'error', title: t({ ko: '다운로드 실패', en: 'Download failed' }), message: msg })
       return null
     }
-  }, [addToast])
+  }, [addToast, t])
 
   return {
     uploadLocalVideo,

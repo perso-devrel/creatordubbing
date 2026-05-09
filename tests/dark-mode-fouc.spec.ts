@@ -28,7 +28,6 @@ test('dark mode has no FOUC on landing', async ({ page }) => {
 test('dark mode has no FOUC on dashboard', async ({ page }) => {
   await page.context().addCookies([
     { name: 'dubtube_session', value: signTestSessionCookie('x'), domain: 'localhost', path: '/' },
-    { name: 'google_access_token', value: 'mock', domain: 'localhost', path: '/' },
   ])
   await page.addInitScript(() => {
     localStorage.setItem('dubtube-theme', 'dark')

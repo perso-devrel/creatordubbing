@@ -71,20 +71,20 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full rounded-2xl border border-surface-200 bg-white p-6 shadow-2xl animate-fade-in dark:border-surface-800 dark:bg-surface-900 outline-none',
+          'relative z-10 flex max-h-[min(720px,calc(100vh-48px))] w-full flex-col rounded-lg border border-surface-200 bg-white shadow-xl animate-fade-in outline-none dark:border-surface-800 dark:bg-surface-900',
           sizes[size],
           className,
         )}
       >
         {title && (
-          <div className="mb-4 flex items-center justify-between">
+          <div className="flex shrink-0 items-center justify-between border-b border-surface-200 px-6 py-4 dark:border-surface-800">
             <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">{title}</h2>
-            <button onClick={onClose} aria-label="닫기" className="rounded-lg p-1 text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800">
+            <button onClick={onClose} aria-label="닫기" className="rounded-lg p-1 text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200">
               <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         )}
-        {children}
+        <div className="min-h-0 overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   )

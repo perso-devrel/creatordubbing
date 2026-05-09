@@ -7,7 +7,7 @@ import type { ChannelStats, MyVideoItem } from '@/lib/youtube/types'
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: 'no-store' })
   const json = await res.json()
-  if (!json.ok) throw new Error(json.error?.message || 'Request failed')
+  if (!json.ok) throw new Error(json.error?.message || '요청을 처리하지 못했습니다.')
   return json.data as T
 }
 

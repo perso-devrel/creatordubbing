@@ -97,7 +97,7 @@ async function executeUpload(payload: StartUploadPayload): Promise<void> {
     sendErrorToBackground(
       jobId,
       'NAVIGATING',
-      `자동화 실패 (3회 재시도 후). 수동 진행: ${guideUrl} — ${String(err)}`,
+      `자동 업로드를 완료하지 못했습니다. YouTube Studio에서 직접 진행해 주세요: ${guideUrl} - ${String(err)}`,
       false,
     )
   }

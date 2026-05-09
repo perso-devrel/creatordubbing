@@ -6,13 +6,13 @@ import { Loader2 } from 'lucide-react'
 
 const variants = {
   primary:
-    'bg-gradient-to-r from-brand-600 to-brand-500 text-white hover:from-brand-700 hover:to-brand-600 shadow-lg shadow-brand-500/25',
+    'bg-brand-600 text-white shadow-sm hover:bg-brand-700',
   secondary:
     'bg-surface-200 text-surface-900 hover:bg-surface-300 dark:bg-surface-800 dark:text-surface-100 dark:hover:bg-surface-700',
-  ghost: 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
-  destructive: 'bg-red-600 text-white hover:bg-red-700',
+  ghost: 'text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800',
+  destructive: 'bg-red-600 text-white shadow-sm hover:bg-red-700',
   outline:
-    'border border-surface-300 text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:text-surface-300 dark:hover:bg-surface-800',
+    'border border-surface-300 bg-white text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:bg-transparent dark:text-surface-300 dark:hover:bg-surface-800',
 } as const
 
 const sizes = {

@@ -4,13 +4,16 @@ interface ApiEnvelope<T> {
   error?: { code: string; message: string; details?: unknown }
 }
 
+const REQUEST_ERROR_MESSAGE = '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'
+const RESPONSE_READ_ERROR_MESSAGE = '요청 결과를 읽지 못했습니다. 잠시 후 다시 시도해 주세요.'
+
 export async function json<T>(res: Response): Promise<T> {
   const body = (await res.json().catch(() => null)) as ApiEnvelope<T> | null
   if (!body) {
-    throw new Error(`HTTP ${res.status}: invalid response body`)
+    throw new Error(RESPONSE_READ_ERROR_MESSAGE)
   }
   if (!body.ok || body.data === undefined) {
-    const msg = body.error?.message || `HTTP ${res.status}`
+    const msg = body.error?.message || REQUEST_ERROR_MESSAGE
     const err = new Error(msg) as Error & { code?: string; status?: number }
     err.code = body.error?.code
     err.status = res.status

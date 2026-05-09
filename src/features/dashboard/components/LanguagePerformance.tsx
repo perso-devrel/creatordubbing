@@ -5,10 +5,12 @@ import { Card, CardTitle } from '@/components/ui'
 import { formatNumber } from '@/utils/formatters'
 import { useLanguagePerformance } from '@/hooks/useDashboardData'
 import { getLanguageByCode } from '@/utils/languages'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 const COLORS = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#ffe4e6', '#fda4af', '#fb7185', '#f43f5e']
 
 export function LanguagePerformance() {
+  const t = useLocaleText()
   const { data: rawData } = useLanguagePerformance()
 
   const chartData = (rawData || []).map((r) => {
@@ -23,10 +25,10 @@ export function LanguagePerformance() {
   if (chartData.length === 0) {
     return (
       <Card>
-        <CardTitle>언어별 성과</CardTitle>
-        <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">더빙 언어별 조회수</p>
+        <CardTitle>{t({ ko: '언어별 성과', en: 'Language performance' })}</CardTitle>
+        <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t({ ko: '더빙 언어별 조회수', en: 'Views by dubbing language' })}</p>
         <div className="flex h-64 items-center justify-center text-sm text-surface-400">
-          YouTube에 업로드한 영상이 있으면 여기에 성과가 표시됩니다
+          {t({ ko: 'YouTube에 업로드한 영상이 있으면 여기에 성과가 표시됩니다.', en: 'Performance appears here after you upload videos to YouTube.' })}
         </div>
       </Card>
     )
@@ -34,8 +36,8 @@ export function LanguagePerformance() {
 
   return (
     <Card>
-      <CardTitle>언어별 성과</CardTitle>
-      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">더빙 언어별 조회수</p>
+      <CardTitle>{t({ ko: '언어별 성과', en: 'Language performance' })}</CardTitle>
+      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t({ ko: '더빙 언어별 조회수', en: 'Views by dubbing language' })}</p>
 
       <div className="h-64 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -49,7 +51,7 @@ export function LanguagePerformance() {
             />
             <Tooltip
               contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
-              formatter={(value) => [formatNumber(Number(value)), '조회수']}
+              formatter={(value) => [formatNumber(Number(value)), t({ ko: '조회수', en: 'Views' })]}
             />
             <Bar dataKey="views" radius={[0, 4, 4, 0]} barSize={20}>
               {chartData.map((_, i) => (

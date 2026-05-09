@@ -3,6 +3,7 @@ export {
   getUser,
   getUserTokens,
   updateUserTokens,
+  clearUserGoogleTokens,
   updateUserCredits,
   deductUserMinutes,
   addUserCredits,
