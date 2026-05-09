@@ -1,17 +1,19 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  /* Brand Colors - restrained YouTube-inspired red */
-  --color-brand-50: #fff1f2;
-  --color-brand-100: #ffe4e6;
-  --color-brand-200: #fecdd3;
-  --color-brand-300: #fda4af;
-  --color-brand-400: #fb7185;
-  --color-brand-500: #f43f5e;
-  --color-brand-600: #e11d48;
-  --color-brand-700: #be123c;
-  --color-brand-800: #9f1239;
-  --color-brand-900: #881337;
+  /* Brand Colors - YouTube-inspired red, kept restrained for tool UI */
+  --color-brand-50: #fff1f0;
+  --color-brand-100: #ffe1df;
+  --color-brand-200: #ffc8c3;
+  --color-brand-300: #ff9f96;
+  --color-brand-400: #ff5f52;
+  --color-brand-500: #e62117;
+  --color-brand-600: #cc0000;
+  --color-brand-700: #a90000;
+  --color-brand-800: #870000;
+  --color-brand-900: #620000;
 
   /* Surface Colors */
   --color-surface-50: #f7f8fa;

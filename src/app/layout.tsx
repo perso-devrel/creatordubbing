@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     `YouTube 영상 더빙, 제목·설명 번역, 업로드까지 한 번에 준비하는 크리에이터 현지화 도구`,
 };
 
-const themeInitScript = `try{if(localStorage.getItem('dubtube-theme')==='dark'||(!localStorage.getItem('dubtube-theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;
+const themeInitScript = `try{var raw=localStorage.getItem('dubtube-theme');var mode=null;if(raw){try{var parsed=JSON.parse(raw);mode=parsed&&parsed.state&&parsed.state.mode||parsed&&parsed.mode||parsed}catch(_){mode=raw}}if(mode==='dark'||(!mode&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;
 
 export default function RootLayout({
   children,

@@ -9,10 +9,15 @@ interface ThemeState {
   setMode: (mode: 'light' | 'dark') => void
 }
 
+function getInitialMode(): 'light' | 'dark' {
+  if (typeof document === 'undefined') return 'light'
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      mode: 'dark',
+      mode: getInitialMode(),
       toggle: () =>
         set((state) => {
           const next = state.mode === 'dark' ? 'light' : 'dark'

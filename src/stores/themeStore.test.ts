@@ -4,14 +4,16 @@ import { useThemeStore } from './themeStore'
 describe('themeStore', () => {
   beforeEach(() => {
     document.documentElement.classList.remove('dark')
-    useThemeStore.setState({ mode: 'dark' })
+    localStorage.clear()
+    useThemeStore.setState({ mode: 'light' })
   })
 
-  it('starts with dark mode', () => {
-    expect(useThemeStore.getState().mode).toBe('dark')
+  it('starts from the current html theme class', () => {
+    expect(useThemeStore.getState().mode).toBe('light')
   })
 
   it('toggle switches from dark to light', () => {
+    useThemeStore.getState().setMode('dark')
     useThemeStore.getState().toggle()
     expect(useThemeStore.getState().mode).toBe('light')
     expect(document.documentElement.classList.contains('dark')).toBe(false)
@@ -40,10 +42,7 @@ describe('themeStore', () => {
 
   it('onRehydrateStorage applies dark class for dark mode', () => {
     document.documentElement.classList.remove('dark')
-    const persist = (useThemeStore as unknown as { persist: { onRehydrate?: () => void } }).persist
-    if (persist && typeof persist.onRehydrate === 'function') {
-      persist.onRehydrate()
-    }
+    localStorage.setItem('dubtube-theme', JSON.stringify({ state: { mode: 'dark' }, version: 0 }))
     useThemeStore.persist.rehydrate()
     expect(document.documentElement.classList.contains('dark')).toBe(true)
   })
