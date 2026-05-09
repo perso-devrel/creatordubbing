@@ -3,6 +3,7 @@
 import { X, CheckCircle2, AlertCircle, Info, AlertTriangle } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useNotificationStore, type ToastType } from '@/stores/notificationStore'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 const icons: Record<ToastType, typeof CheckCircle2> = {
   success: CheckCircle2,
@@ -27,6 +28,7 @@ const iconColors: Record<ToastType, string> = {
 
 export function ToastContainer() {
   const { toasts, removeToast } = useNotificationStore()
+  const t = useLocaleText()
 
   if (toasts.length === 0) return null
 
@@ -51,7 +53,7 @@ export function ToastContainer() {
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              aria-label="알림 닫기"
+              aria-label={t({ ko: '알림 닫기', en: 'Close notification' })}
               className="shrink-0 rounded p-0.5 text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200"
             >
               <X className="h-4 w-4" aria-hidden="true" />

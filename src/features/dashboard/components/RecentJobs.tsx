@@ -49,9 +49,9 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
             return (
               <div
                 key={job.id}
-                className="flex items-center gap-4 rounded-lg border border-surface-100 p-3 dark:border-surface-800"
+                className="flex flex-col gap-3 rounded-lg border border-surface-100 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:gap-4"
               >
-                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-400 dark:bg-surface-800">
+                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-500 dark:bg-surface-800 dark:text-surface-300">
                   {formatDuration(job.video_duration_ms / 1000)}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -63,11 +63,11 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
                       <LanguageBadge key={lang} code={lang} />
                     ))}
                     {languages.length > 4 && (
-                      <span className="text-xs text-surface-400">+{languages.length - 4}</span>
+                      <span className="text-xs text-surface-500 dark:text-surface-300">+{languages.length - 4}</span>
                     )}
                   </div>
                 </div>
-                <div className="shrink-0 text-right">
+                <div className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-auto sm:block sm:text-right">
                   <Badge variant={status.variant}>{t(status.label)}</Badge>
                   {job.status === 'processing' && (
                     <Progress value={avgProgress} size="sm" className="mt-2 w-24" />

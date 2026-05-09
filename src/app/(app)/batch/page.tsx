@@ -120,7 +120,7 @@ export default function BatchPage() {
           </p>
         </div>
         <Link href="/dubbing">
-          <Button><Plus className="h-4 w-4" /> {t({ ko: '영상 추가', en: 'Add video' })}</Button>
+          <Button><Plus className="h-4 w-4" /> {t({ ko: '새 더빙', en: 'New dubbing' })}</Button>
         </Link>
       </div>
 
@@ -142,7 +142,7 @@ export default function BatchPage() {
               >
                 <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-surface-300" />
 
-                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-400 dark:bg-surface-800">
+                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-500 dark:bg-surface-800 dark:text-surface-300">
                   {formatDuration(Math.round(job.video_duration_ms / 1000))}
                 </div>
 

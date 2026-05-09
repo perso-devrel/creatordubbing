@@ -77,26 +77,29 @@ export default function BillingPage() {
       <Card>
         <div className="flex items-center gap-2 mb-4">
           <Coins className="h-5 w-5 text-amber-500" />
-          <CardTitle>{t({ ko: '더빙 시간 충전', en: 'Add dubbing minutes' })}</CardTitle>
+          <CardTitle>{t({ ko: '충전할 시간 선택', en: 'Choose a minutes pack' })}</CardTitle>
         </div>
         <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">
           {t({ ko: '충전한 시간은 만료 없이 사용할 수 있습니다.', en: 'Purchased minutes do not expire.' })}
         </p>
 
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {CREDIT_PACKS.map((pack) => (
             <button
               key={pack.minutes}
               onClick={() => setSelectedPack(pack.minutes)}
               className={cn(
-                'rounded-lg border-2 p-4 text-left transition-all cursor-pointer',
+                'rounded-lg border-2 p-4 text-left transition-all cursor-pointer focus-ring',
                 selectedPack === pack.minutes
-                  ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                  : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 dark:border-surface-800 dark:bg-surface-900 dark:hover:border-surface-700 dark:hover:bg-surface-800/70',
+                  ? 'border-brand-600 bg-brand-50 shadow-sm dark:border-brand-500 dark:bg-brand-900/25'
+                  : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:hover:border-surface-600 dark:hover:bg-surface-800/70',
               )}
             >
-              <p className="whitespace-nowrap text-2xl font-bold text-surface-900 dark:text-white">{pack.minutes}분</p>
-              {pack.label && <p className="mb-2 text-xs text-surface-500 dark:text-surface-400">{pack.label}</p>}
+              <div className="flex items-start justify-between gap-3">
+                <p className="whitespace-nowrap text-2xl font-bold text-surface-900 dark:text-white">{pack.minutes}분</p>
+                {selectedPack === pack.minutes && <Check className="mt-1 h-4 w-4 text-brand-600 dark:text-brand-400" />}
+              </div>
+              {pack.label && <p className="mb-2 min-h-5 text-xs text-surface-600 dark:text-surface-300">{pack.label}</p>}
               <p className="whitespace-nowrap text-lg font-semibold text-surface-900 dark:text-white">
                 {formatKrw(pack.priceKrw)}
               </p>

@@ -79,7 +79,7 @@ export function BillingSuccessClient({ paymentKey, orderId, amount }: Props) {
                   ? t({ ko: '결제 확인 실패', en: 'Payment confirmation failed' })
                   : t({ ko: '결제 확인 중', en: 'Confirming payment' })}
             </CardTitle>
-            <p className="mt-1 text-sm text-surface-500">{message}</p>
+            <p className="mt-1 text-sm text-surface-500 dark:text-surface-300">{message}</p>
           </div>
         </div>
         <Link href="/billing">

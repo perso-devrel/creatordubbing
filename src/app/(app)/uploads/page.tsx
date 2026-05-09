@@ -95,7 +95,7 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
             value={settings.description}
             onChange={(e) => onChange({ ...settings, description: e.target.value })}
             placeholder={t({ ko: '영상 설명', en: 'Video description' })}
-            className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
+            className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:placeholder:text-surface-400"
           />
         </div>
 
@@ -140,18 +140,18 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
             checked={settings.containsSyntheticMedia}
             onChange={(e) => onChange({ ...settings, containsSyntheticMedia: e.target.checked })}
           />
-          <span>{t({ ko: 'AI 생성 또는 합성 콘텐츠임을 표시', en: 'Disclose AI-generated or synthetic media' })}</span>
+          <span>{t({ ko: 'AI 음성 사용을 표시', en: 'Disclose AI voice use' })}</span>
         </label>
 
         <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
-          <span className="text-xs text-surface-500">{t({ ko: '언어', en: 'Language' })}: {langName}</span>
+          <span className="text-xs text-surface-500 dark:text-surface-300">{t({ ko: '언어', en: 'Language' })}: {langName}</span>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button size="sm" onClick={onClose} className="bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700">
+        <div className="grid grid-cols-1 gap-2 pt-2 sm:flex sm:justify-end">
+          <Button size="sm" onClick={onClose} className="w-full bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700 sm:w-auto">
             {t({ ko: '취소', en: 'Cancel' })}
           </Button>
-          <Button size="sm" onClick={onConfirm} disabled={isLoading || !settings.title.trim()}>
+          <Button size="sm" onClick={onConfirm} disabled={isLoading || !settings.title.trim()} className="w-full sm:w-auto">
             {isLoading ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -328,7 +328,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
   return (
     <>
       <div className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center">
-        <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-surface-100 text-xs text-surface-400 dark:bg-surface-800">
+        <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-surface-100 text-xs text-surface-500 dark:bg-surface-800 dark:text-surface-300">
           {formatDuration(Math.round(item.video_duration_ms / 1000))}
         </div>
 
@@ -357,7 +357,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
               {t({ ko: '업로드됨', en: 'Uploaded' })}
             </Badge>
           ) : isLoading ? (
-            <div className="flex items-center gap-1.5 text-xs text-surface-500">
+            <div className="flex items-center gap-1.5 text-xs text-surface-500 dark:text-surface-300">
               <Loader2 className="h-4 w-4 animate-spin" />
               {loadingLabel}
             </div>

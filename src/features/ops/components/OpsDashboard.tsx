@@ -172,13 +172,13 @@ export function OpsDashboard() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '운영 상태', en: 'Operations' })}</h1>
-          <p className="text-surface-500 dark:text-surface-400">
+          <p className="text-surface-500 dark:text-surface-300">
             {t({
               ko: '업로드 대기열, 더빙 처리, 시간 환급, 결제 웹훅 상태를 확인합니다.',
               en: 'Monitor upload queue, dubbing jobs, minute releases, and payment webhooks.',
             })}
           </p>
-          {generatedLabel && <p className="mt-1 text-xs text-surface-400">{t({ ko: '마지막 업데이트', en: 'Last updated' })}: {generatedLabel}</p>}
+          {generatedLabel && <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">{t({ ko: '마지막 업데이트', en: 'Last updated' })}: {generatedLabel}</p>}
         </div>
         <div className="flex items-end gap-2">
           <Select
@@ -252,7 +252,7 @@ export function OpsDashboard() {
             </div>
             {summary.alerts.length === 0 ? (
               <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-4 text-sm text-surface-500 dark:bg-surface-800/60 dark:text-surface-400">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 {t({ ko: '선택한 기간에는 운영 알림이 없습니다.', en: 'No active operations alerts for this window.' })}
               </div>
             ) : (
@@ -289,14 +289,14 @@ export function OpsDashboard() {
                   <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
                     {summary.recentEvents.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-3 py-8 text-center text-surface-400">
+                        <td colSpan={5} className="px-3 py-8 text-center text-surface-500 dark:text-surface-300">
                           {t({ ko: '최근 운영 이벤트가 없습니다.', en: 'No recent operational events.' })}
                         </td>
                       </tr>
                     ) : (
                       summary.recentEvents.map((event) => (
                         <tr key={event.id} className="text-surface-700 dark:text-surface-200">
-                          <td className="whitespace-nowrap px-3 py-2 text-xs text-surface-400">
+                          <td className="whitespace-nowrap px-3 py-2 text-xs text-surface-500 dark:text-surface-300">
                             {formatDate(event.createdAt, locale)}
                           </td>
                           <td className="px-3 py-2">{text(locale, categoryLabel[event.category])}</td>
@@ -304,7 +304,7 @@ export function OpsDashboard() {
                             <Badge variant={severityVariant(event.severity)}>{text(locale, severityLabel[event.severity])}</Badge>
                           </td>
                           <td className="px-3 py-2">{eventMessageLabel[event.message] ? text(locale, eventMessageLabel[event.message]) : event.message}</td>
-                          <td className="px-3 py-2 text-xs text-surface-400">
+                          <td className="px-3 py-2 text-xs text-surface-500 dark:text-surface-300">
                             {event.referenceType && event.referenceId
                               ? `${event.referenceType}:${event.referenceId}`
                               : '-'}
@@ -320,7 +320,7 @@ export function OpsDashboard() {
         </>
       ) : (
         <Card>
-          <div className="flex items-center gap-2 text-sm text-surface-500">
+          <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-300">
             <Clock className="h-4 w-4 animate-pulse" />
             {t({ ko: '운영 상태를 불러오는 중...', en: 'Loading operations summary.' })}
           </div>
@@ -352,9 +352,9 @@ function MetricCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm text-surface-500 dark:text-surface-400">{title}</p>
+          <p className="text-sm text-surface-500 dark:text-surface-300">{title}</p>
           <p className="mt-2 text-2xl font-bold text-surface-900 dark:text-white">{value}</p>
-          <p className="mt-1 text-xs text-surface-400">{detail}</p>
+          <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">{detail}</p>
         </div>
         <div
           className={cn(

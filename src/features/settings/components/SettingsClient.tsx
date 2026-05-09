@@ -68,7 +68,7 @@ export function SettingsClient() {
             options={languageOptions}
           />
           <Select
-            label={isEnglish ? 'Recommended localization market' : '추천 번역 시장'}
+            label={isEnglish ? 'Recommended language set' : '추천 대상 언어 묶음'}
             value={metadataTargetPreset}
             onChange={(event) => setMetadataTargetPreset(event.target.value)}
             options={presetOptions}
@@ -77,11 +77,11 @@ export function SettingsClient() {
         </div>
 
         {selectedPreset && (
-          <div className="mt-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/60">
+          <div className="mt-4 rounded-lg border border-surface-200 bg-surface-100/70 p-3 dark:border-surface-700 dark:bg-surface-850">
             <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
               {isEnglish ? selectedPreset.labelEn : selectedPreset.labelKo}
             </p>
-            <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
+            <p className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-300">
               {isEnglish ? selectedPreset.descriptionEn : selectedPreset.descriptionKo}
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">

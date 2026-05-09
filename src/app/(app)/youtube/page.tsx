@@ -94,7 +94,7 @@ export default function YouTubeSettingsPage() {
       <Card>
         <CardTitle>{t({ ko: '연결된 채널', en: 'Connected channel' })}</CardTitle>
         {channelLoading ? (
-          <div className="mt-4 flex items-center gap-2 text-surface-400">
+          <div className="mt-4 flex items-center gap-2 text-surface-500 dark:text-surface-300">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm">{t({ ko: '채널 정보 불러오는 중...', en: 'Loading channel information...' })}</span>
           </div>
@@ -106,8 +106,8 @@ export default function YouTubeSettingsPage() {
             </p>
           </div>
         ) : isConnected ? (
-          <div className="mt-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
               {channel.thumbnail ? (
                 <Image
                   src={channel.thumbnail}
@@ -118,19 +118,19 @@ export default function YouTubeSettingsPage() {
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-600 text-lg font-bold text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-600 text-lg font-bold text-white">
                   {channel.title[0]?.toUpperCase() || 'Y'}
                 </div>
               )}
-              <div>
-                <p className="font-semibold text-surface-900 dark:text-white">{channel.title}</p>
-                <p className="text-sm text-surface-500">
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-surface-900 dark:text-white">{channel.title}</p>
+                <p className="text-sm text-surface-500 dark:text-surface-300">
                   {t({ ko: `구독자 ${formatNumber(channel.subscriberCount)} · 영상 ${formatNumber(channel.videoCount)}개`, en: `${formatNumber(channel.subscriberCount)} subscribers · ${formatNumber(channel.videoCount)} videos` })}
                 </p>
               </div>
               <Badge variant="success">{t({ ko: '연결됨', en: 'Connected' })}</Badge>
             </div>
-            <Button variant="outline" size="sm" onClick={handleDisconnect} loading={disconnecting}>
+            <Button variant="outline" size="sm" onClick={handleDisconnect} loading={disconnecting} className="w-full sm:w-auto">
               <Unlink className="h-4 w-4" />
               {t({ ko: 'YouTube 연결 해제', en: 'Disconnect YouTube' })}
             </Button>
@@ -138,7 +138,7 @@ export default function YouTubeSettingsPage() {
         ) : (
           <div className="mt-4 flex flex-col items-center gap-4 py-8">
             <Video className="h-12 w-12 text-surface-300" />
-            <p className="text-surface-500">{t({ ko: '연결된 YouTube 채널이 없습니다', en: 'No YouTube channel connected' })}</p>
+            <p className="text-surface-500 dark:text-surface-300">{t({ ko: '연결된 YouTube 채널이 없습니다', en: 'No YouTube channel connected' })}</p>
             <p className="max-w-md text-center text-xs leading-5 text-surface-600 dark:text-surface-300">
               {t({
                 ko: '채널 영상 조회, 업로드, 자막·제목 수정, 분석 데이터 확인에 필요한 YouTube 권한을 요청합니다. 권한은 언제든 해제할 수 있습니다.',
@@ -203,7 +203,7 @@ export default function YouTubeSettingsPage() {
           </div>
 
           {videosLoading ? (
-            <div className="flex items-center gap-2 py-4 text-surface-400">
+            <div className="flex items-center gap-2 py-4 text-surface-500 dark:text-surface-300">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-sm">{t({ ko: '영상 목록 불러오는 중...', en: 'Loading video list...' })}</span>
             </div>
@@ -212,13 +212,13 @@ export default function YouTubeSettingsPage() {
               {videosError instanceof Error ? videosError.message : t({ ko: 'YouTube 영상 목록을 불러오지 못했습니다.', en: 'Could not load the YouTube video list.' })}
             </p>
           ) : videos.length === 0 ? (
-            <p className="py-4 text-center text-sm text-surface-400">{t({ ko: '영상이 없습니다', en: 'No videos found' })}</p>
+            <p className="py-4 text-center text-sm text-surface-500 dark:text-surface-300">{t({ ko: '표시할 영상이 없습니다', en: 'No videos to show' })}</p>
           ) : (
             <div className="space-y-2">
               {videos.map((video) => (
                 <div
                   key={video.videoId}
-                  className="flex items-center justify-between rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
+                  className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <Image
@@ -230,12 +230,12 @@ export default function YouTubeSettingsPage() {
                     />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
-                      <p className="text-xs text-surface-500">
+                      <p className="text-xs text-surface-500 dark:text-surface-300">
                         {new Date(video.publishedAt).toLocaleDateString('ko-KR')}
                       </p>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" className="shrink-0 ml-3" onClick={() => router.push(`/dubbing?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${video.videoId}`)}`)}>
+                  <Button variant="outline" size="sm" className="w-full shrink-0 sm:ml-3 sm:w-auto" onClick={() => router.push(`/dubbing?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${video.videoId}`)}`)}>
                     {t({ ko: '이 영상 더빙', en: 'Dub this video' })}
                   </Button>
                 </div>

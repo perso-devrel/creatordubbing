@@ -7,7 +7,7 @@ import { useLanguagePerformance } from '@/hooks/useDashboardData'
 import { getLanguageByCode } from '@/utils/languages'
 import { useLocaleText } from '@/hooks/useLocaleText'
 
-const COLORS = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#ffe4e6', '#fda4af', '#fb7185', '#f43f5e']
+const COLORS = ['#cc0000', '#e62117', '#ff5f52', '#ff9f96', '#ffc8c3', '#a90000', '#870000', '#620000']
 
 export function LanguagePerformance() {
   const t = useLocaleText()
@@ -27,7 +27,7 @@ export function LanguagePerformance() {
       <Card>
         <CardTitle>{t({ ko: '언어별 성과', en: 'Language performance' })}</CardTitle>
         <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t({ ko: '더빙 언어별 조회수', en: 'Views by dubbing language' })}</p>
-        <div className="flex h-64 items-center justify-center text-sm text-surface-400">
+        <div className="flex h-64 items-center justify-center text-center text-sm text-surface-500 dark:text-surface-300">
           {t({ ko: 'YouTube에 업로드한 영상이 있으면 여기에 성과가 표시됩니다.', en: 'Performance appears here after you upload videos to YouTube.' })}
         </div>
       </Card>

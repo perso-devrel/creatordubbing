@@ -17,14 +17,14 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/dashboard', label: { ko: '대시보드', en: 'Dashboard' }, icon: LayoutDashboard },
-  { to: '/dubbing', label: { ko: '새 더빙', en: 'New dubbing' }, icon: Languages },
-  { to: '/metadata', label: { ko: '제목·설명', en: 'Title & description' }, icon: Globe2 },
-  { to: '/batch', label: { ko: '더빙 작업', en: 'Dubbing jobs' }, icon: Layers },
-  { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, icon: Upload },
-  { to: '/ops', label: { ko: '운영 상태', en: 'Operations' }, icon: Activity, opsAdminOnly: true },
-  { to: '/youtube', label: { ko: 'YouTube', en: 'YouTube' }, icon: Video },
-  { to: '/billing', label: { ko: '결제', en: 'Billing' }, icon: CreditCard },
+  { to: '/dashboard', label: { ko: '대시보드', en: 'Dashboard' }, mobileLabel: { ko: '홈', en: 'Home' }, icon: LayoutDashboard },
+  { to: '/dubbing', label: { ko: '새 더빙', en: 'New dubbing' }, mobileLabel: { ko: '더빙', en: 'Dub' }, icon: Languages },
+  { to: '/metadata', label: { ko: '제목·설명', en: 'Title & description' }, mobileLabel: { ko: '제목', en: 'Title' }, icon: Globe2 },
+  { to: '/batch', label: { ko: '더빙 작업', en: 'Dubbing jobs' }, mobileLabel: { ko: '작업', en: 'Jobs' }, icon: Layers },
+  { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, mobileLabel: { ko: '업로드', en: 'Upload' }, icon: Upload },
+  { to: '/ops', label: { ko: '운영 상태', en: 'Operations' }, mobileLabel: { ko: '운영', en: 'Ops' }, icon: Activity, opsAdminOnly: true },
+  { to: '/youtube', label: { ko: 'YouTube', en: 'YouTube' }, mobileLabel: { ko: '채널', en: 'Channel' }, icon: Video },
+  { to: '/billing', label: { ko: '결제', en: 'Billing' }, mobileLabel: { ko: '결제', en: 'Billing' }, icon: CreditCard },
 ]
 
 export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
@@ -52,21 +52,21 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
     )
   }
 
-  const renderMobileNavItem = ({ to, label, icon: Icon }: (typeof navItems)[number]) => {
+  const renderMobileNavItem = ({ to, label, mobileLabel, icon: Icon }: (typeof navItems)[number]) => {
     const isActive = pathname === to || pathname?.startsWith(to + '/')
     return (
       <Link
         key={to}
         href={to}
         className={cn(
-          'flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-medium transition-colors',
+          'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition-colors',
           isActive
             ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
             : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
         )}
       >
         <Icon className="h-5 w-5" />
-        <span className="max-w-[4.25rem] truncate">{label[appLocale]}</span>
+        <span className="max-w-[4.25rem] truncate">{mobileLabel[appLocale] ?? label[appLocale]}</span>
       </Link>
     )
   }
@@ -79,7 +79,7 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
           <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
-            Dub<span className="text-brand-500">tube</span>
+            Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
           </span>
         </div>
 
@@ -102,12 +102,12 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
         aria-label={appLocale === 'en' ? 'App navigation' : '앱 메뉴'}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-200 bg-white/95 px-2 py-2 backdrop-blur-md dark:border-surface-800 dark:bg-surface-900/95 lg:hidden"
       >
-        <div className="flex gap-1 overflow-x-auto">
+        <div className="flex gap-0.5">
           {visibleItems.map(renderMobileNavItem)}
           <Link
             href="/settings"
             className={cn(
-              'flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-medium transition-colors',
+              'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition-colors',
               pathname === '/settings' || pathname?.startsWith('/settings/')
                 ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
               : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',

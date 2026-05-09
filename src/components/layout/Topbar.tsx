@@ -1,27 +1,31 @@
 'use client'
 
 import Image from 'next/image'
-import { Moon, Sun, LogOut } from 'lucide-react'
-import { useThemeStore } from '@/stores/themeStore'
+import { LogOut } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { signOut } from '@/lib/google-auth'
 import { Button } from '@/components/ui'
 import { useRouter } from 'next/navigation'
 import { OpsAlertButton } from '@/features/ops/components/OpsAlertButton'
 import { useChannelStats } from '@/hooks/useYouTubeData'
+import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 
 interface TopbarProps {
   isOpsAdmin?: boolean
 }
 
 export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
-  const { mode, toggle } = useThemeStore()
   const { user, clear } = useAuthStore()
   const router = useRouter()
   const { data: channel } = useChannelStats()
-  const accountName = channel?.title || user?.displayName || '사용자'
+  const locale = useAppLocale()
+  const t = useLocaleText()
+  const accountName = channel?.title || user?.displayName || t({ ko: '사용자', en: 'User' })
   const subscriberLabel = channel
-    ? `구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}`
+    ? locale === 'ko'
+      ? `구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}`
+      : `${channel.subscriberCount.toLocaleString('en-US')} subscribers`
     : null
 
   const handleSignOut = async () => {
@@ -36,9 +40,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
       <div />
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={toggle} aria-label="테마 전환">
-          {mode === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
-        </Button>
+        <ThemeToggleButton iconClassName="h-4.5 w-4.5" />
         {isOpsAdmin && <OpsAlertButton />}
 
         {user && (
@@ -65,7 +67,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
                 {accountName[0].toUpperCase()}
               </div>
             )}
-            <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label="로그아웃">
+            <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label={t({ ko: '로그아웃', en: 'Sign out' })}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
