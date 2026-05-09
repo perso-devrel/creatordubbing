@@ -19,7 +19,7 @@ import {
 const navItems = [
   { to: '/dashboard', label: { ko: '대시보드', en: 'Dashboard' }, icon: LayoutDashboard },
   { to: '/dubbing', label: { ko: '새 더빙', en: 'New dubbing' }, icon: Languages },
-  { to: '/metadata', label: { ko: '제목·설명 번역', en: 'Title translation' }, icon: Globe2 },
+  { to: '/metadata', label: { ko: '제목·설명', en: 'Title & description' }, icon: Globe2 },
   { to: '/batch', label: { ko: '더빙 작업', en: 'Dubbing jobs' }, icon: Layers },
   { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, icon: Upload },
   { to: '/ops', label: { ko: '운영 상태', en: 'Operations' }, icon: Activity, opsAdminOnly: true },
@@ -62,11 +62,11 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
           'flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-medium transition-colors',
           isActive
             ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
-            : 'text-surface-500 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+            : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
         )}
       >
         <Icon className="h-5 w-5" />
-        <span className="whitespace-nowrap">{label[appLocale]}</span>
+        <span className="max-w-[4.25rem] truncate">{label[appLocale]}</span>
       </Link>
     )
   }
@@ -75,7 +75,7 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
     <>
       <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900 lg:flex">
         <div className="flex h-16 items-center gap-2.5 border-b border-surface-200 px-6 dark:border-surface-800">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-500">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
           <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
@@ -110,11 +110,11 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
               'flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-medium transition-colors',
               pathname === '/settings' || pathname?.startsWith('/settings/')
                 ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
-                : 'text-surface-500 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+              : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
             )}
           >
             <Settings className="h-5 w-5" />
-            <span className="whitespace-nowrap">{settingsLabel}</span>
+            <span className="max-w-[4.25rem] truncate">{settingsLabel}</span>
           </Link>
         </div>
       </nav>

@@ -34,7 +34,6 @@ fs.mkdirSync(SNAPSHOT_DIR, { recursive: true })
 async function injectMockAuth(page: Page) {
   await page.context().addCookies([
     { name: 'dubtube_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
-    { name: 'google_access_token', value: 'mock-token', domain: 'localhost', path: '/' },
   ])
   await page.addInitScript(() => {
     try {

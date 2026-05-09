@@ -43,12 +43,12 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
 
         {user && (
           <div className="ml-2 flex items-center gap-3">
-            <div className="hidden sm:block text-right">
-              <p className="max-w-48 truncate text-sm font-medium leading-tight text-surface-900 dark:text-white">
+            <div className="hidden text-right sm:block">
+              <p className="max-w-48 truncate text-sm font-medium leading-snug text-surface-900 dark:text-white">
                 {accountName}
               </p>
               {subscriberLabel && (
-                <p className="whitespace-nowrap text-xs leading-tight text-surface-400">{subscriberLabel}</p>
+                <p className="whitespace-nowrap text-xs leading-snug text-surface-600 dark:text-surface-400">{subscriberLabel}</p>
               )}
             </div>
             {user.photoURL ? (
@@ -61,7 +61,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-600 text-sm font-bold text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
                 {accountName[0].toUpperCase()}
               </div>
             )}

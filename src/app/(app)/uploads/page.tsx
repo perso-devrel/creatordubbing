@@ -410,11 +410,11 @@ export default function UploadsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: 'YouTube 업로드', en: 'YouTube uploads' })}</h1>
-        <p className="text-surface-500 dark:text-surface-400">{t({ ko: '더빙이 끝난 영상을 YouTube에 올리세요.', en: 'Upload finished dubbed videos to YouTube.' })}</p>
+        <p className="text-surface-600 dark:text-surface-400">{t({ ko: '완료된 더빙 결과를 YouTube에 업로드하세요.', en: 'Upload completed dubbing results to YouTube.' })}</p>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center gap-2 text-surface-400">
+        <div className="flex items-center gap-2 text-surface-500 dark:text-surface-400">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">{t({ ko: '불러오는 중...', en: 'Loading...' })}</span>
         </div>
@@ -431,7 +431,7 @@ export default function UploadsPage() {
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base">{job.title}</CardTitle>
-                  <p className="text-xs text-surface-400 mt-0.5">
+                  <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-400">
                     {formatDuration(Math.round(job.durationMs / 1000))} · {new Date(job.createdAt).toLocaleDateString('ko-KR')}
                   </p>
                 </div>

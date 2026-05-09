@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { type ReactNode, useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Captions, Languages, Link2, ShieldCheck, Sparkles, Upload } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
@@ -120,7 +120,7 @@ export function UploadSettingsStep() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '업로드 설정', en: 'Upload settings' })}</h2>
-        <p className="mt-1 text-surface-500">
+        <p className="mt-1 text-surface-600 dark:text-surface-400">
           {isMultiAudio
             ? t({ ko: '원본 영상에 자막을 추가하기 전에 기본 설정을 확인하세요.', en: 'Review the settings before adding captions to the original video.' })
             : t({ ko: '더빙 완료 후 YouTube에 어떻게 올릴지 미리 정하세요.', en: 'Choose how the finished dubbing should be uploaded to YouTube.' })}
@@ -133,7 +133,7 @@ export function UploadSettingsStep() {
           <CardTitle>{t({ ko: '제목 · 설명 · 태그', en: 'Title, description, and tags' })}</CardTitle>
           <div className="space-y-4">
             <Select
-              label={t({ ko: '작성 언어', en: 'Writing language' })}
+              label={t({ ko: '제목·설명 작성 언어', en: 'Title and description language' })}
               value={uploadSettings.metadataLanguage}
               onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
               options={languageOptions}
@@ -195,7 +195,7 @@ export function UploadSettingsStep() {
           <CardTitle>{t({ ko: '원본 영상 업로드 설정', en: 'Original video upload settings' })}</CardTitle>
           <div className="space-y-4">
             <Select
-              label={t({ ko: '작성 언어', en: 'Writing language' })}
+              label={t({ ko: '제목·설명 작성 언어', en: 'Title and description language' })}
               value={uploadSettings.metadataLanguage}
               onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
               options={languageOptions}
@@ -262,8 +262,8 @@ export function UploadSettingsStep() {
               ? t({ ko: '완료된 번역 자막을 자동으로 업로드합니다.', en: 'Automatically upload translated captions when processing finishes.' })
               : t({ ko: '더빙이 완료되면 언어별 영상을 자동으로 업로드합니다.', en: 'Automatically upload each dubbed video when processing finishes.' })}
             active={uploadSettings.autoUpload}
-            activeLabel="ON"
-            inactiveLabel="OFF"
+            activeLabel={t({ ko: '켜짐', en: 'On' })}
+            inactiveLabel={t({ ko: '꺼짐', en: 'Off' })}
             onToggle={handleAutoUploadToggle}
           />
 
@@ -277,8 +277,8 @@ export function UploadSettingsStep() {
                 ? t({ ko: '완료된 언어의 번역 자막을 대상 영상에 올립니다.', en: 'Upload translated captions for each completed language to the target video.' })
                 : t({ ko: '선택한 언어에 맞는 자막을 영상과 함께 올립니다.', en: 'Upload matching captions with each selected language video.' })}
               active={captionUploadDisabled ? false : uploadSettings.uploadCaptions}
-              activeLabel="ON"
-              inactiveLabel="OFF"
+              activeLabel={t({ ko: '켜짐', en: 'On' })}
+              inactiveLabel={t({ ko: '꺼짐', en: 'Off' })}
               onToggle={() => setUploadSettings({ uploadCaptions: !uploadSettings.uploadCaptions })}
               disabled={captionUploadDisabled}
               disabledBadgeLabel={t({ ko: '자동 업로드 꺼짐', en: 'Auto-upload off' })}
@@ -315,14 +315,14 @@ export function UploadSettingsStep() {
               {shouldShowAiDisclosure && (
                 <ToggleRow
                   icon={<Sparkles className="h-4 w-4 text-amber-500" />}
-                  label={t({ ko: 'AI 보이스 더빙 고지 추가', en: 'Add AI voice dubbing disclosure' })}
+                  label={t({ ko: 'AI 음성 사용 표시', en: 'Disclose AI voice use' })}
                   description={t({
                     ko: '설명 맨 아래에 AI 보이스로 더빙했다는 문구를 붙입니다.',
                     en: 'Adds a note at the end of the description that the video uses AI voice dubbing.',
                   })}
                   active={uploadSettings.containsSyntheticMedia}
-                  activeLabel="ON"
-                  inactiveLabel="OFF"
+                  activeLabel={t({ ko: '켜짐', en: 'On' })}
+                  inactiveLabel={t({ ko: '꺼짐', en: 'Off' })}
                   onToggle={handleSyntheticMediaToggle}
                 />
               )}
@@ -339,7 +339,7 @@ export function UploadSettingsStep() {
                 en: 'YouTube multilingual audio tracks are coming soon.',
               })}
               active={false}
-              activeLabel="ON"
+              activeLabel={t({ ko: '켜짐', en: 'On' })}
               inactiveLabel={t({ ko: '준비 중', en: 'Soon' })}
               onToggle={() => {}}
               disabled
@@ -378,7 +378,7 @@ function AiDisclosurePreview({ text }: { text: string }) {
 }
 
 interface ToggleRowProps {
-  icon: React.ReactNode
+  icon: ReactNode
   label: string
   description?: string
   active: boolean
@@ -418,7 +418,7 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
           disabled
             ? 'bg-surface-200 text-surface-500 dark:bg-surface-700 dark:text-surface-300 cursor-not-allowed'
             : `cursor-pointer ${active
-              ? 'bg-brand-500 text-white'
+              ? 'bg-brand-600 text-white'
               : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'}`
         }`}
       >

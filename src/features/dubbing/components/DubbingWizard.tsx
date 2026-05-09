@@ -15,10 +15,10 @@ import { UploadStep } from './steps/UploadStep'
 
 const steps = [
   { num: 1, label: { ko: '영상', en: 'Video' } },
-  { num: 2, label: { ko: '결과물', en: 'Output' } },
+  { num: 2, label: { ko: '출력 방식', en: 'Output' } },
   { num: 3, label: { ko: '언어', en: 'Languages' } },
-  { num: 4, label: { ko: '업로드', en: 'Upload' } },
-  { num: 5, label: { ko: '확인', en: 'Review' } },
+  { num: 4, label: { ko: '게시 설정', en: 'Publish settings' } },
+  { num: 5, label: { ko: '검토', en: 'Review' } },
   { num: 6, label: { ko: '처리', en: 'Processing' } },
   { num: 7, label: { ko: '결과', en: 'Results' } },
 ] satisfies Array<{ num: number; label: LocalizedText }>
@@ -41,9 +41,9 @@ export function DubbingWizard() {
                   className={cn(
                     'flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all',
                     isCompleted
-                      ? 'bg-brand-500 text-white'
+                      ? 'bg-brand-600 text-white'
                       : isActive
-                        ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/30'
+                        ? 'bg-brand-600 text-white shadow-sm'
                         : 'bg-surface-200 text-surface-500 dark:bg-surface-800 dark:text-surface-400',
                   )}
                 >
@@ -62,7 +62,7 @@ export function DubbingWizard() {
                 <div
                   className={cn(
                     'h-0.5 w-8 rounded-full sm:w-16',
-                    currentStep > num ? 'bg-brand-500' : 'bg-surface-200 dark:bg-surface-800',
+                    currentStep > num ? 'bg-brand-600' : 'bg-surface-200 dark:bg-surface-800',
                   )}
                 />
               )}

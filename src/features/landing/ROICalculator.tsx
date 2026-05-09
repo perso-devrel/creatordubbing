@@ -70,20 +70,20 @@ export function ROICalculator() {
                 aria-label="더빙 언어 수"
                 className="w-full accent-brand-500"
               />
-              <div className="mt-1 flex justify-between text-xs text-surface-400"><span>1</span><span>10</span></div>
+              <div className="mt-1 flex justify-between text-xs text-surface-500 dark:text-surface-400"><span>1</span><span>10</span></div>
             </div>
 
-            <div className="rounded-xl bg-gradient-to-r from-brand-50 to-pink-50 p-6 dark:from-brand-900/20 dark:to-pink-900/20">
+            <div className="rounded-lg border border-brand-100 bg-brand-50 p-6 dark:border-brand-900/50 dark:bg-brand-900/20">
               <div className="flex items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-400">
                 <TrendingUp className="h-4 w-4" />
-                참고용 예상 증가율
+                선택 언어 기준 참고치
               </div>
               <div className="mt-2 text-5xl font-extrabold text-surface-900 dark:text-white">
-                최대 +{growthPct}% 예상
+                +{growthPct}%
               </div>
               <div className="mt-3 text-sm text-surface-600 dark:text-surface-400">
                 월 조회수 <span className="font-semibold">{formatNumber(BASE_VIEWS)}회</span> 기준{' '}
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatNumber(projectedViews)}회</span>까지 도달 가능
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatNumber(projectedViews)}회</span> 참고 예상
               </div>
               <p className="mt-3 text-xs text-surface-500 dark:text-surface-400">
                 공개 사례를 언어별로 분배한 참고 추정치입니다. 채널별 실측치나 성과 보장이 아닙니다.

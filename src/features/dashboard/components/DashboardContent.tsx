@@ -40,7 +40,7 @@ export function DashboardContent({ initial }: { initial: DashboardInitialData })
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '대시보드', en: 'Dashboard' })}</h1>
-        <p className="text-surface-500 dark:text-surface-400">{t({ ko: '더빙 현황을 확인하세요.', en: 'Review your dubbing activity.' })}</p>
+        <p className="text-surface-600 dark:text-surface-400">{t({ ko: '최근 더빙, 업로드, 사용 시간을 확인하세요.', en: 'Review recent dubbing, uploads, and minute usage.' })}</p>
       </div>
 
       <DashboardSummary initialData={initial.summary} />

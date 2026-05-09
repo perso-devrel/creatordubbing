@@ -18,7 +18,7 @@ export default function TermsPage() {
         <h1 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
           서비스 약관
         </h1>
-        <p className="mt-2 text-sm text-surface-500">최종 업데이트: {LAST_UPDATED}</p>
+        <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">최종 업데이트: {LAST_UPDATED}</p>
       </header>
 
       <Section title="1. 약관의 동의">
@@ -94,8 +94,8 @@ export default function TermsPage() {
             않습니다.
           </li>
           <li>
-            본 서비스가 저장·캐시한 YouTube 데이터는 30일 이내에 갱신되거나, 사용자 요청 시
-            즉시 삭제됩니다.
+            본 서비스가 저장·캐시한 YouTube 채널/영상 데이터는 서비스 표시와 안정성을 위해 필요한
+            기간 동안 보관되며, 사용자 요청 또는 YouTube 연결 해제 시 삭제 또는 갱신 중단 처리됩니다.
           </li>
         </ul>
       </Section>
@@ -196,6 +196,10 @@ export default function TermsPage() {
           ·{' '}
           <ExternalA href="https://developers.google.com/terms/api-services-user-data-policy">
             Google API Services User Data Policy
+          </ExternalA>
+          {' '}·{' '}
+          <ExternalA href="https://policies.google.com/privacy">
+            Google Privacy Policy
           </ExternalA>
         </p>
       </footer>

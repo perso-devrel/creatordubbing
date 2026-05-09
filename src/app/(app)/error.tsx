@@ -21,11 +21,11 @@ export default function AppError({
       <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">
         문제가 발생했습니다
       </h2>
-      <p className="max-w-md text-sm text-surface-500">
+      <p className="max-w-md text-sm text-surface-600 dark:text-surface-400">
         잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.
       </p>
       {error.digest && (
-        <p className="text-xs text-surface-400">오류 코드: {error.digest}</p>
+        <p className="text-xs text-surface-500 dark:text-surface-400">문의 시 전달할 오류 코드: {error.digest}</p>
       )}
       <Button variant="secondary" onClick={() => unstable_retry()}>
         다시 시도

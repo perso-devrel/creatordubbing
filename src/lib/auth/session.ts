@@ -12,53 +12,12 @@ export interface Session {
   email: string
 }
 
-interface GoogleTokenInfo {
-  sub: string
-  email: string
-  email_verified: string
-  expires_in: string
-}
-
-const GOOGLE_TOKENINFO_URL = 'https://www.googleapis.com/oauth2/v3/tokeninfo'
-
-function getAccessToken(req: NextRequest): string | null {
-  return (
-    req.cookies.get('google_access_token')?.value ||
-    req.headers.get('x-google-access-token') ||
-    null
-  )
-}
-
-async function verifyTokenWithGoogle(
-  token: string,
-): Promise<{ uid: string; email: string } | null> {
-  try {
-    const res = await fetch(
-      `${GOOGLE_TOKENINFO_URL}?access_token=${encodeURIComponent(token)}`,
-    )
-    if (!res.ok) return null
-    const info = (await res.json()) as GoogleTokenInfo
-    if (!info.sub || !info.email) return null
-    return { uid: info.sub, email: info.email }
-  } catch {
-    return null
-  }
-}
-
 export async function requireSession(
   req: NextRequest,
 ): Promise<
   | { ok: true; session: Session }
   | { ok: false; response: Response }
 > {
-  // 1) Try the access token cookie / header (fast path)
-  const cookieToken = getAccessToken(req)
-  if (cookieToken) {
-    const info = await verifyTokenWithGoogle(cookieToken)
-    if (info) return { ok: true, session: info }
-  }
-
-  // 2) Cookie expired or invalid — try refreshing via session cookie
   const sessionCookie = req.cookies.get('dubtube_session')?.value
   if (sessionCookie) {
     const verified = await verifySessionCookiePayload(sessionCookie)
@@ -76,17 +35,11 @@ export async function requireSession(
 
       const refreshedToken = await getOrRefreshAccessToken(uid)
       if (refreshedToken) {
-        const info = await verifyTokenWithGoogle(refreshedToken)
-        if (info) {
-          logger.info('session restored via token refresh', { uid })
-          return { ok: true, session: info }
-        }
+        logger.info('session restored with available google token', { uid })
       }
 
-      // Token refresh failed but session cookie is valid — use DB email as fallback
       const user = await getUser(uid)
       if (user?.email) {
-        logger.info('session restored from DB (token refresh failed)', { uid })
         return { ok: true, session: { uid, email: user.email as string } }
       }
     }

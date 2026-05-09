@@ -31,28 +31,28 @@ export function ToastContainer() {
   if (toasts.length === 0) return null
 
   return (
-    <div role="status" aria-live="polite" aria-atomic="false" className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
+    <div role="status" aria-live="polite" aria-atomic="false" className="fixed bottom-4 right-4 z-[100] flex max-w-[calc(100vw-2rem)] flex-col gap-2">
       {toasts.map((toast) => {
         const Icon = icons[toast.type]
         return (
           <div
             key={toast.id}
             className={cn(
-              'flex items-start gap-3 rounded-lg border p-4 shadow-lg animate-slide-up min-w-[320px] max-w-[420px]',
+              'flex w-[calc(100vw-2rem)] max-w-[420px] items-start gap-3 rounded-lg border p-4 shadow-lg animate-slide-up sm:w-[420px]',
               styles[toast.type],
             )}
           >
             <Icon className={cn('h-5 w-5 shrink-0 mt-0.5', iconColors[toast.type])} aria-hidden="true" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{toast.title}</p>
+              <p className="break-words text-sm font-medium text-surface-900 dark:text-surface-100">{toast.title}</p>
               {toast.message && (
-                <p className="mt-0.5 text-sm text-surface-600 dark:text-surface-400">{toast.message}</p>
+                <p className="mt-0.5 break-words text-sm text-surface-600 dark:text-surface-400">{toast.message}</p>
               )}
             </div>
             <button
               onClick={() => removeToast(toast.id)}
               aria-label="알림 닫기"
-              className="shrink-0 rounded p-0.5 text-surface-400 hover:text-surface-600 dark:hover:text-surface-200"
+              className="shrink-0 rounded p-0.5 text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>

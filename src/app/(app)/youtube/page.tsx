@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Video, Unlink, Settings, Globe, Loader2 } from 'lucide-react'
@@ -10,10 +11,16 @@ import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import { SUPPORTED_LANGUAGES } from '@/utils/languages'
 import { useLocaleText } from '@/hooks/useLocaleText'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
+import { signInWithGoogle } from '@/lib/google-auth'
+import { useAuthStore } from '@/stores/authStore'
+import { useNotificationStore } from '@/stores/notificationStore'
 
 export default function YouTubeSettingsPage() {
   const t = useLocaleText()
   const router = useRouter()
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [connecting, setConnecting] = useState(false)
+  const addToast = useNotificationStore((s) => s.addToast)
   const defaultVisibility = useYouTubeSettingsStore((s) => s.defaultPrivacy)
   const setDefaultVisibility = useYouTubeSettingsStore((s) => s.setDefaultPrivacy)
   const defaultLanguage = useYouTubeSettingsStore((s) => s.defaultLanguage)
@@ -31,8 +38,50 @@ export default function YouTubeSettingsPage() {
   }
 
   const { data: channel, isLoading: channelLoading, error: channelError } = useChannelStats()
-  const isConnected = !!channel
+  const missingYouTubeConnection =
+    channelError instanceof Error &&
+    (channelError.message.includes('YouTube 연결') || channelError.message.includes('Google access token'))
+  const isConnected = !!channel && !missingYouTubeConnection
   const { data: videos = [], isLoading: videosLoading, error: videosError } = useMyVideos(10, isConnected)
+
+  const handleReconnect = async () => {
+    setConnecting(true)
+    try {
+      const { user } = await signInWithGoogle({ forceConsent: true })
+      useAuthStore.getState().setUser(user)
+      window.location.reload()
+    } catch {
+      addToast({
+        type: 'error',
+        title: t({ ko: 'YouTube에 연결할 수 없습니다', en: 'Could not connect YouTube' }),
+        message: t({
+          ko: '팝업 차단을 확인한 뒤 다시 시도해 주세요.',
+          en: 'Please allow pop-ups and try again.',
+        }),
+      })
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  const handleDisconnect = async () => {
+    setDisconnecting(true)
+    try {
+      const res = await fetch('/api/auth/disconnect-youtube', { method: 'POST' })
+      if (!res.ok) throw new Error('disconnect failed')
+      window.location.reload()
+    } catch {
+      addToast({
+        type: 'error',
+        title: t({ ko: '연결을 해제하지 못했습니다', en: 'Could not disconnect' }),
+        message: t({
+          ko: '잠시 후 다시 시도해 주세요.',
+          en: 'Please try again shortly.',
+        }),
+      })
+      setDisconnecting(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -49,7 +98,7 @@ export default function YouTubeSettingsPage() {
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm">{t({ ko: '채널 정보 불러오는 중...', en: 'Loading channel information...' })}</span>
           </div>
-        ) : channelError ? (
+        ) : channelError && !missingYouTubeConnection ? (
           <div className="mt-4 flex flex-col items-center gap-3 py-8">
             <Video className="h-12 w-12 text-surface-300" />
             <p className="text-sm text-red-500">
@@ -81,21 +130,24 @@ export default function YouTubeSettingsPage() {
               </div>
               <Badge variant="success">{t({ ko: '연결됨', en: 'Connected' })}</Badge>
             </div>
-            <Button variant="outline" size="sm" onClick={() => {
-              fetch('/api/auth/signout', { method: 'POST' }).then(() => window.location.reload())
-            }}>
+            <Button variant="outline" size="sm" onClick={handleDisconnect} loading={disconnecting}>
               <Unlink className="h-4 w-4" />
-              {t({ ko: '연결 해제', en: 'Disconnect' })}
+              {t({ ko: 'YouTube 연결 해제', en: 'Disconnect YouTube' })}
             </Button>
           </div>
         ) : (
           <div className="mt-4 flex flex-col items-center gap-4 py-8">
             <Video className="h-12 w-12 text-surface-300" />
             <p className="text-surface-500">{t({ ko: '연결된 YouTube 채널이 없습니다', en: 'No YouTube channel connected' })}</p>
-            <p className="text-xs text-surface-500 dark:text-surface-300">{t({ ko: 'Google로 로그인하면 YouTube 권한을 함께 요청합니다.', en: 'Signing in with Google also requests YouTube permissions.' })}</p>
-            <Button onClick={() => window.location.href = '/'}>
+            <p className="max-w-md text-center text-xs leading-5 text-surface-600 dark:text-surface-300">
+              {t({
+                ko: '채널 영상 조회, 업로드, 자막·제목 수정, 분석 데이터 확인에 필요한 YouTube 권한을 요청합니다. 권한은 언제든 해제할 수 있습니다.',
+                en: 'Dubtube requests YouTube permissions for channel reads, uploads, captions, title updates, and analytics. You can disconnect at any time.',
+              })}
+            </p>
+            <Button onClick={handleReconnect} loading={connecting}>
               <Globe className="h-4 w-4" />
-              {t({ ko: 'Google 계정으로 연결', en: 'Connect Google account' })}
+              {t({ ko: 'Google 계정으로 YouTube 연결', en: 'Connect YouTube with Google' })}
             </Button>
           </div>
         )}

@@ -60,7 +60,7 @@ export function LanguageSelectStep() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '대상 언어 선택', en: 'Choose target languages' })}</h2>
-        <p className="mt-1 text-surface-500">
+        <p className="mt-1 text-surface-600 dark:text-surface-400">
           {selectionDescription} ({countText(locale, selectedLanguages.length, { ko: '개 선택됨', en: 'selected' })})
         </p>
       </div>
@@ -94,7 +94,7 @@ export function LanguageSelectStep() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t({ ko: '언어 검색 (예: Korean, 한국어, ko)', en: 'Search languages (e.g. Korean, 한국어, ko)' })}
+            placeholder={t({ ko: '언어 검색', en: 'Search languages' })}
             className="w-full rounded-md border border-surface-300 bg-white py-2 pl-9 pr-9 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-surface-700 dark:bg-surface-900 dark:text-white"
           />
           {query && (
@@ -116,7 +116,7 @@ export function LanguageSelectStep() {
                 className={cn(
                   'rounded-full px-3 py-1 text-sm font-medium transition',
                   region === tab.id
-                    ? 'bg-brand-500 text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700',
                 )}
               >
@@ -141,14 +141,14 @@ export function LanguageSelectStep() {
                 key={lang.code}
                 onClick={() => toggleLanguage(lang.code)}
                 className={cn(
-                  'relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all cursor-pointer',
+                  'relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all cursor-pointer',
                   isSelected
-                    ? 'border-brand-500 bg-brand-50 shadow-md shadow-brand-500/10 dark:bg-brand-900/20'
+                    ? 'border-brand-600 bg-brand-50 shadow-sm dark:bg-brand-900/20'
                     : 'border-surface-200 bg-white hover:border-surface-300 dark:border-surface-800 dark:bg-surface-900 dark:hover:border-surface-700',
                 )}
               >
                 {isSelected && (
-                  <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-white">
+                  <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-white">
                     <Check className="h-3 w-3" />
                   </div>
                 )}
@@ -156,7 +156,7 @@ export function LanguageSelectStep() {
                 <span className="text-sm font-medium text-surface-900 dark:text-white">
                   {locale === 'ko' ? lang.nativeName : lang.name}
                 </span>
-                <span className="text-xs text-surface-400">
+                <span className="max-w-full truncate text-xs text-surface-500 dark:text-surface-400">
                   {locale === 'ko' ? lang.name : lang.nativeName}
                 </span>
               </button>
@@ -169,7 +169,7 @@ export function LanguageSelectStep() {
       <Card>
         <div className="rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-surface-600 dark:text-surface-400">{t({ ko: '예상 필요 시간', en: 'Estimated minutes' })}</span>
+            <span className="text-surface-600 dark:text-surface-400">{t({ ko: '참고 예상 시간', en: 'Reference estimate' })}</span>
             <span className="whitespace-nowrap font-bold text-surface-900 dark:text-white">{countText(locale, estimatedMinutes, { ko: '분', en: 'min' })}</span>
           </div>
         </div>

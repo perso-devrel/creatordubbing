@@ -18,12 +18,12 @@ export function QuickStart() {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-brand-50 to-pink-50 dark:from-brand-900/10 dark:to-pink-900/10">
+    <Card className="border-brand-200 dark:border-brand-900/60">
       <CardTitle>{t({ ko: '빠른 시작', en: 'Quick start' })}</CardTitle>
-      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">
-        {t({ ko: 'YouTube URL을 붙여넣어 바로 더빙을 시작하세요.', en: 'Paste a YouTube URL to start dubbing.' })}
+      <p className="mb-4 text-sm text-surface-600 dark:text-surface-400">
+        {t({ ko: 'YouTube 링크를 붙여넣고 새 더빙을 시작하세요.', en: 'Paste a YouTube link to start a new dubbing job.' })}
       </p>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <Input
           placeholder="https://youtube.com/watch?v=..."
           value={url}

@@ -77,9 +77,9 @@ export default function BatchPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '더빙 작업', en: 'Dubbing jobs' })}</h1>
-          <p className="text-surface-500 dark:text-surface-400">{t({ ko: '여러 더빙 작업의 진행 상태를 확인하세요.', en: 'Track progress across dubbing jobs.' })}</p>
+          <p className="text-surface-600 dark:text-surface-400">{t({ ko: '진행 중인 더빙 작업을 확인하세요.', en: 'Review active dubbing jobs.' })}</p>
         </div>
-        <div className="flex items-center gap-2 text-surface-400">
+        <div className="flex items-center gap-2 text-surface-500 dark:text-surface-400">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">{t({ ko: '불러오는 중...', en: 'Loading...' })}</span>
         </div>
@@ -92,7 +92,7 @@ export default function BatchPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '더빙 작업', en: 'Dubbing jobs' })}</h1>
-          <p className="text-surface-500 dark:text-surface-400">{t({ ko: '여러 더빙 작업의 진행 상태를 확인하세요.', en: 'Track progress across dubbing jobs.' })}</p>
+          <p className="text-surface-600 dark:text-surface-400">{t({ ko: '진행 중인 더빙 작업을 확인하세요.', en: 'Review active dubbing jobs.' })}</p>
         </div>
         <EmptyState
           icon={<Layers className="h-12 w-12" />}
@@ -110,10 +110,10 @@ export default function BatchPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '더빙 작업', en: 'Dubbing jobs' })}</h1>
-          <p className="text-surface-500 dark:text-surface-400">
+          <p className="text-surface-600 dark:text-surface-400">
             {processing > 0 && t({ ko: `${processing} 처리 중`, en: `${processing} processing` })}
             {processing > 0 && queued > 0 && ' · '}
             {queued > 0 && t({ ko: `${queued} 대기 중`, en: `${queued} queued` })}
@@ -138,7 +138,7 @@ export default function BatchPage() {
             return (
               <div
                 key={job.id}
-                className="flex items-center gap-3 rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50"
+                className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50 sm:flex-row sm:items-center"
               >
                 <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-surface-300" />
 
@@ -155,12 +155,12 @@ export default function BatchPage() {
                       <LanguageBadge key={lang} code={lang} />
                     ))}
                     {langList.length > 3 && (
-                      <span className="text-xs text-surface-400">+{langList.length - 3}</span>
+                      <span className="text-xs text-surface-500 dark:text-surface-400">+{langList.length - 3}</span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                <div className="flex shrink-0 flex-row items-center gap-2 sm:flex-col sm:items-end sm:gap-1.5">
                   <Badge variant={status.variant}>{t(status.label)}</Badge>
                   {job.status === 'processing' && (
                     <Progress value={progress} size="sm" className="w-24" />
@@ -175,7 +175,7 @@ export default function BatchPage() {
                   className={`shrink-0 rounded-md p-1.5 transition-colors ${
                     deletingId === job.id
                       ? 'cursor-not-allowed text-surface-300'
-                      : 'text-surface-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20'
+                      : 'text-surface-500 hover:bg-red-50 hover:text-red-600 dark:text-surface-400 dark:hover:bg-red-900/20 dark:hover:text-red-400'
                   }`}
                   title={deletingId === job.id
                     ? t({ ko: '삭제 중...', en: 'Deleting...' })

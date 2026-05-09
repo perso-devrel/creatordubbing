@@ -47,19 +47,19 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '결제', en: 'Billing' })}</h1>
-        <p className="text-surface-500 dark:text-surface-400">{t({ ko: '더빙 시간을 충전하고 결제 내역을 확인하세요.', en: 'Add dubbing minutes and review payment history.' })}</p>
+        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '더빙 시간 충전', en: 'Add dubbing minutes' })}</h1>
+        <p className="text-surface-600 dark:text-surface-400">{t({ ko: '더빙 시간을 충전하고 결제 내역을 확인하세요.', en: 'Add dubbing minutes and review payment history.' })}</p>
       </div>
 
       {/* Remaining time */}
       <Card className="border-brand-200 dark:border-brand-800">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-amber-50 p-3 dark:bg-amber-900/20">
+            <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
               <Coins className="h-6 w-6 text-amber-500" />
             </div>
             <div>
-              <p className="text-sm text-surface-500">{t({ ko: '남은 더빙 시간', en: 'Remaining dubbing time' })}</p>
+              <p className="text-sm text-surface-600 dark:text-surface-400">{t({ ko: '남은 더빙 시간', en: 'Remaining dubbing time' })}</p>
               {isLoading ? (
                 <Loader2 className="mt-1 h-6 w-6 animate-spin text-surface-300" />
               ) : (
@@ -89,7 +89,7 @@ export default function BillingPage() {
               key={pack.minutes}
               onClick={() => setSelectedPack(pack.minutes)}
               className={cn(
-                'rounded-xl border-2 p-4 text-left transition-all cursor-pointer',
+                'rounded-lg border-2 p-4 text-left transition-all cursor-pointer',
                 selectedPack === pack.minutes
                   ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
                   : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 dark:border-surface-800 dark:bg-surface-900 dark:hover:border-surface-700 dark:hover:bg-surface-800/70',
@@ -111,7 +111,7 @@ export default function BillingPage() {
         )}
 
         {selectedPack && (
-          <Button className="mt-4 whitespace-nowrap" onClick={handleCharge} disabled={isCharging || charged}>
+          <Button className="mt-4" onClick={handleCharge} disabled={isCharging || charged}>
             {isCharging ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : charged ? (
@@ -120,7 +120,7 @@ export default function BillingPage() {
               <CreditCard className="h-4 w-4" />
             )}
             {charged
-              ? t({ ko: '결제창으로 이동 중...', en: 'Opening checkout...' })
+              ? t({ ko: '결제창을 여는 중...', en: 'Opening checkout...' })
               : t({ ko: `${selectedPack}분 충전`, en: `Add ${selectedPack} minutes` })}
             {!isCharging && !charged && <ArrowRight className="h-4 w-4" />}
           </Button>
@@ -130,7 +130,7 @@ export default function BillingPage() {
       {/* Invoices */}
       <Card>
         <CardTitle>{t({ ko: '결제 내역', en: 'Payment history' })}</CardTitle>
-        <div className="mt-4 py-8 text-center text-sm text-surface-400">
+        <div className="mt-4 py-8 text-center text-sm text-surface-500 dark:text-surface-400">
           {t({ ko: '결제 내역이 없습니다', en: 'No payment history yet' })}
         </div>
       </Card>

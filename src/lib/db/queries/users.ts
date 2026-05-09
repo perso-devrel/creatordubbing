@@ -66,6 +66,19 @@ export async function updateUserTokens(
   })
 }
 
+export async function clearUserGoogleTokens(userId: string) {
+  const db = getDb()
+  await db.execute({
+    sql: `UPDATE users
+          SET google_access_token = NULL,
+              google_refresh_token = NULL,
+              token_expires_at = NULL,
+              updated_at = datetime('now')
+          WHERE id = ?`,
+    args: [userId],
+  })
+}
+
 export async function getUser(userId: string) {
   const db = getDb()
   const result = await db.execute({

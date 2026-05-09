@@ -10,8 +10,8 @@ export default function MetadataPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: 'YouTube 제목·설명 번역', en: 'YouTube title and description translation' })}</h1>
-        <p className="text-surface-500 dark:text-surface-400">
-          {t({ ko: 'YouTube 제목과 설명만 여러 언어로 번역합니다.', en: 'Translate YouTube titles and descriptions into multiple languages.' })}
+        <p className="text-surface-600 dark:text-surface-400">
+          {t({ ko: 'YouTube 제목과 설명을 여러 언어로 현지화합니다.', en: 'Localize YouTube titles and descriptions into multiple languages.' })}
         </p>
       </div>
 

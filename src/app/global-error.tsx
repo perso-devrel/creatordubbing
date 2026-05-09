@@ -27,7 +27,7 @@ export default function GlobalError({
             잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.
           </p>
           {error.digest && (
-            <p className="text-xs text-gray-400 dark:text-gray-500">오류 코드: {error.digest}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">문의 시 전달할 오류 코드: {error.digest}</p>
           )}
           <button
             onClick={() => unstable_retry()}

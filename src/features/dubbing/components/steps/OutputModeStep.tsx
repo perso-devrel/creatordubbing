@@ -23,8 +23,8 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
     {
       value: 'newDubbedVideos',
       icon: Film,
-      title: { ko: '새 더빙 영상 업로드', en: 'Upload new dubbed videos' },
-      description: { ko: '언어별 더빙 영상을 새 YouTube 영상으로 업로드합니다.', en: 'Upload a separate dubbed YouTube video for each language.' },
+      title: { ko: '언어별 새 영상 만들기', en: 'Create new videos for each language' },
+      description: { ko: '언어별 더빙 영상을 새 YouTube 영상으로 준비합니다.', en: 'Prepare a separate dubbed YouTube video for each language.' },
     },
   ]
 
@@ -32,8 +32,8 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
-      title: { ko: '기존 영상에 자막 추가', en: 'Add captions to existing video' },
-      description: { ko: '내 채널의 기존 YouTube 영상에 번역 자막을 추가합니다.', en: 'Add translated captions to an existing YouTube video on your channel.' },
+      title: { ko: '기존 영상에 자막·제목 번역 추가', en: 'Add captions and localized metadata' },
+      description: { ko: '내 채널의 기존 YouTube 영상에 번역 자막과 제목·설명을 추가합니다.', en: 'Add translated captions, titles, and descriptions to an existing YouTube video.' },
     })
   } else if (sourceType === 'upload') {
     options.push({
@@ -71,7 +71,7 @@ export function OutputModeStep() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '결과물 선택', en: 'Choose output' })}</h2>
-        <p className="mt-1 text-surface-500">
+        <p className="mt-1 text-surface-600 dark:text-surface-400">
           {t({ ko: '더빙이 끝난 뒤 어떤 형태로 받을지 선택하세요.', en: 'Choose what you want to do with the finished dubbing.' })}
         </p>
       </div>
@@ -103,11 +103,11 @@ export function OutputModeStep() {
                 if (!disabled) setDeliverableMode(value)
               }}
               className={cn(
-                'flex flex-col items-center gap-4 rounded-xl border-2 p-6 text-center transition-all',
+                'flex flex-col items-center gap-4 rounded-lg border-2 p-6 text-center transition-all',
                 disabled && 'cursor-not-allowed opacity-60',
                 !disabled && 'cursor-pointer',
                 selected
-                  ? 'border-brand-500 bg-brand-50 shadow-lg shadow-brand-500/10 dark:bg-brand-900/10'
+                  ? 'border-brand-600 bg-brand-50 shadow-sm dark:bg-brand-900/10'
                   : disabled
                     ? 'border-surface-200 bg-surface-50 dark:border-surface-700 dark:bg-surface-800/60'
                     : 'border-surface-200 bg-white hover:border-surface-300 dark:border-surface-700 dark:bg-surface-800 dark:hover:border-surface-600',
@@ -117,7 +117,7 @@ export function OutputModeStep() {
                 className={cn(
                   'flex h-14 w-14 items-center justify-center rounded-full',
                   selected
-                    ? 'bg-brand-500 text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'bg-surface-100 text-surface-500 dark:bg-surface-700 dark:text-surface-400',
                 )}
               >
@@ -137,7 +137,7 @@ export function OutputModeStep() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-surface-500">{t(description)}</p>
+                <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">{t(description)}</p>
               </div>
             </button>
           )

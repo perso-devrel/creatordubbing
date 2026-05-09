@@ -5,12 +5,11 @@ const enc = new TextEncoder()
 const dec = new TextDecoder()
 
 function getEncryptionSecret() {
-  const secret = process.env.TOKEN_ENCRYPTION_KEY || process.env.SESSION_SECRET
-  if (secret) return secret
+  if (process.env.TOKEN_ENCRYPTION_KEY) return process.env.TOKEN_ENCRYPTION_KEY
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('TOKEN_ENCRYPTION_KEY or SESSION_SECRET is required in production')
+    throw new Error('TOKEN_ENCRYPTION_KEY is required in production')
   }
-  return 'dubtube-dev-token-secret-do-not-use-in-prod'
+  return process.env.SESSION_SECRET || 'dubtube-dev-token-secret-do-not-use-in-prod'
 }
 
 function toBase64Url(bytes: Uint8Array) {
@@ -42,7 +41,15 @@ export async function encryptToken(token: string | null | undefined): Promise<st
 
 export async function decryptToken(value: string | null | undefined): Promise<string | null> {
   if (!value) return null
-  if (!value.startsWith(`${PREFIX}:`)) return value
+  if (!value.startsWith(`${PREFIX}:`)) {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      process.env.ALLOW_LEGACY_PLAINTEXT_TOKENS !== 'true'
+    ) {
+      return null
+    }
+    return value
+  }
   const [, , ivRaw, cipherRaw] = value.split(':')
   if (!ivRaw || !cipherRaw) return null
   try {

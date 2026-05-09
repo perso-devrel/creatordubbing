@@ -127,8 +127,8 @@ export function VideoInputStep() {
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">
           {t({ ko: '영상 선택', en: 'Choose a video' })}
         </h2>
-        <p className="mt-1 text-surface-500">
-          {t({ ko: '파일을 올리거나 YouTube 영상 URL을 가져오세요.', en: 'Upload a file or import a YouTube video URL.' })}
+        <p className="mt-1 text-surface-600 dark:text-surface-400">
+          {t({ ko: 'YouTube 링크를 붙여넣거나 영상 파일을 업로드하세요.', en: 'Paste a YouTube link or upload a video file.' })}
         </p>
       </div>
 
@@ -162,21 +162,21 @@ export function VideoInputStep() {
                 })}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Input
-                placeholder={t({ ko: 'YouTube URL 또는 영상 파일 링크 (.mp4, .mov, .webm)', en: 'YouTube URL or direct video link (.mp4, .mov, .webm)' })}
+                placeholder={t({ ko: 'YouTube 링크 또는 영상 파일 링크', en: 'YouTube link or direct video link' })}
                 value={url}
                 onChange={(e) => { setUrl(e.target.value); setError(null) }}
                 icon={<Play className="h-4 w-4" />}
                 onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
                 error={error && !loading ? error : undefined}
               />
-              <Button onClick={handleUrlSubmit} loading={loading} disabled={!isValid || loading} className="whitespace-nowrap">
+              <Button onClick={handleUrlSubmit} loading={loading} disabled={!isValid || loading}>
                 {loading ? t({ ko: '가져오는 중...', en: 'Importing...' }) : t({ ko: '가져오기', en: 'Import' })}
               </Button>
             </div>
             {loading && (
-              <p className="mt-2 text-xs text-surface-400">
+              <p className="mt-2 text-xs text-surface-500 dark:text-surface-400">
                 {isValidYouTubeUrl(url)
                   ? t({ ko: 'YouTube에서 영상을 가져오는 중입니다. 긴 영상은 몇 분 걸릴 수 있습니다.', en: 'Importing from YouTube. Longer videos can take a few minutes.' })
                   : t({ ko: '영상 파일을 가져오는 중입니다. 긴 영상은 몇 분 걸릴 수 있습니다.', en: 'Importing the video file. Longer videos can take a few minutes.' })}
@@ -214,11 +214,11 @@ export function VideoInputStep() {
                 </>
               ) : (
                 <>
-                  <Upload className="mx-auto h-10 w-10 text-surface-400" />
+                  <Upload className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
                   <p className="mt-3 text-sm font-medium text-surface-700 dark:text-surface-300">
                     {t({ ko: '영상을 드래그하거나 클릭해서 선택하세요.', en: 'Drag a video here or click to select one.' })}
                   </p>
-                  <p className="mt-1 text-xs text-surface-400">
+                  <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
                     {t({ ko: 'MP4, MOV, WebM 지원 · 최대 30분', en: 'MP4, MOV, and WebM · up to 30 minutes' })}
                   </p>
                 </>
@@ -233,44 +233,44 @@ export function VideoInputStep() {
         <TabsContent value="channel" className="mt-6">
           {channelLoading ? (
             <Card className="py-12 text-center">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-400" />
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500">{t({ ko: '채널 정보를 불러오는 중...', en: 'Loading channel information...' })}</p>
             </Card>
           ) : channelError ? (
             <Card className="py-12 text-center">
-              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-red-500">
                 {channelError instanceof Error ? channelError.message : t({ ko: 'YouTube 채널 정보를 불러오지 못했습니다.', en: 'Could not load YouTube channel information.' })}
               </p>
             </Card>
           ) : !isConnected ? (
             <Card className="py-12 text-center">
-              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500">{t({ ko: 'YouTube 채널을 연결하면 내 영상을 바로 선택할 수 있습니다.', en: 'Connect your YouTube channel to choose from your videos.' })}</p>
               <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/youtube'}>{t({ ko: '채널 연결', en: 'Connect channel' })}</Button>
             </Card>
           ) : myVideosLoading ? (
             <Card className="py-12 text-center">
-              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-400" />
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500">{t({ ko: '영상 목록을 불러오는 중...', en: 'Loading videos...' })}</p>
             </Card>
           ) : myVideosError ? (
             <Card className="py-12 text-center">
-              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-red-500">
                 {myVideosError instanceof Error ? myVideosError.message : t({ ko: 'YouTube 영상 목록을 불러오지 못했습니다.', en: 'Could not load YouTube videos.' })}
               </p>
             </Card>
           ) : myVideos.length === 0 ? (
             <Card className="py-12 text-center">
-              <Film className="mx-auto h-10 w-10 text-surface-400" />
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500">{t({ ko: '채널에 업로드된 영상이 없습니다.', en: 'There are no uploaded videos on this channel.' })}</p>
             </Card>
           ) : publicVideos.length === 0 ? (
             <Card className="py-12 text-center">
-              <Lock className="mx-auto h-10 w-10 text-surface-400" />
+              <Lock className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500">{t({ ko: '가져올 수 있는 공개 영상이 없습니다.', en: 'There are no public videos available to import.' })}</p>
-              <p className="mt-1 text-xs text-surface-400">
+              <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
                 {t({
                   ko: '비공개 또는 일부 공개 영상은 파일로 직접 업로드해 주세요.',
                   en: 'For private or unlisted videos, upload the video file directly.',
@@ -336,7 +336,7 @@ export function VideoInputStep() {
               </div>
 
               {hiddenCount > 0 && !videoSearch && (
-                <p className="mt-3 text-xs text-surface-400">
+                  <p className="mt-3 text-xs text-surface-500 dark:text-surface-400">
                   {t({
                     ko: `비공개 또는 일부 공개 영상 ${hiddenCount}개는 파일로 직접 업로드해야 합니다.`,
                     en: `${hiddenCount} private or unlisted videos must be uploaded as files.`,
@@ -380,7 +380,7 @@ export function VideoInputStep() {
               </div>
               <p className="text-sm text-surface-500">{videoMeta.channelTitle}</p>
               {videoMeta.duration > 0 && (
-                <p className="text-xs text-surface-400 mt-1">
+                <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
                   {locale === 'ko'
                     ? `길이 ${formatDuration(videoMeta.duration)}`
                     : `${formatDuration(videoMeta.duration)} long`}

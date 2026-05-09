@@ -53,9 +53,15 @@ vi.mock('@/lib/youtube/server', () => ({
   },
 }))
 
+vi.mock('@/lib/auth/token-refresh', () => ({
+  getOrRefreshAccessToken: vi.fn(),
+}))
+
 import { requireSession } from '@/lib/auth/session'
+import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 
 const mockSession = vi.mocked(requireSession)
+const mockGetOrRefreshAccessToken = vi.mocked(getOrRefreshAccessToken)
 
 function mockAuth(uid: string) {
   mockSession.mockResolvedValueOnce({
@@ -197,7 +203,7 @@ describe('/api/dashboard/jobs', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.message).toBe('Internal Server Error')
+    expect(body.error.message).toBe('일시적인 서버 오류가 발생했습니다.')
   })
 })
 
@@ -308,8 +314,9 @@ describe('/api/dashboard/language-performance', () => {
     expect(res.status).toBe(400)
   })
 
-  it('refreshes YouTube stats when accessToken and uploads exist', async () => {
+  it('refreshes YouTube stats when DB token and uploads exist', async () => {
     mockAuth('user1')
+    mockGetOrRefreshAccessToken.mockResolvedValueOnce('db_token')
     mockGetUserYouTubeUploads.mockResolvedValueOnce([
       { youtube_video_id: 'vid1' },
       { youtube_video_id: 'vid2' },
@@ -323,26 +330,23 @@ describe('/api/dashboard/language-performance', () => {
     mockGetLanguagePerformance.mockResolvedValueOnce([] as never) // initial call
     mockGetLanguagePerformance.mockResolvedValueOnce(refreshedData as never) // after refresh
 
-    const req = new NextRequest('http://localhost/api/dashboard/language-performance?uid=user1', {
-      headers: { cookie: 'google_access_token=fake_token' },
-    })
+    const req = new NextRequest('http://localhost/api/dashboard/language-performance?uid=user1')
     const res = await GET(req)
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.data).toEqual(refreshedData)
     expect(mockUpdateYouTubeStats).toHaveBeenCalledTimes(2)
-    expect(mockFetchVideoStatistics).toHaveBeenCalledWith('fake_token', ['vid1', 'vid2'])
+    expect(mockFetchVideoStatistics).toHaveBeenCalledWith('db_token', ['vid1', 'vid2'])
   })
 
   it('falls back to DB data when YouTube refresh fails', async () => {
     mockAuth('user1')
+    mockGetOrRefreshAccessToken.mockResolvedValueOnce('db_token')
     const dbData = [{ lang: 'en', views: 50 }]
     mockGetLanguagePerformance.mockResolvedValueOnce(dbData as never)
     mockGetUserYouTubeUploads.mockRejectedValueOnce(new Error('YouTube down'))
 
-    const req = new NextRequest('http://localhost/api/dashboard/language-performance?uid=user1', {
-      headers: { cookie: 'google_access_token=fake_token' },
-    })
+    const req = new NextRequest('http://localhost/api/dashboard/language-performance?uid=user1')
     const res = await GET(req)
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -351,6 +355,7 @@ describe('/api/dashboard/language-performance', () => {
 
   it('skips YouTube refresh when no uploads have video IDs', async () => {
     mockAuth('user1')
+    mockGetOrRefreshAccessToken.mockResolvedValueOnce('db_token')
     const dbData = [{ lang: 'ja', views: 10 }]
     mockGetLanguagePerformance.mockResolvedValueOnce(dbData as never)
     mockGetUserYouTubeUploads.mockResolvedValueOnce([
@@ -358,9 +363,7 @@ describe('/api/dashboard/language-performance', () => {
       { youtube_video_id: '' },
     ] as never)
 
-    const req = new NextRequest('http://localhost/api/dashboard/language-performance?uid=user1', {
-      headers: { cookie: 'google_access_token=fake_token' },
-    })
+    const req = new NextRequest('http://localhost/api/dashboard/language-performance?uid=user1')
     const res = await GET(req)
     expect(res.status).toBe(200)
     const body = await res.json()
@@ -387,11 +390,12 @@ describe('/api/dashboard/language-performance', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.message).toBe('Internal Server Error')
+    expect(body.error.message).toBe('일시적인 서버 오류가 발생했습니다.')
   })
 
-  it('reads accessToken from x-google-access-token header', async () => {
+  it('ignores raw token headers and uses the DB token', async () => {
     mockAuth('user1')
+    mockGetOrRefreshAccessToken.mockResolvedValueOnce('db_token')
     mockGetUserYouTubeUploads.mockResolvedValueOnce([
       { youtube_video_id: 'vid1' },
     ] as never)
@@ -406,7 +410,7 @@ describe('/api/dashboard/language-performance', () => {
     })
     const res = await GET(req)
     expect(res.status).toBe(200)
-    expect(mockFetchVideoStatistics).toHaveBeenCalledWith('header_token', ['vid1'])
+    expect(mockFetchVideoStatistics).toHaveBeenCalledWith('db_token', ['vid1'])
   })
 })
 
@@ -712,6 +716,6 @@ describe('/api/dashboard/mutations', () => {
     const res = await POST(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.message).toBe('Internal Server Error')
+    expect(body.error.message).toBe('일시적인 서버 오류가 발생했습니다.')
   })
 })
