@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, FileVideo, Languages, Loader2, RefreshCw, Search, Upload } from 'lucide-react'
 import { Badge, Button, Card, CardTitle, Input, Modal, Select, Toggle } from '@/components/ui'
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
@@ -83,6 +83,11 @@ export function MetadataLocalizationTool() {
   }
   const closeUploadModal = () => setShowUploadModal(false)
 
+  useEffect(() => {
+    if (!videosError) return
+    console.error('[MetadataLocalizationTool] Failed to load YouTube videos', videosError)
+  }, [videosError])
+
   const filteredVideos = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return videos
@@ -159,10 +164,14 @@ export function MetadataLocalizationTool() {
 
       addToast({ type: 'success', title: ui('YouTube 제목·설명을 불러왔습니다', 'Loaded YouTube title and description') })
     } catch (err) {
+      console.error('[MetadataLocalizationTool] Failed to load YouTube metadata', err)
       addToast({
         type: 'error',
         title: ui('제목·설명 불러오기 실패', 'Failed to load title and description'),
-        message: err instanceof Error ? err.message : ui('알 수 없는 오류가 발생했습니다.', 'An unknown error occurred.'),
+        message: ui(
+          'YouTube 제목·설명을 불러오지 못했습니다. 잠시 후 다시 시도하세요.',
+          'Could not load the YouTube title and description. Please try again shortly.',
+        ),
       })
     } finally {
       setLoadingMetadata(false)
@@ -182,10 +191,14 @@ export function MetadataLocalizationTool() {
       setTranslations((prev) => ({ ...prev, ...result }))
       addToast({ type: 'success', title: ui('제목·설명 번역이 생성되었습니다', 'Title and description translations generated') })
     } catch (err) {
+      console.error('[MetadataLocalizationTool] Failed to translate metadata', err)
       addToast({
         type: 'error',
         title: ui('번역 생성 실패', 'Translation failed'),
-        message: err instanceof Error ? err.message : ui('알 수 없는 오류가 발생했습니다.', 'An unknown error occurred.'),
+        message: ui(
+          '번역을 생성하지 못했습니다. 잠시 후 다시 시도하세요.',
+          'Could not generate translations. Please try again shortly.',
+        ),
       })
     } finally {
       setTranslating(false)
@@ -208,10 +221,14 @@ export function MetadataLocalizationTool() {
       })
       addToast({ type: 'success', title: ui('YouTube 제목·설명 번역을 적용했습니다', 'Applied YouTube title and description translations') })
     } catch (err) {
+      console.error('[MetadataLocalizationTool] Failed to apply YouTube metadata', err)
       addToast({
         type: 'error',
         title: ui('YouTube 적용 실패', 'Failed to apply changes on YouTube'),
-        message: err instanceof Error ? err.message : ui('알 수 없는 오류가 발생했습니다.', 'An unknown error occurred.'),
+        message: ui(
+          'YouTube에 변경사항을 적용하지 못했습니다. 잠시 후 다시 시도하세요.',
+          'Could not apply changes to YouTube. Please try again shortly.',
+        ),
       })
     } finally {
       setSaving(false)
@@ -252,10 +269,14 @@ export function MetadataLocalizationTool() {
       setTranslations({})
       setShowUploadModal(false)
     } catch (err) {
+      console.error('[MetadataLocalizationTool] Failed to upload YouTube video', err)
       addToast({
         type: 'error',
         title: ui('YouTube 업로드 실패', 'YouTube upload failed'),
-        message: err instanceof Error ? err.message : ui('알 수 없는 오류가 발생했습니다.', 'An unknown error occurred.'),
+        message: ui(
+          'YouTube 업로드를 완료하지 못했습니다. 설정을 확인하고 다시 시도하세요.',
+          'Could not complete the YouTube upload. Check the settings and try again.',
+        ),
       })
     } finally {
       setUploading(false)
@@ -372,8 +393,11 @@ export function MetadataLocalizationTool() {
                 ]}
               />
               {videosError && (
-                <p className="text-sm text-red-500">
-                  {videosError instanceof Error ? videosError.message : ui('YouTube 영상 목록을 불러오지 못했습니다.', 'Could not load YouTube videos.')}
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {ui(
+                    'YouTube 영상 목록을 불러오지 못했습니다. 잠시 후 다시 시도하세요.',
+                    'Could not load YouTube videos. Please try again shortly.',
+                  )}
                 </p>
               )}
             </div>
@@ -629,7 +653,7 @@ export function MetadataLocalizationTool() {
                     <span className="font-medium text-surface-900 dark:text-white">
                       {language ? (isEnglish ? language.name : language.nativeName) : code}
                     </span>
-                    <span className="text-xs text-surface-400">{toBcp47(code)}</span>
+                    <span className="text-xs text-surface-500 dark:text-surface-400">{toBcp47(code)}</span>
                     {isPreExisting && (
                       <Badge variant="default">{ui('YouTube 기존 번역', 'Existing YouTube translation')}</Badge>
                     )}
@@ -663,7 +687,7 @@ export function MetadataLocalizationTool() {
         <Modal
           open={showUploadModal}
           onClose={closeUploadModal}
-          title={ui('YouTube 업로드 확인', 'Confirm YouTube upload')}
+          title={ui('YouTube 업로드 설정 확인', 'Review YouTube upload settings')}
           size="lg"
         >
           <div className="space-y-5">
@@ -693,7 +717,7 @@ export function MetadataLocalizationTool() {
             <div className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
               <p className="text-xs font-medium text-surface-500 dark:text-surface-400">{ui('태그', 'Tags')}</p>
               <p className="mt-1 text-sm text-surface-900 dark:text-surface-100">
-                {tags.length > 0 ? tags.join(', ') : <span className="text-surface-400">{ui('없음', 'None')}</span>}
+                {tags.length > 0 ? tags.join(', ') : <span className="text-surface-500 dark:text-surface-400">{ui('없음', 'None')}</span>}
               </p>
             </div>
 
@@ -711,10 +735,10 @@ export function MetadataLocalizationTool() {
               {ui('기본값이 적용되어 있습니다. 필요하면 이 영상에서만 바꾸세요.', 'The default is applied. Change it for this video if needed.')}
             </p>
 
-            <div className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-              <div>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-surface-900 dark:text-white">{ui('아동용 영상', 'Made for kids')}</p>
-                <p className="text-xs text-surface-500">{ui('YouTube의 아동용 콘텐츠 정책에 따라 표시합니다. 일반 영상은 꺼두세요.', 'Set this according to YouTube made-for-kids policy. Leave it off for general videos.')}</p>
+                <p className="text-xs leading-5 text-surface-500 dark:text-surface-400">{ui('YouTube의 아동용 콘텐츠 정책에 따라 표시합니다. 일반 영상은 꺼두세요.', 'Set this according to YouTube made-for-kids policy. Leave it off for general videos.')}</p>
               </div>
               <Toggle checked={uploadMadeForKids} onChange={setUploadMadeForKids} />
             </div>
@@ -724,15 +748,15 @@ export function MetadataLocalizationTool() {
                 type="checkbox"
                 checked={uploadConfirmed}
                 onChange={(e) => setUploadConfirmed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus-ring"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-surface-300 text-brand-600 focus-ring"
               />
-              <span className="text-sm text-surface-700 dark:text-surface-300">
-                {ui('위 설정을 확인했으며 업로드를 진행합니다.', 'I have reviewed these settings and want to upload.')}
+              <span className="text-sm leading-6 text-surface-700 dark:text-surface-300">
+                {ui('설정을 확인했으며 YouTube에 업로드합니다.', 'I reviewed the settings and want to upload to YouTube.')}
               </span>
             </label>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
+          <div className="mt-6 flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={closeUploadModal} disabled={uploading}>
               {ui('취소', 'Cancel')}
             </Button>
@@ -742,7 +766,7 @@ export function MetadataLocalizationTool() {
               disabled={!uploadConfirmed || uploading}
             >
               <Upload className="h-4 w-4" />
-              {ui('업로드', 'Upload')}
+              {ui('설정대로 업로드', 'Upload with these settings')}
             </Button>
           </div>
         </Modal>

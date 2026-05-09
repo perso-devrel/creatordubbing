@@ -47,6 +47,27 @@ const STEP_LABELS: Record<string, LocalizedText> = {
   COMPLETED: { ko: '완료', en: 'Complete' },
 }
 
+const STEP_ALIASES: Record<string, string> = {
+  OPENING_TRANSLATIONS: 'OPENING_LANGUAGES',
+  OPENING_TRANSLATION_PAGE: 'OPENING_LANGUAGES',
+  CHECKING_TRANSLATIONS: 'OPENING_LANGUAGES',
+  ADDING_LANGUAGE: 'SELECTING_LANGUAGE',
+  SELECT_LANGUAGE: 'SELECTING_LANGUAGE',
+  LANGUAGE_SELECT: 'SELECTING_LANGUAGE',
+  DOWNLOADING_AUDIO: 'INJECTING_AUDIO',
+  ADDING_AUDIO: 'INJECTING_AUDIO',
+  AUDIO_INJECTING: 'INJECTING_AUDIO',
+  WAITING_FOR_PUBLISH: 'WAITING_PUBLISH',
+  PUBLISH_READY: 'WAITING_PUBLISH',
+  PUBLISHED: 'COMPLETED',
+  DONE: 'COMPLETED',
+}
+
+function normalizeStep(step: string) {
+  const normalized = step.trim().replace(/[\s-]+/g, '_').toUpperCase()
+  return STEP_ALIASES[normalized] ?? normalized
+}
+
 export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, autoTrigger = false }: Props) {
   const { status: extensionStatus, version, recheck } = useExtensionDetect()
   const locale = useAppLocale()
@@ -55,6 +76,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
   const [langJobs, setLangJobs] = useState<Record<string, LangJobState>>({})
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoTriggered = useRef(false)
+  const loggedExtensionErrors = useRef<Set<string>>(new Set())
   const addToast = useNotificationStore((s) => s.addToast)
 
   const getDisplayLanguageName = useCallback((langCode: string) => {
@@ -65,7 +87,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
 
   const getStepLabel = useCallback((step?: string) => {
     if (!step) return t({ ko: '진행 중...', en: 'In progress...' })
-    const label = STEP_LABELS[step]
+    const label = STEP_LABELS[normalizeStep(step)]
     return label ? text(locale, label) : t({ ko: '진행 중...', en: 'In progress...' })
   }, [locale, t])
 
@@ -77,6 +99,18 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
       const updated: Record<string, LangJobState> = {}
       for (const job of response.jobs) {
         if (job.videoId === videoId) {
+          if (job.error) {
+            const errorKey = `${job.jobId}:${job.error}`
+            if (!loggedExtensionErrors.current.has(errorKey)) {
+              loggedExtensionErrors.current.add(errorKey)
+              console.warn('[Dubtube] Extension upload error', {
+                jobId: job.jobId,
+                languageCode: job.languageCode,
+                step: job.step,
+                error: job.error,
+              })
+            }
+          }
           updated[job.languageCode] = {
             jobId: job.jobId,
             status: job.status,
@@ -137,13 +171,17 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
           message: t({ ko: 'YouTube Studio에서 진행 상황을 확인하세요.', en: 'Check the progress in YouTube Studio.' }),
         })
       } else {
+        if (response.error) {
+          console.warn('[Dubtube] Extension upload request failed', response.error)
+        }
         addToast({
           type: 'error',
           title: t({ ko: '오디오 트랙 추가 실패', en: 'Audio track upload failed' }),
           message: t({ ko: '잠시 후 다시 시도하거나 수동으로 추가해 주세요.', en: 'Try again shortly or add it manually.' }),
         })
       }
-    } catch {
+    } catch (err) {
+      console.warn('[Dubtube] Extension connection failed', err)
       addToast({
         type: 'error',
         title: t({ ko: '확장 프로그램 연결 실패', en: 'Extension connection failed' }),
@@ -241,6 +279,12 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
                 {job?.status === 'error' && (
                   <div>
                     <p className="text-xs text-red-500">{t({ ko: '자동 추가 실패', en: 'Auto add failed' })}</p>
+                    <p className="text-[10px] text-red-400">
+                      {t({
+                        ko: '업로드를 완료하지 못했습니다. YouTube Studio에서 직접 확인해 주세요.',
+                        en: 'Upload could not be completed. Please check in YouTube Studio.',
+                      })}
+                    </p>
                     {job.step && (
                       <p className="text-[10px] text-red-400">
                         {t({ ko: '멈춘 단계', en: 'Stopped at' })}: {getStepLabel(job.step)}

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) return auth.response
 
   const uid = req.nextUrl.searchParams.get('uid')
-  if (!uid) return apiFail('BAD_REQUEST', 'uid required', 400)
+  if (!uid) return apiFail('BAD_REQUEST', '로그인 정보를 확인해 주세요.', 400)
   if (uid !== auth.session.uid) return forbiddenUidMismatch()
 
   try {

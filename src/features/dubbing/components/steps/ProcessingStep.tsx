@@ -101,8 +101,8 @@ export function ProcessingStep() {
           {allCompleted
             ? t({ ko: '완료된 파일을 확인하고 필요한 작업을 이어서 진행하세요.', en: 'Review the finished files and continue with the next action.' })
             : deliverableMode === 'originalWithMultiAudio'
-              ? t({ ko: '자막을 생성하고 있습니다.', en: 'Creating captions.' })
-              : t({ ko: '자막과 더빙 오디오를 생성하고 있습니다.', en: 'Creating captions and dubbed audio.' })}
+              ? t({ ko: '자막을 생성하고 있습니다. 영상 길이와 언어 수에 따라 시간이 걸릴 수 있습니다.', en: 'Creating captions. Processing time depends on video length and the number of languages.' })
+              : t({ ko: '자막과 더빙 오디오를 생성하고 있습니다. 영상 길이와 언어 수에 따라 시간이 걸릴 수 있습니다.', en: 'Creating captions and dubbed audio. Processing time depends on video length and the number of languages.' })}
         </p>
       </div>
 

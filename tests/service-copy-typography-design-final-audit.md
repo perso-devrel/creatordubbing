@@ -13,6 +13,13 @@
 - YouTube 정책: 연결 해제 API를 추가해 Google token revoke와 DB 토큰 삭제를 수행하고, OAuth callback의 `redirectUri`는 현재 서비스 origin의 `/auth/callback`만 허용하도록 제한했다.
 - 보호 라우트: Next 16 기준 `proxy.ts`로 `/metadata`까지 로그인 보호 범위에 포함했다.
 
+2차 반영에서는 아래 항목을 추가로 마감했다.
+
+- 더빙 결과 화면: 다운로드, YouTube 업로드, YouTube Studio 보조 업로드 버튼 문구를 짧게 줄이고 줄바꿈·폭 변화가 큰 버튼을 정리했다.
+- 메타데이터 화면: 업로드 모달과 실패 토스트에서 내부 오류 원문 대신 사용자가 다시 시도할 수 있는 문장만 보여주도록 정리했다.
+- 확장 프로그램: 등록 전 검수 가능한 수준으로 팝업, 진행 상태, 실패 문구, README를 정리하고 `localhost` 개발 등록 범위를 명확히 했다.
+- API 오류: Perso/YouTube/SRT/공통 API 클라이언트의 raw status, provider body, 내부 코드가 일반 사용자 메시지에 섞이지 않도록 막았다.
+
 작성일: 2026-05-10  
 범위: `src/app`, `src/components`, `src/features`, `src/lib`, `extension`의 사용자가 볼 수 있는 페이지, 버튼, 모달, 토스트, 빈 상태, 오류 문구, 확장 프로그램 팝업/진행 문구  
 목표: 현재 기능은 유지하고, 실서비스에서 유튜버와 일반 사용자가 보기에 자연스러운 카피와 디자인 방향을 확정한다.

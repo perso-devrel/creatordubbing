@@ -32,10 +32,10 @@ describe('fail', () => {
   })
 
   it('preserves PersoError details', async () => {
-    const err = new PersoError('F4004', 'file too big', 400, { maxSize: 100 })
+    const err = new PersoError('INVALID_BODY', 'bad body', 400, { issues: [{ path: 'name', message: 'required' }] })
     const res = fail(err)
     const body = await res.json()
-    expect(body.error.details).toEqual({ maxSize: 100 })
+    expect(body.error.details).toEqual({ issues: [{ path: 'name', message: 'required' }] })
   })
 
   it('logs and returns 500 for server PersoError', async () => {
@@ -90,12 +90,12 @@ describe('readJson', () => {
     expect(result).toEqual({ key: 'value' })
   })
 
-  it('throws PersoError-like on invalid JSON', async () => {
+  it('throws PersoError on invalid JSON', async () => {
     const req = new Request('http://localhost', {
       method: 'POST',
       body: 'not json',
     })
-    await expect(readJson(req)).rejects.toThrow('Invalid JSON body')
+    await expect(readJson(req)).rejects.toThrow('입력값을 확인해 주세요.')
   })
 })
 
@@ -124,7 +124,13 @@ describe('parseBody', () => {
     } catch (err) {
       expect((err as Error & { code: string }).code).toBe('INVALID_BODY')
       expect((err as Error & { status: number }).status).toBe(400)
-      expect((err as Error).message).toContain('name')
+      expect((err as Error).message).toBe('입력값을 확인해 주세요.')
+      expect((err as PersoError).details).toEqual({
+        issues: [
+          { path: 'name', message: expect.any(String) },
+          { path: 'age', message: expect.any(String) },
+        ],
+      })
     }
   })
 
@@ -133,7 +139,7 @@ describe('parseBody', () => {
       method: 'POST',
       body: 'not json',
     })
-    await expect(parseBody(req, schema)).rejects.toThrow('Invalid JSON body')
+    await expect(parseBody(req, schema)).rejects.toThrow('입력값을 확인해 주세요.')
   })
 
   it('strips extra fields', async () => {
@@ -155,12 +161,12 @@ describe('requireIntParam', () => {
 
   it('throws on missing param', () => {
     const url = new URL('http://localhost')
-    expect(() => requireIntParam(url, 'id')).toThrow('Missing required query param: id')
+    expect(() => requireIntParam(url, 'id')).toThrow('필수 입력값이 누락되었습니다.')
   })
 
   it('throws on non-numeric param', () => {
     const url = new URL('http://localhost?id=abc')
-    expect(() => requireIntParam(url, 'id')).toThrow('Invalid numeric query param: id')
+    expect(() => requireIntParam(url, 'id')).toThrow('입력값 형식을 확인해 주세요.')
   })
 })
 
@@ -172,11 +178,11 @@ describe('requireStringParam', () => {
 
   it('throws on missing param', () => {
     const url = new URL('http://localhost')
-    expect(() => requireStringParam(url, 'name')).toThrow('Missing required query param: name')
+    expect(() => requireStringParam(url, 'name')).toThrow('필수 입력값이 누락되었습니다.')
   })
 
   it('throws on empty param', () => {
     const url = new URL('http://localhost?name=')
-    expect(() => requireStringParam(url, 'name')).toThrow('Missing required query param: name')
+    expect(() => requireStringParam(url, 'name')).toThrow('필수 입력값이 누락되었습니다.')
   })
 })

@@ -28,7 +28,7 @@ export async function requireSession(
         if (!active) {
           return {
             ok: false,
-            response: apiFail('UNAUTHORIZED', 'Session has expired or was revoked', 401),
+            response: apiFail('UNAUTHORIZED', '세션이 만료되었습니다. 다시 로그인해 주세요.', 401),
           }
         }
       }
@@ -47,10 +47,10 @@ export async function requireSession(
 
   return {
     ok: false,
-    response: apiFail('UNAUTHORIZED', 'Missing or expired access token', 401),
+    response: apiFail('UNAUTHORIZED', '로그인이 필요합니다. 다시 로그인해 주세요.', 401),
   }
 }
 
 export function forbiddenUidMismatch(): Response {
-  return apiFail('FORBIDDEN', 'UID mismatch: you can only access your own data', 403)
+  return apiFail('FORBIDDEN', '이 작업을 진행할 권한이 없습니다.', 403)
 }

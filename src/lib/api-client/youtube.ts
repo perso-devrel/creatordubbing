@@ -84,8 +84,12 @@ export async function ytUploadVideo(params: {
     body: video,
   })
   if (!putRes.ok) {
-    const errText = await putRes.text().catch(() => '')
-    throw new Error(`YouTube 업로드 실패: ${putRes.status} ${errText}`)
+    const detail = await putRes.text().catch(() => '')
+    console.warn('[Dubtube] YouTube direct upload failed', {
+      status: putRes.status,
+      detail,
+    })
+    throw new Error('YouTube 업로드를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.')
   }
   const data = (await putRes.json()) as {
     id: string

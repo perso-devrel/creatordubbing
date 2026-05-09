@@ -142,7 +142,7 @@ describe('/api/dashboard/summary', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.message).toBe('Failed to load summary')
+    expect(body.error.message).toBe('대시보드 요약을 불러오지 못했습니다.')
   })
 })
 
@@ -264,7 +264,7 @@ describe('/api/dashboard/credit-usage', () => {
     const res = await GET(req)
     expect(res.status).toBe(500)
     const body = await res.json()
-    expect(body.error.message).toBe('Failed to load credit usage')
+    expect(body.error.message).toBe('사용 시간 내역을 불러오지 못했습니다.')
   })
 })
 
