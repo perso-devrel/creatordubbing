@@ -138,10 +138,10 @@ export function UploadSettingsStep() {
               onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
               options={languageOptions}
             />
-            <p className="-mt-2 text-xs text-surface-400">
+            <p className="-mt-2 text-xs text-surface-500 dark:text-surface-300">
               {t({
-                ko: '제목과 설명을 작성할 언어입니다. 업로드 시 대상 언어별로 자동 번역됩니다.',
-                en: 'This is the language you write in. Titles and descriptions are translated per target language during upload.',
+                ko: '제목과 설명을 작성할 언어입니다. 업로드할 때 언어별로 번역됩니다.',
+                en: 'This is the language you write in. Titles and descriptions are translated during upload.',
               })}
             </p>
 
@@ -175,7 +175,7 @@ export function UploadSettingsStep() {
               onChange={(e) => handleTagsChange(e.target.value)}
               placeholder={t({ ko: 'Dubtube, AI 더빙, 리뷰', en: 'Dubtube, AI dubbing, review' })}
             />
-            <p className="-mt-2 text-xs text-surface-400">
+            <p className="-mt-2 text-xs text-surface-500 dark:text-surface-300">
               {t({ ko: '태그는 번역하지 않고 그대로 사용됩니다.', en: 'Tags are used as written and are not translated.' })}
             </p>
 
@@ -200,10 +200,10 @@ export function UploadSettingsStep() {
               onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
               options={languageOptions}
             />
-            <p className="-mt-2 text-xs text-surface-400">
+            <p className="-mt-2 text-xs text-surface-500 dark:text-surface-300">
               {t({
-                ko: '제목과 설명을 작성할 언어입니다. 업로드 시 대상 언어별로 자동 번역됩니다.',
-                en: 'This is the language you write in. Titles and descriptions are translated per target language during upload.',
+                ko: '제목과 설명을 작성할 언어입니다. 업로드할 때 언어별로 번역됩니다.',
+                en: 'This is the language you write in. Titles and descriptions are translated during upload.',
               })}
             </p>
 
@@ -237,7 +237,7 @@ export function UploadSettingsStep() {
               onChange={(e) => handleTagsChange(e.target.value)}
               placeholder={t({ ko: 'Dubtube, AI 더빙, 자막', en: 'Dubtube, AI dubbing, captions' })}
             />
-            <p className="-mt-2 text-xs text-surface-400">
+            <p className="-mt-2 text-xs text-surface-500 dark:text-surface-300">
               {t({ ko: '태그는 번역하지 않고 그대로 사용됩니다.', en: 'Tags are used as written and are not translated.' })}
             </p>
 
@@ -257,7 +257,7 @@ export function UploadSettingsStep() {
         <div className="mt-4 space-y-2">
           <ToggleRow
             icon={<Upload className="h-4 w-4 text-emerald-500" />}
-            label={t({ ko: '완료 즉시 자동 업로드', en: 'Auto-upload when finished' })}
+            label={t({ ko: '완료 후 자동 업로드', en: 'Auto-upload when finished' })}
             description={isMultiAudio
               ? t({ ko: '완료된 번역 자막을 자동으로 업로드합니다.', en: 'Automatically upload translated captions when processing finishes.' })
               : t({ ko: '더빙이 완료되면 언어별 영상을 자동으로 업로드합니다.', en: 'Automatically upload each dubbed video when processing finishes.' })}
@@ -281,7 +281,7 @@ export function UploadSettingsStep() {
               inactiveLabel="OFF"
               onToggle={() => setUploadSettings({ uploadCaptions: !uploadSettings.uploadCaptions })}
               disabled={captionUploadDisabled}
-              disabledBadgeLabel={t({ ko: '자동 업로드 OFF', en: 'Auto-upload off' })}
+              disabledBadgeLabel={t({ ko: '자동 업로드 꺼짐', en: 'Auto-upload off' })}
             />
           )}
 
@@ -393,7 +393,7 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
   const t = useLocaleText()
 
   return (
-    <div className={`flex items-start justify-between gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 ${disabled ? 'opacity-60' : ''}`}>
+    <div className={`flex items-start justify-between gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 ${disabled ? 'opacity-75' : ''}`}>
       <div className="flex min-w-0 items-start gap-2">
         <div className="mt-0.5 flex-shrink-0">{icon}</div>
         <div className="min-w-0">
@@ -406,7 +406,7 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
             )}
           </div>
           {description && (
-            <p className="mt-1 text-xs leading-5 text-surface-500 dark:text-surface-400">{description}</p>
+            <p className="mt-1 text-xs leading-5 text-surface-500 dark:text-surface-300">{description}</p>
           )}
         </div>
       </div>
@@ -416,7 +416,7 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
         disabled={disabled}
         className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all ${
           disabled
-            ? 'bg-surface-200 text-surface-400 dark:bg-surface-700 dark:text-surface-500 cursor-not-allowed'
+            ? 'bg-surface-200 text-surface-500 dark:bg-surface-700 dark:text-surface-300 cursor-not-allowed'
             : `cursor-pointer ${active
               ? 'bg-brand-500 text-white'
               : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'}`

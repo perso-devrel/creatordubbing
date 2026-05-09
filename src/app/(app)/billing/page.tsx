@@ -53,7 +53,7 @@ export default function BillingPage() {
 
       {/* Remaining time */}
       <Card className="border-brand-200 dark:border-brand-800">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-amber-50 p-3 dark:bg-amber-900/20">
               <Coins className="h-6 w-6 text-amber-500" />
@@ -69,7 +69,7 @@ export default function BillingPage() {
               )}
             </div>
           </div>
-          <p className="text-sm text-surface-400">{t({ ko: '결제는 원화(KRW)로 처리됩니다.', en: 'Payments are processed in KRW.' })}</p>
+          <p className="text-sm text-surface-500 dark:text-surface-300">{t({ ko: '결제는 원화(KRW)로 처리됩니다.', en: 'Payments are processed in KRW.' })}</p>
         </div>
       </Card>
 
@@ -92,12 +92,12 @@ export default function BillingPage() {
                 'rounded-xl border-2 p-4 text-left transition-all cursor-pointer',
                 selectedPack === pack.minutes
                   ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20'
-                  : 'border-surface-200 hover:border-surface-300 dark:border-surface-800 dark:hover:border-surface-700',
+                  : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 dark:border-surface-800 dark:bg-surface-900 dark:hover:border-surface-700 dark:hover:bg-surface-800/70',
               )}
             >
-              <p className="text-2xl font-bold text-surface-900 dark:text-white">{pack.minutes}분</p>
-              <p className="text-xs text-surface-500 mb-2">{pack.label}</p>
-              <p className="text-lg font-semibold text-surface-900 dark:text-white">
+              <p className="whitespace-nowrap text-2xl font-bold text-surface-900 dark:text-white">{pack.minutes}분</p>
+              {pack.label && <p className="mb-2 text-xs text-surface-500 dark:text-surface-400">{pack.label}</p>}
+              <p className="whitespace-nowrap text-lg font-semibold text-surface-900 dark:text-white">
                 {formatKrw(pack.priceKrw)}
               </p>
             </button>
@@ -111,7 +111,7 @@ export default function BillingPage() {
         )}
 
         {selectedPack && (
-          <Button className="mt-4" onClick={handleCharge} disabled={isCharging || charged}>
+          <Button className="mt-4 whitespace-nowrap" onClick={handleCharge} disabled={isCharging || charged}>
             {isCharging ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : charged ? (

@@ -382,7 +382,7 @@ export function VideoInputStep() {
               {videoMeta.duration > 0 && (
                 <p className="text-xs text-surface-400 mt-1">
                   {locale === 'ko'
-                    ? `${formatDuration(videoMeta.duration)} 길이`
+                    ? `길이 ${formatDuration(videoMeta.duration)}`
                     : `${formatDuration(videoMeta.duration)} long`}
                 </p>
               )}

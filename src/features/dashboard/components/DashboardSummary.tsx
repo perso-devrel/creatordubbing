@@ -50,7 +50,7 @@ export function DashboardSummary({ initialData }: DashboardSummaryProps) {
           </div>
           <div>
             <p className="text-sm text-surface-500 dark:text-surface-400">{label}</p>
-            <p className="text-2xl font-bold text-surface-900 dark:text-white">{value}</p>
+            <p className="whitespace-nowrap text-2xl font-bold text-surface-900 dark:text-white">{value}</p>
           </div>
         </Card>
       ))}

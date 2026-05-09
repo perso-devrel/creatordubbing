@@ -12,7 +12,7 @@ export function CTASection() {
             <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
               전 세계 시청자를 만날 준비가 되셨나요?
             </h2>
-            <p className="mx-auto mt-4 text-lg text-white/80 break-keep sm:whitespace-nowrap">
+            <p className="mx-auto mt-4 text-lg text-white/80 break-keep lg:whitespace-nowrap">
               영상을 여러 언어로 더빙하고 YouTube 업로드까지 한 흐름으로 진행하세요.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">

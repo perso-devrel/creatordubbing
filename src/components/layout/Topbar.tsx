@@ -44,11 +44,11 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
         {user && (
           <div className="ml-2 flex items-center gap-3">
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium text-surface-900 dark:text-white leading-tight">
+              <p className="max-w-48 truncate text-sm font-medium leading-tight text-surface-900 dark:text-white">
                 {accountName}
               </p>
               {subscriberLabel && (
-                <p className="text-xs text-surface-400 leading-tight">{subscriberLabel}</p>
+                <p className="whitespace-nowrap text-xs leading-tight text-surface-400">{subscriberLabel}</p>
               )}
             </div>
             {user.photoURL ? (

@@ -101,8 +101,8 @@ export function ProcessingStep() {
           {allCompleted
             ? t({ ko: '완료된 파일을 확인하고 필요한 작업을 이어서 진행하세요.', en: 'Review the finished files and continue with the next action.' })
             : deliverableMode === 'originalWithMultiAudio'
-              ? t({ ko: 'AI가 전사, 번역, 자막 생성을 진행하고 있습니다.', en: 'AI is transcribing, translating, and creating captions.' })
-              : t({ ko: 'AI가 전사, 번역, 더빙 오디오 생성을 진행하고 있습니다.', en: 'AI is transcribing, translating, and creating dubbed audio.' })}
+              ? t({ ko: '자막을 생성하고 있습니다.', en: 'Creating captions.' })
+              : t({ ko: '자막과 더빙 오디오를 생성하고 있습니다.', en: 'Creating captions and dubbed audio.' })}
         </p>
       </div>
 

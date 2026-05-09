@@ -941,14 +941,14 @@ export function UploadStep() {
                         if (!lang) return null
                         const opening = studioOpenedLang === code
                         return (
-                          <div key={code} className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+                          <div key={code} className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-3">
                               <span className="text-lg">{lang.flag}</span>
                               <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
                             </div>
-                            <Button variant="outline" size="sm" onClick={() => handleAudioToStudio(code, multiAudioVideoId)} loading={opening}>
+                            <Button variant="outline" size="sm" className="w-full whitespace-nowrap sm:w-auto" onClick={() => handleAudioToStudio(code, multiAudioVideoId)} loading={opening}>
                               <Volume2 className="h-3.5 w-3.5" />
-                              {t({ ko: '오디오 + Studio', en: 'Audio + Studio' })}
+                              {t({ ko: '오디오 받고 Studio 열기', en: 'Download audio and open Studio' })}
                             </Button>
                           </div>
                         )
@@ -965,7 +965,7 @@ export function UploadStep() {
       {/* ─── Audio preview for manual mode ─── */}
       {!autoUpload && completedLangs.length > 0 && (
         <Card>
-          <CardTitle>{t({ ko: '오디오 미리듣기', en: 'Audio preview' })}</CardTitle>
+          <CardTitle>{t({ ko: '더빙 오디오 확인', en: 'Review dubbed audio' })}</CardTitle>
           <p className="mb-4 mt-1 text-xs text-surface-500">
             {t({ ko: '업로드 전에 더빙 오디오를 확인하세요.', en: 'Review the dubbed audio before uploading.' })}
           </p>
@@ -1035,7 +1035,7 @@ export function UploadStep() {
                   return (
                     <div
                       key={code}
-                      className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800"
+                      className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-lg">{lang.flag}</span>
@@ -1065,23 +1065,25 @@ export function UploadStep() {
                       ) : state?.status === 'uploading' ? (
                         <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
                       ) : (
-                        <div className="flex gap-1">
+                        <div className="grid gap-1 sm:flex">
                           <Button
                             variant="outline"
                             size="sm"
+                            className="whitespace-nowrap"
                             onClick={() => handleYouTubeUpload(code)}
                             disabled={anyUploading || isYouTubeUploadLocked(state)}
                           >
                             <Upload className="h-3.5 w-3.5" />
-                            {t({ ko: '즉시', en: 'Now' })}
+                            {t({ ko: '지금 업로드', en: 'Upload now' })}
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="whitespace-nowrap"
                             onClick={() => queueYouTubeUpload(code)}
                             disabled={anyUploading || isYouTubeUploadLocked(state)}
                           >
-                            {t({ ko: '예약', en: 'Schedule' })}
+                            {t({ ko: '나중에 업로드', en: 'Upload later' })}
                           </Button>
                         </div>
                       )}
@@ -1091,24 +1093,24 @@ export function UploadStep() {
               </div>
 
               {completedLangs.length > 1 && (
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 grid gap-2 sm:flex">
                   <Button
-                    className="flex-1"
+                    className="flex-1 whitespace-nowrap"
                     onClick={handleUploadAll}
                     disabled={anyUploading || !hasPendingYouTubeUploads}
                     loading={anyUploading}
                   >
                     <Upload className="h-4 w-4" />
-                    {t({ ko: '즉시 업로드', en: 'Upload now' })}
+                    {t({ ko: '지금 업로드', en: 'Upload now' })}
                   </Button>
                   <Button
                     variant="secondary"
-                    className="flex-1"
+                    className="flex-1 whitespace-nowrap"
                     onClick={handleQueueAll}
                     disabled={anyUploading || !hasPendingYouTubeUploads}
                   >
                     <Upload className="h-4 w-4" />
-                    {t({ ko: '예약 업로드', en: 'Schedule upload' })}
+                    {t({ ko: '나중에 업로드', en: 'Upload later' })}
                   </Button>
                 </div>
               )}
@@ -1134,7 +1136,7 @@ export function UploadStep() {
               if (!lang) return null
               const status = captionUploads[code]
               return (
-                <div key={code} className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+                <div key={code} className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{lang.flag}</span>
                     <div>
@@ -1148,7 +1150,7 @@ export function UploadStep() {
                   ) : status === 'uploading' ? (
                     <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
                   ) : (
-                    <Button variant="outline" size="sm" onClick={() => uploadCaptions(originalYouTubeId, [code])}>
+                    <Button variant="outline" size="sm" className="w-full whitespace-nowrap sm:w-auto" onClick={() => uploadCaptions(originalYouTubeId, [code])}>
                       <Upload className="h-3.5 w-3.5" />
                       {t({ ko: '자막 업로드', en: 'Upload captions' })}
                     </Button>
@@ -1172,31 +1174,31 @@ export function UploadStep() {
               return (
                 <div
                   key={code}
-                  className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800"
+                  className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{lang.flag}</span>
                     <div>
                       <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
-                      <p className="text-xs text-surface-400">
+                      <p className="text-xs text-surface-500 dark:text-surface-300">
                         {deliverableMode === 'originalWithMultiAudio'
                           ? t({ ko: '오디오 + 자막', en: 'Audio + captions' })
                           : t({ ko: '영상 + 오디오 + 자막', en: 'Video + audio + captions' })}
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="grid gap-2 sm:flex">
                     {deliverableMode !== 'originalWithMultiAudio' && (
-                      <Button variant="outline" size="sm" onClick={() => handleDownload(code, 'video')}
+                      <Button variant="outline" size="sm" className="whitespace-nowrap" onClick={() => handleDownload(code, 'video')}
                         loading={loadingDownload === `${code}-video`}>
                         <Download className="h-3.5 w-3.5" /> {t({ ko: '영상', en: 'Video' })}
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" onClick={() => handleDownload(code, 'voiceAudio')}
+                    <Button variant="outline" size="sm" className="whitespace-nowrap" onClick={() => handleDownload(code, 'voiceAudio')}
                       loading={loadingDownload === `${code}-voiceAudio`}>
                       <Download className="h-3.5 w-3.5" /> {t({ ko: '오디오', en: 'Audio' })}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDownload(code, 'translatedSubtitle')}
+                    <Button variant="outline" size="sm" className="whitespace-nowrap" onClick={() => handleDownload(code, 'translatedSubtitle')}
                       loading={loadingDownload === `${code}-translatedSubtitle`}>
                       <Download className="h-3.5 w-3.5" /> {t({ ko: '자막', en: 'SRT' })}
                     </Button>
@@ -1227,7 +1229,7 @@ export function UploadStep() {
       {/* ─── Subtitle & Script editor (merged) ─── */}
       {completedLangs.length > 0 && spaceSeq && (
         <Card>
-          <CardTitle>{t({ ko: '자막 · 스크립트 편집', en: 'Edit captions and script' })}</CardTitle>
+          <CardTitle>{t({ ko: '자막 · 대사 편집', en: 'Edit captions and dialogue' })}</CardTitle>
           <p className="mb-4 mt-1 text-xs text-surface-500">
             {t({
               ko: '번역 텍스트를 수정하면 다시 생성할 때 더빙 오디오에 반영됩니다. 시간 변경은 자막 파일과 YouTube 자막에 적용됩니다.',

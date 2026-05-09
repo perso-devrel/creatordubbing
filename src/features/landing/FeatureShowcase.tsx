@@ -9,7 +9,7 @@ const features = [
   {
     icon: Subtitles,
     title: '번역 에디터',
-    description: '문장 단위로 번역을 검토하고 수정할 수 있습니다. 브랜드명, 고유명사 보호 기능.',
+    description: '문장 단위로 번역을 검토하고 브랜드명·고유명사를 다듬을 수 있습니다.',
   },
   // Lip sync feature is temporarily hidden from the landing page.
   // {
@@ -35,7 +35,7 @@ export function FeatureShowcase() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            글로벌 진출에 필요한 모든 것
+            다국어 더빙에 필요한 기본 기능
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
             YouTube 크리에이터를 위해 만든 더빙 제작 도구

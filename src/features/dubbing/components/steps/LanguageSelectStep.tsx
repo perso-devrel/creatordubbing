@@ -170,7 +170,7 @@ export function LanguageSelectStep() {
         <div className="rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
           <div className="flex items-center justify-between text-sm">
             <span className="text-surface-600 dark:text-surface-400">{t({ ko: '예상 필요 시간', en: 'Estimated minutes' })}</span>
-            <span className="font-bold text-surface-900 dark:text-white">{countText(locale, estimatedMinutes, { ko: '분', en: 'min' })}</span>
+            <span className="whitespace-nowrap font-bold text-surface-900 dark:text-white">{countText(locale, estimatedMinutes, { ko: '분', en: 'min' })}</span>
           </div>
         </div>
       </Card>

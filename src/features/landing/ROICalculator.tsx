@@ -76,10 +76,10 @@ export function ROICalculator() {
             <div className="rounded-xl bg-gradient-to-r from-brand-50 to-pink-50 p-6 dark:from-brand-900/20 dark:to-pink-900/20">
               <div className="flex items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-400">
                 <TrendingUp className="h-4 w-4" />
-                참고 예상 도달 증가율
+                참고용 예상 증가율
               </div>
               <div className="mt-2 text-5xl font-extrabold text-surface-900 dark:text-white">
-                최대 +{growthPct}%
+                최대 +{growthPct}% 예상
               </div>
               <div className="mt-3 text-sm text-surface-600 dark:text-surface-400">
                 월 조회수 <span className="font-semibold">{formatNumber(BASE_VIEWS)}회</span> 기준{' '}

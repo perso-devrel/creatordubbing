@@ -65,8 +65,8 @@ export function TranslationEditStep() {
   const tagsLabel = uploadSettings.tags.length > 0 ? uploadSettings.tags.join(', ') : t({ ko: '없음', en: 'None' })
   const autoUploadConfirmationText = uploadsVideoToYouTube
     ? showsAiDisclosureSetting
-      ? t({ ko: '채널, 공개 범위, 자막, 아동용 영상, AI 고지 설정을 확인했습니다. 완료 후 자동 업로드를 진행합니다.', en: 'I reviewed the channel, visibility, captions, made-for-kids setting, and AI disclosure. Start auto-upload when finished.' })
-      : t({ ko: '채널, 공개 범위, 자막, 아동용 영상 설정을 확인했습니다. 완료 후 자동 업로드를 진행합니다.', en: 'I reviewed the channel, visibility, captions, and made-for-kids setting. Start auto-upload when finished.' })
+      ? t({ ko: '채널, 공개 범위, 자막, 아동용 여부, AI 표시 설정을 확인했습니다. 완료 후 자동 업로드를 진행합니다.', en: 'I reviewed the channel, visibility, captions, made-for-kids setting, and AI disclosure. Start auto-upload when finished.' })
+      : t({ ko: '채널, 공개 범위, 자막, 아동용 여부를 확인했습니다. 완료 후 자동 업로드를 진행합니다.', en: 'I reviewed the channel, visibility, captions, and made-for-kids setting. Start auto-upload when finished.' })
     : t({ ko: '대상 언어, 결과물, 자동 업로드 설정을 확인했습니다. 완료 후 자동 업로드를 진행합니다.', en: 'I reviewed the languages, output, and auto-upload settings. Start auto-upload when finished.' })
 
   return (

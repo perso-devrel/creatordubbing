@@ -45,11 +45,11 @@ export function SettingsClient() {
             <Globe2 className="h-5 w-5" />
           </div>
           <div>
-            <CardTitle>{isEnglish ? 'Language and localization' : '언어 및 현지화'}</CardTitle>
+            <CardTitle>{isEnglish ? 'Language and YouTube defaults' : '언어 및 YouTube 기본값'}</CardTitle>
             <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
               {isEnglish
-                ? 'Manage app locale and YouTube title/description translation defaults.'
-                : '앱 언어와 YouTube 제목·설명 번역 기본값을 관리합니다.'}
+                ? 'Set display language and title/description translation defaults.'
+                : '화면 언어와 제목·설명 번역 기본값을 정합니다.'}
             </p>
           </div>
         </div>
@@ -81,14 +81,14 @@ export function SettingsClient() {
             <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
               {isEnglish ? selectedPreset.labelEn : selectedPreset.labelKo}
             </p>
-            <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+            <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
               {isEnglish ? selectedPreset.descriptionEn : selectedPreset.descriptionKo}
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {presetLanguages.map((language) => language && (
                 <span
                   key={language.code}
-                  className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
+                  className="max-w-full rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
                 >
                   {language.flag} {isEnglish ? language.name : language.nativeName}
                 </span>

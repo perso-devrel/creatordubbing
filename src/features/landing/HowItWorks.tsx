@@ -33,10 +33,10 @@ export function HowItWorks() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            4단계로 글로벌 진출
+            4단계로 다국어 더빙 시작
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            동영상 선택부터 다국어 업로드까지, 한 흐름으로
+            영상 선택부터 YouTube 업로드까지 한 흐름으로 진행하세요.
           </p>
         </div>
 

@@ -38,7 +38,7 @@ export default function YouTubeSettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: 'YouTube 설정', en: 'YouTube settings' })}</h1>
-        <p className="text-surface-500 dark:text-surface-400">{t({ ko: 'YouTube 채널 연결과 기본 업로드 설정을 관리하세요.', en: 'Manage your YouTube channel connection and upload defaults.' })}</p>
+        <p className="text-surface-500 dark:text-surface-400">{t({ ko: 'YouTube 채널 연결과 업로드 기본값을 관리하세요.', en: 'Manage your YouTube channel connection and upload defaults.' })}</p>
       </div>
 
       {/* Channel Connection */}
@@ -92,7 +92,7 @@ export default function YouTubeSettingsPage() {
           <div className="mt-4 flex flex-col items-center gap-4 py-8">
             <Video className="h-12 w-12 text-surface-300" />
             <p className="text-surface-500">{t({ ko: '연결된 YouTube 채널이 없습니다', en: 'No YouTube channel connected' })}</p>
-            <p className="text-xs text-surface-400">{t({ ko: 'Google로 로그인하면 YouTube 권한을 함께 요청합니다.', en: 'Signing in with Google also requests YouTube permissions.' })}</p>
+            <p className="text-xs text-surface-500 dark:text-surface-300">{t({ ko: 'Google로 로그인하면 YouTube 권한을 함께 요청합니다.', en: 'Signing in with Google also requests YouTube permissions.' })}</p>
             <Button onClick={() => window.location.href = '/'}>
               <Globe className="h-4 w-4" />
               {t({ ko: 'Google 계정으로 연결', en: 'Connect Google account' })}
@@ -105,8 +105,11 @@ export default function YouTubeSettingsPage() {
       <Card>
         <div className="flex items-center gap-2 mb-4">
           <Settings className="h-5 w-5 text-surface-400" />
-          <CardTitle>{t({ ko: '기본 업로드 설정', en: 'Default upload settings' })}</CardTitle>
+          <CardTitle>{t({ ko: '업로드 기본값', en: 'Upload defaults' })}</CardTitle>
         </div>
+        <p className="mb-4 text-sm text-surface-500 dark:text-surface-300">
+          {t({ ko: '아래 기본값은 새 더빙에 먼저 적용되며, 작업마다 바꿀 수 있습니다.', en: 'These defaults are applied to new dubbing jobs first, and can be changed per job.' })}
+        </p>
 
         <div className="space-y-4">
           <Select
@@ -119,12 +122,9 @@ export default function YouTubeSettingsPage() {
               { value: 'private', label: t({ ko: '비공개', en: 'Private' }) },
             ]}
           />
-          <p className="-mt-3 text-xs text-surface-400">
-            {t({ ko: '새 더빙 시작 시 이 값이 기본값으로 적용됩니다. 각 더빙별로 변경할 수 있습니다.', en: 'This is used as the default for new dubbing jobs. You can change it for each job.' })}
-          </p>
 
           <Select
-            label={t({ ko: '기본 원문 언어', en: 'Default source language' })}
+            label={t({ ko: '제목·설명 기본 언어', en: 'Default title and description language' })}
             value={defaultLanguage}
             onChange={(e) => setDefaultLanguage(e.target.value)}
             options={SUPPORTED_LANGUAGES.map((l) => ({
@@ -132,9 +132,6 @@ export default function YouTubeSettingsPage() {
               label: `${l.flag} ${l.name} (${l.nativeName})`,
             }))}
           />
-          <p className="-mt-3 text-xs text-surface-400">
-            {t({ ko: '제목과 설명을 작성할 기본 언어를 선택하세요. 더빙별로 변경할 수 있습니다.', en: 'Choose the default language for titles and descriptions. You can change it for each job.' })}
-          </p>
 
           <Input
             label={t({ ko: '기본 태그', en: 'Default tags' })}
@@ -142,9 +139,6 @@ export default function YouTubeSettingsPage() {
             onChange={(e) => handleDefaultTagsChange(e.target.value)}
             placeholder={t({ ko: '쉼표로 구분 (예: Dubtube, AI 더빙, 브이로그)', en: 'Comma-separated (e.g. Dubtube, AI dubbing, vlog)' })}
           />
-          <p className="-mt-3 text-xs text-surface-400">
-            {t({ ko: '새 더빙 시작 시 이 태그들이 기본값으로 채워집니다. 더빙별로 변경할 수 있습니다.', en: 'These tags are prefilled for new dubbing jobs. You can change them for each job.' })}
-          </p>
         </div>
       </Card>
 

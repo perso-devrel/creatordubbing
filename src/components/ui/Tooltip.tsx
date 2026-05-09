@@ -33,7 +33,7 @@ export function Tooltip({ content, children, position = 'top', className }: Tool
         <div
           role="tooltip"
           className={cn(
-            'absolute z-50 whitespace-nowrap rounded-md bg-surface-900 px-2.5 py-1.5 text-xs text-white shadow-lg animate-fade-in dark:bg-surface-100 dark:text-surface-900',
+            'absolute z-50 max-w-xs whitespace-normal rounded-md bg-surface-900 px-2.5 py-1.5 text-xs text-white shadow-lg animate-fade-in dark:bg-surface-100 dark:text-surface-900',
             positions[position],
             className,
           )}

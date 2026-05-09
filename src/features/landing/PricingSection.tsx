@@ -48,9 +48,8 @@ export function PricingSection() {
                 key={pack.minutes}
                 className="rounded-2xl border border-surface-200 bg-white p-6 text-center dark:border-surface-800 dark:bg-surface-900"
               >
-                <p className="text-3xl font-extrabold text-surface-900 dark:text-white">{pack.minutes}분</p>
-                <p className="mt-1 text-2xl font-bold text-brand-600">{formatKrw(pack.priceKrw)}</p>
-                <p className="mt-1 text-xs text-surface-500">1분 단위 과금</p>
+                <p className="whitespace-nowrap text-3xl font-extrabold text-surface-900 dark:text-white">{pack.minutes}분</p>
+                <p className="mt-1 whitespace-nowrap text-2xl font-bold text-brand-600">{formatKrw(pack.priceKrw)}</p>
               </div>
             ))}
           </div>

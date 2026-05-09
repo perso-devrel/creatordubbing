@@ -37,10 +37,10 @@ export const MARKET_LANGUAGE_PRESETS: MarketLanguagePreset[] = [
   },
   {
     id: 'creator-growth',
-    labelKo: '크리에이터 성장 시장',
-    labelEn: 'Creator growth markets',
-    descriptionKo: 'YouTube 소비가 크고 현지화 효율이 좋은 국가권을 우선 공략합니다.',
-    descriptionEn: 'Prioritize regions with large YouTube audiences and efficient localization ROI.',
+    labelKo: '크리에이터 추천 언어',
+    labelEn: 'Creator language picks',
+    descriptionKo: 'YouTube 시청자가 많고 현지화 효과를 기대하기 쉬운 언어를 우선 선택합니다.',
+    descriptionEn: 'Prioritize languages with large YouTube audiences and practical localization potential.',
     languageCodes: ['en', 'ja', 'es', 'pt', 'id', 'vi', 'th', 'hi'],
   },
   {

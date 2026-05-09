@@ -327,7 +327,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
 
   return (
     <>
-      <div className="flex items-center gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+      <div className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center">
         <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-surface-100 text-xs text-surface-400 dark:bg-surface-800">
           {formatDuration(Math.round(item.video_duration_ms / 1000))}
         </div>
@@ -350,7 +350,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
           </div>
         </div>
 
-        <div className="shrink-0">
+        <div className="shrink-0 sm:ml-auto">
           {state === 'done' ? (
             <Badge variant="success">
               <CheckCircle2 className="h-3 w-3" />
@@ -362,7 +362,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
               {loadingLabel}
             </div>
           ) : (
-            <Button size="sm" onClick={handleOpenModal} disabled={state === 'error'}>
+            <Button size="sm" onClick={handleOpenModal} disabled={state === 'error'} className="w-full whitespace-nowrap sm:w-auto">
               <Settings2 className="h-3.5 w-3.5" />
               {t({ ko: 'YouTube에 업로드', en: 'Upload to YouTube' })}
             </Button>
@@ -410,7 +410,7 @@ export default function UploadsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: 'YouTube 업로드', en: 'YouTube uploads' })}</h1>
-        <p className="text-surface-500 dark:text-surface-400">{t({ ko: '완료된 더빙 영상을 YouTube에 업로드하세요.', en: 'Upload completed dubbed videos to YouTube.' })}</p>
+        <p className="text-surface-500 dark:text-surface-400">{t({ ko: '더빙이 끝난 영상을 YouTube에 올리세요.', en: 'Upload finished dubbed videos to YouTube.' })}</p>
       </div>
 
       {isLoading ? (

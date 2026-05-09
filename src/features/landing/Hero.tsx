@@ -25,10 +25,10 @@ export function Hero() {
           </h1>
 
           <p className="mx-auto mt-6 text-lg text-surface-600 break-keep dark:text-surface-400 sm:text-xl">
-            <span className="block sm:whitespace-nowrap">
+            <span className="block lg:whitespace-nowrap">
               영상을 올리고 언어를 선택하면 {SUPPORTED_LANGUAGE_COUNT}개 언어 더빙을 만들 수 있습니다.
             </span>
-            <span className="block sm:whitespace-nowrap">
+            <span className="block lg:whitespace-nowrap">
               원래 목소리의 톤을 살려 더 많은 시청자에게 콘텐츠를 전하세요.
             </span>
           </p>
@@ -43,7 +43,7 @@ export function Hero() {
             ].map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex flex-col items-center gap-2">
                 <Icon className="h-6 w-6 text-brand-500" />
-                <div className="text-xl font-bold text-surface-900 dark:text-white">{label}</div>
+                <div className="whitespace-nowrap text-xl font-bold text-surface-900 dark:text-white">{label}</div>
                 <div className="text-sm font-medium text-surface-700 dark:text-surface-300">{desc}</div>
               </div>
             ))}

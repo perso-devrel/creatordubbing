@@ -329,8 +329,8 @@ export function MetadataLocalizationTool() {
               <CardTitle>{ui('YouTube 영상 선택', 'Select a YouTube video')}</CardTitle>
               <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
                 {ui(
-                  '내 채널 영상의 현재 제목·설명과 기존 다국어 번역을 불러옵니다. 이미 번역된 언어는 언어 선택 목록에서 비활성화됩니다.',
-                  'Load the current title, description, and existing translations for a video on your channel. Already translated languages are disabled in the language list.',
+                  '내 채널 영상의 제목·설명과 기존 번역을 불러옵니다. 이미 번역된 언어는 선택할 수 없습니다.',
+                  'Load the title, description, and existing translations for a video on your channel. Already translated languages cannot be selected.',
                 )}
               </p>
             </div>
@@ -397,8 +397,8 @@ export function MetadataLocalizationTool() {
             <CardTitle>{ui('영상 파일 선택', 'Select a video file')}</CardTitle>
             <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
               {ui(
-                'YouTube에 새로 올릴 영상 파일을 선택하세요. 번역 후 업로드 시 다국어 제목·설명이 함께 적용됩니다.',
-                'Select a video file to upload to YouTube. Translated titles and descriptions are applied during upload.',
+                '새로 올릴 영상 파일을 선택하세요. 업로드할 때 다국어 제목·설명이 함께 적용됩니다.',
+                'Select a video file to upload. Multilingual titles and descriptions are applied during upload.',
               )}
             </p>
           </div>
@@ -522,8 +522,8 @@ export function MetadataLocalizationTool() {
                 }}
                 placeholder={ui('쉼표로 구분 (예: 브이로그, 리뷰)', 'Comma-separated (e.g. gaming, vlog)')}
               />
-              <p className="mt-1.5 text-xs text-surface-400">
-                {ui('YouTube 설정의 기본 태그가 채워져 있습니다. 이 영상에만 적용할 태그로 수정하세요.', 'Default tags from YouTube settings are prefilled. Edit them for this video if needed.')}
+              <p className="mt-1.5 text-xs text-surface-500 dark:text-surface-300">
+                {ui('기본 태그가 적용되어 있습니다. 필요하면 이 영상에서만 바꾸세요.', 'Default tags are applied. Change them for this video if needed.')}
               </p>
             </div>
           )}
@@ -558,9 +558,9 @@ export function MetadataLocalizationTool() {
                     selected
                       ? 'bg-brand-50 text-brand-700 ring-brand-300 dark:bg-brand-900/30 dark:text-brand-200 dark:ring-brand-800'
                       : alreadyTranslated
-                        ? 'bg-surface-100 text-surface-500 ring-surface-200 dark:bg-surface-800 dark:text-surface-500 dark:ring-surface-700'
+                        ? 'bg-surface-100 text-surface-500 ring-surface-200 dark:bg-surface-800 dark:text-surface-400 dark:ring-surface-700'
                         : 'bg-white text-surface-600 ring-surface-200 hover:bg-surface-50 dark:bg-surface-900 dark:text-surface-300 dark:ring-surface-700 dark:hover:bg-surface-800',
-                    disabled && 'cursor-not-allowed opacity-50',
+                    disabled && 'cursor-not-allowed opacity-70',
                   )}
                 >
                   {selected && <Check className="h-3 w-3" />}
@@ -707,8 +707,8 @@ export function MetadataLocalizationTool() {
                 { value: 'public', label: ui('공개', 'Public') },
               ]}
             />
-            <p className="-mt-3 text-xs text-surface-400">
-              {ui('YouTube 설정 페이지의 기본값으로 채워져 있습니다. 이 영상에만 적용할 값으로 변경할 수 있습니다.', 'This is prefilled from YouTube settings. You can change it for this video.')}
+            <p className="-mt-3 text-xs text-surface-500 dark:text-surface-300">
+              {ui('기본값이 적용되어 있습니다. 필요하면 이 영상에서만 바꾸세요.', 'The default is applied. Change it for this video if needed.')}
             </p>
 
             <div className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
