@@ -32,7 +32,7 @@ function badgeClass(status: Job['status']): string {
 function statusLabel(status: Job['status']): string {
   switch (status) {
     case 'pending': return '대기'
-    case 'running': return '진행'
+    case 'running': return '진행 중'
     case 'done': return '완료'
     case 'error': return '오류'
   }
@@ -85,8 +85,8 @@ function updateStatus(jobs: Job[]): void {
 
 function updateModeDesc(isAuto: boolean): void {
   modeDesc.textContent = isAuto
-    ? 'auto — 게시까지 모두 자동'
-    : 'assisted — 파일 주입까지만 자동'
+    ? '자동 모드: 게시까지 자동으로 진행'
+    : '도움 모드: 파일 추가까지만 자동으로 진행'
 }
 
 async function init(): Promise<void> {

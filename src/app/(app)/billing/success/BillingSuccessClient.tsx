@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Check, Loader2, XCircle } from 'lucide-react'
 import { Button, Card, CardTitle } from '@/components/ui'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 interface Props {
   paymentKey: string | null
@@ -14,10 +15,13 @@ interface Props {
 type Status = 'confirming' | 'done' | 'error'
 
 export function BillingSuccessClient({ paymentKey, orderId, amount }: Props) {
+  const t = useLocaleText()
   const hasRequiredParams = Boolean(paymentKey && orderId && amount)
   const [status, setStatus] = useState<Status>(hasRequiredParams ? 'confirming' : 'error')
   const [message, setMessage] = useState(
-    hasRequiredParams ? '결제를 승인하고 크레딧을 충전하는 중입니다.' : '결제 승인에 필요한 값이 없습니다.',
+    hasRequiredParams
+      ? t({ ko: '결제를 승인하고 더빙 시간을 충전하는 중입니다.', en: 'Confirming payment and adding dubbing minutes.' })
+      : t({ ko: '결제 승인에 필요한 값이 없습니다.', en: 'Required payment confirmation values are missing.' }),
   )
 
   useEffect(() => {
@@ -38,12 +42,12 @@ export function BillingSuccessClient({ paymentKey, orderId, amount }: Props) {
         }
         if (!cancelled) {
           setStatus('done')
-          setMessage(`${body.data.minutes}분이 충전되었습니다.`)
+          setMessage(t({ ko: `${body.data.minutes}분이 충전되었습니다.`, en: `${body.data.minutes} minutes were added.` }))
         }
       } catch (err) {
         if (!cancelled) {
           setStatus('error')
-          setMessage(err instanceof Error ? err.message : '결제 승인에 실패했습니다.')
+          setMessage(err instanceof Error ? err.message : t({ ko: '결제 승인에 실패했습니다.', en: 'Payment confirmation failed.' }))
         }
       }
     }
@@ -52,7 +56,7 @@ export function BillingSuccessClient({ paymentKey, orderId, amount }: Props) {
     return () => {
       cancelled = true
     }
-  }, [paymentKey, orderId, amount])
+  }, [paymentKey, orderId, amount, t])
 
   return (
     <div className="mx-auto max-w-xl">
@@ -68,12 +72,18 @@ export function BillingSuccessClient({ paymentKey, orderId, amount }: Props) {
             )}
           </div>
           <div>
-            <CardTitle>{status === 'done' ? '충전 완료' : status === 'error' ? '결제 확인 실패' : '결제 확인 중'}</CardTitle>
+            <CardTitle>
+              {status === 'done'
+                ? t({ ko: '충전 완료', en: 'Minutes added' })
+                : status === 'error'
+                  ? t({ ko: '결제 확인 실패', en: 'Payment confirmation failed' })
+                  : t({ ko: '결제 확인 중', en: 'Confirming payment' })}
+            </CardTitle>
             <p className="mt-1 text-sm text-surface-500">{message}</p>
           </div>
         </div>
         <Link href="/billing">
-          <Button>결제 페이지로 돌아가기</Button>
+          <Button>{t({ ko: '결제 페이지로 돌아가기', en: 'Back to billing' })}</Button>
         </Link>
       </Card>
     </div>

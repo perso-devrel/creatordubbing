@@ -3,22 +3,12 @@
 import { useEffect, useRef } from 'react'
 import { ArrowLeft, ArrowRight, Captions, Languages, Link2, ShieldCheck, Sparkles, Upload } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { extractVideoId } from '@/utils/validators'
 import { SUPPORTED_LANGUAGES } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { getAiDisclosureText, stripAiDisclosureFooter } from '../../utils/aiDisclosure'
 import type { PrivacyStatus } from '../../types/dubbing.types'
-
-const PRIVACY_OPTIONS: { value: PrivacyStatus; label: string }[] = [
-  { value: 'private', label: '비공개 (권장)' },
-  { value: 'unlisted', label: '일부 공개' },
-  { value: 'public', label: '공개' },
-]
-
-const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((l) => ({
-  value: l.code,
-  label: `${l.flag} ${l.name} (${l.nativeName})`,
-}))
 
 export function UploadSettingsStep() {
   const {
@@ -32,6 +22,19 @@ export function UploadSettingsStep() {
     prevStep,
     nextStep,
   } = useDubbingStore()
+  const locale = useAppLocale()
+  const t = useLocaleText()
+  const privacyOptions: { value: PrivacyStatus; label: string }[] = [
+    { value: 'private', label: t({ ko: '비공개 (권장)', en: 'Private (recommended)' }) },
+    { value: 'unlisted', label: t({ ko: '일부 공개', en: 'Unlisted' }) },
+    { value: 'public', label: t({ ko: '공개', en: 'Public' }) },
+  ]
+  const languageOptions = SUPPORTED_LANGUAGES.map((l) => ({
+    value: l.code,
+    label: locale === 'ko'
+      ? `${l.flag} ${l.nativeName} (${l.name})`
+      : `${l.flag} ${l.name} (${l.nativeName})`,
+  }))
 
   // YouTube 설정 페이지의 기본값과 동기화 (사용자 override 없을 때만).
   useEffect(() => {
@@ -72,10 +75,12 @@ export function UploadSettingsStep() {
     const patch: Partial<typeof uploadSettings> = {}
     if (!title) patch.title = videoMeta.title
     if (!description) {
-      patch.description = `${videoMeta.title} - Dubtube AI 더빙`
+      patch.description = locale === 'ko'
+        ? `${videoMeta.title} - Dubtube AI 더빙`
+        : `${videoMeta.title} - Dubtube AI dubbing`
     }
     if (Object.keys(patch).length > 0) setUploadSettings(patch)
-  }, [videoMeta?.id, videoMeta?.title, setUploadSettings])
+  }, [locale, videoMeta?.id, videoMeta?.title, setUploadSettings])
 
   const tagsString = uploadSettings.tags.join(', ')
 
@@ -114,46 +119,49 @@ export function UploadSettingsStep() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">업로드 설정</h2>
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '업로드 설정', en: 'Upload settings' })}</h2>
         <p className="mt-1 text-surface-500">
           {isMultiAudio
-            ? '원본 영상에 자막을 추가합니다. 기본 설정을 확인하세요.'
-            : '처리 완료 후 YouTube에 어떻게 업로드할지 미리 설정하세요.'}
+            ? t({ ko: '원본 영상에 자막을 추가하기 전에 기본 설정을 확인하세요.', en: 'Review the settings before adding captions to the original video.' })
+            : t({ ko: '더빙 완료 후 YouTube에 어떻게 올릴지 미리 정하세요.', en: 'Choose how the finished dubbing should be uploaded to YouTube.' })}
         </p>
       </div>
 
       {/* Title/Desc/Tags — for new dubbed video uploads */}
       {deliverableMode === 'newDubbedVideos' && (
         <Card>
-          <CardTitle>제목 · 설명 · 태그</CardTitle>
+          <CardTitle>{t({ ko: '제목 · 설명 · 태그', en: 'Title, description, and tags' })}</CardTitle>
           <div className="space-y-4">
             <Select
-              label="작성 언어"
+              label={t({ ko: '작성 언어', en: 'Writing language' })}
               value={uploadSettings.metadataLanguage}
               onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
-              options={LANGUAGE_OPTIONS}
+              options={languageOptions}
             />
             <p className="-mt-2 text-xs text-surface-400">
-              작성하기 편한 언어를 선택하세요. 제목과 설명은 더빙 대상 언어 기준으로 자동 번역되어 업로드됩니다.
+              {t({
+                ko: '제목과 설명을 작성할 언어입니다. 업로드 시 대상 언어별로 자동 번역됩니다.',
+                en: 'This is the language you write in. Titles and descriptions are translated per target language during upload.',
+              })}
             </p>
 
             <Input
-              label="제목"
+              label={t({ ko: '제목', en: 'Title' })}
               value={uploadSettings.title}
               onChange={(e) => setUploadSettings({ title: e.target.value })}
-              placeholder="영상 제목"
+              placeholder={t({ ko: '영상 제목', en: 'Video title' })}
             />
 
             <div className="w-full">
               <label htmlFor="upload-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
-                설명
+                {t({ ko: '설명', en: 'Description' })}
               </label>
               <textarea
                 id="upload-description"
                 rows={4}
                 value={uploadSettings.description}
                 onChange={(e) => setUploadSettings({ description: e.target.value })}
-                placeholder="영상 설명"
+                placeholder={t({ ko: '영상 설명', en: 'Video description' })}
                 className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
               />
               {uploadSettings.containsSyntheticMedia && shouldShowAiDisclosure && (
@@ -162,20 +170,20 @@ export function UploadSettingsStep() {
             </div>
 
             <Input
-              label="태그 (쉼표 구분)"
+              label={t({ ko: '태그 (쉼표 구분)', en: 'Tags (comma-separated)' })}
               value={tagsString}
               onChange={(e) => handleTagsChange(e.target.value)}
-              placeholder="Dubtube, AI더빙, dubbed"
+              placeholder={t({ ko: 'Dubtube, AI 더빙, 리뷰', en: 'Dubtube, AI dubbing, review' })}
             />
             <p className="-mt-2 text-xs text-surface-400">
-              태그는 번역하지 않고 그대로 사용합니다.
+              {t({ ko: '태그는 번역하지 않고 그대로 사용됩니다.', en: 'Tags are used as written and are not translated.' })}
             </p>
 
             <Select
-              label="공개 설정"
+              label={t({ ko: '공개 범위', en: 'Visibility' })}
               value={uploadSettings.privacyStatus}
               onChange={(e) => setUploadSettings({ privacyStatus: e.target.value as PrivacyStatus })}
-              options={PRIVACY_OPTIONS}
+              options={privacyOptions}
             />
           </div>
         </Card>
@@ -184,35 +192,38 @@ export function UploadSettingsStep() {
       {/* Multi-audio: show privacy for original upload if source is file upload */}
       {isMultiAudio && videoSource?.type === 'upload' && (
         <Card>
-          <CardTitle>원본 영상 업로드 설정</CardTitle>
+          <CardTitle>{t({ ko: '원본 영상 업로드 설정', en: 'Original video upload settings' })}</CardTitle>
           <div className="space-y-4">
             <Select
-              label="작성 언어"
+              label={t({ ko: '작성 언어', en: 'Writing language' })}
               value={uploadSettings.metadataLanguage}
               onChange={(e) => setUploadSettings({ metadataLanguage: e.target.value })}
-              options={LANGUAGE_OPTIONS}
+              options={languageOptions}
             />
             <p className="-mt-2 text-xs text-surface-400">
-              작성하기 편한 언어를 선택하세요. 제목과 설명은 더빙 대상 언어 기준으로 자동 번역되어 업로드됩니다.
+              {t({
+                ko: '제목과 설명을 작성할 언어입니다. 업로드 시 대상 언어별로 자동 번역됩니다.',
+                en: 'This is the language you write in. Titles and descriptions are translated per target language during upload.',
+              })}
             </p>
 
             <Input
-              label="제목"
+              label={t({ ko: '제목', en: 'Title' })}
               value={uploadSettings.title}
               onChange={(e) => setUploadSettings({ title: e.target.value })}
-              placeholder="영상 제목"
+              placeholder={t({ ko: '영상 제목', en: 'Video title' })}
             />
 
             <div className="w-full">
               <label htmlFor="upload-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
-                설명
+                {t({ ko: '설명', en: 'Description' })}
               </label>
               <textarea
                 id="upload-description"
                 rows={3}
                 value={uploadSettings.description}
                 onChange={(e) => setUploadSettings({ description: e.target.value })}
-                placeholder="영상 설명"
+                placeholder={t({ ko: '영상 설명', en: 'Video description' })}
                 className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
               />
               {uploadSettings.containsSyntheticMedia && shouldShowAiDisclosure && (
@@ -221,20 +232,20 @@ export function UploadSettingsStep() {
             </div>
 
             <Input
-              label="태그 (쉼표 구분)"
+              label={t({ ko: '태그 (쉼표 구분)', en: 'Tags (comma-separated)' })}
               value={tagsString}
               onChange={(e) => handleTagsChange(e.target.value)}
-              placeholder="Dubtube, AI더빙, subtitles"
+              placeholder={t({ ko: 'Dubtube, AI 더빙, 자막', en: 'Dubtube, AI dubbing, captions' })}
             />
             <p className="-mt-2 text-xs text-surface-400">
-              태그는 번역하지 않고 그대로 사용합니다.
+              {t({ ko: '태그는 번역하지 않고 그대로 사용됩니다.', en: 'Tags are used as written and are not translated.' })}
             </p>
 
             <Select
-              label="공개 설정"
+              label={t({ ko: '공개 범위', en: 'Visibility' })}
               value={uploadSettings.privacyStatus}
               onChange={(e) => setUploadSettings({ privacyStatus: e.target.value as PrivacyStatus })}
-              options={PRIVACY_OPTIONS}
+              options={privacyOptions}
             />
           </div>
         </Card>
@@ -242,14 +253,14 @@ export function UploadSettingsStep() {
 
       {/* Upload options — for both newDubbedVideos and originalWithMultiAudio */}
       <Card>
-        <CardTitle>업로드 옵션</CardTitle>
+        <CardTitle>{t({ ko: '업로드 옵션', en: 'Upload options' })}</CardTitle>
         <div className="mt-4 space-y-2">
           <ToggleRow
             icon={<Upload className="h-4 w-4 text-emerald-500" />}
-            label="완료 즉시 자동 업로드"
+            label={t({ ko: '완료 즉시 자동 업로드', en: 'Auto-upload when finished' })}
             description={isMultiAudio
-              ? '더빙 완료 시 자동으로 오디오 트랙을 추가합니다.'
-              : '더빙이 완료되면 더빙된 영상을 자동으로 업로드합니다.'}
+              ? t({ ko: '완료된 번역 자막을 자동으로 업로드합니다.', en: 'Automatically upload translated captions when processing finishes.' })
+              : t({ ko: '더빙이 완료되면 언어별 영상을 자동으로 업로드합니다.', en: 'Automatically upload each dubbed video when processing finishes.' })}
             active={uploadSettings.autoUpload}
             activeLabel="ON"
             inactiveLabel="OFF"
@@ -259,25 +270,29 @@ export function UploadSettingsStep() {
           {(deliverableMode === 'newDubbedVideos' || isMultiAudio) && (
             <ToggleRow
               icon={<Captions className="h-4 w-4 text-surface-400" />}
-              label={isMultiAudio ? '자막(SRT) 업로드' : '더빙 영상에 자막(SRT) 자동 업로드'}
-              description={isMultiAudio ? '완료된 언어의 번역 자막을 대상 영상에 업로드합니다.' : '선택한 언어에 맞는 자막을 함께 업로드합니다.'}
+              label={isMultiAudio
+                ? t({ ko: '자막(SRT) 업로드', en: 'Upload captions (SRT)' })
+                : t({ ko: '더빙 영상에 자막(SRT) 업로드', en: 'Upload captions (SRT) with dubbed videos' })}
+              description={isMultiAudio
+                ? t({ ko: '완료된 언어의 번역 자막을 대상 영상에 올립니다.', en: 'Upload translated captions for each completed language to the target video.' })
+                : t({ ko: '선택한 언어에 맞는 자막을 영상과 함께 올립니다.', en: 'Upload matching captions with each selected language video.' })}
               active={captionUploadDisabled ? false : uploadSettings.uploadCaptions}
               activeLabel="ON"
               inactiveLabel="OFF"
               onToggle={() => setUploadSettings({ uploadCaptions: !uploadSettings.uploadCaptions })}
               disabled={captionUploadDisabled}
-              disabledBadgeLabel="자동 업로드 OFF"
+              disabledBadgeLabel={t({ ko: '자동 업로드 OFF', en: 'Auto-upload off' })}
             />
           )}
 
           {originalYouTubeUrl && deliverableMode === 'newDubbedVideos' && (
             <ToggleRow
               icon={<Link2 className="h-4 w-4 text-surface-400" />}
-              label="설명란에 원본 YouTube 링크 첨부"
+              label={t({ ko: '설명에 원본 YouTube 링크 추가', en: 'Add original YouTube link to description' })}
               description={originalYouTubeUrl}
               active={uploadSettings.attachOriginalLink}
-              activeLabel="첨부 ON"
-              inactiveLabel="첨부 OFF"
+              activeLabel={t({ ko: '추가 ON', en: 'On' })}
+              inactiveLabel={t({ ko: '추가 OFF', en: 'Off' })}
               onToggle={() => setUploadSettings({ attachOriginalLink: !uploadSettings.attachOriginalLink })}
             />
           )}
@@ -286,19 +301,25 @@ export function UploadSettingsStep() {
             <>
               <ToggleRow
                 icon={<ShieldCheck className="h-4 w-4 text-surface-400" />}
-                label="아동용으로 제작됨"
-                description="YouTube의 아동용 콘텐츠 신고값입니다."
+                label={t({ ko: '아동용 영상', en: 'Made for kids' })}
+                description={t({
+                  ko: 'YouTube의 아동용 콘텐츠 정책에 맞게 설정하세요. 일반 영상은 꺼두면 됩니다.',
+                  en: 'Set this according to YouTube made-for-kids policy. Leave it off for general videos.',
+                })}
                 active={uploadSettings.selfDeclaredMadeForKids}
-                activeLabel="예"
-                inactiveLabel="아니오"
+                activeLabel={t({ ko: '예', en: 'Yes' })}
+                inactiveLabel={t({ ko: '아니오', en: 'No' })}
                 onToggle={() => setUploadSettings({ selfDeclaredMadeForKids: !uploadSettings.selfDeclaredMadeForKids })}
               />
 
               {shouldShowAiDisclosure && (
                 <ToggleRow
                   icon={<Sparkles className="h-4 w-4 text-amber-500" />}
-                  label="AI 합성/변형 콘텐츠 공개"
-                  description="설명 맨 아래에 AI 보이스 클론 더빙 고지 문구를 자동으로 붙입니다."
+                  label={t({ ko: 'AI 보이스 더빙 고지 추가', en: 'Add AI voice dubbing disclosure' })}
+                  description={t({
+                    ko: '설명 맨 아래에 AI 보이스로 더빙했다는 문구를 붙입니다.',
+                    en: 'Adds a note at the end of the description that the video uses AI voice dubbing.',
+                  })}
                   active={uploadSettings.containsSyntheticMedia}
                   activeLabel="ON"
                   inactiveLabel="OFF"
@@ -312,11 +333,14 @@ export function UploadSettingsStep() {
           {isMultiAudio && (
             <ToggleRow
               icon={<Languages className="h-4 w-4 text-surface-400" />}
-              label="다국어 오디오 트랙 추가"
-              description="번역된 더빙 오디오를 YouTube 다국어 오디오 트랙으로 함께 추가합니다. 추후 기능이 추가될 예정입니다."
+              label={t({ ko: '다국어 오디오 트랙 추가', en: 'Add multilingual audio tracks' })}
+              description={t({
+                ko: 'YouTube 다국어 오디오 트랙은 아직 준비 중입니다.',
+                en: 'YouTube multilingual audio tracks are coming soon.',
+              })}
               active={false}
               activeLabel="ON"
-              inactiveLabel="준비 중"
+              inactiveLabel={t({ ko: '준비 중', en: 'Soon' })}
               onToggle={() => {}}
               disabled
             />
@@ -327,10 +351,10 @@ export function UploadSettingsStep() {
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
-          이전
+          {t({ ko: '이전', en: 'Back' })}
         </Button>
         <Button onClick={nextStep} disabled={!canContinue}>
-          다음: 설정 확인
+          {t({ ko: '다음: 설정 확인', en: 'Next: Review settings' })}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
@@ -339,10 +363,12 @@ export function UploadSettingsStep() {
 }
 
 function AiDisclosurePreview({ text }: { text: string }) {
+  const t = useLocaleText()
+
   return (
     <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-900/70 dark:bg-amber-950/20">
       <p className="text-[11px] font-medium text-amber-700 dark:text-amber-300">
-        설명 맨 아래에 자동 추가
+        {t({ ko: '설명 맨 아래에 자동 추가', en: 'Automatically added to the end of the description' })}
       </p>
       <p className="mt-1 text-xs leading-5 text-surface-700 dark:text-surface-200">
         {text}
@@ -363,7 +389,9 @@ interface ToggleRowProps {
   disabledBadgeLabel?: string
 }
 
-function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabel, onToggle, disabled, disabledBadgeLabel = '준비 중' }: ToggleRowProps) {
+function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabel, onToggle, disabled, disabledBadgeLabel }: ToggleRowProps) {
+  const t = useLocaleText()
+
   return (
     <div className={`flex items-start justify-between gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 ${disabled ? 'opacity-60' : ''}`}>
       <div className="flex min-w-0 items-start gap-2">
@@ -373,7 +401,7 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
             <p className="text-sm text-surface-700 dark:text-surface-300">{label}</p>
             {disabled && (
               <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                {disabledBadgeLabel}
+                {disabledBadgeLabel ?? t({ ko: '준비 중', en: 'Coming soon' })}
               </span>
             )}
           </div>

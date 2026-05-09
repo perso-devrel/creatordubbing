@@ -5,6 +5,7 @@ import { Bell } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
 import { useAuthStore } from '@/stores/authStore'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 interface OpsAlertResponse {
   count: number
@@ -27,6 +28,7 @@ async function fetchOpsAlertCount(): Promise<number> {
 
 export function OpsAlertButton() {
   const router = useRouter()
+  const t = useLocaleText()
   const user = useAuthStore((state) => state.user)
   const query = useQuery({
     queryKey: ['ops-alert-count'],
@@ -37,13 +39,16 @@ export function OpsAlertButton() {
   })
 
   const count = query.data ?? 0
+  const label = count > 0
+    ? t({ ko: `운영 알림 ${count}개`, en: `${count} operations alerts` })
+    : t({ ko: '운영 알림', en: 'Operations alerts' })
 
   return (
     <Button
       variant="ghost"
       size="sm"
-      aria-label={count > 0 ? `${count} operations alerts` : 'Operations alerts'}
-      title={count > 0 ? `${count} operations alerts` : 'Operations alerts'}
+      aria-label={label}
+      title={label}
       className="relative"
       onClick={() => router.push('/ops')}
     >

@@ -11,15 +11,17 @@ import { useRecentJobs } from '@/hooks/useDashboardData'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { dbMutation } from '@/lib/api/dbMutation'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 const statusConfig = {
-  processing: { label: '처리 중', variant: 'brand' as const },
-  completed: { label: '완료', variant: 'success' as const },
-  failed: { label: '실패', variant: 'error' as const },
-  queued: { label: '대기 중', variant: 'default' as const },
+  processing: { label: { ko: '처리 중', en: 'Processing' }, variant: 'brand' as const },
+  completed: { label: { ko: '완료', en: 'Complete' }, variant: 'success' as const },
+  failed: { label: { ko: '실패', en: 'Failed' }, variant: 'error' as const },
+  queued: { label: { ko: '대기 중', en: 'Queued' }, variant: 'default' as const },
 }
 
 export default function BatchPage() {
+  const t = useLocaleText()
   const { data: jobs = [], isLoading } = useRecentJobs()
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
@@ -28,7 +30,10 @@ export default function BatchPage() {
   const handleDeleteJob = async (jobId: number) => {
     if (deletingId === jobId) return
     const ok = window.confirm(
-      '이 작업을 큐에서 삭제하시겠습니까?\n진행 중인 Perso 더빙도 함께 취소됩니다.',
+      t({
+        ko: '이 더빙 작업을 삭제할까요?\n진행 중인 작업도 함께 취소됩니다.',
+        en: 'Delete this dubbing job?\nAny work in progress will also be canceled.',
+      }),
     )
     if (!ok) return
 
@@ -71,12 +76,12 @@ export default function BatchPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">배치 큐</h1>
-          <p className="text-surface-500 dark:text-surface-400">여러 영상을 더빙 큐에 추가하세요</p>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '더빙 작업', en: 'Dubbing jobs' })}</h1>
+          <p className="text-surface-500 dark:text-surface-400">{t({ ko: '여러 더빙 작업의 진행 상태를 확인하세요.', en: 'Track progress across dubbing jobs.' })}</p>
         </div>
         <div className="flex items-center gap-2 text-surface-400">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">불러오는 중...</span>
+          <span className="text-sm">{t({ ko: '불러오는 중...', en: 'Loading...' })}</span>
         </div>
       </div>
     )
@@ -86,16 +91,16 @@ export default function BatchPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">배치 큐</h1>
-          <p className="text-surface-500 dark:text-surface-400">여러 영상을 더빙 큐에 추가하세요</p>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '더빙 작업', en: 'Dubbing jobs' })}</h1>
+          <p className="text-surface-500 dark:text-surface-400">{t({ ko: '여러 더빙 작업의 진행 상태를 확인하세요.', en: 'Track progress across dubbing jobs.' })}</p>
         </div>
         <EmptyState
           icon={<Layers className="h-12 w-12" />}
-          title="큐에 작업이 없습니다"
-          description="배치 큐에 영상을 추가하면 여러 더빙 작업을 한 번에 처리할 수 있습니다."
+          title={t({ ko: '진행 중인 작업이 없습니다', en: 'No active jobs' })}
+          description={t({ ko: '새 더빙을 시작하면 진행 상태가 여기에 표시됩니다.', en: 'New dubbing jobs will appear here.' })}
           action={
             <Link href="/dubbing">
-              <Button><Plus className="h-4 w-4" /> 새 더빙</Button>
+              <Button><Plus className="h-4 w-4" /> {t({ ko: '새 더빙', en: 'New dubbing' })}</Button>
             </Link>
           }
         />
@@ -107,20 +112,20 @@ export default function BatchPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">배치 큐</h1>
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '더빙 작업', en: 'Dubbing jobs' })}</h1>
           <p className="text-surface-500 dark:text-surface-400">
-            {processing > 0 && `${processing} 처리 중`}
+            {processing > 0 && t({ ko: `${processing} 처리 중`, en: `${processing} processing` })}
             {processing > 0 && queued > 0 && ' · '}
-            {queued > 0 && `${queued} 대기 중`}
+            {queued > 0 && t({ ko: `${queued} 대기 중`, en: `${queued} queued` })}
           </p>
         </div>
         <Link href="/dubbing">
-          <Button><Plus className="h-4 w-4" /> 영상 추가</Button>
+          <Button><Plus className="h-4 w-4" /> {t({ ko: '영상 추가', en: 'Add video' })}</Button>
         </Link>
       </div>
 
       <Card>
-        <CardTitle>큐 ({activeJobs.length}개 작업)</CardTitle>
+        <CardTitle>{t({ ko: `작업 (${activeJobs.length}개)`, en: `Jobs (${activeJobs.length})` })}</CardTitle>
 
         <div className="mt-4 space-y-2">
           {activeJobs.map((job) => {
@@ -156,7 +161,7 @@ export default function BatchPage() {
                 </div>
 
                 <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  <Badge variant={status.variant}>{status.label}</Badge>
+                  <Badge variant={status.variant}>{t(status.label)}</Badge>
                   {job.status === 'processing' && (
                     <Progress value={progress} size="sm" className="w-24" />
                   )}
@@ -166,13 +171,15 @@ export default function BatchPage() {
                   type="button"
                   onClick={() => handleDeleteJob(job.id)}
                   disabled={deletingId === job.id}
-                  aria-label="작업 삭제"
+                  aria-label={t({ ko: '작업 삭제', en: 'Delete job' })}
                   className={`shrink-0 rounded-md p-1.5 transition-colors ${
                     deletingId === job.id
                       ? 'cursor-not-allowed text-surface-300'
                       : 'text-surface-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20'
                   }`}
-                  title={deletingId === job.id ? '삭제 중...' : '작업 삭제 (Perso 처리도 함께 취소)'}
+                  title={deletingId === job.id
+                    ? t({ ko: '삭제 중...', en: 'Deleting...' })
+                    : t({ ko: '작업 삭제', en: 'Delete job' })}
                 >
                   {deletingId === job.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

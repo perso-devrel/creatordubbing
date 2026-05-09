@@ -19,10 +19,10 @@ import {
 const navItems = [
   { to: '/dashboard', label: { ko: '대시보드', en: 'Dashboard' }, icon: LayoutDashboard },
   { to: '/dubbing', label: { ko: '새 더빙', en: 'New dubbing' }, icon: Languages },
-  { to: '/metadata', label: { ko: '메타데이터 번역', en: 'Metadata' }, icon: Globe2 },
-  { to: '/batch', label: { ko: '배치 큐', en: 'Batch queue' }, icon: Layers },
+  { to: '/metadata', label: { ko: '제목·설명 번역', en: 'Title translation' }, icon: Globe2 },
+  { to: '/batch', label: { ko: '더빙 작업', en: 'Dubbing jobs' }, icon: Layers },
   { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, icon: Upload },
-  { to: '/ops', label: { ko: '운영 관측', en: 'Operations' }, icon: Activity, opsAdminOnly: true },
+  { to: '/ops', label: { ko: '운영 상태', en: 'Operations' }, icon: Activity, opsAdminOnly: true },
   { to: '/youtube', label: { ko: 'YouTube', en: 'YouTube' }, icon: Video },
   { to: '/billing', label: { ko: '결제', en: 'Billing' }, icon: CreditCard },
 ]

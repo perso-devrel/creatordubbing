@@ -39,7 +39,7 @@ export async function openLanguagesPage(ctx: UploadContext): Promise<void> {
 }
 
 export async function clickAddLanguage(ctx: UploadContext): Promise<void> {
-  ctx.reportProgress('SELECTING_LANGUAGE', '"언어 추가" 버튼 탐색 중')
+  ctx.reportProgress('SELECTING_LANGUAGE', '"언어 추가" 버튼 찾는 중')
   const btn = await ctx.dom.waitFor(ADD_LANGUAGE_BUTTON)
   ctx.dom.click(btn)
   await ctx.dom.sleep(500)
@@ -57,7 +57,7 @@ export async function selectLanguage(ctx: UploadContext): Promise<void> {
 }
 
 export async function clickDubAdd(ctx: UploadContext): Promise<void> {
-  ctx.reportProgress('INJECTING_AUDIO', '오디오 추가 버튼 탐색 중')
+  ctx.reportProgress('INJECTING_AUDIO', '오디오 추가 버튼 찾는 중')
   const btn = await ctx.dom.waitFor(AUDIO_ADD_BUTTON)
   ctx.dom.click(btn)
   await ctx.dom.sleep(500)
@@ -67,7 +67,7 @@ export async function injectAudioFile(ctx: UploadContext): Promise<void> {
   ctx.reportProgress('INJECTING_AUDIO', '오디오 파일 다운로드 중')
   const file = await fetchAsFile(ctx.audioUrl)
 
-  ctx.reportProgress('INJECTING_AUDIO', '파일 입력 요소에 주입 중')
+  ctx.reportProgress('INJECTING_AUDIO', '오디오 파일 추가 중')
   const input = await ctx.dom.waitFor<HTMLInputElement>(FILE_INPUT)
   injectFileToInput(input, file)
   await ctx.dom.sleep(1000)

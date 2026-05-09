@@ -58,7 +58,7 @@ export default function PrivacyPolicyPage() {
         </h3>
         <ul className="mt-2 list-disc space-y-1 pl-6">
           <li>더빙 작업 기록(원본 언어, 대상 언어, 처리 상태, 결과 URL)</li>
-          <li>크레딧 사용 내역</li>
+          <li>더빙 시간 사용 내역</li>
           <li>업로드 큐 상태</li>
         </ul>
       </Section>
@@ -67,7 +67,7 @@ export default function PrivacyPolicyPage() {
         <ul className="mt-2 list-disc space-y-1 pl-6">
           <li>더빙 영상·오디오·자막 생성 및 사용자 YouTube 채널로의 업로드</li>
           <li>다국어 자막 트랙 추가/교체(YouTube Captions API 사용)</li>
-          <li>크레딧 차감·결제·잔여량 표시</li>
+          <li>더빙 시간 차감·결제·잔여량 표시</li>
           <li>사용자 인증 및 세션 유지</li>
           <li>서비스 안정성 모니터링 및 오류 진단</li>
         </ul>
@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
             <strong>Turso (libSQL)</strong> — 사용자 계정·작업 기록 데이터베이스 호스팅.
           </li>
           <li>
-            <strong>Toss Payments</strong> — 크레딧 결제 승인, 결제 결과 확인, 환불 및 정산 기록 처리.
+            <strong>Toss Payments</strong> — 더빙 시간 결제 승인, 결제 결과 확인, 환불 및 정산 기록 처리.
           </li>
         </ul>
         <p className="mt-4">

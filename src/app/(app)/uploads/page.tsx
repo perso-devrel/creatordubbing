@@ -13,6 +13,9 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { ytUploadVideo, ytUploadCaption, getDownloadLinks, getPersoFileUrl } from '@/lib/api-client'
 import { dbMutation } from '@/lib/api/dbMutation'
 import { getLanguageByCode } from '@/utils/languages'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import { text } from '@/lib/i18n/text'
+import type { AppLocale } from '@/lib/i18n/config'
 import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
 
 type UploadState = 'idle' | 'fetching' | 'uploading' | 'done' | 'error'
@@ -37,15 +40,21 @@ const PRIVACY_OPTIONS = [
 async function fetchCompletedLanguages(uid: string): Promise<CompletedJobLanguage[]> {
   const res = await fetch(`/api/dashboard/completed-languages?uid=${encodeURIComponent(uid)}`, { cache: 'no-store' })
   const json = await res.json()
-  if (!json.ok) throw new Error(json.error?.message || 'Failed to load')
+  if (!json.ok) throw new Error(json.error?.message || '업로드할 영상을 불러오지 못했습니다.')
   return json.data
 }
 
-function buildDefaultSettings(item: CompletedJobLanguage, langName: string): UploadSettings {
+function buildDefaultSettings(item: CompletedJobLanguage, langName: string, locale: AppLocale): UploadSettings {
   return {
     title: `[${langName}] ${item.video_title}`,
-    description: `${item.video_title} - ${langName} dubbed by Dubtube AI`,
-    tags: `Dubtube, AI dubbing, ${langName}, dubbed`,
+    description: text(locale, {
+      ko: `${item.video_title} - Dubtube AI ${langName} 더빙`,
+      en: `${item.video_title} - Dubtube AI dubbing in ${langName}`,
+    }),
+    tags: text(locale, {
+      ko: `Dubtube, AI 더빙, ${langName}`,
+      en: `Dubtube, AI dubbing, ${langName}`,
+    }),
     privacyStatus: 'private',
     uploadCaptions: true,
     selfDeclaredMadeForKids: false,
@@ -64,39 +73,41 @@ interface UploadSettingsModalProps {
 }
 
 function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isLoading, langName }: UploadSettingsModalProps) {
+  const t = useLocaleText()
+
   return (
-    <Modal open={open} onClose={onClose} title="YouTube upload settings" size="lg">
+    <Modal open={open} onClose={onClose} title={t({ ko: 'YouTube 업로드 설정', en: 'YouTube upload settings' })} size="lg">
       <div className="space-y-4">
         <Input
-          label="Title"
+          label={t({ ko: '제목', en: 'Title' })}
           value={settings.title}
           onChange={(e) => onChange({ ...settings, title: e.target.value })}
-          placeholder="Video title"
+          placeholder={t({ ko: '영상 제목', en: 'Video title' })}
         />
 
         <div className="w-full">
           <label htmlFor="yt-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
-            Description
+            {t({ ko: '설명', en: 'Description' })}
           </label>
           <textarea
             id="yt-description"
             rows={4}
             value={settings.description}
             onChange={(e) => onChange({ ...settings, description: e.target.value })}
-            placeholder="Video description"
+            placeholder={t({ ko: '영상 설명', en: 'Video description' })}
             className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
           />
         </div>
 
         <Input
-          label="Tags (comma separated)"
+          label={t({ ko: '태그', en: 'Tags' })}
           value={settings.tags}
           onChange={(e) => onChange({ ...settings, tags: e.target.value })}
-          placeholder="tag1, tag2, tag3"
+          placeholder={t({ ko: '쉼표로 구분해 입력', en: 'Separate tags with commas' })}
         />
 
         <Select
-          label="Privacy"
+          label={t({ ko: '공개 범위', en: 'Visibility' })}
           value={settings.privacyStatus}
           onChange={(e) => onChange({ ...settings, privacyStatus: e.target.value as PrivacyStatus })}
           options={PRIVACY_OPTIONS}
@@ -109,7 +120,7 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
             checked={settings.uploadCaptions}
             onChange={(e) => onChange({ ...settings, uploadCaptions: e.target.checked })}
           />
-          <span>Upload translated SRT captions with the video</span>
+          <span>{t({ ko: '번역된 SRT 자막도 함께 업로드', en: 'Upload translated SRT captions with the video' })}</span>
         </label>
 
         <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
@@ -119,7 +130,7 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
             checked={settings.selfDeclaredMadeForKids}
             onChange={(e) => onChange({ ...settings, selfDeclaredMadeForKids: e.target.checked })}
           />
-          <span>Made for kids</span>
+          <span>{t({ ko: '아동용 영상', en: 'Made for kids' })}</span>
         </label>
 
         <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
@@ -129,27 +140,27 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
             checked={settings.containsSyntheticMedia}
             onChange={(e) => onChange({ ...settings, containsSyntheticMedia: e.target.checked })}
           />
-          <span>Disclose AI-generated or synthetic media</span>
+          <span>{t({ ko: 'AI 생성 또는 합성 콘텐츠임을 표시', en: 'Disclose AI-generated or synthetic media' })}</span>
         </label>
 
         <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
-          <span className="text-xs text-surface-500">Language: {langName}</span>
+          <span className="text-xs text-surface-500">{t({ ko: '언어', en: 'Language' })}: {langName}</span>
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
           <Button size="sm" onClick={onClose} className="bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700">
-            Cancel
+            {t({ ko: '취소', en: 'Cancel' })}
           </Button>
           <Button size="sm" onClick={onConfirm} disabled={isLoading || !settings.title.trim()}>
             {isLoading ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Uploading...
+                {t({ ko: '업로드 중...', en: 'Uploading...' })}
               </>
             ) : (
               <>
                 <Upload className="h-3.5 w-3.5" />
-                Upload
+                {t({ ko: '업로드', en: 'Upload' })}
               </>
             )}
           </Button>
@@ -165,20 +176,22 @@ interface UploadRowProps {
 }
 
 function UploadRow({ item, userId }: UploadRowProps) {
+  const locale = useAppLocale()
+  const t = useLocaleText()
   const addToast = useNotificationStore((s) => s.addToast)
   const queryClient = useQueryClient()
   const [state, setState] = useState<UploadState>(item.youtube_video_id ? 'done' : 'idle')
   const [videoId, setVideoId] = useState<string | null>(item.youtube_video_id)
   const lang = getLanguageByCode(item.language_code)
-  const langName = lang?.name || item.language_code
+  const langName = (locale === 'ko' ? lang?.nativeName : lang?.name) || lang?.name || item.language_code
 
   const [modalOpen, setModalOpen] = useState(false)
-  const [settings, setSettings] = useState<UploadSettings>(() => buildDefaultSettings(item, langName))
+  const [settings, setSettings] = useState<UploadSettings>(() => buildDefaultSettings(item, langName, locale))
 
   const handleOpenModal = useCallback(() => {
-    setSettings(buildDefaultSettings(item, langName))
+    setSettings(buildDefaultSettings(item, langName, locale))
     setModalOpen(true)
-  }, [item, langName])
+  }, [item, langName, locale])
 
   const handleUpload = useCallback(async () => {
     setModalOpen(false)
@@ -212,7 +225,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
         videoUrl = fresh.video
         srtUrl = srtUrl ?? fresh.srt
       }
-      if (!videoUrl) throw new Error('No dubbed video download link available')
+      if (!videoUrl) throw new Error(t({ ko: '더빙 영상 다운로드 링크를 찾을 수 없습니다.', en: 'Could not find the dubbed video download link.' }))
 
       setState('uploading')
       const baseTags = settings.tags.split(',').map((t) => t.trim()).filter(Boolean)
@@ -271,7 +284,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
       const privacyLabel = PRIVACY_OPTIONS.find((o) => o.value === settings.privacyStatus)?.label || settings.privacyStatus
       addToast({
         type: 'success',
-        title: `${langName} upload complete`,
+        title: t({ ko: `${langName} 업로드 완료`, en: `${langName} upload complete` }),
         message: privacyLabel,
       })
 
@@ -299,12 +312,18 @@ function UploadRow({ item, userId }: UploadRowProps) {
       queryClient.invalidateQueries({ queryKey: ['completed-languages'] })
     } catch (err) {
       setState('error')
-      addToast({ type: 'error', title: 'Upload failed', message: err instanceof Error ? err.message : 'Unknown error' })
+      addToast({
+        type: 'error',
+        title: t({ ko: '업로드 실패', en: 'Upload failed' }),
+        message: err instanceof Error ? err.message : t({ ko: '알 수 없는 오류가 발생했습니다.', en: 'An unknown error occurred.' }),
+      })
     }
-  }, [item, langName, settings, userId, addToast, queryClient])
+  }, [item, langName, settings, userId, addToast, queryClient, t])
 
   const isLoading = state === 'fetching' || state === 'uploading'
-  const loadingLabel = state === 'fetching' ? 'Resolving link...' : 'Uploading...'
+  const loadingLabel = state === 'fetching'
+    ? t({ ko: '다운로드 링크 확인 중...', en: 'Checking download link...' })
+    : t({ ko: '업로드 중...', en: 'Uploading...' })
 
   return (
     <>
@@ -325,7 +344,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
                 className="flex items-center gap-1 text-xs text-brand-500 hover:underline"
               >
                 <ExternalLink className="h-3 w-3" />
-                Watch
+                {t({ ko: 'YouTube에서 보기', en: 'Watch on YouTube' })}
               </a>
             )}
           </div>
@@ -335,7 +354,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
           {state === 'done' ? (
             <Badge variant="success">
               <CheckCircle2 className="h-3 w-3" />
-              Uploaded
+              {t({ ko: '업로드됨', en: 'Uploaded' })}
             </Badge>
           ) : isLoading ? (
             <div className="flex items-center gap-1.5 text-xs text-surface-500">
@@ -345,7 +364,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
           ) : (
             <Button size="sm" onClick={handleOpenModal} disabled={state === 'error'}>
               <Settings2 className="h-3.5 w-3.5" />
-              YouTube Upload
+              {t({ ko: 'YouTube에 업로드', en: 'Upload to YouTube' })}
             </Button>
           )}
         </div>
@@ -365,6 +384,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
 }
 
 export default function UploadsPage() {
+  const t = useLocaleText()
   const user = useAuthStore((s) => s.user)
   const { data: items = [], isLoading } = useQuery<CompletedJobLanguage[]>({
     queryKey: ['completed-languages', user?.uid],
@@ -389,20 +409,20 @@ export default function UploadsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">YouTube Upload</h1>
-        <p className="text-surface-500 dark:text-surface-400">Upload completed dubbed videos to YouTube</p>
+        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: 'YouTube 업로드', en: 'YouTube uploads' })}</h1>
+        <p className="text-surface-500 dark:text-surface-400">{t({ ko: '완료된 더빙 영상을 YouTube에 업로드하세요.', en: 'Upload completed dubbed videos to YouTube.' })}</p>
       </div>
 
       {isLoading ? (
         <div className="flex items-center gap-2 text-surface-400">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="text-sm">Loading...</span>
+          <span className="text-sm">{t({ ko: '불러오는 중...', en: 'Loading...' })}</span>
         </div>
       ) : items.length === 0 ? (
         <EmptyState
           icon={<Video className="h-12 w-12" />}
-          title="No videos to upload"
-          description="Completed dubbed videos will appear here."
+          title={t({ ko: '업로드할 영상이 없습니다', en: 'No videos to upload' })}
+          description={t({ ko: '더빙이 완료된 영상이 여기에 표시됩니다.', en: 'Completed dubbed videos will appear here.' })}
         />
       ) : (
         <div className="space-y-4">
@@ -415,7 +435,7 @@ export default function UploadsPage() {
                     {formatDuration(Math.round(job.durationMs / 1000))} · {new Date(job.createdAt).toLocaleDateString('ko-KR')}
                   </p>
                 </div>
-                <Badge variant="success">{job.langs.length} languages</Badge>
+                <Badge variant="success">{t({ ko: `${job.langs.length}개 언어`, en: `${job.langs.length} languages` })}</Badge>
               </div>
               <div className="space-y-2">
                 {job.langs.map((item) => (

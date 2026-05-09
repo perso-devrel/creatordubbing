@@ -7,14 +7,15 @@ import { formatDuration } from '@/utils/formatters'
 import { useRecentJobs } from '@/hooks/useDashboardData'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { Languages } from 'lucide-react'
+import { useLocaleText } from '@/hooks/useLocaleText'
 import type { DubbingJob } from './types'
 
-const statusConfig: Record<string, { label: string; variant: 'success' | 'brand' | 'default' | 'error' }> = {
-  completed: { label: '완료', variant: 'success' },
-  processing: { label: '처리 중', variant: 'brand' },
-  pending: { label: '대기 중', variant: 'default' },
-  queued: { label: '대기 중', variant: 'default' },
-  failed: { label: '실패', variant: 'error' },
+const statusConfig: Record<string, { label: { ko: string; en: string }; variant: 'success' | 'brand' | 'default' | 'error' }> = {
+  completed: { label: { ko: '완료', en: 'Complete' }, variant: 'success' },
+  processing: { label: { ko: '처리 중', en: 'Processing' }, variant: 'brand' },
+  pending: { label: { ko: '대기 중', en: 'Pending' }, variant: 'default' },
+  queued: { label: { ko: '대기 중', en: 'Queued' }, variant: 'default' },
+  failed: { label: { ko: '실패', en: 'Failed' }, variant: 'error' },
 }
 
 interface RecentJobsProps {
@@ -22,20 +23,21 @@ interface RecentJobsProps {
 }
 
 export function RecentJobs({ initialData }: RecentJobsProps) {
+  const t = useLocaleText()
   const { data: jobs } = useRecentJobs(initialData)
 
   return (
     <Card>
       <div className="mb-4 flex items-center justify-between">
-        <CardTitle>최근 작업</CardTitle>
-        <Link href="/batch" aria-label="최근 작업 전체 보기" className="text-sm text-brand-500 hover:text-brand-600">전체 보기</Link>
+        <CardTitle>{t({ ko: '최근 작업', en: 'Recent jobs' })}</CardTitle>
+        <Link href="/batch" aria-label={t({ ko: '최근 작업 전체 보기', en: 'View all recent jobs' })} className="text-sm text-brand-500 hover:text-brand-600">{t({ ko: '전체 보기', en: 'View all' })}</Link>
       </div>
 
       {!jobs || jobs.length === 0 ? (
         <EmptyState
           icon={<Languages className="h-8 w-8" />}
-          title="아직 더빙 작업이 없습니다"
-          description="새 더빙을 시작해보세요!"
+          title={t({ ko: '아직 더빙 작업이 없습니다', en: 'No dubbing jobs yet' })}
+          description={t({ ko: '새 더빙을 시작하세요.', en: 'Start a new dubbing job.' })}
         />
       ) : (
         <div className="space-y-3">
@@ -66,7 +68,7 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <Badge variant={status.variant}>{status.label}</Badge>
+                  <Badge variant={status.variant}>{t(status.label)}</Badge>
                   {job.status === 'processing' && (
                     <Progress value={avgProgress} size="sm" className="mt-2 w-24" />
                   )}

@@ -30,6 +30,7 @@ import {
   type SrtCue,
 } from '@/utils/srt'
 import type { ScriptSentence } from '@/lib/perso/types'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 
 // ──────────────────────────────────────────────────────────────────────────
 // 표시용: m:ss 짧은 포맷
@@ -64,6 +65,7 @@ function ScriptRow({
     patch: Partial<Pick<EditableSentence, 'editedTranslatedText' | 'savedTranslatedText'>>,
   ) => void
 }) {
+  const t = useLocaleText()
   const addToast = useNotificationStore((s) => s.addToast)
   const [saving, setSaving] = useState(false)
   const [regenerating, setRegenerating] = useState(false)
@@ -78,13 +80,17 @@ function ScriptRow({
         sentence.editedTranslatedText,
       )
       onPatch(sentence.sentenceSeq, { savedTranslatedText: sentence.editedTranslatedText })
-      addToast({ type: 'success', title: '저장됨', message: '번역이 Perso에 반영되었습니다.' })
+      addToast({
+        type: 'success',
+        title: t({ ko: '저장 완료', en: 'Saved' }),
+        message: t({ ko: '수정한 번역을 저장했습니다.', en: 'Your translation edit has been saved.' }),
+      })
     } catch {
-      addToast({ type: 'error', title: '저장 실패' })
+      addToast({ type: 'error', title: t({ ko: '저장 실패', en: 'Save failed' }) })
     } finally {
       setSaving(false)
     }
-  }, [projectSeq, sentence.sentenceSeq, sentence.editedTranslatedText, onPatch, addToast])
+  }, [projectSeq, sentence.sentenceSeq, sentence.editedTranslatedText, onPatch, addToast, t])
 
   const handleRegen = useCallback(async () => {
     if (dirty) await handleSave()
@@ -93,15 +99,15 @@ function ScriptRow({
       await regenerateSentenceAudio(projectSeq, sentence.audioSentenceSeq, sentence.editedTranslatedText)
       addToast({
         type: 'success',
-        title: '재생성 요청됨',
-        message: '오디오가 재생성됩니다. 완료 후 더빙 영상이 갱신됩니다.',
+        title: t({ ko: '오디오 다시 만들기 시작', en: 'Audio regeneration started' }),
+        message: t({ ko: '완료되면 더빙 영상에 반영됩니다.', en: 'The dubbed video will update when it finishes.' }),
       })
     } catch {
-      addToast({ type: 'error', title: '재생성 실패' })
+      addToast({ type: 'error', title: t({ ko: '오디오 다시 만들기 실패', en: 'Audio regeneration failed' }) })
     } finally {
       setRegenerating(false)
     }
-  }, [dirty, handleSave, projectSeq, sentence.audioSentenceSeq, sentence.editedTranslatedText, addToast])
+  }, [dirty, handleSave, projectSeq, sentence.audioSentenceSeq, sentence.editedTranslatedText, addToast, t])
 
   return (
     <div className="space-y-2 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
@@ -128,7 +134,7 @@ function ScriptRow({
         {dirty && (
           <Button size="sm" variant="outline" onClick={handleSave} loading={saving}>
             <Save className="h-3.5 w-3.5" />
-            저장
+            {t({ ko: '저장', en: 'Save' })}
           </Button>
         )}
         <Button
@@ -139,7 +145,7 @@ function ScriptRow({
           disabled={saving}
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          오디오 재생성
+          {t({ ko: '오디오 다시 만들기', en: 'Regenerate audio' })}
         </Button>
       </div>
     </div>
@@ -223,8 +229,11 @@ export function SubtitleScriptEditor({
   spaceSeq,
   youtubeVideoId,
 }: SubtitleScriptEditorProps) {
+  const locale = useAppLocale()
+  const t = useLocaleText()
   const addToast = useNotificationStore((s) => s.addToast)
   const lang = getLanguageByCode(langCode)
+  const languageName = lang ? (locale === 'ko' ? lang.nativeName : lang.name) : langCode
   const [open, setOpen] = useState(false)
 
   // Script section
@@ -252,11 +261,11 @@ export function SubtitleScriptEditor({
         })),
       )
     } catch {
-      addToast({ type: 'error', title: '스크립트 로드 실패' })
+      addToast({ type: 'error', title: t({ ko: '대사를 불러오지 못했습니다', en: 'Failed to load dialogue' }) })
     } finally {
       setScriptLoading(false)
     }
-  }, [projectSeq, spaceSeq, addToast])
+  }, [projectSeq, spaceSeq, addToast, t])
 
   const loadSrt = useCallback(async () => {
     setSrtLoading(true)
@@ -267,13 +276,13 @@ export function SubtitleScriptEditor({
     } catch (err) {
       addToast({
         type: 'error',
-        title: '자막(SRT) 로드 실패',
+        title: t({ ko: '자막 파일을 불러오지 못했습니다', en: 'Failed to load captions' }),
         message: err instanceof Error ? err.message : '',
       })
     } finally {
       setSrtLoading(false)
     }
-  }, [projectSeq, spaceSeq, addToast])
+  }, [projectSeq, spaceSeq, addToast, t])
 
   const handleToggle = useCallback(() => {
     if (open) {
@@ -305,11 +314,14 @@ export function SubtitleScriptEditor({
     setResetting(true)
     try {
       await loadSrt()
-      addToast({ type: 'success', title: '자막을 Perso 원본으로 되돌렸습니다.' })
+      addToast({
+        type: 'success',
+        title: t({ ko: '자막을 처음 생성된 상태로 되돌렸습니다', en: 'Captions restored to the generated version' }),
+      })
     } finally {
       setResetting(false)
     }
-  }, [loadSrt, addToast])
+  }, [loadSrt, addToast, t])
 
   const buildCurrentSrt = useCallback((): string => {
     if (!cues) return ''
@@ -344,25 +356,25 @@ export function SubtitleScriptEditor({
       await ytUploadCaption({
         videoId: youtubeVideoId,
         language: toBcp47(langCode),
-        name: lang?.name || langCode,
+        name: '',
         srtContent: srt,
         replace: true,
       })
       addToast({
         type: 'success',
-        title: 'YouTube 자막 적용 완료',
-        message: '기존 자막을 삭제하고 편집한 SRT를 업로드했습니다.',
+        title: t({ ko: 'YouTube 자막 적용 완료', en: 'YouTube captions updated' }),
+        message: t({ ko: '기존 자막을 교체하고 편집한 자막을 업로드했습니다.', en: 'Existing captions were replaced with your edited captions.' }),
       })
     } catch (err) {
       addToast({
         type: 'error',
-        title: 'YouTube 자막 적용 실패',
+        title: t({ ko: 'YouTube 자막 적용 실패', en: 'Failed to update YouTube captions' }),
         message: err instanceof Error ? err.message : '',
       })
     } finally {
       setPushingToYT(false)
     }
-  }, [youtubeVideoId, buildCurrentSrt, langCode, lang, addToast])
+  }, [youtubeVideoId, buildCurrentSrt, langCode, addToast, t])
 
   const srtPreview = cues ? buildCurrentSrt() : ''
 
@@ -376,7 +388,7 @@ export function SubtitleScriptEditor({
         <div className="flex items-center gap-2">
           <span className="text-lg">{lang?.flag}</span>
           <span className="text-sm font-medium text-surface-900 dark:text-white">
-            {lang?.name} 자막 · 스크립트
+            {t({ ko: `${languageName} 자막 · 대사`, en: `${languageName} captions and dialogue` })}
           </span>
         </div>
         {scriptLoading || srtLoading ? (
@@ -394,23 +406,25 @@ export function SubtitleScriptEditor({
           <section className="space-y-3">
             <div>
               <h4 className="text-sm font-semibold text-surface-900 dark:text-white">
-                📝 스크립트 (재더빙용)
+                {t({ ko: '대사 수정', en: 'Edit dialogue' })}
               </h4>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                번역 텍스트를 수정하고 &ldquo;오디오 재생성&rdquo;을 누르면 Perso가 더빙 오디오를
-                다시 만듭니다. 시간은 Perso가 결정하므로 여기서는 변경할 수 없습니다.
+                {t({
+                  ko: '번역 문장을 고친 뒤 오디오를 다시 만들면 더빙 음성에 반영됩니다. 대사 시간은 여기서 변경할 수 없습니다.',
+                  en: 'Edit translated lines, then regenerate audio to apply the change to the dubbed voice. Dialogue timing cannot be changed here.',
+                })}
               </p>
             </div>
 
             {scriptLoading && (
               <div className="flex items-center gap-2 py-4 text-sm text-surface-400">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                스크립트를 불러오는 중...
+                {t({ ko: '대사를 불러오는 중...', en: 'Loading dialogue...' })}
               </div>
             )}
 
             {!scriptLoading && sentences && sentences.length === 0 && (
-              <p className="py-2 text-xs text-surface-500">표시할 문장이 없습니다.</p>
+              <p className="py-2 text-xs text-surface-500">{t({ ko: '표시할 문장이 없습니다.', en: 'No lines to show.' })}</p>
             )}
 
             {!scriptLoading && sentences && sentences.length > 0 && (
@@ -431,27 +445,28 @@ export function SubtitleScriptEditor({
           <section className="space-y-3 border-t border-surface-200 pt-6 dark:border-surface-800">
             <div>
               <h4 className="text-sm font-semibold text-surface-900 dark:text-white">
-                🎬 자막 SRT 편집
+                {t({ ko: '자막 파일 편집', en: 'Edit caption file' })}
               </h4>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
-                Perso가 생성한 SRT 파일을 그대로 불러와 편집할 수 있습니다.
-                여기서의 변경은 SRT 다운로드와 YouTube 자막 트랙에만 반영되며,
-                Perso 더빙 오디오에는 영향을 주지 않습니다.
+                {t({
+                  ko: '생성된 자막 파일의 문장과 시간을 수정할 수 있습니다. 이 변경은 자막 다운로드와 YouTube 자막에만 적용됩니다.',
+                  en: 'Edit the generated caption text and timing. These changes apply only to caption downloads and YouTube captions.',
+                })}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" variant="outline" onClick={handleDownload} loading={downloading} disabled={!cues}>
                 <Download className="h-3.5 w-3.5" />
-                SRT 다운로드
+                {t({ ko: '자막 파일 받기', en: 'Download captions' })}
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setShowPreview((v) => !v)} disabled={!cues}>
                 {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                SRT 미리보기
+                {t({ ko: '자막 미리보기', en: 'Preview captions' })}
               </Button>
               <Button size="sm" variant="ghost" onClick={handleResetSrt} loading={resetting} disabled={!cues}>
                 <RotateCcw className="h-3.5 w-3.5" />
-                Perso 원본으로 되돌리기
+                {t({ ko: '처음 생성된 자막으로 되돌리기', en: 'Restore generated captions' })}
               </Button>
               {youtubeVideoId && (
                 <Button
@@ -462,13 +477,16 @@ export function SubtitleScriptEditor({
                   disabled={!cues}
                 >
                   <UploadCloud className="h-3.5 w-3.5" />
-                  YouTube에 자막 적용
+                  {t({ ko: 'YouTube에 자막 적용', en: 'Update YouTube captions' })}
                 </Button>
               )}
             </div>
             {!youtubeVideoId && (
               <p className="text-xs text-surface-400">
-                이 언어의 영상이 YouTube에 업로드된 뒤 &ldquo;YouTube에 자막 적용&rdquo; 버튼이 활성화됩니다.
+                {t({
+                  ko: '이 언어의 영상이 YouTube에 업로드되면 자막 적용 버튼이 활성화됩니다.',
+                  en: 'The YouTube caption button becomes available after this language is uploaded.',
+                })}
               </p>
             )}
 
@@ -484,12 +502,12 @@ export function SubtitleScriptEditor({
             {srtLoading && (
               <div className="flex items-center gap-2 py-4 text-sm text-surface-400">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                SRT를 불러오는 중...
+                {t({ ko: '자막 파일을 불러오는 중...', en: 'Loading captions...' })}
               </div>
             )}
 
             {!srtLoading && cues && cues.length === 0 && (
-              <p className="py-2 text-xs text-surface-500">자막 파일이 비어 있습니다.</p>
+              <p className="py-2 text-xs text-surface-500">{t({ ko: '자막 파일이 비어 있습니다.', en: 'The caption file is empty.' })}</p>
             )}
 
             {!srtLoading && cues && cues.length > 0 && (

@@ -3,6 +3,7 @@
 import { Film, Clock, Coins, Zap } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { useDashboardSummary } from '@/hooks/useDashboardData'
+import { useLocaleText } from '@/hooks/useLocaleText'
 import type { DashboardSummary as DashboardSummaryType } from './types'
 
 interface DashboardSummaryProps {
@@ -10,29 +11,30 @@ interface DashboardSummaryProps {
 }
 
 export function DashboardSummary({ initialData }: DashboardSummaryProps) {
+  const t = useLocaleText()
   const { data } = useDashboardSummary(initialData ?? undefined)
 
   const cards = [
     {
-      label: '더빙된 영상',
+      label: t({ ko: '더빙된 영상', en: 'Dubbed videos' }),
       value: data ? Number(data.total_jobs) : 0,
       icon: Film,
       color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20',
     },
     {
-      label: '총 시간(분)',
+      label: t({ ko: '총 시간(분)', en: 'Total minutes' }),
       value: data ? Number(data.total_minutes) : 0,
       icon: Clock,
       color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20',
     },
     {
-      label: '남은 크레딧',
+      label: t({ ko: '남은 더빙 시간', en: 'Remaining minutes' }),
       value: data ? Number(data.credits_remaining) : 0,
       icon: Coins,
       color: 'text-amber-500 bg-amber-50 dark:bg-amber-900/20',
     },
     {
-      label: '진행 중',
+      label: t({ ko: '진행 중', en: 'In progress' }),
       value: data ? Number(data.active_jobs) : 0,
       icon: Zap,
       color: 'text-brand-500 bg-brand-50 dark:bg-brand-900/20',

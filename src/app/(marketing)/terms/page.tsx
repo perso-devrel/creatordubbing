@@ -68,7 +68,7 @@ export default function TermsPage() {
           <li>YouTube 커뮤니티 가이드 및 저작권 정책에 위배되는 콘텐츠 생성</li>
           <li>딥페이크 등 타인의 명예를 훼손하거나 사기에 이용될 수 있는 콘텐츠 생성</li>
           <li>본 서비스의 API/시스템에 대한 비정상적·자동화된 호출(스크래핑, DDoS 등)</li>
-          <li>크레딧 시스템의 회피·부정 사용</li>
+          <li>더빙 시간 또는 결제 시스템의 회피·부정 사용</li>
         </ul>
       </Section>
 
@@ -100,11 +100,11 @@ export default function TermsPage() {
         </ul>
       </Section>
 
-      <Section title="6. 크레딧 및 결제">
+      <Section title="6. 더빙 시간 및 결제">
         <ul className="mt-2 list-disc space-y-1 pl-6">
-          <li>본 서비스는 1분 더빙당 크레딧 1을 차감하는 선불 크레딧 모델을 사용합니다.</li>
-          <li>구매한 크레딧은 환불되지 않으나, 만료 기한은 없습니다.</li>
-          <li>본 서비스 장애로 처리가 실패한 작업은 크레딧이 자동 환원됩니다.</li>
+          <li>본 서비스는 더빙 1분당 충전한 더빙 시간 1분을 차감하는 선불 모델을 사용합니다.</li>
+          <li>구매한 더빙 시간은 환불되지 않으나, 만료 기한은 없습니다.</li>
+          <li>본 서비스 장애로 처리가 실패한 작업은 차감된 더빙 시간이 자동 환원됩니다.</li>
         </ul>
       </Section>
 

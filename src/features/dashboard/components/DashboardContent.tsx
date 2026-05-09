@@ -5,6 +5,7 @@ import { DashboardSummary } from './DashboardSummary'
 import { QuickStart } from './QuickStart'
 import { RecentJobs } from './RecentJobs'
 import { Card } from '@/components/ui'
+import { useLocaleText } from '@/hooks/useLocaleText'
 import type { DashboardInitialData } from './types'
 
 function ChartSkeleton() {
@@ -33,11 +34,13 @@ const AnalyticsChart = dynamic(
 )
 
 export function DashboardContent({ initial }: { initial: DashboardInitialData }) {
+  const t = useLocaleText()
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">대시보드</h1>
-        <p className="text-surface-500 dark:text-surface-400">돌아오신 것을 환영합니다! 더빙 현황을 확인하세요.</p>
+        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '대시보드', en: 'Dashboard' })}</h1>
+        <p className="text-surface-500 dark:text-surface-400">{t({ ko: '더빙 현황을 확인하세요.', en: 'Review your dubbing activity.' })}</p>
       </div>
 
       <DashboardSummary initialData={initial.summary} />

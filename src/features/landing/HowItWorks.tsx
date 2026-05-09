@@ -5,25 +5,25 @@ const steps = [
     icon: FileVideo,
     step: '01',
     title: '동영상 선택',
-    description: 'YouTube URL 붙여넣기, 내 채널 영상 불러오기, 직접 업로드 중 원하는 방식을 고르세요. 오디오 추출과 언어 감지가 자동으로 진행됩니다.',
+    description: 'YouTube URL 붙여넣기, 내 채널 영상 불러오기, 직접 업로드 중 원하는 방식을 고르세요.',
   },
   {
     icon: Languages,
     step: '02',
     title: '언어 & 보이스 설정',
-    description: '지원 언어 중 원하는 대상을 골라 추가하고, 내 목소리를 그대로 살릴 보이스 클론을 활성화하세요. 화자별 음성 매핑도 가능합니다.',
+    description: '지원 언어 중 원하는 대상을 고르고, 보이스 클론 사용 여부를 선택하세요.',
   },
   {
     icon: FileText,
     step: '03',
     title: '번역 검토 & 편집',
-    description: '자동 생성된 번역과 자막을 검토하고 다듬으세요. 고유명사 보호, 문장 단위 수정, 미리듣기로 디테일을 잡을 수 있습니다.',
+    description: '생성된 번역과 자막을 확인하고 필요한 문장을 수정하세요.',
   },
   {
     icon: Upload,
     step: '04',
     title: '더빙 생성 & 업로드',
-    description: 'AI 더빙이 완성되면 파일로 다운로드하거나 YouTube 채널에 다국어 트랙으로 바로 업로드하세요.',
+    description: '더빙이 완료되면 파일로 다운로드하거나 YouTube 채널에 업로드하세요.',
   },
 ]
 

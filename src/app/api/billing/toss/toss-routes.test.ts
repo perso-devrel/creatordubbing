@@ -16,19 +16,19 @@ vi.mock('@/lib/db/queries', () => ({
 vi.mock('@/lib/toss/client', () => ({
   createTossPayment: vi.fn(async () => ({
     orderId: 'DT-1',
-    orderName: 'Dubtube 10분 크레딧',
+    orderName: 'Dubtube 10분 더빙 시간',
     checkout: { url: 'https://pay.toss.test/checkout' },
   })),
   confirmTossPayment: vi.fn(async () => ({
     paymentKey: 'pay_1',
     orderId: 'DT-1',
-    orderName: 'Dubtube 10분 크레딧',
+    orderName: 'Dubtube 10분 더빙 시간',
     status: 'DONE',
   })),
   retrieveTossPayment: vi.fn(async () => ({
     paymentKey: 'pay_1',
     orderId: 'DT-1',
-    orderName: 'Dubtube 10분 크레딧',
+    orderName: 'Dubtube 10분 더빙 시간',
     status: 'DONE',
     totalAmount: 10000,
   })),
@@ -82,7 +82,7 @@ function order(overrides: Partial<Awaited<ReturnType<typeof getPaymentOrderByOrd
     status: 'checkout_created',
     payment_key: null,
     checkout_url: 'https://pay.toss.test/checkout',
-    order_name: 'Dubtube 10분 크레딧',
+    order_name: 'Dubtube 10분 더빙 시간',
     raw_json: null,
     ...overrides,
   }

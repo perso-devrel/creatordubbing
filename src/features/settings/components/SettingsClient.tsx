@@ -17,20 +17,20 @@ const APP_LOCALE_OPTIONS = APP_LOCALES.map((locale) => ({
   label: `${APP_LOCALE_LABELS[locale].nativeLabel} / ${APP_LOCALE_LABELS[locale].label}`,
 }))
 
-const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((language) => ({
-  value: language.code,
-  label: `${language.flag} ${language.name} (${language.nativeName})`,
-}))
-
-const PRESET_OPTIONS = MARKET_LANGUAGE_PRESETS.map((preset) => ({
-  value: preset.id,
-  label: `${preset.labelKo} / ${preset.labelEn}`,
-}))
-
 export function SettingsClient() {
   const { appLocale, metadataTargetPreset, setAppLocale, setMetadataTargetPreset } = useI18nStore()
   const { defaultLanguage, setDefaultLanguage } = useYouTubeSettingsStore()
   const isEnglish = appLocale === 'en'
+  const languageOptions = SUPPORTED_LANGUAGES.map((language) => ({
+    value: language.code,
+    label: isEnglish
+      ? `${language.flag} ${language.name} (${language.nativeName})`
+      : `${language.flag} ${language.nativeName} (${language.name})`,
+  }))
+  const presetOptions = MARKET_LANGUAGE_PRESETS.map((preset) => ({
+    value: preset.id,
+    label: isEnglish ? preset.labelEn : preset.labelKo,
+  }))
 
   const selectedPreset = MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === metadataTargetPreset)
   const presetLanguages = selectedPreset
@@ -65,13 +65,13 @@ export function SettingsClient() {
             label={isEnglish ? 'Default metadata source language' : '제목·설명 작성 기본 언어'}
             value={defaultLanguage}
             onChange={(event) => setDefaultLanguage(event.target.value)}
-            options={LANGUAGE_OPTIONS}
+            options={languageOptions}
           />
           <Select
             label={isEnglish ? 'Recommended localization market' : '추천 번역 시장'}
             value={metadataTargetPreset}
             onChange={(event) => setMetadataTargetPreset(event.target.value)}
-            options={PRESET_OPTIONS}
+            options={presetOptions}
             className="md:col-span-2"
           />
         </div>
@@ -90,7 +90,7 @@ export function SettingsClient() {
                   key={language.code}
                   className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
                 >
-                  {language.flag} {language.name}
+                  {language.flag} {isEnglish ? language.name : language.nativeName}
                 </span>
               ))}
             </div>

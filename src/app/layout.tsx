@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Dubtube",
   },
   description:
-    `Perso.ai + YouTube API 기반 크리에이터 전용 ${SUPPORTED_LANGUAGE_COUNT}개 언어 자동 더빙 SaaS`,
+    `크리에이터를 위한 ${SUPPORTED_LANGUAGE_COUNT}개 언어 AI 더빙 및 YouTube 업로드 도구`,
 };
 
 const themeInitScript = `try{if(localStorage.getItem('dubtube-theme')==='dark'||(!localStorage.getItem('dubtube-theme')&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;

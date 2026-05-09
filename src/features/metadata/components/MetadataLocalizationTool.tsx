@@ -21,16 +21,6 @@ import { cn } from '@/utils/cn'
 
 type Mode = 'new' | 'existing'
 
-const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((language) => ({
-  value: language.code,
-  label: `${language.flag} ${language.name} (${language.nativeName})`,
-}))
-
-const PRESET_OPTIONS = MARKET_LANGUAGE_PRESETS.map((preset) => ({
-  value: preset.id,
-  label: preset.labelKo,
-}))
-
 function buildInitialTargets(presetId: string, sourceLang: string, exclude: Set<string> = new Set()) {
   return getMarketLanguagePreset(presetId)
     .languageCodes
@@ -39,7 +29,19 @@ function buildInitialTargets(presetId: string, sourceLang: string, exclude: Set<
 
 export function MetadataLocalizationTool() {
   const addToast = useNotificationStore((state) => state.addToast)
-  const { metadataTargetPreset, setMetadataTargetPreset } = useI18nStore()
+  const { appLocale, metadataTargetPreset, setMetadataTargetPreset } = useI18nStore()
+  const isEnglish = appLocale === 'en'
+  const ui = (ko: string, en: string) => (isEnglish ? en : ko)
+  const languageOptions = SUPPORTED_LANGUAGES.map((language) => ({
+    value: language.code,
+    label: isEnglish
+      ? `${language.flag} ${language.name} (${language.nativeName})`
+      : `${language.flag} ${language.nativeName} (${language.name})`,
+  }))
+  const presetOptions = MARKET_LANGUAGE_PRESETS.map((preset) => ({
+    value: preset.id,
+    label: isEnglish ? preset.labelEn : preset.labelKo,
+  }))
   const { defaultLanguage, defaultTags, defaultPrivacy } = useYouTubeSettingsStore()
   const { data: channel } = useChannelStats()
 
@@ -129,8 +131,11 @@ export function MetadataLocalizationTool() {
       if (!ytDefaultLang) {
         addToast({
           type: 'warning',
-          title: '원문 언어가 YouTube에 설정되어 있지 않습니다',
-          message: `사용자 기본 언어(${nextSourceLang})로 설정했습니다. 실제와 다르면 위 "원문 언어" 드롭다운에서 변경하세요.`,
+        title: ui('원문 언어가 YouTube에 설정되어 있지 않습니다', 'The source language is not set on YouTube'),
+        message: ui(
+          `사용자 기본 언어(${nextSourceLang})로 설정했습니다. 실제와 다르면 위 "원문 언어" 드롭다운에서 변경하세요.`,
+          `Using your default language (${nextSourceLang}). If this is not correct, change the source language above.`,
+        ),
         })
       }
 
@@ -152,12 +157,12 @@ export function MetadataLocalizationTool() {
       setTargetLangs(buildInitialTargets(metadataTargetPreset, nextSourceLang, existingPersoCodes))
       setMetadataLoaded(true)
 
-      addToast({ type: 'success', title: 'YouTube 메타데이터를 불러왔습니다' })
+      addToast({ type: 'success', title: ui('YouTube 제목·설명을 불러왔습니다', 'Loaded YouTube title and description') })
     } catch (err) {
       addToast({
         type: 'error',
-        title: '메타데이터 불러오기 실패',
-        message: err instanceof Error ? err.message : '알 수 없는 오류',
+        title: ui('제목·설명 불러오기 실패', 'Failed to load title and description'),
+        message: err instanceof Error ? err.message : ui('알 수 없는 오류가 발생했습니다.', 'An unknown error occurred.'),
       })
     } finally {
       setLoadingMetadata(false)
@@ -175,12 +180,12 @@ export function MetadataLocalizationTool() {
         targetLangs,
       })
       setTranslations((prev) => ({ ...prev, ...result }))
-      addToast({ type: 'success', title: '제목·설명 번역이 생성되었습니다' })
+      addToast({ type: 'success', title: ui('제목·설명 번역이 생성되었습니다', 'Title and description translations generated') })
     } catch (err) {
       addToast({
         type: 'error',
-        title: '번역 생성 실패',
-        message: err instanceof Error ? err.message : '알 수 없는 오류',
+        title: ui('번역 생성 실패', 'Translation failed'),
+        message: err instanceof Error ? err.message : ui('알 수 없는 오류가 발생했습니다.', 'An unknown error occurred.'),
       })
     } finally {
       setTranslating(false)
@@ -201,12 +206,12 @@ export function MetadataLocalizationTool() {
         description,
         localizations,
       })
-      addToast({ type: 'success', title: 'YouTube 제목·설명 번역을 적용했습니다' })
+      addToast({ type: 'success', title: ui('YouTube 제목·설명 번역을 적용했습니다', 'Applied YouTube title and description translations') })
     } catch (err) {
       addToast({
         type: 'error',
-        title: 'YouTube 적용 실패',
-        message: err instanceof Error ? err.message : '알 수 없는 오류',
+        title: ui('YouTube 적용 실패', 'Failed to apply changes on YouTube'),
+        message: err instanceof Error ? err.message : ui('알 수 없는 오류가 발생했습니다.', 'An unknown error occurred.'),
       })
     } finally {
       setSaving(false)
@@ -220,7 +225,7 @@ export function MetadataLocalizationTool() {
       const localizations = Object.fromEntries(
         Object.entries(translations).map(([code, value]) => [toBcp47(code), value]),
       )
-      const result = await ytUploadVideo({
+      await ytUploadVideo({
         video: videoFile,
         title: title.trim(),
         description,
@@ -231,13 +236,13 @@ export function MetadataLocalizationTool() {
         localizations,
       })
       const privacyLabel =
-        uploadPrivacy === 'public' ? '공개'
-          : uploadPrivacy === 'unlisted' ? '일부 공개'
-            : '비공개'
+        uploadPrivacy === 'public' ? ui('공개', 'public')
+          : uploadPrivacy === 'unlisted' ? ui('일부 공개', 'unlisted')
+            : ui('비공개', 'private')
       addToast({
         type: 'success',
-        title: 'YouTube 업로드 완료',
-        message: `videoId: ${result.videoId} (${privacyLabel}로 업로드되었습니다)`,
+        title: ui('YouTube 업로드 완료', 'YouTube upload complete'),
+        message: ui(`영상이 ${privacyLabel} 상태로 업로드되었습니다.`, `Video uploaded as ${privacyLabel}.`),
       })
       // 업로드 후 폼 초기화 — 같은 파일 중복 업로드 방지.
       setVideoFile(null)
@@ -249,8 +254,8 @@ export function MetadataLocalizationTool() {
     } catch (err) {
       addToast({
         type: 'error',
-        title: 'YouTube 업로드 실패',
-        message: err instanceof Error ? err.message : '알 수 없는 오류',
+        title: ui('YouTube 업로드 실패', 'YouTube upload failed'),
+        message: err instanceof Error ? err.message : ui('알 수 없는 오류가 발생했습니다.', 'An unknown error occurred.'),
       })
     } finally {
       setUploading(false)
@@ -298,7 +303,7 @@ export function MetadataLocalizationTool() {
           )}
         >
           <FileVideo className="h-4 w-4" />
-          새 영상 업로드
+          {ui('새 영상 올리기', 'Upload new video')}
         </button>
         <button
           type="button"
@@ -313,7 +318,7 @@ export function MetadataLocalizationTool() {
           )}
         >
           <RefreshCw className="h-4 w-4" />
-          내 영상 업로드
+          {ui('내 영상 불러오기', 'Load my video')}
         </button>
       </div>
 
@@ -321,9 +326,12 @@ export function MetadataLocalizationTool() {
         <Card>
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <CardTitle>YouTube 영상 선택</CardTitle>
+              <CardTitle>{ui('YouTube 영상 선택', 'Select a YouTube video')}</CardTitle>
               <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
-                내 채널 영상의 현재 제목·설명과 기존 다국어 번역을 불러옵니다. 이미 번역된 언어는 picker에서 비활성화됩니다.
+                {ui(
+                  '내 채널 영상의 현재 제목·설명과 기존 다국어 번역을 불러옵니다. 이미 번역된 언어는 언어 선택 목록에서 비활성화됩니다.',
+                  'Load the current title, description, and existing translations for a video on your channel. Already translated languages are disabled in the language list.',
+                )}
               </p>
             </div>
             {loadingVideos && <Loader2 className="h-5 w-5 animate-spin text-surface-400" />}
@@ -337,12 +345,12 @@ export function MetadataLocalizationTool() {
                   type="text"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="영상 제목으로 검색"
+                  placeholder={ui('영상 제목으로 검색', 'Search by video title')}
                   className="h-10 w-full rounded-lg border border-surface-300 bg-white pl-9 pr-3 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-surface-700 dark:bg-surface-800 dark:text-white"
                 />
               </div>
               <Select
-                label="대상 영상"
+                label={ui('대상 영상', 'Target video')}
                 value={videoId}
                 onChange={(event) => {
                   const selected = videos.find((video) => video.videoId === event.target.value)
@@ -356,7 +364,7 @@ export function MetadataLocalizationTool() {
                   if (selected) setTitle(selected.title)
                 }}
                 options={[
-                  { value: '', label: loadingVideos ? '불러오는 중...' : '영상을 선택하세요' },
+                  { value: '', label: loadingVideos ? ui('불러오는 중...', 'Loading...') : ui('영상을 선택하세요', 'Select a video') },
                   ...filteredVideos.map((video) => ({
                     value: video.videoId,
                     label: `${video.title} (${video.privacyStatus})`,
@@ -365,7 +373,7 @@ export function MetadataLocalizationTool() {
               />
               {videosError && (
                 <p className="text-sm text-red-500">
-                  {videosError instanceof Error ? videosError.message : 'YouTube 영상 목록을 불러오지 못했습니다.'}
+                  {videosError instanceof Error ? videosError.message : ui('YouTube 영상 목록을 불러오지 못했습니다.', 'Could not load YouTube videos.')}
                 </p>
               )}
             </div>
@@ -378,7 +386,7 @@ export function MetadataLocalizationTool() {
                 className="w-full md:w-auto"
               >
                 <RefreshCw className="h-4 w-4" />
-                불러오기
+                {ui('불러오기', 'Load')}
               </Button>
             </div>
           </div>
@@ -386,9 +394,12 @@ export function MetadataLocalizationTool() {
       ) : (
         <Card>
           <div className="mb-5">
-            <CardTitle>영상 파일 선택</CardTitle>
+            <CardTitle>{ui('영상 파일 선택', 'Select a video file')}</CardTitle>
             <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
-              YouTube에 새로 올릴 영상 파일을 선택하세요. 번역 후 업로드 시 다국어 메타데이터가 함께 적용됩니다.
+              {ui(
+                'YouTube에 새로 올릴 영상 파일을 선택하세요. 번역 후 업로드 시 다국어 제목·설명이 함께 적용됩니다.',
+                'Select a video file to upload to YouTube. Translated titles and descriptions are applied during upload.',
+              )}
             </p>
           </div>
 
@@ -414,10 +425,10 @@ export function MetadataLocalizationTool() {
             ) : (
               <>
                 <span className="text-sm font-medium text-surface-700 dark:text-surface-200">
-                  영상 파일을 선택하세요
+                  {ui('영상 파일을 선택하세요', 'Select a video file')}
                 </span>
                 <span className="text-xs text-surface-500">
-                  mp4, mov, webm 등 YouTube가 지원하는 영상 포맷
+                  {ui('mp4, mov, webm 등 YouTube가 지원하는 영상 포맷', 'Video formats supported by YouTube, such as mp4, mov, and webm')}
                 </span>
               </>
             )}
@@ -433,7 +444,7 @@ export function MetadataLocalizationTool() {
             />
           </label>
           <p className="mt-3 text-xs text-surface-500">
-            업로드 시 비공개(private)로 올라갑니다. 검토 후 YouTube Studio에서 공개 전환하세요.
+            {ui('업로드 시 비공개로 업로드됩니다. 검토 후 YouTube Studio에서 공개로 전환하세요.', 'Videos are uploaded as private by default. Review them in YouTube Studio before making them public.')}
           </p>
         </Card>
       )}
@@ -445,62 +456,62 @@ export function MetadataLocalizationTool() {
             <Languages className="h-5 w-5" />
           </div>
           <div>
-            <CardTitle>제목·설명 번역</CardTitle>
+            <CardTitle>{ui('제목·설명 번역', 'Title and description translation')}</CardTitle>
             <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
               {mode === 'new'
-                ? 'YouTube에 업로드 시 함께 적용될 다국어 제목/설명을 생성합니다.'
-                : '더빙이나 자막 생성 없이 YouTube localizations에 들어갈 번역만 생성합니다.'}
+                ? ui('YouTube에 업로드 시 함께 적용될 다국어 제목·설명을 생성합니다.', 'Generate translated titles and descriptions for upload.')
+                : ui('더빙 없이 YouTube 다국어 제목·설명에 적용할 번역만 생성합니다.', 'Generate translations for YouTube multilingual titles and descriptions without dubbing.')}
             </p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <Select
-            label="원문 언어"
+            label={ui('원문 언어', 'Source language')}
             value={sourceLang}
             onChange={(event) => {
               const nextSourceLang = event.target.value
               setSourceLang(nextSourceLang)
               setTargetLangs(buildInitialTargets(metadataTargetPreset, nextSourceLang, existingLocalizationLangs))
             }}
-            options={LANGUAGE_OPTIONS}
+            options={languageOptions}
           />
           <Select
-            label="추천 시장"
+            label={ui('추천 시장', 'Recommended market')}
             value={metadataTargetPreset}
             onChange={(event) => {
               const nextPreset = event.target.value
               setMetadataTargetPreset(nextPreset)
               setTargetLangs(buildInitialTargets(nextPreset, sourceLang, existingLocalizationLangs))
             }}
-            options={PRESET_OPTIONS}
+            options={presetOptions}
           />
         </div>
 
         <div className="mt-4 space-y-4">
           <Input
-            label="원문 제목"
+            label={ui('원문 제목', 'Source title')}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="YouTube 제목"
+            placeholder={ui('YouTube 제목', 'YouTube title')}
           />
           <div>
             <label htmlFor="metadata-source-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
-              원문 설명
+              {ui('원문 설명', 'Source description')}
             </label>
             <textarea
               id="metadata-source-description"
               rows={5}
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="YouTube 설명"
+              placeholder={ui('YouTube 설명', 'YouTube description')}
               className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
             />
           </div>
           {mode === 'new' && (
             <div>
               <Input
-                label="태그"
+                label={ui('태그', 'Tags')}
                 value={tags.join(', ')}
                 onChange={(event) => {
                   const parsed = event.target.value
@@ -509,10 +520,10 @@ export function MetadataLocalizationTool() {
                     .filter(Boolean)
                   setTags(parsed)
                 }}
-                placeholder="콤마로 구분 (예: gaming, vlog)"
+                placeholder={ui('쉼표로 구분 (예: 브이로그, 리뷰)', 'Comma-separated (e.g. gaming, vlog)')}
               />
               <p className="mt-1.5 text-xs text-surface-400">
-                YouTube 설정의 기본 태그가 채워져 있습니다. 이 영상에만 적용할 태그로 자유롭게 수정하세요.
+                {ui('YouTube 설정의 기본 태그가 채워져 있습니다. 이 영상에만 적용할 태그로 수정하세요.', 'Default tags from YouTube settings are prefilled. Edit them for this video if needed.')}
               </p>
             </div>
           )}
@@ -522,13 +533,13 @@ export function MetadataLocalizationTool() {
           <div className="mb-2 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
-                {selectedPreset.labelKo}
+                {isEnglish ? selectedPreset.labelEn : selectedPreset.labelKo}
               </p>
               <p className="text-xs text-surface-500 dark:text-surface-400">
-                {selectedPreset.descriptionKo}
+                {isEnglish ? selectedPreset.descriptionEn : selectedPreset.descriptionKo}
               </p>
             </div>
-            <Badge variant="brand">{targetLangs.length}개 선택</Badge>
+            <Badge variant="brand">{ui(`${targetLangs.length}개 선택`, `${targetLangs.length} selected`)}</Badge>
           </div>
           <div className="flex flex-wrap gap-2">
             {SUPPORTED_LANGUAGES.map((language) => {
@@ -541,7 +552,7 @@ export function MetadataLocalizationTool() {
                   type="button"
                   disabled={disabled}
                   onClick={() => toggleTarget(language.code)}
-                  title={alreadyTranslated ? '이미 번역되어 있는 언어' : undefined}
+                  title={alreadyTranslated ? ui('이미 번역되어 있는 언어', 'Already translated') : undefined}
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 transition',
                     selected
@@ -554,14 +565,14 @@ export function MetadataLocalizationTool() {
                 >
                   {selected && <Check className="h-3 w-3" />}
                   {alreadyTranslated && <Check className="h-3 w-3 text-surface-400" />}
-                  {language.flag} {language.name}
+                  {language.flag} {isEnglish ? language.name : language.nativeName}
                 </button>
               )
             })}
           </div>
           {mode === 'existing' && existingLocalizationLangs.size > 0 && (
             <p className="mt-2 text-xs text-surface-500">
-              회색 표시 언어 ({existingLocalizationLangs.size}개)는 이미 번역되어 있습니다.
+              {ui(`회색으로 표시된 언어 ${existingLocalizationLangs.size}개는 이미 번역되어 있습니다.`, `${existingLocalizationLangs.size} grayed-out languages are already translated.`)}
             </p>
           )}
         </div>
@@ -574,7 +585,7 @@ export function MetadataLocalizationTool() {
               disabled={!canTranslate || translating}
             >
               <Languages className="h-4 w-4" />
-              번역 생성
+              {ui('번역 생성', 'Generate translations')}
             </Button>
           ) : mode === 'existing' ? (
             <Button
@@ -583,7 +594,7 @@ export function MetadataLocalizationTool() {
               disabled={!canApply || saving}
             >
               <Upload className="h-4 w-4" />
-              YouTube에 적용
+              {ui('YouTube에 적용', 'Apply to YouTube')}
             </Button>
           ) : (
             <Button
@@ -591,7 +602,7 @@ export function MetadataLocalizationTool() {
               disabled={!canUpload || uploading}
             >
               <Upload className="h-4 w-4" />
-              YouTube에 업로드
+              {ui('YouTube에 업로드', 'Upload to YouTube')}
             </Button>
           )}
         </div>
@@ -601,9 +612,9 @@ export function MetadataLocalizationTool() {
       {Object.keys(translations).length > 0 && (
         <Card>
           <div className="mb-5">
-            <CardTitle>번역 검토</CardTitle>
+            <CardTitle>{ui('번역 검토', 'Review translations')}</CardTitle>
             <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
-              적용 전에 언어별 제목과 설명을 직접 수정할 수 있습니다.
+              {ui('적용 전에 언어별 제목과 설명을 직접 수정할 수 있습니다.', 'Edit titles and descriptions before applying them.')}
             </p>
           </div>
 
@@ -616,22 +627,22 @@ export function MetadataLocalizationTool() {
                   <div className="mb-3 flex items-center gap-2">
                     <span className="text-lg">{language?.flag}</span>
                     <span className="font-medium text-surface-900 dark:text-white">
-                      {language?.name ?? code}
+                      {language ? (isEnglish ? language.name : language.nativeName) : code}
                     </span>
                     <span className="text-xs text-surface-400">{toBcp47(code)}</span>
                     {isPreExisting && (
-                      <Badge variant="default">YouTube 기존 번역</Badge>
+                      <Badge variant="default">{ui('YouTube 기존 번역', 'Existing YouTube translation')}</Badge>
                     )}
                   </div>
                   <div className="space-y-3">
                     <Input
-                      label="제목"
+                      label={ui('제목', 'Title')}
                       value={value.title}
                       onChange={(event) => updateTranslation(code, { title: event.target.value })}
                     />
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
-                        설명
+                        {ui('설명', 'Description')}
                       </label>
                       <textarea
                         rows={4}
@@ -652,25 +663,27 @@ export function MetadataLocalizationTool() {
         <Modal
           open={showUploadModal}
           onClose={closeUploadModal}
-          title="YouTube 업로드 확인"
+          title={ui('YouTube 업로드 확인', 'Confirm YouTube upload')}
           size="lg"
         >
           <div className="space-y-5">
             <div className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">채널</p>
+              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">{ui('채널', 'Channel')}</p>
               <p className="mt-1 text-sm text-surface-900 dark:text-surface-100">
-                {channel ? `${channel.title} · 구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}` : '연결된 채널 정보 없음'}
+                {channel
+                  ? ui(`${channel.title} · 구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}`, `${channel.title} · ${channel.subscriberCount.toLocaleString('en-US')} subscribers`)
+                  : ui('연결된 채널 정보 없음', 'No connected channel information')}
               </p>
             </div>
 
             <div className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">대상 언어 ({Object.keys(translations).length}개)</p>
+              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">{ui(`대상 언어 (${Object.keys(translations).length}개)`, `Target languages (${Object.keys(translations).length})`)}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {Object.keys(translations).map((code) => {
                   const lang = getLanguageByCode(code) ?? getLanguageByCode(code.split('-')[0])
                   return (
                     <Badge key={code} variant="brand">
-                      {lang ? `${lang.flag} ${lang.name}` : code}
+                      {lang ? `${lang.flag} ${isEnglish ? lang.name : lang.nativeName}` : code}
                     </Badge>
                   )
                 })}
@@ -678,30 +691,30 @@ export function MetadataLocalizationTool() {
             </div>
 
             <div className="rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">태그</p>
+              <p className="text-xs font-medium text-surface-500 dark:text-surface-400">{ui('태그', 'Tags')}</p>
               <p className="mt-1 text-sm text-surface-900 dark:text-surface-100">
-                {tags.length > 0 ? tags.join(', ') : <span className="text-surface-400">없음</span>}
+                {tags.length > 0 ? tags.join(', ') : <span className="text-surface-400">{ui('없음', 'None')}</span>}
               </p>
             </div>
 
             <Select
-              label="공개 범위"
+              label={ui('공개 범위', 'Visibility')}
               value={uploadPrivacy}
               onChange={(e) => setUploadPrivacy(e.target.value as PrivacyStatus)}
               options={[
-                { value: 'private', label: '비공개 (private)' },
-                { value: 'unlisted', label: '일부 공개 (unlisted)' },
-                { value: 'public', label: '공개 (public)' },
+                { value: 'private', label: ui('비공개', 'Private') },
+                { value: 'unlisted', label: ui('일부 공개', 'Unlisted') },
+                { value: 'public', label: ui('공개', 'Public') },
               ]}
             />
             <p className="-mt-3 text-xs text-surface-400">
-              YouTube 설정 페이지의 기본값으로 채워져 있습니다. 이 영상에만 적용할 값으로 변경 가능.
+              {ui('YouTube 설정 페이지의 기본값으로 채워져 있습니다. 이 영상에만 적용할 값으로 변경할 수 있습니다.', 'This is prefilled from YouTube settings. You can change it for this video.')}
             </p>
 
             <div className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
               <div>
-                <p className="text-sm font-medium text-surface-900 dark:text-white">아동용 영상</p>
-                <p className="text-xs text-surface-500">YouTube의 아동용 콘텐츠 정책(COPPA)에 따라 표시. 일반 영상은 끄세요.</p>
+                <p className="text-sm font-medium text-surface-900 dark:text-white">{ui('아동용 영상', 'Made for kids')}</p>
+                <p className="text-xs text-surface-500">{ui('YouTube의 아동용 콘텐츠 정책에 따라 표시합니다. 일반 영상은 꺼두세요.', 'Set this according to YouTube made-for-kids policy. Leave it off for general videos.')}</p>
               </div>
               <Toggle checked={uploadMadeForKids} onChange={setUploadMadeForKids} />
             </div>
@@ -714,14 +727,14 @@ export function MetadataLocalizationTool() {
                 className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus-ring"
               />
               <span className="text-sm text-surface-700 dark:text-surface-300">
-                위 채널, 공개 범위, 태그, 아동용 등 설정들을 확인했으며 업로드는 진행합니다.
+                {ui('위 설정을 확인했으며 업로드를 진행합니다.', 'I have reviewed these settings and want to upload.')}
               </span>
             </label>
           </div>
 
           <div className="mt-6 flex justify-end gap-2">
             <Button variant="outline" onClick={closeUploadModal} disabled={uploading}>
-              취소
+              {ui('취소', 'Cancel')}
             </Button>
             <Button
               onClick={handleUploadNew}
@@ -729,7 +742,7 @@ export function MetadataLocalizationTool() {
               disabled={!uploadConfirmed || uploading}
             >
               <Upload className="h-4 w-4" />
-              업로드
+              {ui('업로드', 'Upload')}
             </Button>
           </div>
         </Modal>

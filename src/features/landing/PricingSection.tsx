@@ -2,7 +2,7 @@ import { Check } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui'
 import { CREDIT_PACKS } from '@/features/billing/constants/plans'
-import { formatCurrency } from '@/utils/formatters'
+import { formatKrw } from '@/utils/formatters'
 import { SUPPORTED_LANGUAGE_COUNT } from '@/utils/languages'
 
 const INCLUDED_FEATURES = [
@@ -10,8 +10,8 @@ const INCLUDED_FEATURES = [
   '1080p 출력',
   '워터마크 없음',
   // '립싱크',
-  'YouTube 자동 업로드',
-  '크레딧 만료 없음',
+  'YouTube 업로드 지원',
+  '충전한 더빙 시간 만료 없음',
 ]
 
 export function PricingSection() {
@@ -23,7 +23,7 @@ export function PricingSection() {
             심플하고 투명한 요금제
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            구독 없음. 1분 더빙 = $1. 원하는 만큼 충전해서 사용하세요.
+            구독 없이 필요한 만큼 충전하세요. 더빙 시간은 1분 단위로 사용합니다.
           </p>
         </div>
 
@@ -49,8 +49,8 @@ export function PricingSection() {
                 className="rounded-2xl border border-surface-200 bg-white p-6 text-center dark:border-surface-800 dark:bg-surface-900"
               >
                 <p className="text-3xl font-extrabold text-surface-900 dark:text-white">{pack.minutes}분</p>
-                <p className="mt-1 text-2xl font-bold text-brand-600">{formatCurrency(pack.price)}</p>
-                <p className="mt-1 text-xs text-surface-500">$1/분</p>
+                <p className="mt-1 text-2xl font-bold text-brand-600">{formatKrw(pack.priceKrw)}</p>
+                <p className="mt-1 text-xs text-surface-500">1분 단위 과금</p>
               </div>
             ))}
           </div>

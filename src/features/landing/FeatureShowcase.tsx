@@ -4,7 +4,7 @@ const features = [
   {
     icon: Mic,
     title: '보이스 클론',
-    description: '모든 더빙 언어에서 내 고유한 목소리를 유지합니다. 시청자는 내 목소리로 듣게 됩니다.',
+    description: '여러 언어에서도 원래 목소리의 톤과 분위기를 유지하도록 돕습니다.',
   },
   {
     icon: Subtitles,
@@ -20,12 +20,12 @@ const features = [
   {
     icon: Clock,
     title: '롱폼 지원',
-    description: '긴 영상도 실시간 진행률 추적으로 처리. 완료되면 알림을 받으세요.',
+    description: '긴 영상도 진행률을 확인하며 처리할 수 있습니다. 완료된 파일은 결과 화면에서 바로 확인하세요.',
   },
   {
     icon: BarChart3,
     title: '분석 대시보드',
-    description: '어떤 더빙 언어가 가장 효과적인지 데이터로 확인. 글로벌 콘텐츠 전략 최적화.',
+    description: '업로드한 더빙 영상의 성과를 언어별로 확인하고 다음 작업에 참고할 수 있습니다.',
   },
 ]
 
@@ -38,7 +38,7 @@ export function FeatureShowcase() {
             글로벌 진출에 필요한 모든 것
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            YouTube 크리에이터를 위해 만든 프로 더빙 도구
+            YouTube 크리에이터를 위해 만든 더빙 제작 도구
           </p>
         </div>
 

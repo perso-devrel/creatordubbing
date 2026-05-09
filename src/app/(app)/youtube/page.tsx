@@ -8,9 +8,11 @@ import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { formatNumber } from '@/utils/formatters'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import { SUPPORTED_LANGUAGES } from '@/utils/languages'
+import { useLocaleText } from '@/hooks/useLocaleText'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
 
 export default function YouTubeSettingsPage() {
+  const t = useLocaleText()
   const router = useRouter()
   const defaultVisibility = useYouTubeSettingsStore((s) => s.defaultPrivacy)
   const setDefaultVisibility = useYouTubeSettingsStore((s) => s.setDefaultPrivacy)
@@ -35,23 +37,23 @@ export default function YouTubeSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">YouTube 설정</h1>
-        <p className="text-surface-500 dark:text-surface-400">YouTube 채널 연결 및 업로드 설정을 관리하세요</p>
+        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: 'YouTube 설정', en: 'YouTube settings' })}</h1>
+        <p className="text-surface-500 dark:text-surface-400">{t({ ko: 'YouTube 채널 연결과 기본 업로드 설정을 관리하세요.', en: 'Manage your YouTube channel connection and upload defaults.' })}</p>
       </div>
 
       {/* Channel Connection */}
       <Card>
-        <CardTitle>연결된 채널</CardTitle>
+        <CardTitle>{t({ ko: '연결된 채널', en: 'Connected channel' })}</CardTitle>
         {channelLoading ? (
           <div className="mt-4 flex items-center gap-2 text-surface-400">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">채널 정보 불러오는 중...</span>
+            <span className="text-sm">{t({ ko: '채널 정보 불러오는 중...', en: 'Loading channel information...' })}</span>
           </div>
         ) : channelError ? (
           <div className="mt-4 flex flex-col items-center gap-3 py-8">
             <Video className="h-12 w-12 text-surface-300" />
             <p className="text-sm text-red-500">
-              {channelError instanceof Error ? channelError.message : 'YouTube 채널 정보를 불러오지 못했습니다.'}
+              {channelError instanceof Error ? channelError.message : t({ ko: 'YouTube 채널 정보를 불러오지 못했습니다.', en: 'Could not load YouTube channel information.' })}
             </p>
           </div>
         ) : isConnected ? (
@@ -74,26 +76,26 @@ export default function YouTubeSettingsPage() {
               <div>
                 <p className="font-semibold text-surface-900 dark:text-white">{channel.title}</p>
                 <p className="text-sm text-surface-500">
-                  구독자 {formatNumber(channel.subscriberCount)} · 영상 {formatNumber(channel.videoCount)}개
+                  {t({ ko: `구독자 ${formatNumber(channel.subscriberCount)} · 영상 ${formatNumber(channel.videoCount)}개`, en: `${formatNumber(channel.subscriberCount)} subscribers · ${formatNumber(channel.videoCount)} videos` })}
                 </p>
               </div>
-              <Badge variant="success">연결됨</Badge>
+              <Badge variant="success">{t({ ko: '연결됨', en: 'Connected' })}</Badge>
             </div>
             <Button variant="outline" size="sm" onClick={() => {
               fetch('/api/auth/signout', { method: 'POST' }).then(() => window.location.reload())
             }}>
               <Unlink className="h-4 w-4" />
-              연결 해제
+              {t({ ko: '연결 해제', en: 'Disconnect' })}
             </Button>
           </div>
         ) : (
           <div className="mt-4 flex flex-col items-center gap-4 py-8">
             <Video className="h-12 w-12 text-surface-300" />
-            <p className="text-surface-500">연결된 YouTube 채널이 없습니다</p>
-            <p className="text-xs text-surface-400">Google 로그인 시 YouTube 권한이 함께 연결됩니다</p>
+            <p className="text-surface-500">{t({ ko: '연결된 YouTube 채널이 없습니다', en: 'No YouTube channel connected' })}</p>
+            <p className="text-xs text-surface-400">{t({ ko: 'Google로 로그인하면 YouTube 권한을 함께 요청합니다.', en: 'Signing in with Google also requests YouTube permissions.' })}</p>
             <Button onClick={() => window.location.href = '/'}>
               <Globe className="h-4 w-4" />
-              Google 계정으로 연결
+              {t({ ko: 'Google 계정으로 연결', en: 'Connect Google account' })}
             </Button>
           </div>
         )}
@@ -103,26 +105,26 @@ export default function YouTubeSettingsPage() {
       <Card>
         <div className="flex items-center gap-2 mb-4">
           <Settings className="h-5 w-5 text-surface-400" />
-          <CardTitle>기본 업로드 설정</CardTitle>
+          <CardTitle>{t({ ko: '기본 업로드 설정', en: 'Default upload settings' })}</CardTitle>
         </div>
 
         <div className="space-y-4">
           <Select
-            label="기본 공개 설정"
+            label={t({ ko: '기본 공개 범위', en: 'Default visibility' })}
             value={defaultVisibility}
             onChange={(e) => setDefaultVisibility(e.target.value as PrivacyStatus)}
             options={[
-              { value: 'public', label: '공개' },
-              { value: 'unlisted', label: '일부 공개' },
-              { value: 'private', label: '비공개' },
+              { value: 'public', label: t({ ko: '공개', en: 'Public' }) },
+              { value: 'unlisted', label: t({ ko: '일부 공개', en: 'Unlisted' }) },
+              { value: 'private', label: t({ ko: '비공개', en: 'Private' }) },
             ]}
           />
           <p className="-mt-3 text-xs text-surface-400">
-            새 더빙 시작 시 이 값이 기본값으로 적용됩니다. 각 더빙 별로 변경할 수 있습니다.
+            {t({ ko: '새 더빙 시작 시 이 값이 기본값으로 적용됩니다. 각 더빙별로 변경할 수 있습니다.', en: 'This is used as the default for new dubbing jobs. You can change it for each job.' })}
           </p>
 
           <Select
-            label="기본 작성 언어"
+            label={t({ ko: '기본 원문 언어', en: 'Default source language' })}
             value={defaultLanguage}
             onChange={(e) => setDefaultLanguage(e.target.value)}
             options={SUPPORTED_LANGUAGES.map((l) => ({
@@ -131,17 +133,17 @@ export default function YouTubeSettingsPage() {
             }))}
           />
           <p className="-mt-3 text-xs text-surface-400">
-            편한 언어를 선택해주세요. 작성하신 내용은 선택하신 언어로 자동 번역되어 함께 업로드됩니다. 더빙별로도 변경할 수 있습니다.
+            {t({ ko: '제목과 설명을 작성할 기본 언어를 선택하세요. 더빙별로 변경할 수 있습니다.', en: 'Choose the default language for titles and descriptions. You can change it for each job.' })}
           </p>
 
           <Input
-            label="기본 태그"
+            label={t({ ko: '기본 태그', en: 'Default tags' })}
             value={defaultTagsString}
             onChange={(e) => handleDefaultTagsChange(e.target.value)}
-            placeholder="콤마로 구분 (예: Dubtube, AI더빙, dubbed)"
+            placeholder={t({ ko: '쉼표로 구분 (예: Dubtube, AI 더빙, 브이로그)', en: 'Comma-separated (e.g. Dubtube, AI dubbing, vlog)' })}
           />
           <p className="-mt-3 text-xs text-surface-400">
-            새 더빙 시작 시 이 태그들이 기본값으로 채워집니다. 더빙별로도 변경할 수 있습니다.
+            {t({ ko: '새 더빙 시작 시 이 태그들이 기본값으로 채워집니다. 더빙별로 변경할 수 있습니다.', en: 'These tags are prefilled for new dubbing jobs. You can change them for each job.' })}
           </p>
         </div>
       </Card>
@@ -150,21 +152,21 @@ export default function YouTubeSettingsPage() {
       {isConnected && (
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <CardTitle>내 영상</CardTitle>
-            <CardDescription>{formatNumber(channel.videoCount)}개 영상</CardDescription>
+            <CardTitle>{t({ ko: '내 영상', en: 'My videos' })}</CardTitle>
+            <CardDescription>{t({ ko: `${formatNumber(channel.videoCount)}개 영상`, en: `${formatNumber(channel.videoCount)} videos` })}</CardDescription>
           </div>
 
           {videosLoading ? (
             <div className="flex items-center gap-2 py-4 text-surface-400">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">영상 목록 불러오는 중...</span>
+              <span className="text-sm">{t({ ko: '영상 목록 불러오는 중...', en: 'Loading video list...' })}</span>
             </div>
           ) : videosError ? (
             <p className="py-4 text-center text-sm text-red-500">
-              {videosError instanceof Error ? videosError.message : 'YouTube 영상 목록을 불러오지 못했습니다.'}
+              {videosError instanceof Error ? videosError.message : t({ ko: 'YouTube 영상 목록을 불러오지 못했습니다.', en: 'Could not load the YouTube video list.' })}
             </p>
           ) : videos.length === 0 ? (
-            <p className="py-4 text-center text-sm text-surface-400">영상이 없습니다</p>
+            <p className="py-4 text-center text-sm text-surface-400">{t({ ko: '영상이 없습니다', en: 'No videos found' })}</p>
           ) : (
             <div className="space-y-2">
               {videos.map((video) => (
@@ -188,7 +190,7 @@ export default function YouTubeSettingsPage() {
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="shrink-0 ml-3" onClick={() => router.push(`/dubbing?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${video.videoId}`)}`)}>
-                    이 영상 더빙
+                    {t({ ko: '이 영상 더빙', en: 'Dub this video' })}
                   </Button>
                 </div>
               ))}

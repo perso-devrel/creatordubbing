@@ -6,8 +6,10 @@ import { useQuery } from '@tanstack/react-query'
 import { ytFetchAnalytics } from '@/lib/api-client'
 import { useAuthStore } from '@/stores/authStore'
 import { useMemo, useState } from 'react'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
+  const t = useLocaleText()
   const user = useAuthStore((s) => s.user)
   const [tab, setTab] = useState<'daily' | 'country'>('daily')
 
@@ -57,9 +59,9 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
   if (!videoIds || videoIds.length === 0) {
     return (
       <Card>
-        <CardTitle>시청 분석</CardTitle>
+        <CardTitle>{t({ ko: '시청 분석', en: 'Viewer analytics' })}</CardTitle>
         <p className="text-sm text-surface-500 dark:text-surface-400">
-          YouTube에 업로드된 영상이 없습니다.
+          {t({ ko: 'YouTube에 업로드된 영상이 없습니다.', en: 'No videos have been uploaded to YouTube yet.' })}
         </p>
       </Card>
     )
@@ -68,7 +70,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
   if (isLoading) {
     return (
       <Card>
-        <CardTitle>시청 분석</CardTitle>
+        <CardTitle>{t({ ko: '시청 분석', en: 'Viewer analytics' })}</CardTitle>
         <div className="mt-4 h-64 animate-pulse rounded bg-surface-100 dark:bg-surface-800" />
       </Card>
     )
@@ -77,7 +79,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
   return (
     <Card>
       <div className="mb-4 flex items-center justify-between">
-        <CardTitle>시청 분석</CardTitle>
+        <CardTitle>{t({ ko: '시청 분석', en: 'Viewer analytics' })}</CardTitle>
         <div className="flex gap-1 rounded-lg bg-surface-100 p-1 dark:bg-surface-800" role="tablist">
           <button
             role="tab"
@@ -89,7 +91,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
                 : 'text-surface-500 hover:text-surface-700 dark:text-surface-400'
             }`}
           >
-            일별
+            {t({ ko: '일별', en: 'Daily' })}
           </button>
           <button
             role="tab"
@@ -101,7 +103,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
                 : 'text-surface-500 hover:text-surface-700 dark:text-surface-400'
             }`}
           >
-            국가별
+            {t({ ko: '국가별', en: 'By country' })}
           </button>
         </div>
       </div>
@@ -129,7 +131,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
                 }}
                 formatter={(value, name) => [
                   Number(value).toLocaleString(),
-                  name === 'views' ? '조회수' : '시청 시간(분)',
+                  name === 'views' ? t({ ko: '조회수', en: 'Views' }) : t({ ko: '시청 시간(분)', en: 'Watch time (min)' }),
                 ]}
                 labelFormatter={(label) => String(label)}
               />
@@ -161,7 +163,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
                 }}
                 formatter={(value, name) => [
                   Number(value).toLocaleString(),
-                  name === 'views' ? '조회수' : '시청 시간(분)',
+                  name === 'views' ? t({ ko: '조회수', en: 'Views' }) : t({ ko: '시청 시간(분)', en: 'Watch time (min)' }),
                 ]}
               />
               <Bar dataKey="views" fill="#8b5cf6" radius={[0, 4, 4, 0]} />

@@ -13,7 +13,6 @@ export default async function BillingFailPage({
 }) {
   const params = await searchParams
   const code = getParam(params.code)
-  const message = getParam(params.message)
 
   return (
     <div className="mx-auto max-w-xl">
@@ -25,7 +24,7 @@ export default async function BillingFailPage({
           <div>
             <CardTitle>결제가 완료되지 않았습니다</CardTitle>
             <p className="mt-1 text-sm text-surface-500">
-              {message || '결제가 취소되었거나 실패했습니다.'}
+              결제가 취소되었거나 처리 중 문제가 발생했습니다. 다시 시도해 주세요.
             </p>
             {code && <p className="mt-1 text-xs text-surface-400">오류 코드: {code}</p>}
           </div>

@@ -16,20 +16,20 @@ export function Hero() {
           </div>
 
           <h1 className="text-5xl font-extrabold tracking-tight text-surface-900 dark:text-white sm:text-6xl lg:text-7xl">
-            클릭 한 번으로{' '}
+            영상 하나로{' '}
             <span className="bg-gradient-to-r from-brand-600 to-pink-500 bg-clip-text text-transparent">
-              {SUPPORTED_LANGUAGE_COUNT}개국 더빙
+              {SUPPORTED_LANGUAGE_COUNT}개 언어 더빙
             </span>
             <br />
-            내 채널을 세계에 알리세요
+            전 세계 시청자에게 전하세요
           </h1>
 
           <p className="mx-auto mt-6 text-lg text-surface-600 break-keep dark:text-surface-400 sm:text-xl">
             <span className="block sm:whitespace-nowrap">
-              영상 하나만 올리면 {SUPPORTED_LANGUAGE_COUNT}개 언어로 프로급 더빙이 완성됩니다.
+              영상을 올리고 언어를 선택하면 {SUPPORTED_LANGUAGE_COUNT}개 언어 더빙을 만들 수 있습니다.
             </span>
             <span className="block sm:whitespace-nowrap">
-              보이스 클론이 내 목소리를 그대로 살려, 구독자를 글로벌로 확장하세요.
+              원래 목소리의 톤을 살려 더 많은 시청자에게 콘텐츠를 전하세요.
             </span>
           </p>
 
@@ -38,8 +38,8 @@ export function Hero() {
           <div className="mt-16 grid grid-cols-3 gap-8 border-t border-surface-200 pt-10 dark:border-surface-800">
             {[
               { icon: Globe, label: `${SUPPORTED_LANGUAGE_COUNT}개 언어`, desc: '지원' },
-              { icon: Puzzle, label: '확장 프로그램', desc: '원클릭 연결' },
-              { icon: Shield, label: '보이스 클론', desc: '내 목소리 유지' },
+              { icon: Puzzle, label: 'YouTube 업로드', desc: '연동 지원' },
+              { icon: Shield, label: '보이스 클론', desc: '톤 유지' },
             ].map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex flex-col items-center gap-2">
                 <Icon className="h-6 w-6 text-brand-500" />
