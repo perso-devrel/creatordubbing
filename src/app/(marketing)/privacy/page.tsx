@@ -148,7 +148,7 @@ export default function PrivacyPolicyPage() {
         <p>
           본 서비스는 사용자 인증과 환경 설정을 위해 다음 쿠키를 사용합니다:
           {' '}<code>dubtube_session</code> (세션 식별), <code>dubtube-theme</code> (라이트/다크 모드 설정),
-          <code> dubtube-youtube-settings</code> (사용자 기본 업로드 설정).
+          {' '}<code>dubtube-youtube-settings</code> (사용자 기본 업로드 설정).
         </p>
       </Section>
 
@@ -180,7 +180,7 @@ export default function PrivacyPolicyPage() {
         </p>
       </Section>
 
-      <footer className="mt-12 border-t border-surface-200 pt-6 text-sm text-surface-500 dark:border-surface-800">
+      <footer className="mt-12 border-t border-surface-200 pt-6 text-sm text-surface-500 dark:border-surface-800 dark:text-surface-300">
         <p>
           관련 문서:{' '}
           <Link href="/terms" className="text-brand-600 hover:underline dark:text-brand-400">

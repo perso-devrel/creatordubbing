@@ -183,7 +183,7 @@ export default function TermsPage() {
         </p>
       </Section>
 
-      <footer className="mt-12 border-t border-surface-200 pt-6 text-sm text-surface-500 dark:border-surface-800">
+      <footer className="mt-12 border-t border-surface-200 pt-6 text-sm text-surface-500 dark:border-surface-800 dark:text-surface-300">
         <p>
           관련 문서:{' '}
           <Link href="/privacy" className="text-brand-600 hover:underline dark:text-brand-400">

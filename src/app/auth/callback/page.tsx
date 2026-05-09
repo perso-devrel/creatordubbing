@@ -22,5 +22,9 @@ export default function AuthCallbackPage() {
     window.close()
   }, [])
 
-  return null
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-surface-50 px-6 text-center text-sm text-surface-600 dark:bg-surface-950 dark:text-surface-300">
+      로그인 처리 중입니다...
+    </main>
+  )
 }

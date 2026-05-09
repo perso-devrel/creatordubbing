@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { TrendingUp } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { formatNumber } from '@/utils/formatters'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 const BASE_VIEWS = 100000
 
@@ -32,6 +33,7 @@ const LANGUAGE_LIFT_RATES = [
 
 export function ROICalculator() {
   const [selectedCount, setSelectedCount] = useState(5)
+  const t = useLocaleText()
 
   const lift = LANGUAGE_LIFT_RATES.slice(0, selectedCount).reduce((a, b) => a + b, 0)
   const growthPct = Math.round(lift * 100)
@@ -42,12 +44,12 @@ export function ROICalculator() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            예상 도달 범위 계산기
+            {t({ ko: '예상 도달 범위 계산기', en: 'Estimated reach calculator' })}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            공개 사례와 업계 데이터를 바탕으로 한 참고용 추정치입니다.
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-600 dark:text-surface-300">
+            {t({ ko: '공개 사례와 업계 데이터를 바탕으로 한 참고용 추정치입니다.', en: 'A reference estimate based on public cases and industry data.' })}
             <br className="hidden sm:block" />
-            실제 성과는 콘텐츠·썸네일·업로드 빈도·채널 규모에 따라 크게 달라집니다.
+            {t({ ko: '실제 성과는 콘텐츠·썸네일·업로드 빈도·채널 규모에 따라 크게 달라집니다.', en: 'Actual performance depends on content, thumbnails, upload cadence, and channel size.' })}
           </p>
         </div>
 
@@ -56,9 +58,9 @@ export function ROICalculator() {
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <label htmlFor="roi-langs" className="text-sm font-medium text-surface-700 dark:text-surface-300">
-                  더빙 언어 수
+                  {t({ ko: '더빙 언어 수', en: 'Number of dubbing languages' })}
                 </label>
-                <span className="text-lg font-bold text-surface-900 dark:text-white">{selectedCount}개</span>
+                <span className="text-lg font-bold text-surface-900 dark:text-white">{t({ ko: `${selectedCount}개`, en: `${selectedCount}` })}</span>
               </div>
               <input
                 id="roi-langs"
@@ -67,26 +69,28 @@ export function ROICalculator() {
                 max={10}
                 value={selectedCount}
                 onChange={(e) => setSelectedCount(Number(e.target.value))}
-                aria-label="더빙 언어 수"
-                className="w-full accent-brand-500"
+                aria-label={t({ ko: '더빙 언어 수', en: 'Number of dubbing languages' })}
+                className="w-full accent-brand-600"
               />
-              <div className="mt-1 flex justify-between text-xs text-surface-500 dark:text-surface-400"><span>1</span><span>10</span></div>
+              <div className="mt-1 flex justify-between text-xs text-surface-600 dark:text-surface-300"><span>1</span><span>10</span></div>
             </div>
 
             <div className="rounded-lg border border-brand-100 bg-brand-50 p-6 dark:border-brand-900/50 dark:bg-brand-900/20">
               <div className="flex items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-400">
                 <TrendingUp className="h-4 w-4" />
-                선택 언어 기준 참고치
+                {t({ ko: '선택 언어 기준 참고치', en: 'Reference estimate for selected languages' })}
               </div>
               <div className="mt-2 text-5xl font-extrabold text-surface-900 dark:text-white">
                 +{growthPct}%
               </div>
               <div className="mt-3 text-sm text-surface-600 dark:text-surface-400">
-                월 조회수 <span className="font-semibold">{formatNumber(BASE_VIEWS)}회</span> 기준{' '}
-                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatNumber(projectedViews)}회</span> 참고 예상
+                {t({ ko: '월 조회수', en: 'From' })}{' '}
+                <span className="font-semibold">{formatNumber(BASE_VIEWS)}{t({ ko: '회', en: ' monthly views' })}</span>{' '}
+                {t({ ko: '기준', en: 'to an estimated' })}{' '}
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatNumber(projectedViews)}{t({ ko: '회', en: ' views' })}</span>
               </div>
-              <p className="mt-3 text-xs text-surface-500 dark:text-surface-400">
-                공개 사례를 언어별로 분배한 참고 추정치입니다. 채널별 실측치나 성과 보장이 아닙니다.
+              <p className="mt-3 text-xs text-surface-600 dark:text-surface-300">
+                {t({ ko: '공개 사례를 언어별로 분배한 참고 추정치입니다. 채널별 실측치나 성과 보장이 아닙니다.', en: 'This is a reference estimate from public cases distributed by language, not a channel-specific measurement or guarantee.' })}
               </p>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/services/queryClient'
 import { ToastContainer } from '@/components/feedback/Toast'
@@ -52,14 +53,21 @@ function AuthHydrator() {
 }
 
 function I18nHydrator() {
+  const pathname = usePathname()
+
   useEffect(() => {
     useI18nStore.persist.rehydrate()
-    const unsubscribe = useI18nStore.subscribe((state) => {
-      document.documentElement.lang = state.appLocale
-    })
-    document.documentElement.lang = useI18nStore.getState().appLocale
-    return unsubscribe
   }, [])
+
+  useEffect(() => {
+    const applyDocumentLang = (state = useI18nStore.getState()) => {
+      document.documentElement.lang = pathname === '/privacy' || pathname === '/terms' ? 'ko' : state.appLocale
+    }
+
+    applyDocumentLang()
+    const unsubscribe = useI18nStore.subscribe(applyDocumentLang)
+    return unsubscribe
+  }, [pathname])
   return null
 }
 
