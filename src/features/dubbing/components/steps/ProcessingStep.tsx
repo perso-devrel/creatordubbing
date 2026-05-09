@@ -97,7 +97,7 @@ export function ProcessingStep() {
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">
           {allCompleted ? t({ ko: '처리 완료', en: 'Processing complete' }) : t({ ko: '영상 처리 중', en: 'Processing video' })}
         </h2>
-        <p className="mt-1 text-surface-500">
+        <p className="mt-1 text-surface-500 dark:text-surface-300">
           {allCompleted
             ? t({ ko: '완료된 파일을 확인하고 필요한 작업을 이어서 진행하세요.', en: 'Review the finished files and continue with the next action.' })
             : deliverableMode === 'originalWithMultiAudio'
@@ -158,7 +158,7 @@ export function ProcessingStep() {
                 <span className="text-xl">{lang.flag}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-surface-900 dark:text-white">{locale === 'ko' ? lang.nativeName : lang.name}</p>
-                  <p className="text-xs text-surface-500">
+                  <p className="text-xs text-surface-500 dark:text-surface-300">
                     {getProgressLabel(locale, lp)}
                   </p>
                 </div>
@@ -181,7 +181,7 @@ export function ProcessingStep() {
                 >
                   {text(locale, statusLabels[lp.status])}
                 </Badge>
-                <span className="text-xs text-surface-400">{Math.round(lp.progress)}%</span>
+                <span className="text-xs text-surface-500 dark:text-surface-300">{Math.round(lp.progress)}%</span>
               </div>
 
             </Card>

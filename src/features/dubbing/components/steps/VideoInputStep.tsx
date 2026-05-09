@@ -234,7 +234,7 @@ export function VideoInputStep() {
           {channelLoading ? (
             <Card className="py-12 text-center">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-500 dark:text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">{t({ ko: '채널 정보를 불러오는 중...', en: 'Loading channel information...' })}</p>
+              <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t({ ko: '채널 정보를 불러오는 중...', en: 'Loading channel information...' })}</p>
             </Card>
           ) : channelError ? (
             <Card className="py-12 text-center">
@@ -246,13 +246,13 @@ export function VideoInputStep() {
           ) : !isConnected ? (
             <Card className="py-12 text-center">
               <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">{t({ ko: 'YouTube 채널을 연결하면 내 영상을 바로 선택할 수 있습니다.', en: 'Connect your YouTube channel to choose from your videos.' })}</p>
+              <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t({ ko: 'YouTube 채널을 연결하면 내 영상을 바로 선택할 수 있습니다.', en: 'Connect your YouTube channel to choose from your videos.' })}</p>
               <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/youtube'}>{t({ ko: '채널 연결', en: 'Connect channel' })}</Button>
             </Card>
           ) : myVideosLoading ? (
             <Card className="py-12 text-center">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-500 dark:text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">{t({ ko: '영상 목록을 불러오는 중...', en: 'Loading videos...' })}</p>
+              <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t({ ko: '영상 목록을 불러오는 중...', en: 'Loading videos...' })}</p>
             </Card>
           ) : myVideosError ? (
             <Card className="py-12 text-center">
@@ -264,12 +264,12 @@ export function VideoInputStep() {
           ) : myVideos.length === 0 ? (
             <Card className="py-12 text-center">
               <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">{t({ ko: '채널에 업로드된 영상이 없습니다.', en: 'There are no uploaded videos on this channel.' })}</p>
+              <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t({ ko: '채널에 업로드된 영상이 없습니다.', en: 'There are no uploaded videos on this channel.' })}</p>
             </Card>
           ) : publicVideos.length === 0 ? (
             <Card className="py-12 text-center">
               <Lock className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
-              <p className="mt-3 text-sm text-surface-500">{t({ ko: '가져올 수 있는 공개 영상이 없습니다.', en: 'There are no public videos available to import.' })}</p>
+              <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t({ ko: '가져올 수 있는 공개 영상이 없습니다.', en: 'There are no public videos available to import.' })}</p>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
                 {t({
                   ko: '비공개 또는 일부 공개 영상은 파일로 직접 업로드해 주세요.',
@@ -292,7 +292,7 @@ export function VideoInputStep() {
 
               <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
                 {filteredVideos.length === 0 ? (
-                  <p className="py-8 text-center text-sm text-surface-500">{t({ ko: '검색 결과가 없습니다.', en: 'No matching videos.' })}</p>
+                  <p className="py-8 text-center text-sm text-surface-500 dark:text-surface-300">{t({ ko: '검색 결과가 없습니다.', en: 'No matching videos.' })}</p>
                 ) : (
                   filteredVideos.map((video) => (
                     <div
@@ -315,7 +315,7 @@ export function VideoInputStep() {
                         )}
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{video.title}</p>
-                          <p className="text-xs text-surface-500">
+                          <p className="text-xs text-surface-500 dark:text-surface-300">
                             {new Date(video.publishedAt).toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US')}
                           </p>
                         </div>
@@ -369,16 +369,16 @@ export function VideoInputStep() {
                 <YouTubeLogo className="h-8 w-12" />
               </div>
             )}
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-surface-900 dark:text-white truncate">{videoMeta.title}</h3>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2">
+                <h3 className="min-w-0 flex-1 truncate font-semibold text-surface-900 dark:text-white">{videoMeta.title}</h3>
                 {videoMeta.durationMs <= 180000 && (
                   <Badge variant="brand" className="shrink-0">
                     <Zap className="h-3 w-3" /> {t({ ko: '쇼츠', en: 'Shorts' })}
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-surface-500">{videoMeta.channelTitle}</p>
+              <p className="text-sm text-surface-500 dark:text-surface-300">{videoMeta.channelTitle}</p>
               {videoMeta.duration > 0 && (
                 <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
                   {locale === 'ko'

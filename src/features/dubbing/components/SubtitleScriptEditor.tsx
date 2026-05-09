@@ -111,7 +111,7 @@ function ScriptRow({
 
   return (
     <div className="space-y-2 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
-      <div className="flex items-center gap-2 text-xs text-surface-400">
+      <div className="flex items-center gap-2 text-xs text-surface-500 dark:text-surface-300">
         <span className="font-mono">
           {formatShortTime(sentence.startMs)} → {formatShortTime(sentence.endMs)}
         </span>
@@ -121,7 +121,7 @@ function ScriptRow({
           </span>
         )}
       </div>
-      <p className="text-xs italic text-surface-500">&ldquo;{sentence.originalText}&rdquo;</p>
+      <p className="text-xs italic text-surface-500 dark:text-surface-300">&ldquo;{sentence.originalText}&rdquo;</p>
       <textarea
         value={sentence.editedTranslatedText}
         onChange={(e) =>
@@ -192,7 +192,7 @@ function SrtRow({
           onBlur={commitStart}
           className="w-32 rounded border border-surface-300 bg-white px-2 py-0.5 font-mono text-xs text-surface-700 focus:border-brand-500 focus:outline-none dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300"
         />
-        <span className="text-surface-400">&rarr;</span>
+        <span className="text-surface-500 dark:text-surface-300">&rarr;</span>
         <input
           type="text"
           value={endStr}
@@ -408,7 +408,7 @@ export function SubtitleScriptEditor({
               <h4 className="text-sm font-semibold text-surface-900 dark:text-white">
                 {t({ ko: '대사 수정', en: 'Edit dialogue' })}
               </h4>
-              <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+              <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
                 {t({
                   ko: '번역 문장을 고친 뒤 오디오를 다시 만들면 더빙 음성에 반영됩니다. 대사 시간은 여기서 변경할 수 없습니다.',
                   en: 'Edit translated lines, then regenerate audio to apply the change to the dubbed voice. Dialogue timing cannot be changed here.',
@@ -417,14 +417,14 @@ export function SubtitleScriptEditor({
             </div>
 
             {scriptLoading && (
-              <div className="flex items-center gap-2 py-4 text-sm text-surface-400">
+              <div className="flex items-center gap-2 py-4 text-sm text-surface-500 dark:text-surface-300">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {t({ ko: '대사를 불러오는 중...', en: 'Loading dialogue...' })}
               </div>
             )}
 
             {!scriptLoading && sentences && sentences.length === 0 && (
-              <p className="py-2 text-xs text-surface-500">{t({ ko: '표시할 문장이 없습니다.', en: 'No lines to show.' })}</p>
+              <p className="py-2 text-xs text-surface-500 dark:text-surface-300">{t({ ko: '표시할 문장이 없습니다.', en: 'No lines to show.' })}</p>
             )}
 
             {!scriptLoading && sentences && sentences.length > 0 && (
@@ -447,7 +447,7 @@ export function SubtitleScriptEditor({
               <h4 className="text-sm font-semibold text-surface-900 dark:text-white">
                 {t({ ko: '자막 파일 편집', en: 'Edit caption file' })}
               </h4>
-              <p className="mt-1 text-xs text-surface-500 dark:text-surface-400">
+              <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
                 {t({
                   ko: '생성된 자막 파일의 문장과 시간을 수정할 수 있습니다. 이 변경은 자막 다운로드와 YouTube 자막에만 적용됩니다.',
                   en: 'Edit the generated caption text and timing. These changes apply only to caption downloads and YouTube captions.',
@@ -482,7 +482,7 @@ export function SubtitleScriptEditor({
               )}
             </div>
             {!youtubeVideoId && (
-              <p className="text-xs text-surface-400">
+              <p className="text-xs text-surface-500 dark:text-surface-300">
                 {t({
                   ko: '이 언어의 영상이 YouTube에 업로드되면 자막 적용 버튼이 활성화됩니다.',
                   en: 'The YouTube caption button becomes available after this language is uploaded.',
@@ -500,14 +500,14 @@ export function SubtitleScriptEditor({
             )}
 
             {srtLoading && (
-              <div className="flex items-center gap-2 py-4 text-sm text-surface-400">
+              <div className="flex items-center gap-2 py-4 text-sm text-surface-500 dark:text-surface-300">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 {t({ ko: '자막 파일을 불러오는 중...', en: 'Loading captions...' })}
               </div>
             )}
 
             {!srtLoading && cues && cues.length === 0 && (
-              <p className="py-2 text-xs text-surface-500">{t({ ko: '자막 파일이 비어 있습니다.', en: 'The caption file is empty.' })}</p>
+              <p className="py-2 text-xs text-surface-500 dark:text-surface-300">{t({ ko: '자막 파일이 비어 있습니다.', en: 'The caption file is empty.' })}</p>
             )}
 
             {!srtLoading && cues && cues.length > 0 && (

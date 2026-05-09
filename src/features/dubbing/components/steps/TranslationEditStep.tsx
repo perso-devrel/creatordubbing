@@ -71,7 +71,7 @@ export function TranslationEditStep() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '설정 확인', en: 'Review settings' })}</h2>
-        <p className="mt-1 text-surface-500">
+        <p className="mt-1 text-surface-500 dark:text-surface-300">
           {t({ ko: '더빙을 시작하기 전에 업로드 설정을 확인하세요.', en: 'Review upload settings before starting dubbing.' })}
         </p>
       </div>
@@ -108,7 +108,7 @@ export function TranslationEditStep() {
             <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
               <div>
                 <span className="text-sm text-surface-600 dark:text-surface-400">립싱크</span>
-                <p className="text-xs text-surface-400 mt-0.5">더빙 오디오에 맞춰 입 모양을 조절합니다</p>
+                <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-300">더빙 오디오에 맞춰 입 모양을 조절합니다</p>
               </div>
               <Toggle checked={lipSyncEnabled} onChange={setLipSync} />
             </div>
@@ -211,9 +211,9 @@ function SummaryRow({
   return (
     <div className="flex items-start justify-between gap-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
       <div className="min-w-0">
-        <span className="text-sm text-surface-600 dark:text-surface-400">{label}</span>
+        <span className="text-sm text-surface-600 dark:text-surface-300">{label}</span>
         {description && (
-          <p className="mt-0.5 text-xs text-surface-400">{description}</p>
+          <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-300">{description}</p>
         )}
       </div>
       <div className="max-w-[60%] break-words text-right text-sm font-medium text-surface-900 dark:text-white">
@@ -228,7 +228,7 @@ function StatusValue({ active }: { active: boolean }) {
 
   return (
     <span className={cn(
-      active ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-500',
+      active ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-500 dark:text-surface-300',
     )}>
       {active ? t({ ko: '켜짐', en: 'On' }) : t({ ko: '꺼짐', en: 'Off' })}
     </span>

@@ -45,8 +45,8 @@ export const MARKET_LANGUAGE_PRESETS: MarketLanguagePreset[] = [
   },
   {
     id: 'global-broad',
-    labelKo: '글로벌 확장',
-    labelEn: 'Global expansion',
+    labelKo: '다국어 확장',
+    labelEn: 'Multilingual expansion',
     descriptionKo: '초기 성과가 확인된 뒤 유럽과 중동 주요 언어까지 확장합니다.',
     descriptionEn: 'Expand into major European and Middle Eastern languages after initial traction.',
     languageCodes: ['en', 'ja', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi', 'ar'],

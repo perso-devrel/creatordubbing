@@ -162,7 +162,7 @@ export function UploadSettingsStep() {
                 value={uploadSettings.description}
                 onChange={(e) => setUploadSettings({ description: e.target.value })}
                 placeholder={t({ ko: '영상 설명', en: 'Video description' })}
-                className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
+                className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:placeholder:text-surface-400"
               />
               {uploadSettings.containsSyntheticMedia && shouldShowAiDisclosure && (
                 <AiDisclosurePreview text={aiDisclosureText} />
@@ -224,7 +224,7 @@ export function UploadSettingsStep() {
                 value={uploadSettings.description}
                 onChange={(e) => setUploadSettings({ description: e.target.value })}
                 placeholder={t({ ko: '영상 설명', en: 'Video description' })}
-                className="w-full rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 resize-none"
+                className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:placeholder:text-surface-400"
               />
               {uploadSettings.containsSyntheticMedia && shouldShowAiDisclosure && (
                 <AiDisclosurePreview text={aiDisclosureText} />
@@ -291,8 +291,8 @@ export function UploadSettingsStep() {
               label={t({ ko: '설명에 원본 YouTube 링크 추가', en: 'Add original YouTube link to description' })}
               description={originalYouTubeUrl}
               active={uploadSettings.attachOriginalLink}
-              activeLabel={t({ ko: '추가 ON', en: 'On' })}
-              inactiveLabel={t({ ko: '추가 OFF', en: 'Off' })}
+              activeLabel={t({ ko: '켜짐', en: 'On' })}
+              inactiveLabel={t({ ko: '꺼짐', en: 'Off' })}
               onToggle={() => setUploadSettings({ attachOriginalLink: !uploadSettings.attachOriginalLink })}
             />
           )}
@@ -393,11 +393,11 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
   const t = useLocaleText()
 
   return (
-    <div className={`flex items-start justify-between gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 ${disabled ? 'opacity-75' : ''}`}>
+    <div className={`flex flex-col gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 sm:flex-row sm:items-start sm:justify-between ${disabled ? 'opacity-75' : ''}`}>
       <div className="flex min-w-0 items-start gap-2">
         <div className="mt-0.5 flex-shrink-0">{icon}</div>
         <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-sm text-surface-700 dark:text-surface-300">{label}</p>
             {disabled && (
               <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
@@ -414,7 +414,7 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
         type="button"
         onClick={disabled ? undefined : onToggle}
         disabled={disabled}
-        className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all ${
+        className={`shrink-0 self-start rounded-full px-3 py-1 text-xs font-medium transition-all sm:self-auto ${
           disabled
             ? 'bg-surface-200 text-surface-500 dark:bg-surface-700 dark:text-surface-300 cursor-not-allowed'
             : `cursor-pointer ${active

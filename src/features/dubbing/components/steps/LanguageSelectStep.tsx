@@ -129,7 +129,7 @@ export function LanguageSelectStep() {
 
       {/* Language grid */}
       {filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-surface-500">
+        <p className="py-8 text-center text-sm text-surface-500 dark:text-surface-300">
           {t({ ko: '검색 결과가 없습니다.', en: 'No matching languages.' })}
         </p>
       ) : (

@@ -32,8 +32,8 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
-      title: { ko: '기존 영상에 자막·제목 번역 추가', en: 'Add captions and localized metadata' },
-      description: { ko: '내 채널의 기존 YouTube 영상에 번역 자막과 제목·설명을 추가합니다.', en: 'Add translated captions, titles, and descriptions to an existing YouTube video.' },
+      title: { ko: '원본 영상에 자막 추가', en: 'Add captions to the original video' },
+      description: { ko: '내 채널의 기존 영상에 번역 자막과 제목·설명을 추가합니다.', en: 'Add translated captions, titles, and descriptions to an existing channel video.' },
     })
   } else if (sourceType === 'upload') {
     options.push({
@@ -91,7 +91,7 @@ export function OutputModeStep() {
         </div>
       )}
 
-      <div className={cn('grid gap-4', options.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
+      <div className={cn('grid gap-4', options.length === 3 ? 'md:grid-cols-3' : 'sm:grid-cols-2')}>
         {options.map(({ value, icon: Icon, title, description, disabled, badge }) => {
           const selected = deliverableMode === value && !disabled
           return (
@@ -103,7 +103,7 @@ export function OutputModeStep() {
                 if (!disabled) setDeliverableMode(value)
               }}
               className={cn(
-                'flex flex-col items-center gap-4 rounded-lg border-2 p-6 text-center transition-all',
+                'flex flex-col items-center gap-4 rounded-lg border-2 p-4 text-center transition-all sm:p-5',
                 disabled && 'cursor-not-allowed opacity-60',
                 !disabled && 'cursor-pointer',
                 selected
@@ -126,7 +126,7 @@ export function OutputModeStep() {
               <div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <p className={cn(
-                    'text-lg font-semibold',
+                    'text-base font-semibold leading-snug',
                     selected ? 'text-brand-700 dark:text-brand-300' : 'text-surface-900 dark:text-white',
                   )}>
                     {t(title)}
@@ -137,7 +137,7 @@ export function OutputModeStep() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">{t(description)}</p>
+                <p className="mt-2 text-sm leading-6 text-surface-600 dark:text-surface-300">{t(description)}</p>
               </div>
             </button>
           )

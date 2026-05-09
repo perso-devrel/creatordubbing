@@ -320,11 +320,11 @@ export function MetadataLocalizationTool() {
             'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-ring',
             mode === 'new'
               ? 'bg-white text-surface-900 shadow-sm dark:bg-surface-700 dark:text-white'
-              : 'text-surface-500 hover:text-surface-700 dark:text-surface-400',
+              : 'text-surface-600 hover:text-surface-800 dark:text-surface-300 dark:hover:text-surface-100',
           )}
         >
           <FileVideo className="h-4 w-4" />
-          {ui('새 영상 올리기', 'Upload new video')}
+          {ui('새 영상 업로드 번역', 'Upload and localize new video')}
         </button>
         <button
           type="button"
@@ -335,11 +335,11 @@ export function MetadataLocalizationTool() {
             'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors focus-ring',
             mode === 'existing'
               ? 'bg-white text-surface-900 shadow-sm dark:bg-surface-700 dark:text-white'
-              : 'text-surface-500 hover:text-surface-700 dark:text-surface-400',
+              : 'text-surface-600 hover:text-surface-800 dark:text-surface-300 dark:hover:text-surface-100',
           )}
         >
           <RefreshCw className="h-4 w-4" />
-          {ui('내 영상 불러오기', 'Load my video')}
+          {ui('기존 영상 불러오기', 'Use existing video')}
         </button>
       </div>
 
@@ -348,14 +348,14 @@ export function MetadataLocalizationTool() {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <CardTitle>{ui('YouTube 영상 선택', 'Select a YouTube video')}</CardTitle>
-              <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
+              <p className="mt-1 text-sm text-surface-600 dark:text-surface-300">
                 {ui(
                   '내 채널 영상의 제목·설명과 기존 번역을 불러옵니다. 이미 번역된 언어는 선택할 수 없습니다.',
                   'Load the title, description, and existing translations for a video on your channel. Already translated languages cannot be selected.',
                 )}
               </p>
             </div>
-            {loadingVideos && <Loader2 className="h-5 w-5 animate-spin text-surface-400" />}
+            {loadingVideos && <Loader2 className="h-5 w-5 animate-spin text-surface-500 dark:text-surface-300" />}
           </div>
 
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
@@ -419,7 +419,7 @@ export function MetadataLocalizationTool() {
         <Card>
           <div className="mb-5">
             <CardTitle>{ui('영상 파일 선택', 'Select a video file')}</CardTitle>
-            <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
+            <p className="mt-1 text-sm text-surface-600 dark:text-surface-300">
               {ui(
                 '새로 올릴 영상 파일을 선택하세요. 업로드할 때 다국어 제목·설명이 함께 적용됩니다.',
                 'Select a video file to upload. Multilingual titles and descriptions are applied during upload.',
@@ -442,7 +442,7 @@ export function MetadataLocalizationTool() {
                 <span className="text-sm font-medium text-surface-900 dark:text-white">
                   {videoFile.name}
                 </span>
-                <span className="text-xs text-surface-500">
+                <span className="text-xs text-surface-500 dark:text-surface-300">
                   {(videoFile.size / (1024 * 1024)).toFixed(1)} MB
                 </span>
               </>
@@ -451,7 +451,7 @@ export function MetadataLocalizationTool() {
                 <span className="text-sm font-medium text-surface-700 dark:text-surface-200">
                   {ui('영상 파일을 선택하세요', 'Select a video file')}
                 </span>
-                <span className="text-xs text-surface-500">
+                <span className="text-xs text-surface-500 dark:text-surface-300">
                   {ui('mp4, mov, webm 등 YouTube가 지원하는 영상 포맷', 'Video formats supported by YouTube, such as mp4, mov, and webm')}
                 </span>
               </>
@@ -467,7 +467,7 @@ export function MetadataLocalizationTool() {
               }}
             />
           </label>
-          <p className="mt-3 text-xs text-surface-500">
+          <p className="mt-3 text-xs text-surface-500 dark:text-surface-300">
             {ui('업로드 시 비공개로 업로드됩니다. 검토 후 YouTube Studio에서 공개로 전환하세요.', 'Videos are uploaded as private by default. Review them in YouTube Studio before making them public.')}
           </p>
         </Card>
@@ -481,7 +481,7 @@ export function MetadataLocalizationTool() {
           </div>
           <div>
             <CardTitle>{ui('제목·설명 번역', 'Title and description translation')}</CardTitle>
-            <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
+            <p className="mt-1 text-sm text-surface-600 dark:text-surface-300">
               {mode === 'new'
                 ? ui('YouTube에 업로드 시 함께 적용될 다국어 제목·설명을 생성합니다.', 'Generate translated titles and descriptions for upload.')
                 : ui('더빙 없이 YouTube 다국어 제목·설명에 적용할 번역만 생성합니다.', 'Generate translations for YouTube multilingual titles and descriptions without dubbing.')}
@@ -501,7 +501,7 @@ export function MetadataLocalizationTool() {
             options={languageOptions}
           />
           <Select
-            label={ui('추천 시장', 'Recommended market')}
+            label={ui('추천 대상 언어 묶음', 'Recommended language set')}
             value={metadataTargetPreset}
             onChange={(event) => {
               const nextPreset = event.target.value
@@ -529,7 +529,7 @@ export function MetadataLocalizationTool() {
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder={ui('YouTube 설명', 'YouTube description')}
-              className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-400 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100"
+              className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:placeholder:text-surface-400"
             />
           </div>
           {mode === 'new' && (
@@ -559,7 +559,7 @@ export function MetadataLocalizationTool() {
               <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
                 {isEnglish ? selectedPreset.labelEn : selectedPreset.labelKo}
               </p>
-              <p className="text-xs text-surface-500 dark:text-surface-400">
+              <p className="text-xs text-surface-500 dark:text-surface-300">
                 {isEnglish ? selectedPreset.descriptionEn : selectedPreset.descriptionKo}
               </p>
             </div>
@@ -582,21 +582,21 @@ export function MetadataLocalizationTool() {
                     selected
                       ? 'bg-brand-50 text-brand-700 ring-brand-300 dark:bg-brand-900/30 dark:text-brand-200 dark:ring-brand-800'
                       : alreadyTranslated
-                        ? 'bg-surface-100 text-surface-500 ring-surface-200 dark:bg-surface-800 dark:text-surface-400 dark:ring-surface-700'
+                        ? 'bg-surface-100 text-surface-600 ring-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:ring-surface-700'
                         : 'bg-white text-surface-600 ring-surface-200 hover:bg-surface-50 dark:bg-surface-900 dark:text-surface-300 dark:ring-surface-700 dark:hover:bg-surface-800',
-                    disabled && 'cursor-not-allowed opacity-70',
+                    disabled && 'cursor-not-allowed',
                   )}
                 >
                   {selected && <Check className="h-3 w-3" />}
-                  {alreadyTranslated && <Check className="h-3 w-3 text-surface-400" />}
+                  {alreadyTranslated && <Check className="h-3 w-3 text-surface-500 dark:text-surface-300" />}
                   {language.flag} {isEnglish ? language.name : language.nativeName}
                 </button>
               )
             })}
           </div>
           {mode === 'existing' && existingLocalizationLangs.size > 0 && (
-            <p className="mt-2 text-xs text-surface-500">
-              {ui(`회색으로 표시된 언어 ${existingLocalizationLangs.size}개는 이미 번역되어 있습니다.`, `${existingLocalizationLangs.size} grayed-out languages are already translated.`)}
+            <p className="mt-2 text-xs text-surface-500 dark:text-surface-300">
+              {ui(`기존 번역 ${existingLocalizationLangs.size}개는 선택할 수 없습니다.`, `${existingLocalizationLangs.size} existing translations cannot be selected.`)}
             </p>
           )}
         </div>

@@ -214,12 +214,12 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
   if (extensionStatus === 'not-installed') {
     return (
       <div className="flex items-center gap-3 rounded-lg border border-dashed border-surface-300 p-3 dark:border-surface-700">
-        <AlertCircle className="h-5 w-5 flex-shrink-0 text-surface-400" />
+        <AlertCircle className="h-5 w-5 flex-shrink-0 text-surface-500 dark:text-surface-300" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-surface-600 dark:text-surface-400">
-            {t({ ko: 'Chrome 확장 프로그램이 필요합니다', en: 'Chrome extension required' })}
+          <p className="text-sm font-medium text-surface-700 dark:text-surface-200">
+            {t({ ko: '확장 프로그램이 필요합니다', en: 'Chrome extension required' })}
           </p>
-          <p className="text-xs text-surface-400 mb-2">
+          <p className="mb-2 text-xs text-surface-500 dark:text-surface-300">
             {t({
               ko: '확장 프로그램을 설치하면 YouTube Studio에서 오디오 트랙 추가를 도와드립니다.',
               en: 'Install the extension to add audio tracks in YouTube Studio.',
@@ -248,7 +248,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
         </span>
         <Badge variant="success">{t({ ko: '연결됨', en: 'Connected' })}{version ? ` v${version}` : ''}</Badge>
       </div>
-      <p className="text-xs text-surface-500 mb-3">
+      <p className="mb-3 text-xs text-surface-500 dark:text-surface-300">
         {t({
           ko: 'Chrome 확장이 YouTube Studio를 열고 더빙 오디오를 트랙으로 추가합니다.',
           en: 'The Chrome extension opens YouTube Studio and adds dubbed audio as tracks.',

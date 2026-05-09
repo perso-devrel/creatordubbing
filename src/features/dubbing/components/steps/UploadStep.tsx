@@ -749,7 +749,7 @@ export function UploadStep() {
             ? t({ ko: '일부 언어 처리 완료', en: 'Some languages finished' })
             : t({ ko: '더빙 파일이 준비되었습니다', en: 'Dubbing files are ready' })}
         </h2>
-        <p className="mt-1 text-surface-500">
+        <p className="mt-1 text-surface-500 dark:text-surface-300">
           {locale === 'ko'
             ? `${completedLangs.length} / ${selectedLanguages.length}개 언어 완료.`
             : `${completedLangs.length} of ${selectedLanguages.length} languages complete.`}
@@ -771,7 +771,7 @@ export function UploadStep() {
               <div className="mt-3">
                 {originalUploadState.status === 'idle' && (
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-surface-500">
+                    <p className="text-sm text-surface-500 dark:text-surface-300">
                       {t({
                         ko: '원본 영상 YouTube 업로드 후 번역 자막을 추가할 수 있습니다.',
                         en: 'After the original video is uploaded to YouTube, add translated captions.',
@@ -847,7 +847,7 @@ export function UploadStep() {
                   <Badge variant="warning">{t({ ko: '로그인 필요', en: 'Sign-in required' })}</Badge>
                 )}
               </div>
-              <p className="mb-4 text-sm text-surface-500">
+              <p className="mb-4 text-sm text-surface-500 dark:text-surface-300">
                 {t({ ko: '번역된 자막을 원본 영상에 업로드합니다.', en: 'Upload translated captions to the original video.' })}
               </p>
               <div className="space-y-2">
@@ -902,23 +902,23 @@ export function UploadStep() {
           {/* Audio track toggle + extension upload */}
           {multiAudioVideoId && (
             <Card className="border-surface-200 dark:border-surface-700">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>{t({ ko: '다국어 오디오 트랙 추가', en: 'Add multilingual audio tracks' })}</CardTitle>
-                  <p className="mt-1 text-xs text-surface-500">
+                  <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
                     {t({ ko: '더빙 오디오를 원본 영상의 오디오 트랙으로 추가합니다.', en: 'Add dubbed audio as audio tracks on the original video.' })}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setAudioTrackEnabled((v) => !v)}
-                  className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
+                  className={`shrink-0 self-start rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer sm:self-auto ${
                     audioTrackEnabled
                       ? 'bg-brand-500 text-white'
                       : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
                   }`}
                 >
-                  {audioTrackEnabled ? 'ON' : 'OFF'}
+                  {audioTrackEnabled ? t({ ko: '켜짐', en: 'On' }) : t({ ko: '꺼짐', en: 'Off' })}
                 </button>
               </div>
 
@@ -945,7 +945,7 @@ export function UploadStep() {
                   />
 
                   <div className="border-t border-surface-200 pt-4 dark:border-surface-700">
-                    <p className="text-xs text-surface-500 mb-3">
+                    <p className="mb-3 text-xs text-surface-500 dark:text-surface-300">
                       {t({
                         ko: '확장 프로그램 없이 직접 진행하려면 아래 버튼으로 오디오를 받고 YouTube Studio를 여세요.',
                         en: 'To proceed manually without the extension, use the buttons below to download audio and open YouTube Studio.',
@@ -982,7 +982,7 @@ export function UploadStep() {
       {!autoUpload && completedLangs.length > 0 && (
         <Card>
           <CardTitle>{t({ ko: '더빙 오디오 확인', en: 'Review dubbed audio' })}</CardTitle>
-          <p className="mb-4 mt-1 text-xs text-surface-500">
+          <p className="mb-4 mt-1 text-xs text-surface-500 dark:text-surface-300">
             {t({ ko: '업로드 전에 더빙 오디오를 확인하세요.', en: 'Review the dubbed audio before uploading.' })}
           </p>
           <div className="space-y-3">
@@ -1020,11 +1020,11 @@ export function UploadStep() {
 
           {isAuthenticated ? (
             <>
-              <p className="text-sm text-surface-500 mb-4">
+              <p className="mb-4 text-sm text-surface-500 dark:text-surface-300">
                 {t({ ko: '언어별 더빙 영상을 새 YouTube 영상으로 업로드합니다.', en: 'Upload each language as a new dubbed YouTube video.' })}
               </p>
 
-              <div className="mb-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 text-xs text-surface-500 space-y-1">
+              <div className="mb-4 space-y-1 rounded-lg bg-surface-50 p-3 text-xs text-surface-500 dark:bg-surface-800/50 dark:text-surface-300">
                 <p>
                   {t({ ko: '자동 업로드', en: 'Auto-upload' })}: <span className="font-medium text-surface-700 dark:text-surface-300">{autoUpload ? t({ ko: '켜짐', en: 'On' }) : t({ ko: '꺼짐', en: 'Off' })}</span>
                   {' · '}
@@ -1077,7 +1077,7 @@ export function UploadStep() {
                       </div>
 
                       {state?.status === 'done' ? (
-                        <Badge variant="success">{t({ ko: '완료', en: 'Done' })}</Badge>
+                        <Badge variant="success">{t({ ko: '업로드됨', en: 'Uploaded' })}</Badge>
                       ) : state?.status === 'uploading' ? (
                         <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
                       ) : (
@@ -1117,7 +1117,7 @@ export function UploadStep() {
                     loading={anyUploading}
                   >
                     <Upload className="h-4 w-4" />
-                    {t({ ko: '지금 업로드', en: 'Upload now' })}
+                    {t({ ko: '모두 지금 업로드', en: 'Upload all now' })}
                   </Button>
                   <Button
                     variant="secondary"
@@ -1126,13 +1126,13 @@ export function UploadStep() {
                     disabled={anyUploading || !hasPendingYouTubeUploads}
                   >
                     <Upload className="h-4 w-4" />
-                    {t({ ko: '나중에 업로드', en: 'Upload later' })}
+                    {t({ ko: '모두 나중에 업로드', en: 'Queue all for later' })}
                   </Button>
                 </div>
               )}
             </>
           ) : (
-            <p className="text-sm text-surface-500">
+            <p className="text-sm text-surface-500 dark:text-surface-300">
               {t({ ko: 'YouTube에 로그인하면 더빙 영상을 채널에 업로드할 수 있습니다.', en: 'Sign in to YouTube to upload dubbed videos to your channel.' })}
             </p>
           )}
@@ -1143,7 +1143,7 @@ export function UploadStep() {
       {deliverableMode === 'newDubbedVideos' && originalYouTubeId && completedLangs.length > 0 && isAuthenticated && (
         <Card>
           <CardTitle>{t({ ko: '원본 영상에 자막 추가', en: 'Add captions to original video' })}</CardTitle>
-          <p className="mb-4 mt-1 text-sm text-surface-500">
+          <p className="mb-4 mt-1 text-sm text-surface-500 dark:text-surface-300">
             {t({ ko: '번역된 자막(SRT)을 원본 YouTube 영상에 업로드합니다.', en: 'Upload translated captions (SRT) to the original YouTube video.' })}
           </p>
           <div className="space-y-2">
@@ -1236,7 +1236,7 @@ export function UploadStep() {
               return lang ? <Badge key={code} variant="error">{lang.flag} {getDisplayLanguageName(code)}</Badge> : null
             })}
           </div>
-          <p className="mt-2 text-xs text-surface-500">
+          <p className="mt-2 text-xs text-surface-500 dark:text-surface-300">
             {t({ ko: '이 언어들은 처리에 실패했습니다. 새 더빙 작업으로 다시 시도할 수 있습니다.', en: 'These languages failed. You can try them again in a new dubbing job.' })}
           </p>
         </Card>
@@ -1246,7 +1246,7 @@ export function UploadStep() {
       {completedLangs.length > 0 && spaceSeq && (
         <Card>
           <CardTitle>{t({ ko: '자막 · 대사 편집', en: 'Edit captions and dialogue' })}</CardTitle>
-          <p className="mb-4 mt-1 text-xs text-surface-500">
+          <p className="mb-4 mt-1 text-xs text-surface-500 dark:text-surface-300">
             {t({
               ko: '번역 텍스트를 수정하면 다시 생성할 때 더빙 오디오에 반영됩니다. 시간 변경은 자막 파일과 YouTube 자막에 적용됩니다.',
               en: 'Text edits apply to regenerated dubbing audio. Timing edits apply to caption files and YouTube captions.',
