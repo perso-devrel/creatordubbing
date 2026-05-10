@@ -7,7 +7,7 @@ import {
 
 export async function generateMetadata({ params }: LocaleMetadataProps): Promise<Metadata> {
   const locale = await resolveMetadataLocale(params)
-  return getAppRouteMetadata(locale, 'youtube')
+  return getAppRouteMetadata(locale, 'settings')
 }
 
 export default function YouTubeLayout({ children }: { children: React.ReactNode }) {

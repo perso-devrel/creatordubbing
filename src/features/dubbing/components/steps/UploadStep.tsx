@@ -27,6 +27,7 @@ import { SubtitleScriptEditor } from '../SubtitleScriptEditor'
 import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
 import { appendAiDisclosureFooter, appendTextFooter, stripAiDisclosureFooter } from '../../utils/aiDisclosure'
 import type { YouTubeUploadState } from '../../types/dubbing.types'
+import { resolveCaptionTrackName } from '@/lib/youtube/captions'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -80,6 +81,7 @@ export function UploadStep() {
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [captionUploads, setCaptionUploads] = useState<Record<string, UploadStatus>>({})
   const [audioTrackEnabled, setAudioTrackEnabled] = useState(false)
+  const allowDialogueEditingInOutput = deliverableMode !== 'originalWithMultiAudio' || audioTrackEnabled
   const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
   const autoChainTriggered = useRef(false)
   const existingVideoMetadataSyncRef = useRef<Set<string>>(new Set())
@@ -455,7 +457,7 @@ export function UploadStep() {
               await ytUploadCaption({
                 videoId: result.videoId,
                 language: toBcp47(langCode),
-                name: '',
+                name: resolveCaptionTrackName(toBcp47(langCode), lang.name),
                 srtContent: srtText,
               })
             }
@@ -580,8 +582,7 @@ export function UploadStep() {
           isShort,
           uploadCaptions: shouldUploadCaptions,
           captionLanguage: toBcp47(langCode),
-          // 빈 문자열로 두면 YouTube가 시청자 로케일에 맞춰 언어 이름 자동 표시.
-          captionName: '',
+          captionName: resolveCaptionTrackName(toBcp47(langCode), lang.name),
           srtContent,
           selfDeclaredMadeForKids,
           containsSyntheticMedia: shouldApplyAiDisclosure,
@@ -656,7 +657,7 @@ export function UploadStep() {
         await ytUploadCaption({
           videoId: targetVideoId,
           language: toBcp47(langCode),
-          name: '',
+          name: resolveCaptionTrackName(toBcp47(langCode), lang.name),
           srtContent,
         })
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'done' }))
@@ -1222,20 +1223,36 @@ export function UploadStep() {
       {/* ─── Subtitle & Script editor (merged) ─── */}
       {completedLangs.length > 0 && spaceSeq && (
         <Card>
-          <CardTitle>{t('features.dubbing.components.steps.uploadStep.editCaptionsAndDialogue')}</CardTitle>
+          <CardTitle>
+            {t(
+              allowDialogueEditingInOutput
+                ? 'features.dubbing.components.steps.uploadStep.editCaptionsAndDialogue'
+                : 'features.dubbing.components.steps.uploadStep.editCaptionsOnly',
+            )}
+          </CardTitle>
           <p className="mb-4 mt-1 text-xs text-surface-500 dark:text-surface-300">
-            {t('features.dubbing.components.steps.uploadStep.textEditsApplyToRegeneratedDubbingAudioTiming')}
+            {t(
+              allowDialogueEditingInOutput
+                ? 'features.dubbing.components.steps.uploadStep.textEditsApplyToRegeneratedDubbingAudioTiming'
+                : 'features.dubbing.components.steps.uploadStep.captionOnlyEditsApplyToCaptionFiles',
+            )}
           </p>
           <div className="space-y-2">
-            {completedLangs.map((code) => (
-              <SubtitleScriptEditor
-                key={code}
-                langCode={code}
-                projectSeq={projectMap[code] || 0}
-                spaceSeq={spaceSeq}
-                youtubeVideoId={ytUploads[code]?.videoId ?? null}
-              />
-            ))}
+            {completedLangs.map((code) => {
+              const projectSeq = projectMap[code]
+              if (!projectSeq) return null
+
+              return (
+                <SubtitleScriptEditor
+                  key={code}
+                  langCode={code}
+                  projectSeq={projectSeq}
+                  spaceSeq={spaceSeq}
+                  allowDialogueEditing={allowDialogueEditingInOutput}
+                  youtubeVideoId={ytUploads[code]?.videoId ?? null}
+                />
+              )
+            })}
           </div>
         </Card>
       )}

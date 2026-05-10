@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   description: message(DEFAULT_APP_LOCALE, "metadata.landing.description", { SUPPORTED_LANGUAGE_COUNT }),
 };
 
-const themeInitScript = `try{var raw=localStorage.getItem('dubtube-theme');var mode=null;if(raw){try{var parsed=JSON.parse(raw);mode=parsed&&parsed.state&&parsed.state.mode||parsed&&parsed.mode||parsed}catch(_){mode=raw}}if(mode==='dark'||(!mode&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`;
+const themeInitScript = `try{var raw=localStorage.getItem('dubtube-theme');var state=null;var preference=null;var mode=null;if(raw){try{var parsed=JSON.parse(raw);state=parsed&&parsed.state||parsed;preference=state&&state.preference;mode=state&&state.mode||state}catch(_){mode=raw}}if(!preference&&(mode==='dark'||mode==='light'))preference=mode;var systemDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;if(preference==='dark'||((!preference||preference==='system')&&systemDark)){document.documentElement.classList.add('dark')}}catch(e){}`;
 
 export default async function RootLayout({
   children,

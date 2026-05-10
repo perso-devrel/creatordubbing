@@ -24,14 +24,18 @@ const baseMessages = {
   'status.complete': { ko: '완료', en: 'Complete' },
   'status.failed': { ko: '실패', en: 'Failed' },
   'settings.languageDefaults.title': {
-    ko: '언어 및 YouTube 기본값',
-    en: 'Language and YouTube defaults',
+    ko: '언어, 테마 및 YouTube 기본값',
+    en: 'Language, theme, and YouTube defaults',
   },
   'settings.languageDefaults.description': {
-    ko: '화면 언어와 제목·설명 번역 기본값을 정합니다.',
-    en: 'Set display language and title/description translation defaults.',
+    ko: '화면 언어, 표시 테마, 제목·설명 번역 기본값을 정합니다.',
+    en: 'Set display language, theme, and title/description translation defaults.',
   },
   'settings.appLocale': { ko: '앱 언어', en: 'App locale' },
+  'settings.themeMode': { ko: '화면 테마', en: 'Theme' },
+  'settings.themeMode.system': { ko: '시스템 설정 사용', en: 'Use system setting' },
+  'settings.themeMode.light': { ko: '라이트 모드', en: 'Light mode' },
+  'settings.themeMode.dark': { ko: '다크 모드', en: 'Dark mode' },
   'settings.metadataLanguage': {
     ko: '제목·설명 작성 기본 언어',
     en: 'Default metadata source language',
@@ -178,6 +182,106 @@ const baseMessages = {
   'features.dubbing.components.steps.videoInputStep.durationLabel': {
     ko: '길이 {duration}',
     en: '{duration} long',
+  },
+  'features.dubbing.components.steps.uploadStep.editCaptionsOnly': {
+    ko: '자막 편집',
+    en: 'Edit captions',
+  },
+  'features.dubbing.components.steps.uploadStep.captionOnlyEditsApplyToCaptionFiles': {
+    ko: '이 모드에서는 자막 텍스트와 시간만 편집합니다. 대사 수정과 오디오 재생성은 숨겨집니다.',
+    en: 'In this mode, edit only caption text and timing. Dialogue editing and audio regeneration are hidden.',
+  },
+  'features.dubbing.components.subtitleScriptEditor.valueCaptionsOnly': {
+    ko: '{languageName} 자막',
+    en: '{languageName} captions',
+  },
+  'features.dubbing.components.subtitleScriptEditor.dialogueTab': {
+    ko: '대사',
+    en: 'Dialogue',
+  },
+  'features.dubbing.components.subtitleScriptEditor.captionsTab': {
+    ko: '자막',
+    en: 'Captions',
+  },
+  'features.dubbing.components.subtitleScriptEditor.dialogueChanged': {
+    ko: '변경됨',
+    en: 'Changed',
+  },
+  'features.dubbing.components.subtitleScriptEditor.editDialogueThenApplyToRegenerateLanguageAudio': {
+    ko: '대사를 수정한 뒤 적용하면 이 언어의 오디오를 다시 생성합니다.',
+    en: 'Edit dialogue, then apply changes to regenerate audio for this language.',
+  },
+  'features.dubbing.components.subtitleScriptEditor.dialogueChangesValue': {
+    ko: '대사 변경 {count}개',
+    en: '{count} dialogue changes',
+  },
+  'features.dubbing.components.subtitleScriptEditor.noDialogueChanges': {
+    ko: '대사 변경 없음',
+    en: 'No dialogue changes',
+  },
+  'features.dubbing.components.subtitleScriptEditor.applyRegeneratesThisLanguageAudio': {
+    ko: '적용하면 저장한 뒤 이 언어의 오디오 재생성을 시작합니다.',
+    en: 'Applying saves the edits and starts audio regeneration for this language.',
+  },
+  'features.dubbing.components.subtitleScriptEditor.discardChanges': {
+    ko: '변경 취소',
+    en: 'Discard changes',
+  },
+  'features.dubbing.components.subtitleScriptEditor.applyDialogueChanges': {
+    ko: '적용하기',
+    en: 'Apply changes',
+  },
+  'features.dubbing.components.subtitleScriptEditor.dialogueChangesApplied': {
+    ko: '대사 변경 적용됨',
+    en: 'Dialogue changes applied',
+  },
+  'features.dubbing.components.subtitleScriptEditor.dialogueChangesAppliedMessage': {
+    ko: '{languageName} 대사를 저장하고 오디오 재생성을 시작했습니다.',
+    en: 'Saved {languageName} dialogue and started audio regeneration.',
+  },
+  'features.dubbing.components.subtitleScriptEditor.dialogueChangesApplyFailed': {
+    ko: '대사 변경을 적용하지 못했습니다',
+    en: 'Could not apply dialogue changes',
+  },
+  'features.dubbing.components.subtitleScriptEditor.captionChangesPending': {
+    ko: '자막 변경 있음',
+    en: 'Caption changes pending',
+  },
+  'features.dubbing.components.subtitleScriptEditor.timeFormatInvalid': {
+    ko: '시간 형식을 확인해 주세요. 예: 00:01:23,456',
+    en: 'Check the time format. Example: 00:01:23,456',
+  },
+  'features.dubbing.components.subtitleScriptEditor.timeRangeInvalid': {
+    ko: '시작 시간은 종료 시간보다 빨라야 합니다.',
+    en: 'Start time must be before end time.',
+  },
+  'features.dubbing.components.subtitleScriptEditor.fixCaptionTimingBeforeExport': {
+    ko: '자막 시간을 먼저 확인해 주세요.',
+    en: 'Fix caption timing before exporting.',
+  },
+  'features.dubbing.components.steps.languageSelectStep.videoLengthRounded': {
+    ko: '영상 길이(올림)',
+    en: 'Video length (rounded up)',
+  },
+  'features.dubbing.components.steps.languageSelectStep.selectedLanguageCount': {
+    ko: '선택 언어',
+    en: 'Selected languages',
+  },
+  'features.dubbing.components.steps.languageSelectStep.estimatedUsage': {
+    ko: '예상 차감 분',
+    en: 'Estimated minutes used',
+  },
+  'features.dubbing.components.steps.languageSelectStep.remainingDubbingTime': {
+    ko: '남은 더빙 시간',
+    en: 'Remaining dubbing time',
+  },
+  'features.dubbing.components.steps.languageSelectStep.remainingAfterThisJob': {
+    ko: '작업 후 예상 잔여',
+    en: 'Estimated remaining after this job',
+  },
+  'features.dubbing.components.steps.languageSelectStep.notEnoughDubbingTime': {
+    ko: '남은 더빙 시간이 부족합니다. 결제 페이지에서 시간을 충전해 주세요.',
+    en: 'Not enough dubbing time remains. Add more minutes on the billing page.',
   },
 } as const satisfies Record<string, LocalizedText>
 

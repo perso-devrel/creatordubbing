@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/services/queryClient'
 import { ToastContainer } from '@/components/feedback/Toast'
@@ -26,6 +26,13 @@ function writeLocaleCookie(locale: AppLocale) {
 function ThemeHydrator() {
   useEffect(() => {
     useThemeStore.persist.rehydrate()
+    const media = window.matchMedia?.('(prefers-color-scheme: dark)')
+    if (!media) return
+
+    const syncSystemMode = () => useThemeStore.getState().syncSystemMode()
+    syncSystemMode()
+    media.addEventListener('change', syncSystemMode)
+    return () => media.removeEventListener('change', syncSystemMode)
   }, [])
   return null
 }
@@ -122,6 +129,22 @@ function I18nHydrator() {
   return null
 }
 
+function ScrollToTopOnNavigation() {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const search = searchParams.toString()
+
+  useEffect(() => {
+    if (window.location.hash) return
+
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    })
+  }, [pathname, search])
+
+  return null
+}
+
 /** youtubeSettingsStore ↔ /api/user/preferences 양방향 동기화. QueryClientProvider 안쪽에서 mount되어야 함. */
 function UserPreferencesSync() {
   useUserPreferencesSync()
@@ -134,6 +157,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={client}>
       <ThemeHydrator />
       <I18nHydrator />
+      <Suspense fallback={null}>
+        <ScrollToTopOnNavigation />
+      </Suspense>
       <AuthHydrator />
       <UserPreferencesSync />
       {children}

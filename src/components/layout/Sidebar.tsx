@@ -8,7 +8,6 @@ import { useLocaleText } from '@/hooks/useLocaleText'
 import {
   LayoutDashboard,
   Languages,
-  Video,
   CreditCard,
   Layers,
   Settings,
@@ -24,7 +23,6 @@ const navItems = [
   { to: '/batch', label: 'components.layout.sidebar.labelDubbingJobs', mobileLabel: 'components.layout.sidebar.mobileLabelJobs', icon: Layers },
   { to: '/uploads', label: 'components.layout.sidebar.labelYouTubeUploads', mobileLabel: 'components.layout.sidebar.mobileLabelUpload', icon: Upload },
   { to: '/ops', label: 'components.layout.sidebar.labelOperations', mobileLabel: 'components.layout.sidebar.mobileLabelOps', icon: Activity, opsAdminOnly: true },
-  { to: '/youtube', label: 'components.layout.sidebar.labelYouTube', mobileLabel: 'components.layout.sidebar.mobileLabelChannel', icon: Video },
   { to: '/billing', label: 'components.layout.sidebar.labelBilling', mobileLabel: 'components.layout.sidebar.mobileLabelBilling', icon: CreditCard },
 ]
 

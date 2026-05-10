@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { Check } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useLocaleText } from '@/hooks/useLocaleText'
@@ -26,10 +27,16 @@ export function DubbingWizard() {
   const currentStep = useDubbingStore((s) => s.currentStep)
   const t = useLocaleText()
 
+  useEffect(() => {
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    })
+  }, [currentStep])
+
   return (
     <div className="space-y-8">
       {/* Step indicator */}
-      <nav className="flex items-center justify-start gap-1 overflow-x-auto px-1 pb-1 sm:justify-center sm:gap-2 sm:overflow-visible sm:px-0 sm:pb-0">
+      <nav className="flex items-center justify-start gap-1 overflow-x-auto px-1 pb-1 sm:gap-2 sm:px-0 xl:justify-center">
         {steps.map(({ num, label }, i) => {
           const isActive = currentStep === num
           const isCompleted = currentStep > num
@@ -50,7 +57,7 @@ export function DubbingWizard() {
                 </div>
                 <span
                   className={cn(
-                    'hidden text-sm font-medium sm:block',
+                    'hidden text-sm font-medium xl:block',
                     isActive ? 'text-surface-900 dark:text-white' : 'text-surface-500 dark:text-surface-300',
                   )}
                 >
@@ -60,7 +67,7 @@ export function DubbingWizard() {
               {i < steps.length - 1 && (
                 <div
                   className={cn(
-                    'h-0.5 w-3 rounded-full min-[380px]:w-4 sm:w-16',
+                    'h-0.5 w-3 rounded-full min-[380px]:w-4 sm:w-8 xl:w-16',
                     currentStep > num ? 'bg-brand-600' : 'bg-surface-200 dark:bg-surface-800',
                   )}
                 />

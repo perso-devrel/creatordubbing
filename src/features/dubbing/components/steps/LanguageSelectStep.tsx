@@ -14,12 +14,14 @@ import {
 } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { countMessage } from '@/lib/i18n/messages'
+import { useDashboardSummary } from '@/hooks/useDashboardData'
 
 type RegionFilter = 'all' | LanguageRegion
 
 export function LanguageSelectStep() {
   const {
     selectedLanguages,
+    videoMeta,
     toggleLanguage,
     deliverableMode,
     prevStep,
@@ -30,6 +32,7 @@ export function LanguageSelectStep() {
 
   const [region, setRegion] = useState<RegionFilter>('popular')
   const [query, setQuery] = useState('')
+  const { data: summary, isLoading: summaryLoading } = useDashboardSummary()
   const regionTabs: { id: RegionFilter; label: string }[] = useMemo(() => [
     { id: 'all', label: t('features.dubbing.components.steps.languageSelectStep.all') },
     { id: 'popular', label: locale === 'ko' ? REGION_LABELS.popular : 'Popular' },
@@ -52,7 +55,13 @@ export function LanguageSelectStep() {
     })
   }, [region, query])
 
-  const estimatedMinutes = selectedLanguages.length * 15
+  const videoMinutes = videoMeta
+    ? Math.max(1, Math.ceil((videoMeta.durationMs || videoMeta.duration * 1000) / 60_000))
+    : 0
+  const estimatedMinutes = selectedLanguages.length * videoMinutes
+  const remainingMinutes = summary ? Number(summary.credits_remaining) : null
+  const remainingAfter = remainingMinutes === null ? null : remainingMinutes - estimatedMinutes
+  const hasInsufficientMinutes = remainingAfter !== null && selectedLanguages.length > 0 && remainingAfter < 0
   const selectionDescription = deliverableMode === 'originalWithMultiAudio'
     ? t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesForTranslatedCaptions')
     : t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesToDubInto')
@@ -168,11 +177,42 @@ export function LanguageSelectStep() {
 
       {/* Dub options */}
       <Card>
-        <div className="rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-surface-600 dark:text-surface-400">{t('features.dubbing.components.steps.languageSelectStep.referenceEstimate')}</span>
-            <span className="whitespace-nowrap font-bold text-surface-900 dark:text-white">{countMessage(locale, estimatedMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin')}</span>
-          </div>
+        <div className="space-y-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
+          <EstimateRow
+            label={t('features.dubbing.components.steps.languageSelectStep.videoLengthRounded')}
+            value={videoMinutes > 0
+              ? countMessage(locale, videoMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin')
+              : t('common.loading')}
+          />
+          <EstimateRow
+            label={t('features.dubbing.components.steps.languageSelectStep.selectedLanguageCount')}
+            value={countMessage(locale, selectedLanguages.length, 'features.dubbing.components.steps.languageSelectStep.unitSelected')}
+          />
+          <EstimateRow
+            label={t('features.dubbing.components.steps.languageSelectStep.estimatedUsage')}
+            value={countMessage(locale, estimatedMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin')}
+            strong
+          />
+          <EstimateRow
+            label={t('features.dubbing.components.steps.languageSelectStep.remainingDubbingTime')}
+            value={summaryLoading
+              ? t('common.loading')
+              : remainingMinutes === null
+                ? '-'
+                : countMessage(locale, remainingMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin')}
+          />
+          {remainingAfter !== null && selectedLanguages.length > 0 && (
+            <EstimateRow
+              label={t('features.dubbing.components.steps.languageSelectStep.remainingAfterThisJob')}
+              value={countMessage(locale, Math.max(0, remainingAfter), 'features.dubbing.components.steps.languageSelectStep.unitMin')}
+              danger={hasInsufficientMinutes}
+            />
+          )}
+          {hasInsufficientMinutes && (
+            <p className="pt-1 text-xs text-red-600 dark:text-red-400">
+              {t('features.dubbing.components.steps.languageSelectStep.notEnoughDubbingTime')}
+            </p>
+          )}
         </div>
       </Card>
 
@@ -181,13 +221,38 @@ export function LanguageSelectStep() {
           <ArrowLeft className="h-4 w-4" />
           {t('features.dubbing.components.steps.languageSelectStep.back')}
         </Button>
-        <Button onClick={nextStep} disabled={selectedLanguages.length === 0}>
+        <Button onClick={nextStep} disabled={selectedLanguages.length === 0 || hasInsufficientMinutes}>
           {deliverableMode === 'downloadOnly'
             ? t('features.dubbing.components.steps.languageSelectStep.nextReviewSettings')
             : t('features.dubbing.components.steps.languageSelectStep.nextUploadSettings')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
+    </div>
+  )
+}
+
+function EstimateRow({
+  label,
+  value,
+  strong,
+  danger,
+}: {
+  label: string
+  value: string
+  strong?: boolean
+  danger?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 text-sm">
+      <span className="text-surface-600 dark:text-surface-400">{label}</span>
+      <span className={cn(
+        'whitespace-nowrap text-right',
+        strong ? 'font-bold text-surface-900 dark:text-white' : 'font-medium text-surface-700 dark:text-surface-200',
+        danger && 'text-red-600 dark:text-red-400',
+      )}>
+        {value}
+      </span>
     </div>
   )
 }

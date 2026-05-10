@@ -7,7 +7,7 @@ import { signOut } from '@/lib/google-auth'
 import { Button } from '@/components/ui'
 import { OpsAlertButton } from '@/features/ops/components/OpsAlertButton'
 import { useChannelStats } from '@/hooks/useYouTubeData'
-import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton'
+import { AppLocaleSelect } from '@/components/layout/AppLocaleSelect'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useLocaleRouter } from '@/hooks/useLocalePath'
 
@@ -40,7 +40,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
       <div />
 
       <div className="flex items-center gap-2">
-        <ThemeToggleButton iconClassName="h-4.5 w-4.5" />
+        <AppLocaleSelect className="w-28 sm:w-32" />
         {isOpsAdmin && <OpsAlertButton />}
 
         {user && (

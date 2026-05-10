@@ -46,7 +46,7 @@ function getProgressLabel(locale: ReturnType<typeof useAppLocale>, lp: { progres
 }
 
 export function ProcessingStep() {
-  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted, deliverableMode } = useDubbingStore()
+  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted, deliverableMode, reset } = useDubbingStore()
   const { submitDubbing, startPolling, stopPolling, cancelAll } = usePersoFlow()
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -123,8 +123,12 @@ export function ProcessingStep() {
             size="sm"
             onClick={async () => {
               setCancelling(true)
-              await cancelAll()
-              setCancelling(false)
+              try {
+                await cancelAll()
+                reset()
+              } catch {
+                setCancelling(false)
+              }
             }}
             loading={cancelling}
             disabled={cancelling}

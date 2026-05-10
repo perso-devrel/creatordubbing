@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { ArrowLeft, ArrowRight, Info } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button, Card, Badge } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
@@ -165,19 +165,6 @@ export function TranslationEditStep() {
             </span>
           </label>
         )}
-      </Card>
-
-      {/* Info note */}
-      <Card className="flex items-start gap-3 bg-blue-50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800">
-        <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-medium text-blue-900 dark:text-blue-300">{t('features.dubbing.components.steps.translationEditStep.whatHappensNext')}</p>
-          <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
-            {deliverableMode === 'originalWithMultiAudio'
-              ? t('features.dubbing.components.steps.translationEditStep.aITranscribesTheVideoAndCreatesCaptionsIn')
-              : t('features.dubbing.components.steps.translationEditStep.aITranscribesTheVideoAndCreatesDubbedAudio')}
-          </p>
-        </div>
       </Card>
 
       <div className="flex justify-between">

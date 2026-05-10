@@ -7,7 +7,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { signInWithGoogle } from '@/lib/google-auth'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { Button } from '@/components/ui'
-import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton'
+import { AppLocaleSelect } from '@/components/layout/AppLocaleSelect'
 import { useLocaleText } from '@/hooks/useLocaleText'
 import { useLocaleRouter } from '@/hooks/useLocalePath'
 
@@ -53,7 +53,7 @@ export function LandingNavBar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeToggleButton />
+          <AppLocaleSelect className="w-28 sm:w-32" />
           {isAuthenticated ? (
             <LocaleLink href="/dashboard">
               <Button size="sm">

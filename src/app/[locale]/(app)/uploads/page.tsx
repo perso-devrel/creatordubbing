@@ -17,6 +17,7 @@ import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import type { AppLocale } from '@/lib/i18n/config'
 import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
 import { message, type MessageKey } from '@/lib/i18n/messages'
+import { resolveCaptionTrackName } from '@/lib/youtube/captions'
 
 type UploadState = 'idle' | 'fetching' | 'uploading' | 'done' | 'error'
 type PrivacyStatus = 'public' | 'unlisted' | 'private'
@@ -181,6 +182,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
   const [videoId, setVideoId] = useState<string | null>(item.youtube_video_id)
   const lang = getLanguageByCode(item.language_code)
   const langName = (locale === 'ko' ? lang?.nativeName : lang?.name) || lang?.name || item.language_code
+  const captionTrackName = resolveCaptionTrackName(item.language_code, lang?.name)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [settings, setSettings] = useState<UploadSettings>(() => buildDefaultSettings(item, langName, locale))
@@ -265,9 +267,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
           await ytUploadCaption({
             videoId: result.videoId,
             language: item.language_code,
-            // name 비워두면 YouTube가 시청자 로케일에 맞춰 언어 이름 자동 표시.
-            // "X subtitles" 같은 영어 고정 문구를 박으면 일본 시청자에게도 그대로 노출.
-            name: '',
+            name: captionTrackName,
             srtContent: srtText,
           })
         } catch {
@@ -315,7 +315,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
         message: err instanceof Error ? err.message : t('app.app.uploads.page.anUnknownErrorOccurred'),
       })
     }
-  }, [item, langName, settings, userId, addToast, queryClient, t])
+  }, [item, langName, captionTrackName, settings, userId, addToast, queryClient, t])
 
   const isLoading = state === 'fetching' || state === 'uploading'
   const loadingLabel = state === 'fetching'

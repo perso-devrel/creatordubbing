@@ -246,7 +246,7 @@ export function VideoInputStep() {
             <Card className="py-12 text-center">
               <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t('features.dubbing.components.steps.videoInputStep.connectYourYouTubeChannelToChooseFromYour')}</p>
-              <Button variant="outline" className="mt-4" onClick={() => localeRouter.push('/youtube')}>{t('features.dubbing.components.steps.videoInputStep.connectChannel')}</Button>
+              <Button variant="outline" className="mt-4" onClick={() => localeRouter.push('/settings?section=youtube')}>{t('features.dubbing.components.steps.videoInputStep.connectChannel')}</Button>
             </Card>
           ) : myVideosLoading ? (
             <Card className="py-12 text-center">
