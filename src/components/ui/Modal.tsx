@@ -3,6 +3,7 @@
 import { type ReactNode, useEffect, useRef, useCallback } from 'react'
 import { cn } from '@/utils/cn'
 import { X } from 'lucide-react'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 interface ModalProps {
   open: boolean
@@ -23,6 +24,7 @@ const sizes = {
 const FOCUSABLE = 'a[href],button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])'
 
 export function Modal({ open, onClose, title, children, className, size = 'md' }: ModalProps) {
+  const t = useLocaleText()
   const dialogRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
   const onCloseRef = useRef(onClose)
@@ -79,7 +81,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
         {title && (
           <div className="flex shrink-0 items-center justify-between border-b border-surface-200 px-6 py-4 dark:border-surface-800">
             <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">{title}</h2>
-            <button onClick={onClose} aria-label="닫기" className="rounded-lg p-1 text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200">
+            <button onClick={onClose} aria-label={t('components.ui.modal.close')} className="rounded-lg p-1 text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200">
               <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>

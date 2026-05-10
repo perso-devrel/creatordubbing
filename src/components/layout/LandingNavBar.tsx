@@ -1,20 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Languages } from 'lucide-react'
+import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { useAuthStore } from '@/stores/authStore'
 import { signInWithGoogle } from '@/lib/google-auth'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { Button } from '@/components/ui'
 import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton'
 import { useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
 
 export function LandingNavBar() {
   const { isAuthenticated } = useAuthStore()
   const addToast = useNotificationStore((s) => s.addToast)
-  const router = useRouter()
+  const router = useLocaleRouter()
   const [loading, setLoading] = useState(false)
   const t = useLocaleText()
 
@@ -25,10 +25,10 @@ export function LandingNavBar() {
       useAuthStore.getState().setUser(user)
       router.push('/dashboard')
     } catch (err) {
-      const message = err instanceof Error && err.message.includes('팝업')
-        ? t({ ko: '팝업 차단을 허용한 뒤 다시 로그인해 주세요.', en: 'Allow pop-ups, then sign in again.' })
-        : t({ ko: '잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.', en: 'Please try again shortly. Contact us if the problem continues.' })
-      addToast({ type: 'error', title: t({ ko: '로그인할 수 없습니다', en: 'Could not sign in' }), message })
+      const message = err instanceof Error && err.message.includes(t('internal.keyword.popup'))
+        ? t('components.layout.landingNavBar.allowPopUpsThenSignInAgain')
+        : t('components.layout.landingNavBar.pleaseTryAgainShortlyContactUsIfThe')
+      addToast({ type: 'error', title: t('components.layout.landingNavBar.couldNotSignIn'), message })
     } finally {
       setLoading(false)
     }
@@ -37,36 +37,36 @@ export function LandingNavBar() {
   return (
     <nav className="sticky top-0 z-50 border-b border-surface-200/50 bg-white/80 backdrop-blur-md dark:border-surface-800/50 dark:bg-surface-950/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5">
+        <LocaleLink href="/" className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
           <span className="hidden text-lg font-bold text-surface-900 dark:text-surface-100 min-[360px]:inline">
             Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
           </span>
-        </Link>
+        </LocaleLink>
 
         <div className="hidden items-center gap-6 md:flex">
-          <a href="#features" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t({ ko: '기능', en: 'Features' })}</a>
-          <a href="#pricing" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t({ ko: '요금제', en: 'Pricing' })}</a>
-          <a href="#how-it-works" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t({ ko: '이용 방법', en: 'How it works' })}</a>
+          <a href="#features" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t('components.layout.landingNavBar.features')}</a>
+          <a href="#pricing" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t('components.layout.landingNavBar.pricing')}</a>
+          <a href="#how-it-works" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t('components.layout.landingNavBar.howItWorks')}</a>
         </div>
 
         <div className="flex items-center gap-2">
           <ThemeToggleButton />
           {isAuthenticated ? (
-            <Link href="/dashboard">
+            <LocaleLink href="/dashboard">
               <Button size="sm">
-                <span className="hidden sm:inline">{t({ ko: '대시보드', en: 'Dashboard' })}</span>
-                <span className="sm:hidden">{t({ ko: '홈', en: 'Home' })}</span>
+                <span className="hidden sm:inline">{t('components.layout.landingNavBar.dashboard')}</span>
+                <span className="sm:hidden">{t('components.layout.landingNavBar.home')}</span>
               </Button>
-            </Link>
+            </LocaleLink>
           ) : (
             <button
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              aria-label={t({ ko: 'Google로 시작하기', en: 'Start with Google' })}
+              aria-label={t('components.layout.landingNavBar.startWithGoogle')}
               className="inline-flex h-9 items-center gap-2 rounded-md border border-[#747775] bg-white px-3 text-sm font-medium text-[#1f1f1f] transition-colors hover:bg-[#f8f9fa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0b57d0] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#8e918f] dark:bg-[#131314] dark:text-[#e3e3e3] dark:hover:bg-[#1f1f1f]"
             >
               {loading ? (
@@ -79,8 +79,8 @@ export function LandingNavBar() {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
               )}
-              <span className="hidden sm:inline">{t({ ko: 'Google로 시작하기', en: 'Start with Google' })}</span>
-              <span className="sm:hidden">{t({ ko: '시작', en: 'Start' })}</span>
+              <span className="hidden sm:inline">{t('components.layout.landingNavBar.startWithGoogle2')}</span>
+              <span className="sm:hidden">{t('components.layout.landingNavBar.start')}</span>
             </button>
           )}
         </div>

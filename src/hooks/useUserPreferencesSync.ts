@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
+import { useI18nStore } from '@/stores/i18nStore'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import {
   fetchUserPreferences,
@@ -56,6 +57,9 @@ export function useUserPreferencesSync() {
     store.setDefaultPrivacy(serverPrefs.defaultPrivacy)
     store.setDefaultLanguage(serverPrefs.defaultLanguage)
     store.setDefaultTags(serverPrefs.defaultTags)
+    const i18nStore = useI18nStore.getState()
+    i18nStore.setAppLocale(serverPrefs.appLocale)
+    i18nStore.setMetadataTargetPreset(serverPrefs.metadataTargetPreset)
     // 다음 tick에 잠금 해제 — subscribe 콜백이 위 set 호출들을 처리한 뒤 PUT이 안 나가도록.
     const handle = setTimeout(() => { hydratingRef.current = false }, 0)
     return () => clearTimeout(handle)
@@ -69,13 +73,23 @@ export function useUserPreferencesSync() {
     let timer: ReturnType<typeof setTimeout> | null = null
     let lastSerialized = ''
 
-    const unsubscribe = useYouTubeSettingsStore.subscribe((state) => {
-      if (hydratingRef.current) return
-      const next = {
-        defaultPrivacy: state.defaultPrivacy,
-        defaultLanguage: state.defaultLanguage,
-        defaultTags: state.defaultTags,
+    const readSnapshot = () => {
+      const youtubeState = useYouTubeSettingsStore.getState()
+      const i18nState = useI18nStore.getState()
+      return {
+        appLocale: i18nState.appLocale,
+        metadataTargetPreset: i18nState.metadataTargetPreset,
+        defaultPrivacy: youtubeState.defaultPrivacy,
+        defaultLanguage: youtubeState.defaultLanguage,
+        defaultTags: youtubeState.defaultTags,
       }
+    }
+
+    lastSerialized = JSON.stringify(readSnapshot())
+
+    const scheduleSave = () => {
+      if (hydratingRef.current) return
+      const next = readSnapshot()
       const serialized = JSON.stringify(next)
       if (serialized === lastSerialized) return
       lastSerialized = serialized
@@ -83,10 +97,14 @@ export function useUserPreferencesSync() {
       timer = setTimeout(() => {
         saveMutation.mutate(next)
       }, SAVE_DEBOUNCE_MS)
-    })
+    }
+
+    const unsubscribeYoutube = useYouTubeSettingsStore.subscribe(scheduleSave)
+    const unsubscribeI18n = useI18nStore.subscribe(scheduleSave)
 
     return () => {
-      unsubscribe()
+      unsubscribeYoutube()
+      unsubscribeI18n()
       if (timer) clearTimeout(timer)
     }
   }, [uid, saveMutation])

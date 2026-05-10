@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/services/queryClient'
 import { ToastContainer } from '@/components/feedback/Toast'
@@ -10,6 +10,18 @@ import { useAuthStore } from '@/stores/authStore'
 import { useI18nStore } from '@/stores/i18nStore'
 import { restoreSession, signOut as clearStoredGoogleUser } from '@/lib/google-auth'
 import { useUserPreferencesSync } from '@/hooks/useUserPreferencesSync'
+import {
+  getPathLocale,
+  LOCALE_COOKIE,
+  LOCALE_COOKIE_MAX_AGE,
+  stripLocalePrefix,
+  withLocalePath,
+  type AppLocale,
+} from '@/lib/i18n/config'
+
+function writeLocaleCookie(locale: AppLocale) {
+  document.cookie = `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`
+}
 
 function ThemeHydrator() {
   useEffect(() => {
@@ -54,20 +66,59 @@ function AuthHydrator() {
 
 function I18nHydrator() {
   const pathname = usePathname()
+  const router = useRouter()
+  const initializedRef = useRef(false)
 
   useEffect(() => {
-    useI18nStore.persist.rehydrate()
-  }, [])
+    let unsubscribe: (() => void) | undefined
+    let canceled = false
 
-  useEffect(() => {
     const applyDocumentLang = (state = useI18nStore.getState()) => {
-      document.documentElement.lang = pathname === '/privacy' || pathname === '/terms' ? 'ko' : state.appLocale
+      document.documentElement.lang = state.appLocale
+      writeLocaleCookie(state.appLocale)
     }
 
-    applyDocumentLang()
-    const unsubscribe = useI18nStore.subscribe(applyDocumentLang)
-    return unsubscribe
+    const currentLocalizedPath = () => {
+      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
+      return stripLocalePrefix(current || '/')
+    }
+
+    Promise.resolve(useI18nStore.persist.rehydrate()).finally(() => {
+      if (canceled) return
+
+      const routeLocale = getPathLocale(window.location.pathname)
+      if (routeLocale) {
+        useI18nStore.getState().setAppLocale(routeLocale)
+      }
+
+      applyDocumentLang()
+      initializedRef.current = true
+
+      unsubscribe = useI18nStore.subscribe((state) => {
+        applyDocumentLang(state)
+
+        const routeLocale = getPathLocale(window.location.pathname)
+        if (routeLocale && routeLocale !== state.appLocale) {
+          router.replace(withLocalePath(currentLocalizedPath(), state.appLocale))
+        }
+      })
+    })
+
+    return () => {
+      canceled = true
+      initializedRef.current = false
+      unsubscribe?.()
+    }
+  }, [router])
+
+  useEffect(() => {
+    if (!initializedRef.current) return
+    const routeLocale = getPathLocale(pathname)
+    if (routeLocale && useI18nStore.getState().appLocale !== routeLocale) {
+      useI18nStore.getState().setAppLocale(routeLocale)
+    }
   }, [pathname])
+
   return null
 }
 

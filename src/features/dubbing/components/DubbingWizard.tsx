@@ -3,7 +3,6 @@
 import { Check } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useLocaleText } from '@/hooks/useLocaleText'
-import type { LocalizedText } from '@/lib/i18n/text'
 import { useDubbingStore } from '../store/dubbingStore'
 import { VideoInputStep } from './steps/VideoInputStep'
 import { LanguageSelectStep } from './steps/LanguageSelectStep'
@@ -14,14 +13,14 @@ import { ProcessingStep } from './steps/ProcessingStep'
 import { UploadStep } from './steps/UploadStep'
 
 const steps = [
-  { num: 1, label: { ko: '영상', en: 'Video' } },
-  { num: 2, label: { ko: '출력 방식', en: 'Output' } },
-  { num: 3, label: { ko: '언어', en: 'Languages' } },
-  { num: 4, label: { ko: '게시 설정', en: 'Publish settings' } },
-  { num: 5, label: { ko: '검토', en: 'Review' } },
-  { num: 6, label: { ko: '처리', en: 'Processing' } },
-  { num: 7, label: { ko: '결과', en: 'Results' } },
-] satisfies Array<{ num: number; label: LocalizedText }>
+  { num: 1, label: 'features.dubbing.components.dubbingWizard.labelVideo' },
+  { num: 2, label: 'features.dubbing.components.dubbingWizard.labelOutput' },
+  { num: 3, label: 'features.dubbing.components.dubbingWizard.labelLanguages' },
+  { num: 4, label: 'features.dubbing.components.dubbingWizard.labelPublishSettings' },
+  { num: 5, label: 'features.dubbing.components.dubbingWizard.labelReview' },
+  { num: 6, label: 'features.dubbing.components.dubbingWizard.labelProcessing' },
+  { num: 7, label: 'features.dubbing.components.dubbingWizard.labelResults' },
+] satisfies Array<{ num: number; label: string }>
 
 export function DubbingWizard() {
   const currentStep = useDubbingStore((s) => s.currentStep)

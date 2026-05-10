@@ -21,7 +21,7 @@ export function ThemeToggleButton({ iconClassName = 'h-4 w-4' }: ThemeToggleButt
   const t = useLocaleText()
 
   return (
-    <Button variant="ghost" size="sm" onClick={toggle} aria-label={t({ ko: '테마 전환', en: 'Toggle theme' })}>
+    <Button variant="ghost" size="sm" onClick={toggle} aria-label={t('components.layout.themeToggleButton.toggleTheme')}>
       {mounted ? (
         mode === 'dark' ? <Sun className={iconClassName} /> : <Moon className={iconClassName} />
       ) : (

@@ -39,8 +39,8 @@ export function DashboardContent({ initial }: { initial: DashboardInitialData })
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '대시보드', en: 'Dashboard' })}</h1>
-        <p className="text-surface-600 dark:text-surface-400">{t({ ko: '최근 더빙, 업로드, 사용 시간을 확인하세요.', en: 'Review recent dubbing, uploads, and minute usage.' })}</p>
+        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.dashboard.components.dashboardContent.dashboard')}</h1>
+        <p className="text-surface-600 dark:text-surface-400">{t('features.dashboard.components.dashboardContent.reviewRecentDubbingUploadsAndMinuteUsage')}</p>
       </div>
 
       <DashboardSummary initialData={initial.summary} />

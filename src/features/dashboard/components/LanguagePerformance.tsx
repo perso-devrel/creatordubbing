@@ -25,10 +25,10 @@ export function LanguagePerformance() {
   if (chartData.length === 0) {
     return (
       <Card>
-        <CardTitle>{t({ ko: '언어별 성과', en: 'Language performance' })}</CardTitle>
-        <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t({ ko: '더빙 언어별 조회수', en: 'Views by dubbing language' })}</p>
+        <CardTitle>{t('features.dashboard.components.languagePerformance.languagePerformance')}</CardTitle>
+        <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t('features.dashboard.components.languagePerformance.viewsByDubbingLanguage')}</p>
         <div className="flex h-64 items-center justify-center text-center text-sm text-surface-500 dark:text-surface-300">
-          {t({ ko: 'YouTube에 업로드한 영상이 있으면 여기에 성과가 표시됩니다.', en: 'Performance appears here after you upload videos to YouTube.' })}
+          {t('features.dashboard.components.languagePerformance.performanceAppearsHereAfterYouUploadVideosTo')}
         </div>
       </Card>
     )
@@ -36,8 +36,8 @@ export function LanguagePerformance() {
 
   return (
     <Card>
-      <CardTitle>{t({ ko: '언어별 성과', en: 'Language performance' })}</CardTitle>
-      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t({ ko: '더빙 언어별 조회수', en: 'Views by dubbing language' })}</p>
+      <CardTitle>{t('features.dashboard.components.languagePerformance.languagePerformance2')}</CardTitle>
+      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t('features.dashboard.components.languagePerformance.viewsByDubbingLanguage2')}</p>
 
       <div className="h-64 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -51,7 +51,7 @@ export function LanguagePerformance() {
             />
             <Tooltip
               contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
-              formatter={(value) => [formatNumber(Number(value)), t({ ko: '조회수', en: 'Views' })]}
+              formatter={(value) => [formatNumber(Number(value)), t('features.dashboard.components.languagePerformance.views')]}
             />
             <Bar dataKey="views" radius={[0, 4, 4, 0]} barSize={20}>
               {chartData.map((_, i) => (

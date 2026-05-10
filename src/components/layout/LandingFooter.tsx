@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import { Languages } from 'lucide-react'
+import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { useLocaleText } from '@/hooks/useLocaleText'
 
 export function LandingFooter() {
@@ -21,23 +21,23 @@ export function LandingFooter() {
           </div>
 
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">
-            <Link
+            <LocaleLink
               href="/privacy"
               className="text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100"
             >
-              {t({ ko: '개인정보처리방침', en: 'Privacy Policy' })}
-            </Link>
-            <Link
+              {t('components.layout.landingFooter.privacyPolicy')}
+            </LocaleLink>
+            <LocaleLink
               href="/terms"
               className="text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100"
             >
-              {t({ ko: '서비스 약관', en: 'Terms of Service' })}
-            </Link>
+              {t('components.layout.landingFooter.termsOfService')}
+            </LocaleLink>
             <a
               href="mailto:devrel.365@gmail.com"
               className="text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100"
             >
-              {t({ ko: '문의', en: 'Contact' })}
+              {t('components.layout.landingFooter.contact')}
             </a>
           </nav>
 

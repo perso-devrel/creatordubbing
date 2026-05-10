@@ -82,11 +82,11 @@ function ScriptRow({
       onPatch(sentence.sentenceSeq, { savedTranslatedText: sentence.editedTranslatedText })
       addToast({
         type: 'success',
-        title: t({ ko: '저장 완료', en: 'Saved' }),
-        message: t({ ko: '수정한 번역을 저장했습니다.', en: 'Your translation edit has been saved.' }),
+        title: t('features.dubbing.components.subtitleScriptEditor.saved'),
+        message: t('features.dubbing.components.subtitleScriptEditor.yourTranslationEditHasBeenSaved'),
       })
     } catch {
-      addToast({ type: 'error', title: t({ ko: '저장 실패', en: 'Save failed' }) })
+      addToast({ type: 'error', title: t('features.dubbing.components.subtitleScriptEditor.saveFailed') })
     } finally {
       setSaving(false)
     }
@@ -99,11 +99,11 @@ function ScriptRow({
       await regenerateSentenceAudio(projectSeq, sentence.audioSentenceSeq, sentence.editedTranslatedText)
       addToast({
         type: 'success',
-        title: t({ ko: '오디오 다시 만들기 시작', en: 'Audio regeneration started' }),
-        message: t({ ko: '완료되면 더빙 영상에 반영됩니다.', en: 'The dubbed video will update when it finishes.' }),
+        title: t('features.dubbing.components.subtitleScriptEditor.audioRegenerationStarted'),
+        message: t('features.dubbing.components.subtitleScriptEditor.theDubbedVideoWillUpdateWhenItFinishes'),
       })
     } catch {
-      addToast({ type: 'error', title: t({ ko: '오디오 다시 만들기 실패', en: 'Audio regeneration failed' }) })
+      addToast({ type: 'error', title: t('features.dubbing.components.subtitleScriptEditor.audioRegenerationFailed') })
     } finally {
       setRegenerating(false)
     }
@@ -134,7 +134,7 @@ function ScriptRow({
         {dirty && (
           <Button size="sm" variant="outline" onClick={handleSave} loading={saving}>
             <Save className="h-3.5 w-3.5" />
-            {t({ ko: '저장', en: 'Save' })}
+            {t('features.dubbing.components.subtitleScriptEditor.save')}
           </Button>
         )}
         <Button
@@ -145,7 +145,7 @@ function ScriptRow({
           disabled={saving}
         >
           <RotateCcw className="h-3.5 w-3.5" />
-          {t({ ko: '오디오 다시 만들기', en: 'Regenerate audio' })}
+          {t('features.dubbing.components.subtitleScriptEditor.regenerateAudio')}
         </Button>
       </div>
     </div>
@@ -261,7 +261,7 @@ export function SubtitleScriptEditor({
         })),
       )
     } catch {
-      addToast({ type: 'error', title: t({ ko: '대사를 불러오지 못했습니다', en: 'Failed to load dialogue' }) })
+      addToast({ type: 'error', title: t('features.dubbing.components.subtitleScriptEditor.failedToLoadDialogue') })
     } finally {
       setScriptLoading(false)
     }
@@ -276,7 +276,7 @@ export function SubtitleScriptEditor({
     } catch (err) {
       addToast({
         type: 'error',
-        title: t({ ko: '자막 파일을 불러오지 못했습니다', en: 'Failed to load captions' }),
+        title: t('features.dubbing.components.subtitleScriptEditor.failedToLoadCaptions'),
         message: err instanceof Error ? err.message : '',
       })
     } finally {
@@ -316,7 +316,7 @@ export function SubtitleScriptEditor({
       await loadSrt()
       addToast({
         type: 'success',
-        title: t({ ko: '자막을 처음 생성된 상태로 되돌렸습니다', en: 'Captions restored to the generated version' }),
+        title: t('features.dubbing.components.subtitleScriptEditor.captionsRestoredToTheGeneratedVersion'),
       })
     } finally {
       setResetting(false)
@@ -362,13 +362,13 @@ export function SubtitleScriptEditor({
       })
       addToast({
         type: 'success',
-        title: t({ ko: 'YouTube 자막 적용 완료', en: 'YouTube captions updated' }),
-        message: t({ ko: '기존 자막을 교체하고 편집한 자막을 업로드했습니다.', en: 'Existing captions were replaced with your edited captions.' }),
+        title: t('features.dubbing.components.subtitleScriptEditor.youTubeCaptionsUpdated'),
+        message: t('features.dubbing.components.subtitleScriptEditor.existingCaptionsWereReplacedWithYourEditedCaptions'),
       })
     } catch (err) {
       addToast({
         type: 'error',
-        title: t({ ko: 'YouTube 자막 적용 실패', en: 'Failed to update YouTube captions' }),
+        title: t('features.dubbing.components.subtitleScriptEditor.failedToUpdateYouTubeCaptions'),
         message: err instanceof Error ? err.message : '',
       })
     } finally {
@@ -388,7 +388,7 @@ export function SubtitleScriptEditor({
         <div className="flex items-center gap-2">
           <span className="text-lg">{lang?.flag}</span>
           <span className="text-sm font-medium text-surface-900 dark:text-white">
-            {t({ ko: `${languageName} 자막 · 대사`, en: `${languageName} captions and dialogue` })}
+            {t('features.dubbing.components.subtitleScriptEditor.valueCaptionsAndDialogue', { languageName: languageName })}
           </span>
         </div>
         {scriptLoading || srtLoading ? (
@@ -406,25 +406,22 @@ export function SubtitleScriptEditor({
           <section className="space-y-3">
             <div>
               <h4 className="text-sm font-semibold text-surface-900 dark:text-white">
-                {t({ ko: '대사 수정', en: 'Edit dialogue' })}
+                {t('features.dubbing.components.subtitleScriptEditor.editDialogue')}
               </h4>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
-                {t({
-                  ko: '번역 문장을 고친 뒤 오디오를 다시 만들면 더빙 음성에 반영됩니다. 대사 시간은 여기서 변경할 수 없습니다.',
-                  en: 'Edit translated lines, then regenerate audio to apply the change to the dubbed voice. Dialogue timing cannot be changed here.',
-                })}
+                {t('features.dubbing.components.subtitleScriptEditor.editTranslatedLinesThenRegenerateAudioToApply')}
               </p>
             </div>
 
             {scriptLoading && (
               <div className="flex items-center gap-2 py-4 text-sm text-surface-500 dark:text-surface-300">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t({ ko: '대사를 불러오는 중...', en: 'Loading dialogue...' })}
+                {t('features.dubbing.components.subtitleScriptEditor.loadingDialogue')}
               </div>
             )}
 
             {!scriptLoading && sentences && sentences.length === 0 && (
-              <p className="py-2 text-xs text-surface-500 dark:text-surface-300">{t({ ko: '표시할 문장이 없습니다.', en: 'No lines to show.' })}</p>
+              <p className="py-2 text-xs text-surface-500 dark:text-surface-300">{t('features.dubbing.components.subtitleScriptEditor.noLinesToShow')}</p>
             )}
 
             {!scriptLoading && sentences && sentences.length > 0 && (
@@ -445,28 +442,25 @@ export function SubtitleScriptEditor({
           <section className="space-y-3 border-t border-surface-200 pt-6 dark:border-surface-800">
             <div>
               <h4 className="text-sm font-semibold text-surface-900 dark:text-white">
-                {t({ ko: '자막 파일 편집', en: 'Edit caption file' })}
+                {t('features.dubbing.components.subtitleScriptEditor.editCaptionFile')}
               </h4>
               <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
-                {t({
-                  ko: '생성된 자막 파일의 문장과 시간을 수정할 수 있습니다. 이 변경은 자막 다운로드와 YouTube 자막에만 적용됩니다.',
-                  en: 'Edit the generated caption text and timing. These changes apply only to caption downloads and YouTube captions.',
-                })}
+                {t('features.dubbing.components.subtitleScriptEditor.editTheGeneratedCaptionTextAndTimingThese')}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" variant="outline" onClick={handleDownload} loading={downloading} disabled={!cues}>
                 <Download className="h-3.5 w-3.5" />
-                {t({ ko: '자막 파일 받기', en: 'Download captions' })}
+                {t('features.dubbing.components.subtitleScriptEditor.downloadCaptions')}
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setShowPreview((v) => !v)} disabled={!cues}>
                 {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                {t({ ko: '자막 미리보기', en: 'Preview captions' })}
+                {t('features.dubbing.components.subtitleScriptEditor.previewCaptions')}
               </Button>
               <Button size="sm" variant="ghost" onClick={handleResetSrt} loading={resetting} disabled={!cues}>
                 <RotateCcw className="h-3.5 w-3.5" />
-                {t({ ko: '처음 생성된 자막으로 되돌리기', en: 'Restore generated captions' })}
+                {t('features.dubbing.components.subtitleScriptEditor.restoreGeneratedCaptions')}
               </Button>
               {youtubeVideoId && (
                 <Button
@@ -477,16 +471,13 @@ export function SubtitleScriptEditor({
                   disabled={!cues}
                 >
                   <UploadCloud className="h-3.5 w-3.5" />
-                  {t({ ko: 'YouTube에 자막 적용', en: 'Update YouTube captions' })}
+                  {t('features.dubbing.components.subtitleScriptEditor.updateYouTubeCaptions')}
                 </Button>
               )}
             </div>
             {!youtubeVideoId && (
               <p className="text-xs text-surface-500 dark:text-surface-300">
-                {t({
-                  ko: '이 언어의 영상이 YouTube에 업로드되면 자막 적용 버튼이 활성화됩니다.',
-                  en: 'The YouTube caption button becomes available after this language is uploaded.',
-                })}
+                {t('features.dubbing.components.subtitleScriptEditor.theYouTubeCaptionButtonBecomesAvailableAfterThis')}
               </p>
             )}
 
@@ -502,12 +493,12 @@ export function SubtitleScriptEditor({
             {srtLoading && (
               <div className="flex items-center gap-2 py-4 text-sm text-surface-500 dark:text-surface-300">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {t({ ko: '자막 파일을 불러오는 중...', en: 'Loading captions...' })}
+                {t('features.dubbing.components.subtitleScriptEditor.loadingCaptions')}
               </div>
             )}
 
             {!srtLoading && cues && cues.length === 0 && (
-              <p className="py-2 text-xs text-surface-500 dark:text-surface-300">{t({ ko: '자막 파일이 비어 있습니다.', en: 'The caption file is empty.' })}</p>
+              <p className="py-2 text-xs text-surface-500 dark:text-surface-300">{t('features.dubbing.components.subtitleScriptEditor.theCaptionFileIsEmpty')}</p>
             )}
 
             {!srtLoading && cues && cues.length > 0 && (

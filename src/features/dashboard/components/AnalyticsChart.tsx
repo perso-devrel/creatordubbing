@@ -59,9 +59,9 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
   if (!videoIds || videoIds.length === 0) {
     return (
       <Card>
-        <CardTitle>{t({ ko: '시청 분석', en: 'Viewer analytics' })}</CardTitle>
+        <CardTitle>{t('features.dashboard.components.analyticsChart.viewerAnalytics')}</CardTitle>
         <p className="text-sm text-surface-500 dark:text-surface-400">
-          {t({ ko: 'YouTube에 업로드된 영상이 없습니다.', en: 'No videos have been uploaded to YouTube yet.' })}
+          {t('features.dashboard.components.analyticsChart.noVideosHaveBeenUploadedToYouTubeYet')}
         </p>
       </Card>
     )
@@ -70,7 +70,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
   if (isLoading) {
     return (
       <Card>
-        <CardTitle>{t({ ko: '시청 분석', en: 'Viewer analytics' })}</CardTitle>
+        <CardTitle>{t('features.dashboard.components.analyticsChart.viewerAnalytics2')}</CardTitle>
         <div className="mt-4 h-64 animate-pulse rounded bg-surface-100 dark:bg-surface-800" />
       </Card>
     )
@@ -79,7 +79,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
   return (
     <Card>
       <div className="mb-4 flex items-center justify-between">
-        <CardTitle>{t({ ko: '시청 분석', en: 'Viewer analytics' })}</CardTitle>
+        <CardTitle>{t('features.dashboard.components.analyticsChart.viewerAnalytics3')}</CardTitle>
         <div className="flex gap-1 rounded-lg bg-surface-100 p-1 dark:bg-surface-800" role="tablist">
           <button
             role="tab"
@@ -91,7 +91,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
                 : 'text-surface-500 hover:text-surface-700 dark:text-surface-400'
             }`}
           >
-            {t({ ko: '일별', en: 'Daily' })}
+            {t('features.dashboard.components.analyticsChart.daily')}
           </button>
           <button
             role="tab"
@@ -103,7 +103,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
                 : 'text-surface-500 hover:text-surface-700 dark:text-surface-400'
             }`}
           >
-            {t({ ko: '국가별', en: 'By country' })}
+            {t('features.dashboard.components.analyticsChart.byCountry')}
           </button>
         </div>
       </div>
@@ -131,7 +131,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
                 }}
                 formatter={(value, name) => [
                   Number(value).toLocaleString(),
-                  name === 'views' ? t({ ko: '조회수', en: 'Views' }) : t({ ko: '시청 시간(분)', en: 'Watch time (min)' }),
+                  name === 'views' ? t('features.dashboard.components.analyticsChart.views') : t('features.dashboard.components.analyticsChart.watchTimeMin'),
                 ]}
                 labelFormatter={(label) => String(label)}
               />
@@ -163,7 +163,7 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
                 }}
                 formatter={(value, name) => [
                   Number(value).toLocaleString(),
-                  name === 'views' ? t({ ko: '조회수', en: 'Views' }) : t({ ko: '시청 시간(분)', en: 'Watch time (min)' }),
+                  name === 'views' ? t('features.dashboard.components.analyticsChart.views2') : t('features.dashboard.components.analyticsChart.watchTimeMin2'),
                 ]}
               />
               <Bar dataKey="views" fill="#8b5cf6" radius={[0, 4, 4, 0]} />

@@ -3,10 +3,13 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect } from 'react'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 // Google OAuth popup callback.
 // Google redirects here with ?code=... — pass to opener via postMessage then close.
 export default function AuthCallbackPage() {
+  const t = useLocaleText()
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const code = params.get('code')
@@ -24,7 +27,7 @@ export default function AuthCallbackPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface-50 px-6 text-center text-sm text-surface-600 dark:bg-surface-950 dark:text-surface-300">
-      로그인 처리 중입니다...
+      {t('app.auth.callback.page.processingLogin')}
     </main>
   )
 }

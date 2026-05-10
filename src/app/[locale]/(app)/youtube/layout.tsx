@@ -1,0 +1,15 @@
+import type { Metadata } from 'next'
+import {
+  getAppRouteMetadata,
+  resolveMetadataLocale,
+  type LocaleMetadataProps,
+} from '@/lib/i18n/metadata'
+
+export async function generateMetadata({ params }: LocaleMetadataProps): Promise<Metadata> {
+  const locale = await resolveMetadataLocale(params)
+  return getAppRouteMetadata(locale, 'youtube')
+}
+
+export default function YouTubeLayout({ children }: { children: React.ReactNode }) {
+  return children
+}

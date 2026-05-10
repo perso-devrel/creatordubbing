@@ -5,11 +5,11 @@ import { LogOut } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { signOut } from '@/lib/google-auth'
 import { Button } from '@/components/ui'
-import { useRouter } from 'next/navigation'
 import { OpsAlertButton } from '@/features/ops/components/OpsAlertButton'
 import { useChannelStats } from '@/hooks/useYouTubeData'
 import { ThemeToggleButton } from '@/components/layout/ThemeToggleButton'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
 
 interface TopbarProps {
   isOpsAdmin?: boolean
@@ -17,15 +17,15 @@ interface TopbarProps {
 
 export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
   const { user, clear } = useAuthStore()
-  const router = useRouter()
+  const router = useLocaleRouter()
   const { data: channel } = useChannelStats()
   const locale = useAppLocale()
   const t = useLocaleText()
-  const accountName = channel?.title || user?.displayName || t({ ko: '사용자', en: 'User' })
+  const accountName = channel?.title || user?.displayName || t('components.layout.topbar.user')
   const subscriberLabel = channel
-    ? locale === 'ko'
-      ? `구독자 ${channel.subscriberCount.toLocaleString('ko-KR')}`
-      : `${channel.subscriberCount.toLocaleString('en-US')} subscribers`
+    ? t('components.layout.topbar.subscriberCount', {
+      count: channel.subscriberCount.toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US'),
+    })
     : null
 
   const handleSignOut = async () => {
@@ -67,7 +67,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
                 {accountName[0].toUpperCase()}
               </div>
             )}
-            <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label={t({ ko: '로그아웃', en: 'Sign out' })}>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label={t('components.layout.topbar.signOut')}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

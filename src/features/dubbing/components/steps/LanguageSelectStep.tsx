@@ -5,7 +5,7 @@ import { ArrowLeft, ArrowRight, Check, Search, X } from 'lucide-react'
 import { Button, Card } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
-import { countText } from '@/lib/i18n/text'
+
 import {
   REGION_LABELS,
   SUPPORTED_LANGUAGES,
@@ -13,6 +13,7 @@ import {
   type LanguageRegion,
 } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
+import { countMessage } from '@/lib/i18n/messages'
 
 type RegionFilter = 'all' | LanguageRegion
 
@@ -30,7 +31,7 @@ export function LanguageSelectStep() {
   const [region, setRegion] = useState<RegionFilter>('popular')
   const [query, setQuery] = useState('')
   const regionTabs: { id: RegionFilter; label: string }[] = useMemo(() => [
-    { id: 'all', label: t({ ko: '전체', en: 'All' }) },
+    { id: 'all', label: t('features.dubbing.components.steps.languageSelectStep.all') },
     { id: 'popular', label: locale === 'ko' ? REGION_LABELS.popular : 'Popular' },
     { id: 'asia', label: locale === 'ko' ? REGION_LABELS.asia : 'Asia' },
     { id: 'europe', label: locale === 'ko' ? REGION_LABELS.europe : 'Europe' },
@@ -53,15 +54,15 @@ export function LanguageSelectStep() {
 
   const estimatedMinutes = selectedLanguages.length * 15
   const selectionDescription = deliverableMode === 'originalWithMultiAudio'
-    ? t({ ko: '자막을 만들 언어를 선택하세요.', en: 'Choose the languages for translated captions.' })
-    : t({ ko: '더빙할 언어를 선택하세요.', en: 'Choose the languages to dub into.' })
+    ? t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesForTranslatedCaptions')
+    : t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesToDubInto')
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '대상 언어 선택', en: 'Choose target languages' })}</h2>
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.dubbing.components.steps.languageSelectStep.chooseTargetLanguages')}</h2>
         <p className="mt-1 text-surface-600 dark:text-surface-400">
-          {selectionDescription} ({countText(locale, selectedLanguages.length, { ko: '개 선택됨', en: 'selected' })})
+          {selectionDescription} ({countMessage(locale, selectedLanguages.length, 'features.dubbing.components.steps.languageSelectStep.unitSelected')})
         </p>
       </div>
 
@@ -94,7 +95,7 @@ export function LanguageSelectStep() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t({ ko: '언어 검색', en: 'Search languages' })}
+            placeholder={t('features.dubbing.components.steps.languageSelectStep.searchLanguages')}
             className="w-full rounded-md border border-surface-300 bg-white py-2 pl-9 pr-9 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-surface-700 dark:bg-surface-900 dark:text-white"
           />
           {query && (
@@ -130,7 +131,7 @@ export function LanguageSelectStep() {
       {/* Language grid */}
       {filtered.length === 0 ? (
         <p className="py-8 text-center text-sm text-surface-500 dark:text-surface-300">
-          {t({ ko: '검색 결과가 없습니다.', en: 'No matching languages.' })}
+          {t('features.dubbing.components.steps.languageSelectStep.noMatchingLanguages')}
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
@@ -169,8 +170,8 @@ export function LanguageSelectStep() {
       <Card>
         <div className="rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-surface-600 dark:text-surface-400">{t({ ko: '참고 예상 시간', en: 'Reference estimate' })}</span>
-            <span className="whitespace-nowrap font-bold text-surface-900 dark:text-white">{countText(locale, estimatedMinutes, { ko: '분', en: 'min' })}</span>
+            <span className="text-surface-600 dark:text-surface-400">{t('features.dubbing.components.steps.languageSelectStep.referenceEstimate')}</span>
+            <span className="whitespace-nowrap font-bold text-surface-900 dark:text-white">{countMessage(locale, estimatedMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin')}</span>
           </div>
         </div>
       </Card>
@@ -178,12 +179,12 @@ export function LanguageSelectStep() {
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
-          {t({ ko: '이전', en: 'Back' })}
+          {t('features.dubbing.components.steps.languageSelectStep.back')}
         </Button>
         <Button onClick={nextStep} disabled={selectedLanguages.length === 0}>
           {deliverableMode === 'downloadOnly'
-            ? t({ ko: '다음: 설정 확인', en: 'Next: Review settings' })
-            : t({ ko: '다음: 업로드 설정', en: 'Next: Upload settings' })}
+            ? t('features.dubbing.components.steps.languageSelectStep.nextReviewSettings')
+            : t('features.dubbing.components.steps.languageSelectStep.nextUploadSettings')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

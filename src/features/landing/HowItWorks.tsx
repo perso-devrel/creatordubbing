@@ -7,26 +7,26 @@ const steps = [
   {
     icon: FileVideo,
     step: '01',
-    title: { ko: '영상 넣기', en: 'Add video' },
-    description: { ko: 'YouTube 링크를 붙여넣거나 파일을 업로드합니다.', en: 'Paste a YouTube link or upload a file.' },
+    title: 'features.landing.howItWorks.titleAddVideo',
+    description: 'features.landing.howItWorks.descriptionPasteAYouTubeLinkOrUploadA',
   },
   {
     icon: Languages,
     step: '02',
-    title: { ko: '언어 고르기', en: 'Choose languages' },
-    description: { ko: '필요한 언어를 선택하고 제목·설명 기본값을 확인합니다.', en: 'Choose target languages and review title and description defaults.' },
+    title: 'features.landing.howItWorks.titleChooseLanguages',
+    description: 'features.landing.howItWorks.descriptionChooseTargetLanguagesAndReviewTitleAnd',
   },
   {
     icon: FileText,
     step: '03',
-    title: { ko: '검토 및 수정', en: 'Review and edit' },
-    description: { ko: '언어별 더빙, 자막, 제목·설명 결과를 확인합니다.', en: 'Review each dub, caption, title, and description.' },
+    title: 'features.landing.howItWorks.titleReviewAndEdit',
+    description: 'features.landing.howItWorks.descriptionReviewEachDubCaptionTitleAndDescription',
   },
   {
     icon: Upload,
     step: '04',
-    title: { ko: 'YouTube에 게시', en: 'Publish to YouTube' },
-    description: { ko: '파일로 받거나 YouTube 업로드까지 이어서 진행합니다.', en: 'Download files or continue directly to YouTube upload.' },
+    title: 'features.landing.howItWorks.titlePublishToYouTube',
+    description: 'features.landing.howItWorks.descriptionDownloadFilesOrContinueDirectlyToYouTube',
   },
 ]
 
@@ -38,10 +38,10 @@ export function HowItWorks() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="break-keep text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            {t({ ko: '4단계로 다국어 더빙 시작', en: 'Start multilingual dubbing in four steps' })}
+            {t('features.landing.howItWorks.startMultilingualDubbingInFourSteps')}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-600 dark:text-surface-300">
-            {t({ ko: '영상 선택부터 YouTube 업로드까지 같은 흐름으로 진행하세요.', en: 'Move from video selection to YouTube upload in one workflow.' })}
+            {t('features.landing.howItWorks.moveFromVideoSelectionToYouTubeUploadIn')}
           </p>
         </div>
 

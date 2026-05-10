@@ -31,8 +31,8 @@ export function CreditChart({ initialData }: CreditChartProps) {
 
   return (
     <Card>
-      <CardTitle>{t({ ko: '더빙 시간 사용량', en: 'Dubbing time usage' })}</CardTitle>
-      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t({ ko: '월별 사용 시간', en: 'Monthly usage' })}</p>
+      <CardTitle>{t('features.dashboard.components.creditChart.dubbingTimeUsage')}</CardTitle>
+      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t('features.dashboard.components.creditChart.monthlyUsage')}</p>
 
       <div className="h-64 w-full min-w-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -48,7 +48,7 @@ export function CreditChart({ initialData }: CreditChartProps) {
             <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#a1a1aa' }} />
             <Tooltip
               contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
-              formatter={(value) => [`${Number(value)}${t({ ko: '분', en: ' min' })}`, t({ ko: '사용', en: 'Used' })]}
+              formatter={(value) => [`${Number(value)}${t('features.dashboard.components.creditChart.min')}`, t('features.dashboard.components.creditChart.used')]}
             />
             <Area type="monotone" dataKey="used" stroke="#cc0000" strokeWidth={2} fill="url(#creditGradient)" />
           </AreaChart>

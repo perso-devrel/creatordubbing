@@ -6,13 +6,13 @@ import { useLocaleText } from '@/hooks/useLocaleText'
 const features = [
   {
     icon: Mic,
-    title: { ko: '원본 톤에 가까운 더빙', en: 'Dubs close to the original tone' },
-    description: { ko: '언어가 달라져도 원본 목소리의 분위기를 최대한 유지하도록 더빙을 생성합니다.', en: 'Generate dubs that preserve the feel of the original voice across languages.' },
+    title: 'features.landing.featureShowcase.titleDubsCloseToTheOriginalTone',
+    description: 'features.landing.featureShowcase.descriptionGenerateDubsThatPreserveTheFeelOf',
   },
   {
     icon: Subtitles,
-    title: { ko: '제목·설명 현지화', en: 'Localized titles and descriptions' },
-    description: { ko: '더빙 결과와 함께 YouTube 제목, 설명, 자막을 언어별로 준비합니다.', en: 'Prepare YouTube titles, descriptions, and captions for each language.' },
+    title: 'features.landing.featureShowcase.titleLocalizedTitlesAndDescriptions',
+    description: 'features.landing.featureShowcase.descriptionPrepareYouTubeTitlesDescriptionsAndCaptionsFor',
   },
   // Lip sync feature is temporarily hidden from the landing page.
   // {
@@ -22,13 +22,13 @@ const features = [
   // },
   {
     icon: Clock,
-    title: { ko: '완료 파일 관리', en: 'Manage completed files' },
-    description: { ko: '진행률과 완료 상태를 보고, 완료된 파일은 결과 화면에서 바로 확인합니다.', en: 'Track progress and open completed files from the results screen.' },
+    title: 'features.landing.featureShowcase.titleManageCompletedFiles',
+    description: 'features.landing.featureShowcase.descriptionTrackProgressAndOpenCompletedFilesFrom',
   },
   {
     icon: BarChart3,
-    title: { ko: '언어별 성과 확인', en: 'Performance by language' },
-    description: { ko: '업로드한 더빙 영상의 성과를 언어별로 확인하고 다음 작업에 참고합니다.', en: 'Review how each uploaded dub performs and use it for the next upload.' },
+    title: 'features.landing.featureShowcase.titlePerformanceByLanguage',
+    description: 'features.landing.featureShowcase.descriptionReviewHowEachUploadedDubPerformsAnd',
   },
 ]
 
@@ -40,17 +40,17 @@ export function FeatureShowcase() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            {t({ ko: '더빙부터 게시 준비까지 한 흐름으로', en: 'One workflow from dubbing to publishing' })}
+            {t('features.landing.featureShowcase.oneWorkflowFromDubbingToPublishing')}
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-600 dark:text-surface-300">
-            {t({ ko: '새 영상을 만들 때 필요한 더빙, 자막, 제목·설명 작업을 한곳에서 정리합니다.', en: 'Organize dubbing, captions, titles, and descriptions in one place before you publish.' })}
+            {t('features.landing.featureShowcase.organizeDubbingCaptionsTitlesAndDescriptionsInOne')}
           </p>
         </div>
 
         <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map(({ icon: Icon, title, description }) => (
             <div
-              key={title.ko}
+              key={title}
               className="group rounded-lg border border-surface-200 bg-white p-6 shadow-sm transition-colors hover:border-brand-300 dark:border-surface-800 dark:bg-surface-900 dark:hover:border-brand-700"
             >
               <div className="mb-4 inline-flex rounded-lg bg-brand-50 p-3 text-brand-600 transition-colors group-hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400">
