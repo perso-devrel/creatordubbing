@@ -5,6 +5,7 @@ import { persist } from 'zustand/middleware'
 import {
   DEFAULT_APP_LOCALE,
   DEFAULT_METADATA_TARGET_PRESET,
+  getMarketLanguagePreset,
   resolveAppLocale,
   type AppLocale,
 } from '@/lib/i18n/config'
@@ -22,7 +23,7 @@ export const useI18nStore = create<I18nState>()(
       appLocale: DEFAULT_APP_LOCALE,
       metadataTargetPreset: DEFAULT_METADATA_TARGET_PRESET,
       setAppLocale: (locale) => set({ appLocale: resolveAppLocale(locale) }),
-      setMetadataTargetPreset: (presetId) => set({ metadataTargetPreset: presetId }),
+      setMetadataTargetPreset: (presetId) => set({ metadataTargetPreset: getMarketLanguagePreset(presetId).id }),
     }),
     {
       name: 'dubtube-i18n',
@@ -36,9 +37,10 @@ export const useI18nStore = create<I18nState>()(
           ...current,
           ...state,
           appLocale: resolveAppLocale(state?.appLocale),
-          metadataTargetPreset: state?.metadataTargetPreset || DEFAULT_METADATA_TARGET_PRESET,
+          metadataTargetPreset: getMarketLanguagePreset(state?.metadataTargetPreset || DEFAULT_METADATA_TARGET_PRESET).id,
         }
       },
+      skipHydration: true,
     },
   ),
 )

@@ -46,6 +46,8 @@ export async function PUT(req: NextRequest) {
     const existingRaw = await getUserPreferencesRaw(auth.session.uid)
     const existing = parseUserPreferences(existingRaw)
     const next = {
+      appLocale: parsed.data.appLocale ?? existing.appLocale,
+      metadataTargetPreset: parsed.data.metadataTargetPreset ?? existing.metadataTargetPreset,
       defaultPrivacy: parsed.data.defaultPrivacy ?? existing.defaultPrivacy,
       defaultLanguage: parsed.data.defaultLanguage ?? existing.defaultLanguage,
       defaultTags: parsed.data.defaultTags ?? existing.defaultTags,

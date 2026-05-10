@@ -416,6 +416,20 @@ describe('uploadCaptionToYouTube', () => {
     ).resolves.toBeUndefined()
   })
 
+  it('falls back to language name when caption name is empty', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({}))
+    await uploadCaptionToYouTube({
+      accessToken: 'tok',
+      videoId: 'v1',
+      language: 'en',
+      name: '',
+      srtContent: 'x',
+    })
+
+    const [, init] = mockFetch.mock.calls[0]
+    expect(String(init.body)).toContain('"name":"English"')
+  })
+
   it('throws on caption upload failure', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse('Error', 400))
     await expect(

@@ -27,6 +27,16 @@ describe('captionBodySchema', () => {
     expect(result.success).toBe(false)
   })
 
+  it('accepts empty caption name so the uploader can apply a language fallback', () => {
+    const result = captionBodySchema.safeParse({
+      videoId: 'yt-123',
+      language: 'ko',
+      name: '',
+      srtContent: 'content',
+    })
+    expect(result.success).toBe(true)
+  })
+
   it('rejects empty srtContent', () => {
     const result = captionBodySchema.safeParse({
       videoId: 'yt-123',

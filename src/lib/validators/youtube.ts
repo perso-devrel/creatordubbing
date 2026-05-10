@@ -3,7 +3,7 @@ import { z } from 'zod'
 export const captionBodySchema = z.object({
   videoId: z.string().min(1),
   language: z.string().min(1),
-  name: z.string().min(1),
+  name: z.string().optional().default(''),
   srtContent: z.string().min(1),
   /** true면 동일 language의 기존 캡션을 모두 삭제한 뒤 새로 삽입한다. */
   replace: z.boolean().optional(),

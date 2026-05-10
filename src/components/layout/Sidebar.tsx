@@ -1,13 +1,13 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { cn } from '@/utils/cn'
-import { useI18nStore } from '@/stores/i18nStore'
+import { stripLocalePrefix } from '@/lib/i18n/config'
+import { useLocaleText } from '@/hooks/useLocaleText'
 import {
   LayoutDashboard,
   Languages,
-  Video,
   CreditCard,
   Layers,
   Settings,
@@ -17,26 +17,26 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/dashboard', label: { ko: '대시보드', en: 'Dashboard' }, icon: LayoutDashboard },
-  { to: '/dubbing', label: { ko: '새 더빙', en: 'New dubbing' }, icon: Languages },
-  { to: '/metadata', label: { ko: '제목·설명', en: 'Title & description' }, icon: Globe2 },
-  { to: '/batch', label: { ko: '더빙 작업', en: 'Dubbing jobs' }, icon: Layers },
-  { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, icon: Upload },
-  { to: '/ops', label: { ko: '운영 상태', en: 'Operations' }, icon: Activity, opsAdminOnly: true },
-  { to: '/youtube', label: { ko: 'YouTube', en: 'YouTube' }, icon: Video },
-  { to: '/billing', label: { ko: '결제', en: 'Billing' }, icon: CreditCard },
+  { to: '/dashboard', label: 'components.layout.sidebar.labelDashboard', mobileLabel: 'components.layout.sidebar.mobileLabelHome', icon: LayoutDashboard },
+  { to: '/dubbing', label: 'components.layout.sidebar.labelNewDubbing', mobileLabel: 'components.layout.sidebar.mobileLabelDub', icon: Languages },
+  { to: '/metadata', label: 'components.layout.sidebar.labelTitleDescription', mobileLabel: 'components.layout.sidebar.mobileLabelTitle', icon: Globe2 },
+  { to: '/batch', label: 'components.layout.sidebar.labelDubbingJobs', mobileLabel: 'components.layout.sidebar.mobileLabelJobs', icon: Layers },
+  { to: '/uploads', label: 'components.layout.sidebar.labelYouTubeUploads', mobileLabel: 'components.layout.sidebar.mobileLabelUpload', icon: Upload },
+  { to: '/ops', label: 'components.layout.sidebar.labelOperations', mobileLabel: 'components.layout.sidebar.mobileLabelOps', icon: Activity, opsAdminOnly: true },
+  { to: '/billing', label: 'components.layout.sidebar.labelBilling', mobileLabel: 'components.layout.sidebar.mobileLabelBilling', icon: CreditCard },
 ]
 
 export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
   const pathname = usePathname()
-  const appLocale = useI18nStore((state) => state.appLocale)
+  const activePathname = stripLocalePrefix(pathname || '/')
+  const t = useLocaleText()
   const visibleItems = navItems.filter((item) => !item.opsAdminOnly || isOpsAdmin)
-  const settingsLabel = appLocale === 'en' ? 'Settings' : '설정'
+  const settingsLabel = t('components.layout.sidebar.labelSettings')
 
   const renderNavItem = ({ to, label, icon: Icon }: (typeof navItems)[number]) => {
-    const isActive = pathname === to || pathname?.startsWith(to + '/')
+    const isActive = activePathname === to || activePathname.startsWith(to + '/')
     return (
-      <Link
+      <LocaleLink
         key={to}
         href={to}
         className={cn(
@@ -47,27 +47,27 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
         )}
       >
         <Icon className="h-5 w-5 shrink-0" />
-        {label[appLocale]}
-      </Link>
+        {t(label)}
+      </LocaleLink>
     )
   }
 
-  const renderMobileNavItem = ({ to, label, icon: Icon }: (typeof navItems)[number]) => {
-    const isActive = pathname === to || pathname?.startsWith(to + '/')
+  const renderMobileNavItem = ({ to, label, mobileLabel, icon: Icon }: (typeof navItems)[number]) => {
+    const isActive = activePathname === to || activePathname.startsWith(to + '/')
     return (
-      <Link
+      <LocaleLink
         key={to}
         href={to}
         className={cn(
-          'flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-medium transition-colors',
+          'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition-colors',
           isActive
             ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
             : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
         )}
       >
         <Icon className="h-5 w-5" />
-        <span className="max-w-[4.25rem] truncate">{label[appLocale]}</span>
-      </Link>
+        <span className="max-w-[4.25rem] truncate">{t(mobileLabel ?? label)}</span>
+      </LocaleLink>
     )
   }
 
@@ -79,7 +79,7 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
           <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
-            Dub<span className="text-brand-500">tube</span>
+            Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
           </span>
         </div>
 
@@ -88,34 +88,34 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
         </nav>
 
         <div className="border-t border-surface-200 p-3 dark:border-surface-800">
-          <Link
+          <LocaleLink
             href="/settings"
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800"
           >
             <Settings className="h-5 w-5 shrink-0" />
             {settingsLabel}
-          </Link>
+          </LocaleLink>
         </div>
       </aside>
 
       <nav
-        aria-label={appLocale === 'en' ? 'App navigation' : '앱 메뉴'}
+        aria-label={t('components.layout.sidebar.appNavigation')}
         className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-200 bg-white/95 px-2 py-2 backdrop-blur-md dark:border-surface-800 dark:bg-surface-900/95 lg:hidden"
       >
-        <div className="flex gap-1 overflow-x-auto">
+        <div className="flex gap-0.5">
           {visibleItems.map(renderMobileNavItem)}
-          <Link
+          <LocaleLink
             href="/settings"
             className={cn(
-              'flex min-w-[4.75rem] flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-medium transition-colors',
-              pathname === '/settings' || pathname?.startsWith('/settings/')
+              'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition-colors',
+              activePathname === '/settings' || activePathname.startsWith('/settings/')
                 ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
               : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
             )}
           >
             <Settings className="h-5 w-5" />
             <span className="max-w-[4.25rem] truncate">{settingsLabel}</span>
-          </Link>
+          </LocaleLink>
         </div>
       </nav>
     </>

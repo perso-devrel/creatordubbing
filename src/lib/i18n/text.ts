@@ -1,9 +1,11 @@
 import type { AppLocale } from './config'
+import { FALLBACK_APP_LOCALE } from './config'
 
-export type LocalizedText = string | Record<AppLocale, string>
+export type LocalizedText = string | ({ ko: string } & Partial<Record<AppLocale, string>>)
 
 export function text(locale: AppLocale, value: LocalizedText): string {
-  return typeof value === 'string' ? value : value[locale] ?? value.ko
+  if (typeof value === 'string') return value
+  return value[locale] ?? value[FALLBACK_APP_LOCALE] ?? value.ko
 }
 
 export function countText(

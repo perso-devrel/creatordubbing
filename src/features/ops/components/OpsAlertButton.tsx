@@ -2,10 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Bell } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui'
 import { useAuthStore } from '@/stores/authStore'
 import { useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
 
 interface OpsAlertResponse {
   count: number
@@ -27,7 +27,7 @@ async function fetchOpsAlertCount(): Promise<number> {
 }
 
 export function OpsAlertButton() {
-  const router = useRouter()
+  const router = useLocaleRouter()
   const t = useLocaleText()
   const user = useAuthStore((state) => state.user)
   const query = useQuery({
@@ -40,8 +40,8 @@ export function OpsAlertButton() {
 
   const count = query.data ?? 0
   const label = count > 0
-    ? t({ ko: `운영 알림 ${count}개`, en: `${count} operations alerts` })
-    : t({ ko: '운영 알림', en: 'Operations alerts' })
+    ? t('features.ops.components.opsAlertButton.valueOperationsAlerts', { count: count })
+    : t('features.ops.components.opsAlertButton.operationsAlerts')
 
   return (
     <Button

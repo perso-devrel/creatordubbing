@@ -5,17 +5,16 @@ import { ArrowLeft, ArrowRight, Film, Subtitles, Download, AlertTriangle } from 
 import { Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { useLocaleText } from '@/hooks/useLocaleText'
-import type { LocalizedText } from '@/lib/i18n/text'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { DeliverableMode, VideoSourceType } from '../../types/dubbing.types'
 
 interface DeliverableOption {
   value: DeliverableMode
   icon: typeof Film
-  title: LocalizedText
-  description: LocalizedText
+  title: string
+  description: string
   disabled?: boolean
-  badge?: LocalizedText
+  badge?: string
 }
 
 function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
@@ -23,8 +22,8 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
     {
       value: 'newDubbedVideos',
       icon: Film,
-      title: { ko: '언어별 새 영상 만들기', en: 'Create new videos for each language' },
-      description: { ko: '언어별 더빙 영상을 새 YouTube 영상으로 준비합니다.', en: 'Prepare a separate dubbed YouTube video for each language.' },
+      title: 'features.dubbing.components.steps.outputModeStep.titleCreateNewVideosForEachLanguage',
+      description: 'features.dubbing.components.steps.outputModeStep.descriptionPrepareASeparateDubbedYouTubeVideoFor',
     },
   ]
 
@@ -32,23 +31,23 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
-      title: { ko: '기존 영상에 자막·제목 번역 추가', en: 'Add captions and localized metadata' },
-      description: { ko: '내 채널의 기존 YouTube 영상에 번역 자막과 제목·설명을 추가합니다.', en: 'Add translated captions, titles, and descriptions to an existing YouTube video.' },
+      title: 'features.dubbing.components.steps.outputModeStep.titleAddCaptionsToTheOriginalVideo',
+      description: 'features.dubbing.components.steps.outputModeStep.descriptionAddTranslatedCaptionsTitlesAndDescriptionsTo',
     })
   } else if (sourceType === 'upload') {
     options.push({
       value: 'originalWithMultiAudio',
       icon: Subtitles,
-      title: { ko: '원본 업로드 후 자막 추가', en: 'Upload original with captions' },
-      description: { ko: '원본 영상을 YouTube에 올리고 번역 자막을 함께 추가합니다.', en: 'Upload the original video to YouTube and add translated captions.' },
+      title: 'features.dubbing.components.steps.outputModeStep.titleUploadOriginalWithCaptions',
+      description: 'features.dubbing.components.steps.outputModeStep.descriptionUploadTheOriginalVideoToYouTubeAnd',
     })
   }
 
   options.push({
     value: 'downloadOnly',
     icon: Download,
-    title: { ko: '파일만 다운로드', en: 'Download files only' },
-    description: { ko: 'YouTube 업로드 없이 더빙 영상, 오디오, 자막 파일을 다운로드합니다.', en: 'Download dubbed video, audio, and caption files without uploading to YouTube.' },
+    title: 'features.dubbing.components.steps.outputModeStep.titleDownloadFilesOnly',
+    description: 'features.dubbing.components.steps.outputModeStep.descriptionDownloadDubbedVideoAudioAndCaptionFiles',
   })
 
   return options
@@ -70,9 +69,9 @@ export function OutputModeStep() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t({ ko: '결과물 선택', en: 'Choose output' })}</h2>
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.dubbing.components.steps.outputModeStep.chooseOutput')}</h2>
         <p className="mt-1 text-surface-600 dark:text-surface-400">
-          {t({ ko: '더빙이 끝난 뒤 어떤 형태로 받을지 선택하세요.', en: 'Choose what you want to do with the finished dubbing.' })}
+          {t('features.dubbing.components.steps.outputModeStep.chooseWhatYouWantToDoWithThe')}
         </p>
       </div>
 
@@ -80,18 +79,15 @@ export function OutputModeStep() {
         <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/10">
           <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-500 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-900 dark:text-amber-300">{t({ ko: '저작권 안내', en: 'Copyright notice' })}</p>
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-300">{t('features.dubbing.components.steps.outputModeStep.copyrightNotice')}</p>
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-              {t({
-                ko: '직접 소유하지 않은 영상을 재업로드하면 문제가 될 수 있습니다. 업로드 권한이 있는 영상만 사용하세요.',
-                en: 'Re-uploading videos you do not own can cause copyright issues. Only use videos you have permission to upload.',
-              })}
+              {t('features.dubbing.components.steps.outputModeStep.reUploadingVideosYouDoNotOwnCan')}
             </p>
           </div>
         </div>
       )}
 
-      <div className={cn('grid gap-4', options.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
+      <div className={cn('grid gap-4', options.length === 3 ? 'md:grid-cols-3' : 'sm:grid-cols-2')}>
         {options.map(({ value, icon: Icon, title, description, disabled, badge }) => {
           const selected = deliverableMode === value && !disabled
           return (
@@ -103,7 +99,7 @@ export function OutputModeStep() {
                 if (!disabled) setDeliverableMode(value)
               }}
               className={cn(
-                'flex flex-col items-center gap-4 rounded-lg border-2 p-6 text-center transition-all',
+                'flex flex-col items-center gap-4 rounded-lg border-2 p-4 text-center transition-all sm:p-5',
                 disabled && 'cursor-not-allowed opacity-60',
                 !disabled && 'cursor-pointer',
                 selected
@@ -126,7 +122,7 @@ export function OutputModeStep() {
               <div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <p className={cn(
-                    'text-lg font-semibold',
+                    'text-base font-semibold leading-snug',
                     selected ? 'text-brand-700 dark:text-brand-300' : 'text-surface-900 dark:text-white',
                   )}>
                     {t(title)}
@@ -137,7 +133,7 @@ export function OutputModeStep() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">{t(description)}</p>
+                <p className="mt-2 text-sm leading-6 text-surface-600 dark:text-surface-300">{t(description)}</p>
               </div>
             </button>
           )
@@ -147,10 +143,10 @@ export function OutputModeStep() {
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
-          {t({ ko: '이전', en: 'Back' })}
+          {t('features.dubbing.components.steps.outputModeStep.back')}
         </Button>
         <Button onClick={nextStep}>
-          {t({ ko: '다음: 언어 선택', en: 'Next: Choose languages' })}
+          {t('features.dubbing.components.steps.outputModeStep.nextChooseLanguages')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

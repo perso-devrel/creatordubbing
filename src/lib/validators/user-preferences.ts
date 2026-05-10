@@ -1,4 +1,9 @@
 import { z } from 'zod'
+import {
+  APP_LOCALES,
+  DEFAULT_APP_LOCALE,
+  DEFAULT_METADATA_TARGET_PRESET,
+} from '@/lib/i18n/config'
 
 /**
  * 서버에 저장되는 사용자별 워크플로우 설정.
@@ -7,6 +12,8 @@ import { z } from 'zod'
  * 새 키 추가 시 이 스키마와 DEFAULT_USER_PREFERENCES, 그리고 클라이언트 store만 갱신하면 된다.
  */
 export const userPreferencesSchema = z.object({
+  appLocale: z.enum(APP_LOCALES).optional(),
+  metadataTargetPreset: z.string().min(1).max(80).optional(),
   defaultPrivacy: z.enum(['public', 'unlisted', 'private']).optional(),
   defaultLanguage: z.string().min(1).max(20).optional(),
   defaultTags: z.array(z.string().max(100)).max(50).optional(),
@@ -15,6 +22,8 @@ export const userPreferencesSchema = z.object({
 export type UserPreferences = z.infer<typeof userPreferencesSchema>
 
 export const DEFAULT_USER_PREFERENCES: Required<UserPreferences> = {
+  appLocale: DEFAULT_APP_LOCALE,
+  metadataTargetPreset: DEFAULT_METADATA_TARGET_PRESET,
   defaultPrivacy: 'private',
   defaultLanguage: 'ko',
   defaultTags: ['Dubtube', 'AI더빙', 'dubbed'],
@@ -26,6 +35,8 @@ export function parseUserPreferences(raw: string | null): Required<UserPreferenc
   try {
     const parsed = userPreferencesSchema.parse(JSON.parse(raw))
     return {
+      appLocale: parsed.appLocale ?? DEFAULT_USER_PREFERENCES.appLocale,
+      metadataTargetPreset: parsed.metadataTargetPreset ?? DEFAULT_USER_PREFERENCES.metadataTargetPreset,
       defaultPrivacy: parsed.defaultPrivacy ?? DEFAULT_USER_PREFERENCES.defaultPrivacy,
       defaultLanguage: parsed.defaultLanguage ?? DEFAULT_USER_PREFERENCES.defaultLanguage,
       defaultTags: parsed.defaultTags ?? [...DEFAULT_USER_PREFERENCES.defaultTags],

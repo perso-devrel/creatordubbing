@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { Card, CardTitle, Badge, Progress } from '@/components/ui'
 import { LanguageBadge } from '@/components/shared/LanguageBadge'
 import { formatDuration } from '@/utils/formatters'
@@ -10,12 +10,12 @@ import { Languages } from 'lucide-react'
 import { useLocaleText } from '@/hooks/useLocaleText'
 import type { DubbingJob } from './types'
 
-const statusConfig: Record<string, { label: { ko: string; en: string }; variant: 'success' | 'brand' | 'default' | 'error' }> = {
-  completed: { label: { ko: '완료', en: 'Complete' }, variant: 'success' },
-  processing: { label: { ko: '처리 중', en: 'Processing' }, variant: 'brand' },
-  pending: { label: { ko: '대기 중', en: 'Pending' }, variant: 'default' },
-  queued: { label: { ko: '대기 중', en: 'Queued' }, variant: 'default' },
-  failed: { label: { ko: '실패', en: 'Failed' }, variant: 'error' },
+const statusConfig: Record<string, { label: string; variant: 'success' | 'brand' | 'default' | 'error' }> = {
+  completed: { label: 'features.dashboard.components.recentJobs.labelComplete', variant: 'success' },
+  processing: { label: 'features.dashboard.components.recentJobs.labelProcessing', variant: 'brand' },
+  pending: { label: 'features.dashboard.components.recentJobs.labelPending', variant: 'default' },
+  queued: { label: 'features.dashboard.components.recentJobs.labelQueued', variant: 'default' },
+  failed: { label: 'features.dashboard.components.recentJobs.labelFailed', variant: 'error' },
 }
 
 interface RecentJobsProps {
@@ -29,15 +29,15 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
   return (
     <Card>
       <div className="mb-4 flex items-center justify-between">
-        <CardTitle>{t({ ko: '최근 작업', en: 'Recent jobs' })}</CardTitle>
-        <Link href="/batch" aria-label={t({ ko: '최근 작업 전체 보기', en: 'View all recent jobs' })} className="text-sm text-brand-500 hover:text-brand-600">{t({ ko: '전체 보기', en: 'View all' })}</Link>
+        <CardTitle>{t('features.dashboard.components.recentJobs.recentJobs')}</CardTitle>
+        <LocaleLink href="/batch" aria-label={t('features.dashboard.components.recentJobs.viewAllRecentJobs')} className="text-sm text-brand-500 hover:text-brand-600">{t('features.dashboard.components.recentJobs.viewAll')}</LocaleLink>
       </div>
 
       {!jobs || jobs.length === 0 ? (
         <EmptyState
           icon={<Languages className="h-8 w-8" />}
-          title={t({ ko: '아직 더빙 작업이 없습니다', en: 'No dubbing jobs yet' })}
-          description={t({ ko: '새 더빙을 시작하세요.', en: 'Start a new dubbing job.' })}
+          title={t('features.dashboard.components.recentJobs.noDubbingJobsYet')}
+          description={t('features.dashboard.components.recentJobs.startANewDubbingJob')}
         />
       ) : (
         <div className="space-y-3">
@@ -49,9 +49,9 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
             return (
               <div
                 key={job.id}
-                className="flex items-center gap-4 rounded-lg border border-surface-100 p-3 dark:border-surface-800"
+                className="flex flex-col gap-3 rounded-lg border border-surface-100 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:gap-4"
               >
-                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-400 dark:bg-surface-800">
+                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-500 dark:bg-surface-800 dark:text-surface-300">
                   {formatDuration(job.video_duration_ms / 1000)}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -63,11 +63,11 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
                       <LanguageBadge key={lang} code={lang} />
                     ))}
                     {languages.length > 4 && (
-                      <span className="text-xs text-surface-400">+{languages.length - 4}</span>
+                      <span className="text-xs text-surface-500 dark:text-surface-300">+{languages.length - 4}</span>
                     )}
                   </div>
                 </div>
-                <div className="shrink-0 text-right">
+                <div className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-auto sm:block sm:text-right">
                   <Badge variant={status.variant}>{t(status.label)}</Badge>
                   {job.status === 'processing' && (
                     <Progress value={avgProgress} size="sm" className="mt-2 w-24" />
