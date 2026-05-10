@@ -1,6 +1,7 @@
 import 'server-only'
 
 import type { YouTubeLocalization, YouTubeUploadResult } from '@/lib/youtube/types'
+import { resolveCaptionTrackName } from '@/lib/youtube/captions'
 import { YouTubeError } from '@/lib/youtube/error'
 
 const YOUTUBE_UPLOAD_BASE = 'https://www.googleapis.com/upload/youtube/v3'
@@ -228,7 +229,8 @@ async function deleteCaption(
 export async function uploadCaptionToYouTube(
   input: CaptionUploadInput,
 ): Promise<void> {
-  const { accessToken, videoId, language, name, srtContent, replace } = input
+  const { accessToken, videoId, language, srtContent, replace } = input
+  const name = resolveCaptionTrackName(language, input.name)
 
   if (replace) {
     const existing = await listCaptionsForVideo(accessToken, videoId)
