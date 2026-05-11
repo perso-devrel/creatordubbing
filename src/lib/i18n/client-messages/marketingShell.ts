@@ -9,6 +9,8 @@ export const marketingShellMessages = {
   "components.layout.landingFooter.privacyPolicy": { ko: "개인정보처리방침", en: "Privacy Policy" },
   "components.layout.landingFooter.termsOfService": { ko: "서비스 약관", en: "Terms of Service" },
   "components.layout.landingNavBar.allowPopUpsThenSignInAgain": { ko: "팝업 차단을 허용한 뒤 다시 로그인해 주세요.", en: "Allow pop-ups, then sign in again." },
+  "components.layout.landingNavBar.connectYouTubeChannel": { ko: "YouTube 채널을 연결해 주세요", en: "Connect your YouTube channel" },
+  "components.layout.landingNavBar.connectYouTubeChannelInSettings": { ko: "더빙과 업로드를 시작하려면 설정에서 YouTube 채널을 먼저 연결해야 합니다.", en: "Connect your YouTube channel in Settings before starting dubbing and uploads." },
   "components.layout.landingNavBar.couldNotSignIn": { ko: "로그인할 수 없습니다", en: "Could not sign in" },
   "components.layout.landingNavBar.dashboard": { ko: "대시보드", en: "Dashboard" },
   "components.layout.landingNavBar.features": { ko: "기능", en: "Features" },

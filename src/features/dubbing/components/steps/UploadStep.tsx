@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, Check, RotateCcw, Upload, Loader2, Volume2 } from 'lucide-react'
+import { Download, Check, RotateCcw, Upload, Loader2 } from 'lucide-react'
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Button, Card, CardTitle, Badge, Progress } from '@/components/ui'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
@@ -24,10 +24,10 @@ import {
 import { toBcp47 } from '@/utils/languages'
 import { dbMutationStrict } from '@/lib/api/dbMutation'
 import { SubtitleScriptEditor } from '../SubtitleScriptEditor'
-import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
 import { appendAiDisclosureFooter, appendTextFooter, stripAiDisclosureFooter } from '../../utils/aiDisclosure'
 import type { YouTubeUploadState } from '../../types/dubbing.types'
 import { resolveCaptionTrackName } from '@/lib/youtube/captions'
+import { cn } from '@/utils/cn'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -83,9 +83,7 @@ export function UploadStep() {
 
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [captionUploads, setCaptionUploads] = useState<Record<string, UploadStatus>>({})
-  const [audioTrackEnabled, setAudioTrackEnabled] = useState(false)
-  const allowDialogueEditingInOutput = deliverableMode !== 'originalWithMultiAudio' || audioTrackEnabled
-  const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
+  const allowDialogueEditingInOutput = deliverableMode !== 'originalWithMultiAudio'
   const autoChainTriggered = useRef(false)
   const existingVideoMetadataSyncRef = useRef<Set<string>>(new Set())
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -290,44 +288,6 @@ export function UploadStep() {
       return null
     }
   }, [isAuthenticated, originalVideoUrl, settingsTitle, editableDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, shouldApplyAiDisclosure, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage, applyDescriptionFooter, t])
-
-  // ─── Audio → Studio helper ──────────────────────────────────────────
-  const handleAudioToStudio = useCallback(async (langCode: string, targetVideoId?: string) => {
-    const lang = getLanguageByCode(langCode)
-    if (!lang) return
-    setStudioOpenedLang(langCode)
-    try {
-      const data = await fetchDownloads(langCode, 'voiceAudio')
-      const rawAudioUrl = data?.audioFile?.voiceAudioDownloadLink
-      const audioUrl = rawAudioUrl ? (rawAudioUrl.startsWith('http') ? rawAudioUrl : getPersoFileUrl(rawAudioUrl)) : undefined
-      if (audioUrl) {
-        const a = document.createElement('a')
-        a.href = audioUrl
-        a.download = `${lang.name}_${langCode}_audio.wav`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-      }
-
-      try {
-        await navigator.clipboard.writeText(langCode)
-      } catch { /* ignore */ }
-
-      const vid = targetVideoId || originalYouTubeId
-      const studioUrl = vid
-        ? `https://studio.youtube.com/video/${vid}/translations/audio`
-        : 'https://studio.youtube.com'
-      window.open(studioUrl, 'yt-studio', 'width=1400,height=900,noopener')
-
-      addToast({
-        type: 'info',
-        title: t('features.dubbing.components.steps.uploadStep.valueAudioReady', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
-        message: t('features.dubbing.components.steps.uploadStep.downloadedTheAudioFileOpenedYouTubeStudioAnd'),
-      })
-    } finally {
-      setTimeout(() => setStudioOpenedLang(null), 1500)
-    }
-  }, [fetchDownloads, originalYouTubeId, addToast, getDisplayLanguageName, t])
 
   // ─── File download ──────────────────────────────────────────────────
   const handleDownload = useCallback(async (langCode: string, type: 'video' | 'voiceAudio' | 'translatedSubtitle') => {
@@ -758,76 +718,6 @@ export function UploadStep() {
             </Card>
           )}
 
-          {/* Audio track toggle + extension upload */}
-          {multiAudioVideoId && (
-            <Card className="border-surface-200 dark:border-surface-700">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle>{t('features.dubbing.components.steps.uploadStep.addMultilingualAudioTracks')}</CardTitle>
-                  <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
-                    {t('features.dubbing.components.steps.uploadStep.addDubbedAudioAsAudioTracksOnThe')}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setAudioTrackEnabled((v) => !v)}
-                  className={`shrink-0 self-start rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer sm:self-auto ${
-                    audioTrackEnabled
-                      ? 'bg-brand-500 text-white'
-                      : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
-                  }`}
-                >
-                  {audioTrackEnabled ? t('features.dubbing.components.steps.uploadStep.on') : t('features.dubbing.components.steps.uploadStep.off')}
-                </button>
-              </div>
-
-              {!audioTrackEnabled && (
-                <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                  {t('features.dubbing.components.steps.uploadStep.thisRequiresMultilingualAudioAccessOnYourYouTube')}
-                </p>
-              )}
-
-              {audioTrackEnabled && (
-                <div className="mt-4 space-y-4">
-                  <YouTubeExtensionUpload
-                    videoId={multiAudioVideoId}
-                    completedLangs={completedLangs}
-                    autoTrigger={autoUpload}
-                    getAudioUrl={async (langCode) => {
-                      const data = await fetchDownloads(langCode, 'voiceAudio')
-                      const raw = data?.audioFile?.voiceAudioDownloadLink
-                      return raw ? (raw.startsWith('http') ? raw : getPersoFileUrl(raw)) : undefined
-                    }}
-                  />
-
-                  <div className="border-t border-surface-200 pt-4 dark:border-surface-700">
-                    <p className="mb-3 text-xs text-surface-500 dark:text-surface-300">
-                      {t('features.dubbing.components.steps.uploadStep.toProceedManuallyWithoutTheExtensionUseThe')}
-                    </p>
-                    <div className="space-y-2">
-                      {completedLangs.map((code) => {
-                        const lang = getLanguageByCode(code)
-                        if (!lang) return null
-                        const opening = studioOpenedLang === code
-                        return (
-                          <div key={code} className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-3">
-                              <span className="text-lg">{lang.flag}</span>
-                              <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
-                            </div>
-                            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => handleAudioToStudio(code, multiAudioVideoId)} loading={opening}>
-                              <Volume2 className="h-3.5 w-3.5" />
-                              {t('features.dubbing.components.steps.uploadStep.downloadAudioAndOpenStudio')}
-                            </Button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Card>
-          )}
         </>
       )}
 
@@ -1038,7 +928,12 @@ export function UploadStep() {
                       </p>
                     </div>
                   </div>
-                  <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div
+                    className={cn(
+                      'grid min-w-0 grid-cols-1 gap-2 sm:ml-auto',
+                      deliverableMode === 'originalWithMultiAudio' ? 'sm:grid-cols-2' : 'sm:grid-cols-3',
+                    )}
+                  >
                     {deliverableMode !== 'originalWithMultiAudio' && (
                       <Button variant="outline" size="sm" className="min-w-0 justify-center" onClick={() => handleDownload(code, 'video')}
                         loading={loadingDownload === `${code}-video`}>
@@ -1107,6 +1002,7 @@ export function UploadStep() {
                   spaceSeq={spaceSeq}
                   allowDialogueEditing={allowDialogueEditingInOutput}
                   youtubeVideoId={ytUploads[code]?.videoId ?? null}
+                  youtubePreviewVisibility={privacyStatus}
                 />
               )
             })}
