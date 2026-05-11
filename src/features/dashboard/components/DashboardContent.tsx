@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { DashboardSummary } from './DashboardSummary'
 import { QuickStart } from './QuickStart'
@@ -15,6 +16,41 @@ function ChartSkeleton() {
       <div className="mt-2 h-4 w-48 animate-pulse rounded bg-surface-100 dark:bg-surface-800" />
       <div className="mt-4 h-64 animate-pulse rounded bg-surface-100 dark:bg-surface-800" />
     </Card>
+  )
+}
+
+function LazyChart({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [isReady, setIsReady] = useState(false)
+
+  useEffect(() => {
+    if (isReady) return
+
+    const node = ref.current
+    if (!node) return
+    if (!('IntersectionObserver' in window)) {
+      const id = globalThis.setTimeout(() => setIsReady(true), 0)
+      return () => globalThis.clearTimeout(id)
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsReady(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '240px 0px' },
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [isReady])
+
+  return (
+    <div ref={ref}>
+      {isReady ? children : <ChartSkeleton />}
+    </div>
   )
 }
 
@@ -47,11 +83,17 @@ export function DashboardContent({ initial }: { initial: DashboardInitialData })
       <QuickStart />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <CreditChart initialData={initial.creditUsage} />
-        <LanguagePerformance />
+        <LazyChart>
+          <CreditChart initialData={initial.creditUsage} />
+        </LazyChart>
+        <LazyChart>
+          <LanguagePerformance />
+        </LazyChart>
       </div>
 
-      <AnalyticsChart videoIds={initial.ytVideoIds} />
+      <LazyChart>
+        <AnalyticsChart videoIds={initial.ytVideoIds} />
+      </LazyChart>
 
       <RecentJobs initialData={initial.jobs} />
     </div>

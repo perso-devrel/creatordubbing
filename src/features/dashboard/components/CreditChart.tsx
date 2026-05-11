@@ -1,6 +1,5 @@
 'use client'
 
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardTitle } from '@/components/ui'
 import { useCreditUsage } from '@/hooks/useDashboardData'
 import { useLocaleText } from '@/hooks/useLocaleText'
@@ -28,31 +27,44 @@ export function CreditChart({ initialData }: CreditChartProps) {
         used: Number(r.minutes_used) || 0,
       })).reverse()
     : fallbackData.map((d) => ({ month: d.month.slice(5), used: d.used }))
+  const maxUsed = Math.max(1, ...chartData.map((item) => item.used))
+  const points = chartData.map((item, index) => {
+    const x = chartData.length === 1 ? 50 : (index / (chartData.length - 1)) * 100
+    const y = 100 - (item.used / maxUsed) * 84
+    return { ...item, x, y }
+  })
+  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
+  const areaPath = `${linePath} L ${points.at(-1)?.x ?? 100} 100 L ${points[0]?.x ?? 0} 100 Z`
 
   return (
     <Card>
       <CardTitle>{t('features.dashboard.components.creditChart.dubbingTimeUsage')}</CardTitle>
       <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t('features.dashboard.components.creditChart.monthlyUsage')}</p>
 
-      <div className="h-64 w-full min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-            <defs>
-              <linearGradient id="creditGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#cc0000" stopOpacity={0.22} />
-                <stop offset="95%" stopColor="#cc0000" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-            <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#a1a1aa' }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#a1a1aa' }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
-              formatter={(value) => [`${Number(value)}${t('features.dashboard.components.creditChart.min')}`, t('features.dashboard.components.creditChart.used')]}
-            />
-            <Area type="monotone" dataKey="used" stroke="#cc0000" strokeWidth={2} fill="url(#creditGradient)" />
-          </AreaChart>
-        </ResponsiveContainer>
+      <div className="h-64 w-full min-w-0" role="img" aria-label={t('features.dashboard.components.creditChart.monthlyUsage')}>
+        <svg viewBox="0 0 100 112" className="h-full w-full overflow-visible text-surface-200 dark:text-surface-800" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="creditGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#cc0000" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#cc0000" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[16, 44, 72, 100].map((y) => (
+            <line key={y} x1="0" x2="100" y1={y} y2={y} stroke="currentColor" strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
+          ))}
+          <path d={areaPath} fill="url(#creditGradient)" />
+          <path d={linePath} fill="none" stroke="#cc0000" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          {points.map((point) => (
+            <circle key={point.month} cx={point.x} cy={point.y} r="1.6" fill="#cc0000" vectorEffect="non-scaling-stroke">
+              <title>{`${point.month}: ${point.used}${t('features.dashboard.components.creditChart.min')}`}</title>
+            </circle>
+          ))}
+        </svg>
+        <div className="mt-2 flex justify-between text-xs text-surface-500 dark:text-surface-400">
+          {points.map((point) => (
+            <span key={point.month}>{point.month}</span>
+          ))}
+        </div>
       </div>
     </Card>
   )
