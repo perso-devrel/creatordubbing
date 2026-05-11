@@ -1,6 +1,6 @@
 const AI_DISCLOSURE_TEXT: Record<string, string> = {
   en: 'This video was dubbed by Dubtube using an AI voice clone.',
-  ko: 'Dubtube에서 AI 보이스 클론으로 더빙되었습니다.',
+  ko: 'Dubtube에서 AI를 활용하여 더빙되었습니다.',
   ja: 'DubtubeでAI音声クローンにより吹き替えられました。',
   zh: '本视频由 Dubtube 使用 AI 语音克隆配音。',
   es: 'Este video fue doblado por Dubtube con un clon de voz de IA.',
@@ -36,6 +36,7 @@ const AI_DISCLOSURE_TEXT: Record<string, string> = {
 }
 
 const LEGACY_DISCLOSURE_TEXT = [
+  'Dubtube에서 AI 보이스 클론으로 더빙되었습니다.',
   '원본 영상에서 AI 보이스 클론으로 더빙되었습니다.',
 ]
 
