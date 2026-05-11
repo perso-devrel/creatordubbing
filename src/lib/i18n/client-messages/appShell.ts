@@ -1,0 +1,28 @@
+import type { LocalizedText } from '../text'
+
+export const appShellMessages = {
+  "app.app.error.errorCodeForSupportValue": { ko: "문의 시 전달할 오류 코드: {errorDigest}", en: "Error code for support: {errorDigest}" },
+  "app.app.error.pleaseTryAgainInAMomentContactSupport": { ko: "잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.", en: "Please try again in a moment. Contact support if the problem continues." },
+  "app.app.error.somethingWentWrong": { ko: "문제가 발생했습니다", en: "Something went wrong" },
+  "app.app.error.tryAgain": { ko: "다시 시도", en: "Try again" },
+  "components.layout.sidebar.labelBilling": { ko: "결제", en: "Billing" },
+  "components.layout.sidebar.labelDashboard": { ko: "대시보드", en: "Dashboard" },
+  "components.layout.sidebar.labelDubbingJobs": { ko: "더빙 작업", en: "Dubbing jobs" },
+  "components.layout.sidebar.labelNewDubbing": { ko: "새 더빙", en: "New dubbing" },
+  "components.layout.sidebar.labelOperations": { ko: "운영 상태", en: "Operations" },
+  "components.layout.sidebar.labelTitleDescription": { ko: "제목·설명", en: "Title & description" },
+  "components.layout.sidebar.labelYouTube": { ko: "YouTube", en: "YouTube" },
+  "components.layout.sidebar.labelYouTubeUploads": { ko: "YouTube 업로드", en: "YouTube uploads" },
+  "components.layout.sidebar.mobileLabelBilling": { ko: "결제", en: "Billing" },
+  "components.layout.sidebar.mobileLabelChannel": { ko: "채널", en: "Channel" },
+  "components.layout.sidebar.mobileLabelDub": { ko: "더빙", en: "Dub" },
+  "components.layout.sidebar.mobileLabelHome": { ko: "홈", en: "Home" },
+  "components.layout.sidebar.mobileLabelJobs": { ko: "작업", en: "Jobs" },
+  "components.layout.sidebar.mobileLabelOps": { ko: "운영", en: "Ops" },
+  "components.layout.sidebar.mobileLabelTitle": { ko: "제목", en: "Title" },
+  "components.layout.sidebar.mobileLabelUpload": { ko: "업로드", en: "Upload" },
+  "components.layout.topbar.signOut": { ko: "로그아웃", en: "Sign out" },
+  "components.layout.topbar.user": { ko: "사용자", en: "User" },
+  "features.ops.components.opsAlertButton.operationsAlerts": { ko: "운영 알림", en: "Operations alerts" },
+  "features.ops.components.opsAlertButton.valueOperationsAlerts": { ko: "운영 알림 {count}개", en: "{count} operations alerts" },
+} as const satisfies Record<string, LocalizedText>
