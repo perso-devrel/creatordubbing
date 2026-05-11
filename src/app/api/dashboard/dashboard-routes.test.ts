@@ -679,6 +679,29 @@ describe('/api/dashboard/mutations', () => {
     expect(body.data).toEqual({ status: 'queued', queueId: 11 })
   })
 
+  it('processes completed job language upload immediately when requested', async () => {
+    const { processUploadQueue } = await import('@/lib/upload-queue/process')
+    vi.mocked(processUploadQueue).mockResolvedValueOnce({
+      processed: 1,
+      results: [{ id: 11, status: 'done', videoId: 'yt-1' }],
+    })
+    mockAuth('user1')
+    const req = new NextRequest('http://localhost/api/dashboard/mutations', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'queueJobLanguageYouTubeUpload',
+        payload: { jobId: 1, langCode: 'ko', processNow: true },
+      }),
+    })
+
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(processUploadQueue).toHaveBeenCalledWith({ userId: 'user1', queueId: 11, limit: 1 })
+    expect(body.data).toEqual({ status: 'uploaded', queueId: 11, youtubeVideoId: 'yt-1' })
+  })
+
   it('returns 200 for failJobLanguageYouTubeUpload', async () => {
     mockAuth('user1')
     const req = new NextRequest('http://localhost/api/dashboard/mutations', {

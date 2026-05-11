@@ -38,6 +38,11 @@ const marketingMetadata = {
     description: 'lib.i18n.metadata.descriptionDubtubeTermsOfServiceIncludingYouTubeAPI',
     path: '/terms',
   },
+  support: {
+    title: 'lib.i18n.metadata.titleSupportAndContact',
+    description: 'lib.i18n.metadata.descriptionSupportAndContact',
+    path: '/support',
+  },
 } satisfies Record<string, LocalizedPageMetadata>
 
 const appRouteMetadata = {

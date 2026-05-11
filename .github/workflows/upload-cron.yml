@@ -3,8 +3,8 @@ name: Process background jobs
 on:
   schedule:
     # GitHub Actions schedules can be delayed around the top of the hour.
-    # Start at minute 2 and keep a 5-minute cadence.
-    - cron: '2/5 * * * *'
+    # Keep a 5-minute cadence.
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -37,20 +37,49 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          for PATH in /api/cron/process-dubbing-jobs /api/cron/process-uploads; do
-            URL="${BASE_URL%/}${PATH}"
-            echo "Calling $URL"
-            HTTP_CODE=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
-              -X POST "$URL" \
-              -H "Authorization: Bearer $CRON_SECRET" \
-              --max-time 280 \
-              --retry 2 \
-              --retry-delay 10 \
-              --retry-all-errors)
-            echo "HTTP $HTTP_CODE"
-            cat /tmp/body.txt
-            echo
-            if [ "$HTTP_CODE" -ge 400 ]; then
-              exit 1
-            fi
-          done
+          node <<'NODE'
+          const endpoints = ['/api/cron/process-dubbing-jobs', '/api/cron/process-uploads']
+          const baseUrl = process.env.BASE_URL.replace(/\/+$/, '')
+          const cronSecret = process.env.CRON_SECRET
+
+          async function callEndpoint(path) {
+            const url = `${baseUrl}${path}`
+            console.log(`Calling ${url}`)
+
+            for (let attempt = 1; attempt <= 3; attempt += 1) {
+              const controller = new AbortController()
+              const timeout = setTimeout(() => controller.abort(), 280_000)
+
+              try {
+                const res = await fetch(url, {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${cronSecret}` },
+                  signal: controller.signal,
+                })
+                const body = await res.text()
+                console.log(`HTTP ${res.status}`)
+                console.log(body)
+                if (res.ok) return
+                if (attempt === 3) process.exit(1)
+              } catch (err) {
+                console.error(err)
+                if (attempt === 3) process.exit(1)
+              } finally {
+                clearTimeout(timeout)
+              }
+
+              await new Promise((resolve) => setTimeout(resolve, 10_000))
+            }
+          }
+
+          async function main() {
+            for (const endpoint of endpoints) {
+              await callEndpoint(endpoint)
+            }
+          }
+
+          main().catch((err) => {
+            console.error(err)
+            process.exit(1)
+          })
+          NODE
