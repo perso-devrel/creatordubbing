@@ -78,7 +78,8 @@ describe('session-cookie', () => {
 
     it('accepts legacy uid.signature cookies used by existing Playwright helpers', async () => {
       const uid = 'legacy-user'
-      const sig = createHmac('sha256', 'dubtube-dev-secret-do-not-use-in-prod')
+      const secret = process.env.SESSION_SECRET || 'dubtube-dev-secret-do-not-use-in-prod'
+      const sig = createHmac('sha256', secret)
         .update(uid)
         .digest('hex')
 
