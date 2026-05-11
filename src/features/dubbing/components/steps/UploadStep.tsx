@@ -22,7 +22,7 @@ import {
   type MetadataTranslation,
 } from '@/lib/api-client'
 import { toBcp47 } from '@/utils/languages'
-import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
+import { dbMutationStrict } from '@/lib/api/dbMutation'
 import { SubtitleScriptEditor } from '../SubtitleScriptEditor'
 import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
 import { appendAiDisclosureFooter, appendTextFooter, stripAiDisclosureFooter } from '../../utils/aiDisclosure'
@@ -35,20 +35,14 @@ function isYouTubeUploadLocked(state: YouTubeUploadState | undefined) {
   return state?.status === 'uploading' || state?.status === 'done'
 }
 
-interface YouTubeUploadReservation {
-  status: 'reserved' | 'already_uploaded' | 'already_uploading' | 'not_found'
-  youtubeVideoId?: string | null
-}
-
 export function UploadStep() {
   const {
     selectedLanguages, videoMeta, videoSource, languageProgress, dbJobId,
     spaceSeq, projectMap, youtubeUploads: ytUploads, setYouTubeUploadState,
-    uploadSettings, deliverableMode, originalVideoUrl, isShort, reset,
+    uploadSettings, deliverableMode, originalVideoUrl, reset,
   } = useDubbingStore()
   const { fetchDownloads } = usePersoFlow()
   const addToast = useNotificationStore((s) => s.addToast)
-  const userId = useAuthStore((s) => s.user?.uid)
   const router = useLocaleRouter()
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -388,208 +382,35 @@ export function UploadStep() {
       return
     }
 
-    const lang = getLanguageByCode(langCode)
-    if (!lang) return
+    if (!getLanguageByCode(langCode)) return
 
-    setYouTubeUploadState(langCode, { status: 'uploading', progress: 0 })
-    let uploadReserved = false
-
-    try {
-      if (dbJobId) {
-        const reservation = await dbMutationStrict<YouTubeUploadReservation>({
-          type: 'startJobLanguageYouTubeUpload',
-          payload: { jobId: dbJobId, langCode },
-        })
-        if (reservation.status === 'already_uploaded') {
-          setYouTubeUploadState(langCode, {
-            status: 'done',
-            progress: 100,
-            videoId: reservation.youtubeVideoId || undefined,
-          })
-          return
-        }
-        if (reservation.status === 'already_uploading') {
-          setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
-          return
-        }
-        if (reservation.status !== 'reserved') {
-          throw new Error(t('features.dubbing.components.steps.uploadStep.couldNotCheckYouTubeUploadStatus'))
-        }
-        uploadReserved = true
-      }
-
-      const downloads = await fetchDownloads(langCode, 'dubbingVideo')
-      const rawVideoUrl = downloads?.videoFile?.videoDownloadLink
-      if (!rawVideoUrl) throw new Error(t('features.dubbing.components.steps.uploadStep.couldNotFindTheDubbedVideoDownloadLink'))
-      const videoUrl = rawVideoUrl.startsWith('http') ? rawVideoUrl : getPersoFileUrl(rawVideoUrl)
-
-      setYouTubeUploadState(langCode, { status: 'uploading', progress: 20 })
-      // 번역된 제목·설명을 가져와 그 언어 영상의 메타로 사용한다.
-      const allTranslations = await ensureTranslations()
-      const baseTitle = settingsTitle?.trim() || videoMeta?.title || t('features.dubbing.components.steps.uploadStep.dubbedVideo2')
-      const translated = allTranslations[langCode] ?? { title: baseTitle, description: editableDescription }
-      const ytTitle = translated.title
-      const ytDescription = applyDescriptionFooter(translated.description, langCode)
-      const langTags = Array.from(new Set([
-        ...settingsTags,
-        lang.name,
-      ]))
-      const result = await ytUploadVideo({
-        videoUrl,
-        title: ytTitle,
-        description: ytDescription,
-        tags: langTags,
-        privacyStatus,
-        selfDeclaredMadeForKids,
-        containsSyntheticMedia: shouldApplyAiDisclosure,
-        language: langCode,
-      })
-      setYouTubeUploadState(langCode, { status: 'uploading', progress: 90 })
-
-      // Upload SRT caption — use Perso's official translated SRT (audioScript target)
-      setYouTubeUploadState(langCode, { status: 'uploading', progress: 92 })
-      if (shouldUploadCaptions) {
-        try {
-          const pSeq = projectMap[langCode]
-          if (pSeq && spaceSeq) {
-            const srtText = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
-            if (srtText.trim().length > 0) {
-              await ytUploadCaption({
-                videoId: result.videoId,
-                language: toBcp47(langCode),
-                name: resolveCaptionTrackName(toBcp47(langCode), lang.name),
-                srtContent: srtText,
-              })
-            }
-          }
-        } catch { /* caption upload is optional */ }
-      }
-
-      setYouTubeUploadState(langCode, { status: 'done', progress: 100, videoId: result.videoId })
-
-      try {
-        if (dbJobId) {
-          await dbMutationStrict({
-            type: 'updateJobLanguageYouTube',
-            payload: { jobId: dbJobId, langCode, youtubeVideoId: result.videoId },
-          })
-        }
-        if (userId) {
-          await dbMutation({
-            type: 'createYouTubeUpload',
-            payload: {
-              userId,
-              youtubeVideoId: result.videoId,
-              title: ytTitle,
-              languageCode: langCode,
-              privacyStatus,
-              isShort,
-            },
-          })
-        }
-      } catch { /* DB save best-effort */ }
-
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.steps.uploadStep.valueVideoUploaded', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
-        message: t('features.dubbing.components.steps.uploadStep.uploadedToYouTubeAsValue', { privacyLabel: privacyLabel }),
-      })
-    } catch (err) {
-      console.warn('[Dubtube] YouTube upload failed', err)
-      const msg = t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheYouTubeUploadPleaseTry')
-      if (uploadReserved && dbJobId) {
-        await dbMutation({
-          type: 'failJobLanguageYouTubeUpload',
-          payload: { jobId: dbJobId, langCode },
-        })
-      }
-      setYouTubeUploadState(langCode, { status: 'error', progress: 0, error: msg })
-      addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.valueUploadFailed', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }), message: msg })
-    }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, isShort, isAuthenticated, settingsTitle, editableDescription, settingsTags, privacyStatus, privacyLabel, shouldUploadCaptions, selfDeclaredMadeForKids, shouldApplyAiDisclosure, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter, setYouTubeUploadState, getDisplayLanguageName, t])
-
-  // ─── Queue upload (background — survives tab close) ─────────────────
-  const queueYouTubeUpload = useCallback(async (langCode: string) => {
-    const existingUpload = useDubbingStore.getState().youtubeUploads[langCode]
-    if (isYouTubeUploadLocked(existingUpload)) return
-
-    if (!userId || !dbJobId) return
-
-    const lang = getLanguageByCode(langCode)
-    if (!lang) return
+    if (!dbJobId) return
 
     setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
-    let uploadReserved = false
 
     try {
-      const reservation = await dbMutationStrict<YouTubeUploadReservation>({
-        type: 'startJobLanguageYouTubeUpload',
+      const result = await dbMutationStrict<{
+        status: string
+        queueId?: number
+        youtubeVideoId?: string | null
+      }>({
+        type: 'queueJobLanguageYouTubeUpload',
         payload: { jobId: dbJobId, langCode },
       })
-      if (reservation.status === 'already_uploaded') {
+      if (result.status === 'already_uploaded') {
         setYouTubeUploadState(langCode, {
           status: 'done',
           progress: 100,
-          videoId: reservation.youtubeVideoId || undefined,
+          videoId: result.youtubeVideoId || undefined,
         })
         return
       }
-      if (reservation.status === 'already_uploading') {
+      if (result.status === 'queued' || result.status === 'already_queued' || result.status === 'already_uploading') {
         setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
-        return
-      }
-      if (reservation.status !== 'reserved') {
-        throw new Error(t('features.dubbing.components.steps.uploadStep.couldNotCheckYouTubeUploadStatus2'))
-      }
-      uploadReserved = true
-
-      const downloads = await fetchDownloads(langCode, 'dubbingVideo')
-      const rawVideoUrl = downloads?.videoFile?.videoDownloadLink
-      if (!rawVideoUrl) throw new Error(t('features.dubbing.components.steps.uploadStep.couldNotFindTheDubbedVideoDownloadLink2'))
-      const videoUrl = rawVideoUrl.startsWith('http') ? rawVideoUrl : getPersoFileUrl(rawVideoUrl)
-
-      const allTranslations = await ensureTranslations()
-      const baseTitle = settingsTitle?.trim() || videoMeta?.title || t('features.dubbing.components.steps.uploadStep.dubbedVideo3')
-      const translated = allTranslations[langCode] ?? { title: baseTitle, description: editableDescription }
-      const ytTitle = translated.title
-      const langTags = Array.from(new Set([
-        ...settingsTags,
-        lang.name,
-      ]))
-      let srtContent: string | null = null
-      if (shouldUploadCaptions) {
-        const pSeq = projectMap[langCode]
-        if (pSeq && spaceSeq) {
-          try {
-            const srtText = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
-            srtContent = srtText.trim().length > 0 ? srtText : null
-          } catch { /* queue caption is optional */ }
-        }
+      } else {
+        throw new Error(result.status || t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry'))
       }
 
-      await dbMutation({
-        type: 'queueYouTubeUpload',
-        payload: {
-          userId,
-          jobId: dbJobId,
-          langCode,
-          videoUrl,
-          title: ytTitle,
-          description: applyDescriptionFooter(translated.description, langCode),
-          tags: langTags,
-          privacyStatus,
-          language: langCode,
-          isShort,
-          uploadCaptions: shouldUploadCaptions,
-          captionLanguage: toBcp47(langCode),
-          captionName: resolveCaptionTrackName(toBcp47(langCode), lang.name),
-          srtContent,
-          selfDeclaredMadeForKids,
-          containsSyntheticMedia: shouldApplyAiDisclosure,
-        },
-      })
-
-      setYouTubeUploadState(langCode, { status: 'done', progress: 100 })
       addToast({
         type: 'success',
         title: t('features.dubbing.components.steps.uploadStep.valueUploadScheduled', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
@@ -598,16 +419,15 @@ export function UploadStep() {
     } catch (err) {
       console.warn('[Dubtube] YouTube upload scheduling failed', err)
       const msg = t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry')
-      if (uploadReserved) {
-        await dbMutation({
-          type: 'failJobLanguageYouTubeUpload',
-          payload: { jobId: dbJobId, langCode },
-        })
-      }
       setYouTubeUploadState(langCode, { status: 'error', progress: 0, error: msg })
       addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.valueUploadSchedulingFailed', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }), message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, isShort, settingsTitle, editableDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, shouldApplyAiDisclosure, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter, setYouTubeUploadState, getDisplayLanguageName, t])
+  }, [addToast, dbJobId, isAuthenticated, setYouTubeUploadState, getDisplayLanguageName, t])
+
+  // ─── Queue upload (background — survives tab close) ─────────────────
+  const queueYouTubeUpload = useCallback(async (langCode: string) => {
+    await handleYouTubeUpload(langCode)
+  }, [handleYouTubeUpload])
 
   const completedLangs = useMemo(() => selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)

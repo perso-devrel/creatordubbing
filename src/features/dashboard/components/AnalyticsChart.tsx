@@ -1,12 +1,101 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Card, CardTitle } from '@/components/ui'
 import { useQuery } from '@tanstack/react-query'
 import { ytFetchAnalytics } from '@/lib/api-client'
 import { useAuthStore } from '@/stores/authStore'
 import { useMemo, useState } from 'react'
 import { useLocaleText } from '@/hooks/useLocaleText'
+
+function BarSeries({
+  data,
+  xKey,
+  yKey,
+  color,
+  formatLabel,
+}: {
+  data: Array<Record<string, string | number>>
+  xKey: string
+  yKey: string
+  color: string
+  formatLabel?: (value: string) => string
+}) {
+  const maxValue = Math.max(1, ...data.map((row) => Number(row[yKey]) || 0))
+  const barWidth = data.length > 0 ? 100 / data.length : 100
+
+  return (
+    <div className="h-64 w-full min-w-0">
+      <svg viewBox="0 0 100 100" className="h-full w-full overflow-visible text-surface-200 dark:text-surface-800" preserveAspectRatio="none">
+        {[25, 50, 75, 100].map((y) => (
+          <line key={y} x1="0" x2="100" y1={y} y2={y} stroke="currentColor" strokeWidth="0.35" vectorEffect="non-scaling-stroke" />
+        ))}
+        {data.map((row, index) => {
+          const value = Number(row[yKey]) || 0
+          const height = (value / maxValue) * 86
+          const x = index * barWidth + barWidth * 0.2
+          const y = 100 - height
+          return (
+            <rect
+              key={`${row[xKey]}-${index}`}
+              x={x}
+              y={y}
+              width={barWidth * 0.6}
+              height={height}
+              rx="1.4"
+              fill={color}
+              vectorEffect="non-scaling-stroke"
+            >
+              <title>{`${row[xKey]}: ${value.toLocaleString()}`}</title>
+            </rect>
+          )
+        })}
+      </svg>
+      <div className="mt-2 flex justify-between gap-2 text-[11px] text-surface-500 dark:text-surface-400">
+        {data.map((row, index) => (
+          <span key={`${row[xKey]}-${index}`} className="min-w-0 truncate">
+            {formatLabel ? formatLabel(String(row[xKey])) : String(row[xKey])}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function HorizontalBarSeries({
+  data,
+  labelKey,
+  valueKey,
+  color,
+}: {
+  data: Array<Record<string, string | number>>
+  labelKey: string
+  valueKey: string
+  color: string
+}) {
+  const maxValue = Math.max(1, ...data.map((row) => Number(row[valueKey]) || 0))
+
+  return (
+    <div className="h-64 w-full min-w-0 space-y-3 overflow-hidden">
+      {data.map((row) => {
+        const value = Number(row[valueKey]) || 0
+        const width = Math.max(4, (value / maxValue) * 100)
+        return (
+          <div key={String(row[labelKey])} className="grid grid-cols-[3rem_1fr_4.5rem] items-center gap-3">
+            <div className="truncate text-xs font-medium text-surface-600 dark:text-surface-300">
+              {row[labelKey]}
+            </div>
+            <div className="h-5 rounded-full bg-surface-100 dark:bg-surface-800">
+              <div className="h-full rounded-full" style={{ width: `${width}%`, backgroundColor: color }} />
+            </div>
+            <div className="text-right text-xs font-medium text-surface-700 dark:text-surface-200">
+              {value.toLocaleString()}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
   const t = useLocaleText()
@@ -108,69 +197,22 @@ export function AnalyticsChart({ videoIds }: { videoIds?: string[] }) {
         </div>
       </div>
 
-      <div className="h-64 w-full min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          {tab === 'daily' ? (
-            <BarChart data={mergedDaily} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 11, fill: '#a1a1aa' }}
-                tickFormatter={(v: string) => v.slice(5)}
-              />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#a1a1aa' }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #3f3f46',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  fontSize: '13px',
-                }}
-                formatter={(value, name) => [
-                  Number(value).toLocaleString(),
-                  name === 'views' ? t('features.dashboard.components.analyticsChart.views') : t('features.dashboard.components.analyticsChart.watchTimeMin'),
-                ]}
-                labelFormatter={(label) => String(label)}
-              />
-              <Bar dataKey="views" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          ) : (
-            <BarChart
-              data={mergedCountries}
-              layout="vertical"
-              margin={{ top: 5, right: 5, left: 10, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
-              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#a1a1aa' }} />
-              <YAxis
-                type="category"
-                dataKey="country"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12, fill: '#a1a1aa' }}
-                width={40}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #3f3f46',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  fontSize: '13px',
-                }}
-                formatter={(value, name) => [
-                  Number(value).toLocaleString(),
-                  name === 'views' ? t('features.dashboard.components.analyticsChart.views2') : t('features.dashboard.components.analyticsChart.watchTimeMin2'),
-                ]}
-              />
-              <Bar dataKey="views" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          )}
-        </ResponsiveContainer>
-      </div>
+      {tab === 'daily' ? (
+        <BarSeries
+          data={mergedDaily}
+          xKey="date"
+          yKey="views"
+          color="#3b82f6"
+          formatLabel={(value) => value.slice(5)}
+        />
+      ) : (
+        <HorizontalBarSeries
+          data={mergedCountries}
+          labelKey="country"
+          valueKey="views"
+          color="#8b5cf6"
+        />
+      )}
     </Card>
   )
 }

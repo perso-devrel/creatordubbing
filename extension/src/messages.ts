@@ -27,23 +27,6 @@ export interface UploadToYouTubeMessage {
 
 export type InboundMessage = PingMessage | UploadToYouTubeMessage
 
-export interface PongResponse {
-  ok: true
-  version: string
-}
-
-export interface UploadAcceptedResponse {
-  ok: true
-  jobId: string
-}
-
-export interface ErrorResponse {
-  ok: false
-  error: string
-}
-
-export type InboundResponse = PongResponse | UploadAcceptedResponse | ErrorResponse
-
 export interface UploadProgressEvent {
   type: 'UPLOAD_PROGRESS'
   payload: {
@@ -73,8 +56,6 @@ export interface UploadErrorEvent {
 }
 
 export type OutboundEvent = UploadProgressEvent | UploadDoneEvent | UploadErrorEvent
-
-export type Message = InboundMessage | OutboundEvent
 
 export function isPingMessage(msg: unknown): msg is PingMessage {
   return isObject(msg) && msg.type === 'PING'

@@ -3,8 +3,8 @@ import 'server-only'
 import { getDb } from '@/lib/db/client'
 import { logger } from '@/lib/logger'
 
-export type OperationalEventCategory = 'upload_queue' | 'perso' | 'credit' | 'toss'
-export type OperationalEventSeverity = 'info' | 'warning' | 'error' | 'critical'
+type OperationalEventCategory = 'upload_queue' | 'perso' | 'credit' | 'toss'
+type OperationalEventSeverity = 'info' | 'warning' | 'error' | 'critical'
 
 export interface OperationalEventInput {
   category: OperationalEventCategory
@@ -18,7 +18,7 @@ export interface OperationalEventInput {
   idempotencyKey?: string | null
 }
 
-export interface OperationalEvent {
+interface OperationalEvent {
   id: number
   category: OperationalEventCategory
   eventType: string
@@ -31,7 +31,7 @@ export interface OperationalEvent {
   createdAt: string
 }
 
-export interface OpsMetric {
+interface OpsMetric {
   total: number
   failed: number
   failureRate: number
@@ -75,7 +75,7 @@ export interface OpsAlert {
 
 let opsTablesReady = false
 
-export async function ensureOperationalTables() {
+async function ensureOperationalTables() {
   if (opsTablesReady) return
   const db = getDb()
   await db.batch([
@@ -148,7 +148,7 @@ function rowToEvent(row: Record<string, unknown>): OperationalEvent {
   }
 }
 
-export async function recordOperationalEvent(input: OperationalEventInput) {
+async function recordOperationalEvent(input: OperationalEventInput) {
   await ensureOperationalTables()
   await getDb().execute({
     sql: `INSERT OR IGNORE INTO operational_events

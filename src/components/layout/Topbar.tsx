@@ -10,6 +10,7 @@ import { useChannelStats } from '@/hooks/useYouTubeData'
 import { AppLocaleSelect } from '@/components/layout/AppLocaleSelect'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useLocaleRouter } from '@/hooks/useLocalePath'
+import { useOperationsAccess } from '@/features/ops/hooks/useOperationsAccess'
 
 interface TopbarProps {
   isOpsAdmin?: boolean
@@ -19,8 +20,10 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
   const { user, clear } = useAuthStore()
   const router = useLocaleRouter()
   const { data: channel } = useChannelStats()
+  const opsAccess = useOperationsAccess()
   const locale = useAppLocale()
   const t = useLocaleText()
+  const canViewOps = isOpsAdmin || opsAccess.data?.isOpsAdmin === true
   const accountName = channel?.title || user?.displayName || t('components.layout.topbar.user')
   const subscriberLabel = channel
     ? t('components.layout.topbar.subscriberCount', {
@@ -41,7 +44,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
 
       <div className="flex items-center gap-2">
         <AppLocaleSelect className="w-28 sm:w-32" />
-        {isOpsAdmin && <OpsAlertButton />}
+        {canViewOps && <OpsAlertButton />}
 
         {user && (
           <div className="ml-2 flex items-center gap-3">

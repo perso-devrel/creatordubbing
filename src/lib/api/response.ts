@@ -3,7 +3,7 @@ import 'server-only'
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 
-export interface ApiErrorInfo {
+interface ApiErrorInfo {
   code: string
   message: string
   details: unknown | null

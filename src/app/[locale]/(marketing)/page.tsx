@@ -1,10 +1,8 @@
 import type { Metadata } from 'next'
 import { Hero } from '@/features/landing/Hero'
-import { HowItWorks } from '@/features/landing/HowItWorks'
-import { FeatureShowcase } from '@/features/landing/FeatureShowcase'
-import { ROICalculator } from '@/features/landing/ROICalculator'
-import { PricingSection } from '@/features/landing/PricingSection'
-import { CTASection } from '@/features/landing/CTASection'
+import { DeferredLandingSections } from '@/features/landing/DeferredLandingSections'
+import { ClientMessagesProvider } from '@/lib/i18n/clientMessages'
+import { landingMessages } from '@/lib/i18n/client-messages/landing'
 import {
   getLandingMetadata,
   getSoftwareJsonLd,
@@ -22,17 +20,13 @@ export default async function LandingPage({ params }: LocaleMetadataProps) {
   const jsonLd = getSoftwareJsonLd(locale)
 
   return (
-    <>
+    <ClientMessagesProvider messages={landingMessages}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Hero />
-      <HowItWorks />
-      <FeatureShowcase />
-      <ROICalculator />
-      <PricingSection />
-      <CTASection />
-    </>
+      <DeferredLandingSections />
+    </ClientMessagesProvider>
   )
 }

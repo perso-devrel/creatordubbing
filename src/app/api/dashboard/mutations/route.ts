@@ -16,7 +16,6 @@ import {
   releaseJobCredits,
   finalizeJobCredits,
   deleteDubbingJob,
-  createUploadQueueItem,
 } from '@/lib/db/queries'
 import { requireSession } from '@/lib/auth/session'
 import { mutationActionSchema, getUserIdFromAction, getJobIdFromAction } from '@/lib/validators/dashboard'
@@ -24,6 +23,8 @@ import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 import { getDb } from '@/lib/db/client'
 import { persoFetch } from '@/lib/perso/client'
 import { processUploadQueue } from '@/lib/upload-queue/process'
+import { enqueueYouTubeUpload } from '@/lib/upload-queue/enqueue'
+import { enqueueCompletedDubbingUpload } from '@/lib/dubbing/process'
 import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
 export const runtime = 'nodejs'
@@ -180,9 +181,19 @@ export async function POST(req: NextRequest) {
         return apiOk(result)
       }
       case 'queueYouTubeUpload': {
-        const id = await createUploadQueueItem(action.payload)
-        processUploadQueue({ userId: auth.session.uid, queueId: id, limit: 1 }).catch(() => {})
-        return apiOk({ queueId: id })
+        const result = await enqueueYouTubeUpload(action.payload)
+        if ('queueId' in result) {
+          processUploadQueue({ userId: auth.session.uid, queueId: result.queueId, limit: 1 }).catch(() => {})
+        }
+        return apiOk(result)
+      }
+      case 'queueJobLanguageYouTubeUpload': {
+        const { jobId: queuedJobId, langCode } = action.payload
+        const result = await enqueueCompletedDubbingUpload(queuedJobId, langCode, { force: true })
+        if ('queueId' in result) {
+          processUploadQueue({ userId: auth.session.uid, queueId: result.queueId, limit: 1 }).catch(() => {})
+        }
+        return apiOk(result)
       }
       case 'deleteDubbingJob': {
         const { jobId } = action.payload

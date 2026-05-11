@@ -36,10 +36,6 @@ export function sendToExtension(message: unknown): Promise<unknown> {
   })
 }
 
-export function getExtensionId(): string {
-  return EXTENSION_ID
-}
-
 async function detectExtension(): Promise<{ status: ExtensionStatus; version: string | null }> {
   if (!EXTENSION_ID) {
     return { status: 'not-installed', version: null }

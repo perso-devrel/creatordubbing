@@ -1,0 +1,22 @@
+import type { LocalizedText } from '../text'
+
+export const marketingShellMessages = {
+  "app.marketing.error.error": { ko: "오류", en: "Error" },
+  "app.marketing.error.goHome": { ko: "홈으로", en: "Go home" },
+  "app.marketing.error.thereWasAProblemLoadingThisPage": { ko: "페이지를 불러오는 중 문제가 발생했습니다", en: "There was a problem loading this page" },
+  "app.marketing.error.tryAgain": { ko: "다시 시도", en: "Try again" },
+  "components.layout.landingFooter.contact": { ko: "문의", en: "Contact" },
+  "components.layout.landingFooter.privacyPolicy": { ko: "개인정보처리방침", en: "Privacy Policy" },
+  "components.layout.landingFooter.termsOfService": { ko: "서비스 약관", en: "Terms of Service" },
+  "components.layout.landingNavBar.allowPopUpsThenSignInAgain": { ko: "팝업 차단을 허용한 뒤 다시 로그인해 주세요.", en: "Allow pop-ups, then sign in again." },
+  "components.layout.landingNavBar.couldNotSignIn": { ko: "로그인할 수 없습니다", en: "Could not sign in" },
+  "components.layout.landingNavBar.dashboard": { ko: "대시보드", en: "Dashboard" },
+  "components.layout.landingNavBar.features": { ko: "기능", en: "Features" },
+  "components.layout.landingNavBar.home": { ko: "홈", en: "Home" },
+  "components.layout.landingNavBar.howItWorks": { ko: "이용 방법", en: "How it works" },
+  "components.layout.landingNavBar.pleaseTryAgainShortlyContactUsIfThe": { ko: "잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.", en: "Please try again shortly. Contact us if the problem continues." },
+  "components.layout.landingNavBar.pricing": { ko: "요금제", en: "Pricing" },
+  "components.layout.landingNavBar.start": { ko: "시작", en: "Start" },
+  "components.layout.landingNavBar.startWithGoogle": { ko: "Google로 시작하기", en: "Start with Google" },
+  "components.layout.landingNavBar.startWithGoogle2": { ko: "Google로 시작하기", en: "Start with Google" },
+} as const satisfies Record<string, LocalizedText>

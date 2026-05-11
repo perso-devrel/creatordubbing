@@ -1,0 +1,25 @@
+import type { LocalizedText } from '../text'
+
+export const batchMessages = {
+  "app.app.batch.page.deleteJob": { ko: "작업 삭제", en: "Delete job" },
+  "app.app.batch.page.deleteJob2": { ko: "작업 삭제", en: "Delete job" },
+  "app.app.batch.page.deleteThisDubbingJobAnyWorkInProgress": { ko: "이 더빙 작업을 삭제할까요?\n진행 중인 작업도 함께 취소됩니다.", en: "Delete this dubbing job?\nAny work in progress will also be canceled." },
+  "app.app.batch.page.deleting": { ko: "삭제 중...", en: "Deleting..." },
+  "app.app.batch.page.dubbingJobs": { ko: "더빙 작업", en: "Dubbing jobs" },
+  "app.app.batch.page.dubbingJobs2": { ko: "더빙 작업", en: "Dubbing jobs" },
+  "app.app.batch.page.dubbingJobs3": { ko: "더빙 작업", en: "Dubbing jobs" },
+  "app.app.batch.page.jobsValue": { ko: "작업 ({activeJobsLength}개)", en: "Jobs ({activeJobsLength})" },
+  "app.app.batch.page.labelComplete": { ko: "완료", en: "Complete" },
+  "app.app.batch.page.labelFailed": { ko: "실패", en: "Failed" },
+  "app.app.batch.page.labelProcessing": { ko: "처리 중", en: "Processing" },
+  "app.app.batch.page.labelQueued": { ko: "대기 중", en: "Queued" },
+  "app.app.batch.page.loading": { ko: "불러오는 중...", en: "Loading..." },
+  "app.app.batch.page.newDubbing": { ko: "새 더빙", en: "New dubbing" },
+  "app.app.batch.page.newDubbing2": { ko: "새 더빙", en: "New dubbing" },
+  "app.app.batch.page.newDubbingJobsWillAppearHere": { ko: "새 더빙을 시작하면 진행 상태가 여기에 표시됩니다.", en: "New dubbing jobs will appear here." },
+  "app.app.batch.page.noActiveJobs": { ko: "진행 중인 작업이 없습니다", en: "No active jobs" },
+  "app.app.batch.page.reviewActiveDubbingJobs": { ko: "진행 중인 더빙 작업을 확인하세요.", en: "Review active dubbing jobs." },
+  "app.app.batch.page.reviewActiveDubbingJobs2": { ko: "진행 중인 더빙 작업을 확인하세요.", en: "Review active dubbing jobs." },
+  "app.app.batch.page.valueProcessing": { ko: "{processing} 처리 중", en: "{processing} processing" },
+  "app.app.batch.page.valueQueued": { ko: "{queued} 대기 중", en: "{queued} queued" },
+} as const satisfies Record<string, LocalizedText>

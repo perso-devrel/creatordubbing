@@ -14,9 +14,8 @@ import { ytUploadVideo, ytUploadCaption, getDownloadLinks, getPersoFileUrl } fro
 import { dbMutation } from '@/lib/api/dbMutation'
 import { getLanguageByCode } from '@/utils/languages'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
-import type { AppLocale } from '@/lib/i18n/config'
 import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
-import { message, type MessageKey } from '@/lib/i18n/messages'
+import type { MessageKey } from '@/lib/i18n/clientMessages'
 import { resolveCaptionTrackName } from '@/lib/youtube/captions'
 
 type UploadState = 'idle' | 'fetching' | 'uploading' | 'done' | 'error'
@@ -38,18 +37,20 @@ const PRIVACY_OPTIONS = [
   { value: 'public', labelKey: 'privacyStatus.public' },
 ] satisfies Array<{ value: PrivacyStatus; labelKey: MessageKey }>
 
-async function fetchCompletedLanguages(uid: string, locale: AppLocale): Promise<CompletedJobLanguage[]> {
+type LocaleText = ReturnType<typeof useLocaleText>
+
+async function fetchCompletedLanguages(uid: string, t: LocaleText): Promise<CompletedJobLanguage[]> {
   const res = await fetch(`/api/dashboard/completed-languages?uid=${encodeURIComponent(uid)}`, { cache: 'no-store' })
   const json = await res.json()
-  if (!json.ok) throw new Error(json.error?.message || message(locale, 'app.app.uploads.page.couldNotLoadVideosToUpload'))
+  if (!json.ok) throw new Error(json.error?.message || t('app.app.uploads.page.couldNotLoadVideosToUpload'))
   return json.data
 }
 
-function buildDefaultSettings(item: CompletedJobLanguage, langName: string, locale: AppLocale): UploadSettings {
+function buildDefaultSettings(item: CompletedJobLanguage, langName: string, t: LocaleText): UploadSettings {
   return {
     title: `[${langName}] ${item.video_title}`,
-    description: message(locale, 'app.app.uploads.page.valueDubtubeAIDubbingInValue', { itemVideo_title: item.video_title, langName: langName }),
-    tags: message(locale, 'app.app.uploads.page.dubtubeAIDubbingValue', { langName: langName }),
+    description: t('app.app.uploads.page.valueDubtubeAIDubbingInValue', { itemVideo_title: item.video_title, langName: langName }),
+    tags: t('app.app.uploads.page.dubtubeAIDubbingValue', { langName: langName }),
     privacyStatus: 'private',
     uploadCaptions: true,
     selfDeclaredMadeForKids: false,
@@ -185,12 +186,12 @@ function UploadRow({ item, userId }: UploadRowProps) {
   const captionTrackName = resolveCaptionTrackName(item.language_code, lang?.name)
 
   const [modalOpen, setModalOpen] = useState(false)
-  const [settings, setSettings] = useState<UploadSettings>(() => buildDefaultSettings(item, langName, locale))
+  const [settings, setSettings] = useState<UploadSettings>(() => buildDefaultSettings(item, langName, t))
 
   const handleOpenModal = useCallback(() => {
-    setSettings(buildDefaultSettings(item, langName, locale))
+    setSettings(buildDefaultSettings(item, langName, t))
     setModalOpen(true)
-  }, [item, langName, locale])
+  }, [item, langName, t])
 
   const handleUpload = useCallback(async () => {
     setModalOpen(false)
@@ -386,7 +387,7 @@ export default function UploadsPage() {
   const user = useAuthStore((s) => s.user)
   const { data: items = [], isLoading } = useQuery<CompletedJobLanguage[]>({
     queryKey: ['completed-languages', user?.uid, locale],
-    queryFn: () => fetchCompletedLanguages(user!.uid, locale),
+    queryFn: () => fetchCompletedLanguages(user!.uid, t),
     enabled: !!user,
     staleTime: 60_000,
   })

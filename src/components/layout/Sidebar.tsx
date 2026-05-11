@@ -5,6 +5,7 @@ import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { cn } from '@/utils/cn'
 import { stripLocalePrefix } from '@/lib/i18n/config'
 import { useLocaleText } from '@/hooks/useLocaleText'
+import { useOperationsAccess } from '@/features/ops/hooks/useOperationsAccess'
 import {
   LayoutDashboard,
   Languages,
@@ -30,7 +31,9 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
   const pathname = usePathname()
   const activePathname = stripLocalePrefix(pathname || '/')
   const t = useLocaleText()
-  const visibleItems = navItems.filter((item) => !item.opsAdminOnly || isOpsAdmin)
+  const opsAccess = useOperationsAccess()
+  const canViewOps = isOpsAdmin || opsAccess.data?.isOpsAdmin === true
+  const visibleItems = navItems.filter((item) => !item.opsAdminOnly || canViewOps)
   const settingsLabel = t('components.layout.sidebar.labelSettings')
 
   const renderNavItem = ({ to, label, icon: Icon }: (typeof navItems)[number]) => {

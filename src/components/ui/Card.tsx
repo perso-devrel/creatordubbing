@@ -19,26 +19,10 @@ export function Card({ className, children, ...props }: CardProps) {
   )
 }
 
-export function CardHeader({ className, children, ...props }: CardProps) {
-  return (
-    <div className={cn('mb-4', className)} {...props}>
-      {children}
-    </div>
-  )
-}
-
 export function CardTitle({ className, children, ...props }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3 className={cn('text-lg font-semibold text-surface-900 dark:text-surface-100', className)} {...props}>
       {children}
     </h3>
-  )
-}
-
-export function CardDescription({ className, children, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return (
-    <p className={cn('text-sm text-surface-600 dark:text-surface-400', className)} {...props}>
-      {children}
-    </p>
   )
 }

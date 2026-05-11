@@ -10,7 +10,7 @@ import {
 } from '@/lib/i18n/config'
 import { useAppLocale } from '@/hooks/useLocaleText'
 
-export function useCurrentRouteLocale(): AppLocale {
+function useCurrentRouteLocale(): AppLocale {
   const pathname = usePathname()
   const appLocale = useAppLocale()
   return getPathLocale(pathname) ?? appLocale

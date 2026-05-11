@@ -57,7 +57,7 @@ export async function resolveMetadataLocale(params: Promise<{ locale: string }>)
   return resolveAppLocale(locale)
 }
 
-export function localizedAlternates(path: string, locale: AppLocale): Metadata['alternates'] {
+function localizedAlternates(path: string, locale: AppLocale): Metadata['alternates'] {
   return {
     canonical: withLocalePath(path, locale),
     languages: Object.fromEntries([

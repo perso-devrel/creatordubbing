@@ -9,7 +9,7 @@ import { getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import type { JobStatus } from '../../types/dubbing.types'
-import { message, type MessageKey } from '@/lib/i18n/messages'
+import type { MessageKey } from '@/lib/i18n/clientMessages'
 
 const statusLabels: Record<JobStatus, MessageKey> = {
   idle: 'dubbing.processing.status.idle',
@@ -36,13 +36,13 @@ const reasonLabels: Record<string, MessageKey> = {
   CANCELED: 'dubbing.processing.reason.canceled',
 }
 
-function getProgressLabel(locale: ReturnType<typeof useAppLocale>, lp: { progressReason: string; progress: number }) {
+function getProgressLabel(t: ReturnType<typeof useLocaleText>, lp: { progressReason: string; progress: number }) {
   if (lp.progress >= 100 && lp.progressReason !== 'COMPLETED' && lp.progressReason !== 'Completed' && lp.progressReason !== 'FAILED' && lp.progressReason !== 'Failed' && lp.progressReason !== 'CANCELED') {
-    return message(locale, 'features.dubbing.components.steps.processingStep.finalizing')
+    return t('features.dubbing.components.steps.processingStep.finalizing')
   }
   return reasonLabels[lp.progressReason]
-    ? message(locale, reasonLabels[lp.progressReason])
-    : message(locale, 'features.dubbing.components.steps.processingStep.processing')
+    ? t(reasonLabels[lp.progressReason])
+    : t('features.dubbing.components.steps.processingStep.processing')
 }
 
 export function ProcessingStep() {
@@ -163,7 +163,7 @@ export function ProcessingStep() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-surface-900 dark:text-white">{locale === 'ko' ? lang.nativeName : lang.name}</p>
                   <p className="text-xs text-surface-500 dark:text-surface-300">
-                    {getProgressLabel(locale, lp)}
+                {getProgressLabel(t, lp)}
                   </p>
                 </div>
                 {isCompleted ? (

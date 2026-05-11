@@ -5,7 +5,12 @@ import { usePathname } from 'next/navigation'
 import { useI18nStore } from '@/stores/i18nStore'
 import { getPathLocale } from '@/lib/i18n/config'
 import { text, type LocalizedText } from '@/lib/i18n/text'
-import { isMessageKey, message, type MessageKey, type MessageParams } from '@/lib/i18n/messages'
+import {
+  resolveClientMessage,
+  useClientMessages,
+  type MessageKey,
+  type MessageParams,
+} from '@/lib/i18n/clientMessages'
 
 export function useAppLocale() {
   const pathname = usePathname()
@@ -15,10 +20,12 @@ export function useAppLocale() {
 
 export function useLocaleText() {
   const locale = useAppLocale()
+  const messages = useClientMessages()
+
   return useCallback((value: LocalizedText | MessageKey, params?: MessageParams) => {
-    if (typeof value === 'string' && isMessageKey(value)) {
-      return message(locale, value, params)
+    if (typeof value === 'string') {
+      return resolveClientMessage(messages, locale, value, params) ?? value
     }
     return text(locale, value as LocalizedText)
-  }, [locale])
+  }, [locale, messages])
 }

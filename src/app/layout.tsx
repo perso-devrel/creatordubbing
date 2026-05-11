@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { cookies, headers } from "next/headers";
 import Script from "next/script";
 import "@fontsource/pretendard/400.css";
 import "@fontsource/pretendard/500.css";
@@ -12,9 +11,6 @@ import { Providers } from "@/components/providers/Providers";
 import { SUPPORTED_LANGUAGE_COUNT } from "@/utils/languages";
 import {
   DEFAULT_APP_LOCALE,
-  LOCALE_COOKIE,
-  LOCALE_HEADER,
-  resolvePreferredLocale,
 } from "@/lib/i18n/config";
 import { message } from "@/lib/i18n/messages";
 
@@ -48,15 +44,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [headersList, cookieStore] = await Promise.all([headers(), cookies()]);
-  const locale = resolvePreferredLocale(
-    headersList.get(LOCALE_HEADER) ?? cookieStore.get(LOCALE_COOKIE)?.value,
-    DEFAULT_APP_LOCALE,
-  );
-
   return (
     <html
-      lang={locale}
+      lang={DEFAULT_APP_LOCALE}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >

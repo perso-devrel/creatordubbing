@@ -22,7 +22,7 @@ import {
 import type { DownloadTarget } from '@/lib/perso/types'
 import type { LanguageProgress } from '../types/dubbing.types'
 import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
-import { message, countMessage } from '@/lib/i18n/messages'
+import { extractVideoId } from '@/utils/validators'
 
 const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
@@ -30,6 +30,12 @@ const POLL_BACKOFF = 1.5          // 매 폴링마다 1.5배씩 증가
 const POLL_FINALIZING = 2_000     // 100%인데 COMPLETED 아직 안 온 경우 빠르게 재확인
 const DEFAULT_SOURCE_LANGUAGE = 'auto'
 const DEFAULT_SPEAKER_COUNT = 1
+type LocaleText = ReturnType<typeof useLocaleText>
+
+function countLocaleMessage(locale: AppLocale, count: number, key: string, t: LocaleText): string {
+  const unit = t(key)
+  return locale === 'ko' ? `${count}${unit}` : `${count} ${unit}`
+}
 
 function mapProgressReasonToStatus(reason: string) {
   switch (reason) {
@@ -72,13 +78,18 @@ async function saveJobToDb(
   projectMap: Record<string, number>,
   lipSyncEnabled: boolean,
   sourceLanguage: string,
-  locale: AppLocale,
+  t: LocaleText,
 ): Promise<number> {
   const userId = useAuthStore.getState().user?.uid
   const videoMeta = store.getState().videoMeta
   const isShort = store.getState().isShort
+  const state = store.getState()
+  const originalYouTubeId =
+    state.videoSource?.type === 'url' && state.videoSource.url
+      ? extractVideoId(state.videoSource.url)
+      : null
   if (!userId) {
-    throw new Error(message(locale, 'features.dubbing.hooks.usePersoFlow.pleaseSignInFirst'))
+    throw new Error(t('features.dubbing.hooks.usePersoFlow.pleaseSignInFirst'))
   }
 
   const result = await dbMutationStrict<{ jobId: number }>({
@@ -94,6 +105,10 @@ async function saveJobToDb(
         spaceSeq,
         lipSyncEnabled,
         isShort,
+        deliverableMode: state.deliverableMode,
+        uploadSettings: state.uploadSettings,
+        originalVideoUrl: state.originalVideoUrl,
+        originalYouTubeUrl: originalYouTubeId ? `https://www.youtube.com/watch?v=${originalYouTubeId}` : null,
       },
       languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
     },
@@ -108,7 +123,7 @@ async function pollLanguage(
   spaceSeq: number,
   pollTimers: Record<string, ReturnType<typeof setTimeout>>,
   addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
-  locale: AppLocale,
+  t: LocaleText,
 ): Promise<boolean | 'finalizing'> { // true = terminal, 'finalizing' = 100% but not COMPLETED yet
   const progress = await getProjectProgress(projectSeq, spaceSeq)
   const status = mapProgressReasonToStatus(progress.progressReason)
@@ -197,8 +212,8 @@ async function pollLanguage(
   addToast({
     type: anyFailed ? 'warning' : 'success',
     title: anyFailed
-      ? message(locale, 'features.dubbing.hooks.usePersoFlow.dubbingFinishedWithSomeErrors')
-      : message(locale, 'features.dubbing.hooks.usePersoFlow.dubbingComplete'),
+      ? t('features.dubbing.hooks.usePersoFlow.dubbingFinishedWithSomeErrors')
+      : t('features.dubbing.hooks.usePersoFlow.dubbingComplete'),
   })
   return true
 }
@@ -344,7 +359,7 @@ export function usePersoFlow() {
     addToast({
       type: 'info',
       title: t('features.dubbing.hooks.usePersoFlow.startingDubbingJob'),
-      message: countMessage(locale, targetLanguages.length, 'features.dubbing.hooks.usePersoFlow.unitLanguages'),
+      message: countLocaleMessage(locale, targetLanguages.length, 'features.dubbing.hooks.usePersoFlow.unitLanguages', t),
     })
 
     try {
@@ -362,7 +377,7 @@ export function usePersoFlow() {
         pendingProjectMap,
         lipSyncEnabled,
         DEFAULT_SOURCE_LANGUAGE,
-        locale,
+        t,
       )
       await dbMutationStrict({ type: 'reserveJobCredits', payload: { jobId: dbJobId } })
 
@@ -408,7 +423,7 @@ export function usePersoFlow() {
       addToast({
         type: 'success',
         title: t('features.dubbing.hooks.usePersoFlow.dubbingStarted'),
-        message: countMessage(locale, projectIds.length, 'features.dubbing.hooks.usePersoFlow.unitLanguagesProcessing'),
+        message: countLocaleMessage(locale, projectIds.length, 'features.dubbing.hooks.usePersoFlow.unitLanguagesProcessing', t),
       })
       return projectMap
     } catch (err: unknown) {
@@ -434,7 +449,7 @@ export function usePersoFlow() {
     function scheduleNext(langCode: string, projectSeq: number, interval: number) {
       pollTimers.current[langCode] = setTimeout(async () => {
         try {
-          const done = await pollLanguage(langCode, projectSeq, spaceSeq!, pollTimers.current, addToast, locale)
+          const done = await pollLanguage(langCode, projectSeq, spaceSeq!, pollTimers.current, addToast, t)
           if (!done) {
             const next = Math.min(interval * POLL_BACKOFF, POLL_INTERVAL_MAX)
             scheduleNext(langCode, projectSeq, next)
@@ -450,7 +465,7 @@ export function usePersoFlow() {
     Object.entries(projectMap).forEach(([langCode, projectSeq]) => {
       scheduleNext(langCode, projectSeq, POLL_INTERVAL_MIN)
     })
-  }, [addToast, locale])
+  }, [addToast, t])
 
   const stopPolling = useCallback(() => {
     Object.values(pollTimers.current).forEach(clearTimeout)
