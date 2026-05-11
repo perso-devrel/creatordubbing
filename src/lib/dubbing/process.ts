@@ -11,7 +11,7 @@ import {
   type DubbingJobLanguageWorkItem,
 } from '@/lib/db/queries'
 import { persoFetch } from '@/lib/perso/client'
-import type { DownloadResponse, ProgressResponse } from '@/lib/perso/types'
+import type { DownloadResponse, DownloadTarget, ProgressResponse } from '@/lib/perso/types'
 import { getPersoFileUrl } from '@/lib/api-client/perso'
 import { enqueueYouTubeUpload } from '@/lib/upload-queue/enqueue'
 import { translateMetadata } from '@/lib/translate/gemini'
@@ -83,19 +83,43 @@ async function fetchProgress(item: DubbingJobLanguageWorkItem) {
   )
 }
 
-async function fetchDownloadLinks(item: DubbingJobLanguageWorkItem, target = 'all') {
+async function fetchDownloadLinks(item: DubbingJobLanguageWorkItem, target: DownloadTarget = 'all') {
   return persoFetch<DownloadResponse>(
     `/video-translator/api/v1/projects/${item.projectSeq}/spaces/${item.spaceSeq}/download`,
     { baseURL: 'api', query: { target } },
   )
 }
 
+async function tryFetchDownloadLinks(item: DubbingJobLanguageWorkItem, target: DownloadTarget) {
+  try {
+    return await fetchDownloadLinks(item, target)
+  } catch (err) {
+    logger.warn('perso download link fetch failed in dubbing worker', {
+      jobId: item.jobId,
+      langCode: item.languageCode,
+      target,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    })
+    return null
+  }
+}
+
 async function resolveCompletedAssets(item: DubbingJobLanguageWorkItem): Promise<CompletedAssets> {
-  const downloads = await fetchDownloadLinks(item, 'all')
+  const [dubbingDownloads, allDownloads] = await Promise.all([
+    tryFetchDownloadLinks(item, 'dubbingVideo'),
+    tryFetchDownloadLinks(item, 'all'),
+  ])
+  if (!dubbingDownloads && !allDownloads) {
+    throw new Error('Unable to fetch Perso download links')
+  }
+
   return {
-    dubbedVideoUrl: toAbsoluteUrl(downloads.videoFile?.videoDownloadLink),
-    audioUrl: toAbsoluteUrl(downloads.audioFile?.voiceAudioDownloadLink),
-    srtUrl: toAbsoluteUrl(downloads.srtFile?.translatedSubtitleDownloadLink),
+    dubbedVideoUrl: toAbsoluteUrl(
+      dubbingDownloads?.videoFile?.videoDownloadLink
+        ?? allDownloads?.videoFile?.videoDownloadLink,
+    ),
+    audioUrl: toAbsoluteUrl(allDownloads?.audioFile?.voiceAudioDownloadLink),
+    srtUrl: toAbsoluteUrl(allDownloads?.srtFile?.translatedSubtitleDownloadLink),
   }
 }
 
