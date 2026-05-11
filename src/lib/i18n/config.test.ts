@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   APP_LOCALES,
+  CUSTOM_METADATA_TARGET_PRESET,
   DEFAULT_APP_LOCALE,
   DEFAULT_METADATA_TARGET_PRESET,
+  getMetadataTargetLanguageCodes,
   getMarketLanguagePreset,
   isAppLocale,
   MARKET_LANGUAGE_PRESETS,
+  normalizeMetadataTargetLanguages,
   resolveAppLocale,
 } from './config'
 
@@ -32,5 +35,14 @@ describe('i18n config', () => {
     ])
     expect(getMarketLanguagePreset(DEFAULT_METADATA_TARGET_PRESET).languageCodes).toContain('en')
     expect(getMarketLanguagePreset('missing').id).toBe(DEFAULT_METADATA_TARGET_PRESET)
+  })
+
+  it('uses custom metadata target languages when the custom preset is selected', () => {
+    expect(getMarketLanguagePreset(CUSTOM_METADATA_TARGET_PRESET).id).toBe(CUSTOM_METADATA_TARGET_PRESET)
+    expect(getMetadataTargetLanguageCodes(CUSTOM_METADATA_TARGET_PRESET, ['ja', 'en'])).toEqual(['ja', 'en'])
+    expect(getMetadataTargetLanguageCodes('creator-growth', ['ja'])).toEqual(
+      getMarketLanguagePreset('creator-growth').languageCodes,
+    )
+    expect(normalizeMetadataTargetLanguages(['en', 'en', 'ko'])).toEqual(['en', 'ko'])
   })
 })

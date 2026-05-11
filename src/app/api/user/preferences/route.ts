@@ -45,13 +45,14 @@ export async function PUT(req: NextRequest) {
     // 부분 업데이트 지원 — 기존 저장 값에 머지해 누락된 키는 유지한다.
     const existingRaw = await getUserPreferencesRaw(auth.session.uid)
     const existing = parseUserPreferences(existingRaw)
-    const next = {
+    const next = parseUserPreferences(JSON.stringify({
       appLocale: parsed.data.appLocale ?? existing.appLocale,
       metadataTargetPreset: parsed.data.metadataTargetPreset ?? existing.metadataTargetPreset,
+      metadataTargetLanguages: parsed.data.metadataTargetLanguages ?? existing.metadataTargetLanguages,
       defaultPrivacy: parsed.data.defaultPrivacy ?? existing.defaultPrivacy,
       defaultLanguage: parsed.data.defaultLanguage ?? existing.defaultLanguage,
       defaultTags: parsed.data.defaultTags ?? existing.defaultTags,
-    }
+    }))
     await setUserPreferencesRaw(auth.session.uid, JSON.stringify(next))
     return apiOk(next)
   } catch (err) {
