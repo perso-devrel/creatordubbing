@@ -14,6 +14,10 @@ interface OperationsAccess {
 
 const OPS_ACCESS_QUERY_KEY = ['ops-access']
 
+interface UseOperationsAccessOptions {
+  enabled?: boolean
+}
+
 async function fetchOperationsAccess(): Promise<OperationsAccess> {
   const res = await fetch('/api/ops/alerts', { cache: 'no-store' })
 
@@ -32,15 +36,16 @@ async function fetchOperationsAccess(): Promise<OperationsAccess> {
   }
 }
 
-export function useOperationsAccess() {
+export function useOperationsAccess(options: UseOperationsAccessOptions = {}) {
   const user = useAuthStore((state) => state.user)
+  const enabled = Boolean(user) && (options.enabled ?? true)
 
   return useQuery({
     queryKey: OPS_ACCESS_QUERY_KEY,
     queryFn: fetchOperationsAccess,
-    enabled: !!user,
+    enabled,
     retry: false,
     staleTime: 30_000,
-    refetchInterval: 60_000,
+    refetchInterval: enabled ? 60_000 : false,
   })
 }

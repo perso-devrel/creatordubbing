@@ -20,7 +20,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
   const { user, clear } = useAuthStore()
   const router = useLocaleRouter()
   const { data: channel } = useChannelStats()
-  const opsAccess = useOperationsAccess()
+  const opsAccess = useOperationsAccess({ enabled: isOpsAdmin })
   const locale = useAppLocale()
   const t = useLocaleText()
   const canViewOps = isOpsAdmin || opsAccess.data?.isOpsAdmin === true
