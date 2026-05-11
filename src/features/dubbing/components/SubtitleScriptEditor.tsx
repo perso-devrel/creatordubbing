@@ -806,16 +806,16 @@ export function SubtitleScriptEditor({
                       variant="outline"
                       onClick={handleDownload}
                       loading={downloading}
-                      disabled={!cues || hasInvalidCaptionTiming}
+                      disabled={hasInvalidCaptionTiming}
                     >
                       <Download className="h-3.5 w-3.5" />
                       {t('features.dubbing.components.subtitleScriptEditor.downloadCaptions')}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => setShowPreview((v) => !v)} disabled={!cues}>
+                    <Button size="sm" variant="outline" onClick={() => setShowPreview((v) => !v)}>
                       {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                       {t('features.dubbing.components.subtitleScriptEditor.previewCaptions')}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handleResetSrt} loading={resetting} disabled={!cues}>
+                    <Button size="sm" variant="outline" onClick={handleResetSrt} loading={resetting}>
                       <RotateCcw className="h-3.5 w-3.5" />
                       {t('features.dubbing.components.subtitleScriptEditor.restoreGeneratedCaptions')}
                     </Button>
@@ -825,7 +825,7 @@ export function SubtitleScriptEditor({
                         variant="primary"
                         onClick={handlePushToYouTube}
                         loading={pushingToYT}
-                        disabled={!cues || hasInvalidCaptionTiming}
+                        disabled={hasInvalidCaptionTiming}
                       >
                         <UploadCloud className="h-3.5 w-3.5" />
                         {t('features.dubbing.components.subtitleScriptEditor.updateYouTubeCaptions')}
