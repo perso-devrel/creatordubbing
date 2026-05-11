@@ -216,6 +216,10 @@ export function SettingsClient() {
 
   return (
     <div className="space-y-4">
+      <div ref={youtubeSectionRef} id="youtube-settings" className="scroll-mt-20">
+        <YouTubeConnectionCard />
+      </div>
+
       <Card>
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300">
@@ -402,10 +406,6 @@ export function SettingsClient() {
           </div>
         </div>
       </Modal>
-
-      <div ref={youtubeSectionRef} id="youtube-settings" className="scroll-mt-20">
-        <YouTubeConnectionCard />
-      </div>
     </div>
   )
 }
