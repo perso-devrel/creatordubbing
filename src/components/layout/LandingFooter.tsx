@@ -33,12 +33,12 @@ export function LandingFooter() {
             >
               {t('components.layout.landingFooter.termsOfService')}
             </LocaleLink>
-            <a
-              href="mailto:devrel.365@gmail.com"
+            <LocaleLink
+              href="/support"
               className="text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100"
             >
               {t('components.layout.landingFooter.contact')}
-            </a>
+            </LocaleLink>
           </nav>
 
           <p className="text-xs text-surface-500 dark:text-surface-400">

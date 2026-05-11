@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: LocaleMetadataProps): Promise
   return getMarketingMetadata(locale, 'privacy')
 }
 
-const LAST_UPDATED = '2026-05-07'
+const LAST_UPDATED = '2026-05-11'
 
 export default async function PrivacyPolicyPage({ params }: LocaleMetadataProps) {
   const locale = await resolveMetadataLocale(params)
@@ -154,10 +154,10 @@ export default async function PrivacyPolicyPage({ params }: LocaleMetadataProps)
         <p>
           {t('legal.privacy.section.11.beforeEmail')}
           <a
-            href="mailto:devrel.365@gmail.com"
+            href="mailto:gyuwon05@gmail.com"
             className="text-brand-600 hover:underline dark:text-brand-400"
           >
-            devrel.365@gmail.com
+            gyuwon05@gmail.com
           </a>
           {t('legal.common.emailSuffix')}
         </p>
