@@ -79,6 +79,7 @@ test('dubbing page renders and captures network sequence', async ({ page }) => {
   const consoleErrors: string[] = []
 
   await page.context().addCookies([
+    { name: 'dubtube_locale', value: 'ko', domain: 'localhost', path: '/' },
     { name: 'dubtube_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
   ])
   await page.addInitScript(() => {
@@ -115,6 +116,7 @@ test('dubbing page renders and captures network sequence', async ({ page }) => {
   })
 
   expect(res?.status(), `/dubbing HTTP status`).toBeLessThan(500)
+  expect(new URL(page.url()).pathname, 'Final dubbing route').toBe('/ko/dubbing')
 
   await page.waitForTimeout(2000)
 
