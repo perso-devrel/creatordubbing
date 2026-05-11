@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Check, FileVideo, Languages, Loader2, RefreshCw, Search, Upload } from 'lucide-react'
 import { Badge, Button, Card, CardTitle, Input, Modal, Select, Toggle } from '@/components/ui'
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
+import { signInWithGoogle } from '@/lib/google-auth'
 import { translateMetadata } from '@/lib/api-client/translate'
 import {
   ytFetchVideoMetadata,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/i18n/config'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useI18nStore } from '@/stores/i18nStore'
+import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
@@ -58,10 +60,18 @@ export function MetadataLocalizationTool() {
     label: t(preset.labelKey),
   }))
   const { defaultLanguage, defaultTags, defaultPrivacy } = useYouTubeSettingsStore()
-  const { data: channel } = useChannelStats()
 
   const [mode, setMode] = useState<Mode>('existing')
-  const { data: videos = [], isLoading: loadingVideos, error: videosError } = useMyVideos(50, mode === 'existing')
+  const [videosLoaded, setVideosLoaded] = useState(false)
+  const [requestingVideos, setRequestingVideos] = useState(false)
+  const {
+    data: videos = [],
+    isLoading: loadingVideos,
+    isFetching: fetchingVideos,
+    error: videosError,
+    refetch: refetchVideos,
+  } = useMyVideos(50, false)
+  const videosBusy = loadingVideos || fetchingVideos || requestingVideos
   const [videoId, setVideoId] = useState('')
   const [videoFile, setVideoFile] = useState<File | null>(null)
   /** 내 영상 모드에서 "불러오기"가 한 번이라도 성공했는지 — 하단 번역 카드 노출 게이트. */
@@ -104,6 +114,7 @@ export function MetadataLocalizationTool() {
   const [uploadPrivacy, setUploadPrivacy] = useState<PrivacyStatus>(defaultPrivacy)
   const [uploadMadeForKids, setUploadMadeForKids] = useState(false)
   const [uploadConfirmed, setUploadConfirmed] = useState(false)
+  const { data: channel } = useChannelStats(mode === 'new' && showUploadModal)
 
   const openUploadModal = () => {
     // 모달 열 때마다 최신 store 값을 가져와 초기화 — 별도의 sync effect 불필요.
@@ -118,6 +129,26 @@ export function MetadataLocalizationTool() {
     if (!videosError) return
     console.error('[MetadataLocalizationTool] Failed to load YouTube videos', videosError)
   }, [videosError])
+
+  const handleLoadVideos = async () => {
+    setRequestingVideos(true)
+    try {
+      const { user } = await signInWithGoogle({ forceConsent: true, scopeMode: 'youtube-readonly' })
+      useAuthStore.getState().setUser(user)
+      const result = await refetchVideos()
+      if (result.error) throw result.error
+      setVideosLoaded(true)
+    } catch (err) {
+      console.error('[MetadataLocalizationTool] Failed to request YouTube videos permission', err)
+      addToast({
+        type: 'error',
+        title: t('features.metadata.components.metadataLocalizationTool.failedToLoadTitleAndDescription'),
+        message: t('features.metadata.components.metadataLocalizationTool.couldNotLoadYouTubeVideosPleaseTryAgain'),
+      })
+    } finally {
+      setRequestingVideos(false)
+    }
+  }
 
   const filteredVideos = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -368,7 +399,20 @@ export function MetadataLocalizationTool() {
                 {t('features.metadata.components.metadataLocalizationTool.loadTheTitleDescriptionAndExistingTranslationsFor')}
               </p>
             </div>
-            {loadingVideos && <Loader2 className="h-5 w-5 animate-spin text-surface-500 dark:text-surface-300" />}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLoadVideos}
+              loading={videosBusy}
+              disabled={videosBusy}
+            >
+              {videosBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              {t('features.metadata.components.metadataLocalizationTool.useExistingVideo')}
+            </Button>
           </div>
 
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
@@ -386,6 +430,7 @@ export function MetadataLocalizationTool() {
               <Select
                 label={t('features.metadata.components.metadataLocalizationTool.targetVideo')}
                 value={videoId}
+                disabled={!videosLoaded || videosBusy}
                 onChange={(event) => {
                   const selected = videos.find((video) => video.videoId === event.target.value)
                   setVideoId(event.target.value)
@@ -398,7 +443,7 @@ export function MetadataLocalizationTool() {
                   if (selected) setTitle(selected.title)
                 }}
                 options={[
-                  { value: '', label: loadingVideos ? t('features.metadata.components.metadataLocalizationTool.loading') : t('features.metadata.components.metadataLocalizationTool.selectAVideo') },
+                  { value: '', label: videosBusy ? t('features.metadata.components.metadataLocalizationTool.loading') : t('features.metadata.components.metadataLocalizationTool.selectAVideo') },
                   ...filteredVideos.map((video) => ({
                     value: video.videoId,
                     label: `${video.title} (${video.privacyStatus})`,

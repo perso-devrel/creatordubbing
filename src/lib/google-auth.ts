@@ -1,6 +1,6 @@
 /**
  * Google OAuth direct sign-in (no Firebase SDK).
- * Client-only — uses popup + window.localStorage.
+ * Client-only; uses popup + postMessage + window.localStorage.
  */
 'use client'
 
@@ -11,7 +11,28 @@ export interface GoogleUser {
   photoURL: string | null
 }
 
+export type GoogleAuthScopeMode = 'login' | 'youtube-write' | 'youtube-readonly'
+
 const STORAGE_KEY_USER = 'google_user'
+const AUTH_TIMEOUT_MS = 2 * 60 * 1000
+const BASE_SCOPES = ['openid', 'email', 'profile'] as const
+const YOUTUBE_WRITE_SCOPES = [
+  'https://www.googleapis.com/auth/youtube.upload',
+  'https://www.googleapis.com/auth/youtube.force-ssl',
+] as const
+const YOUTUBE_READONLY_SCOPES = ['https://www.googleapis.com/auth/youtube.readonly'] as const
+
+function getGoogleScopes(mode: GoogleAuthScopeMode): readonly string[] {
+  switch (mode) {
+    case 'youtube-write':
+      return [...BASE_SCOPES, ...YOUTUBE_WRITE_SCOPES]
+    case 'youtube-readonly':
+      return [...BASE_SCOPES, ...YOUTUBE_READONLY_SCOPES]
+    case 'login':
+    default:
+      return BASE_SCOPES
+  }
+}
 
 function getStoredUser(): GoogleUser | null {
   if (typeof window === 'undefined') return null
@@ -27,23 +48,19 @@ function storeUser(user: GoogleUser) {
   localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user))
 }
 
-export async function signInWithGoogle(options: { forceConsent?: boolean } = {}): Promise<{
+export async function signInWithGoogle(
+  options: { forceConsent?: boolean; scopeMode?: GoogleAuthScopeMode } = {}
+): Promise<{
   user: GoogleUser
 }> {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-  if (!clientId) throw new Error('Google 로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.')
+  if (!clientId) {
+    throw new Error('Google 로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.')
+  }
 
   return new Promise((resolve, reject) => {
     const redirectUri = `${window.location.origin}/auth/callback`
-    const scope = [
-      'openid',
-      'email',
-      'profile',
-      'https://www.googleapis.com/auth/youtube.upload',
-      'https://www.googleapis.com/auth/youtube.readonly',
-      'https://www.googleapis.com/auth/youtube.force-ssl',
-      'https://www.googleapis.com/auth/yt-analytics.readonly',
-    ].join(' ')
+    const scope = getGoogleScopes(options.scopeMode ?? 'login').join(' ')
 
     const stateNonce = crypto.randomUUID()
     sessionStorage.setItem('oauth_state', stateNonce)
@@ -61,17 +78,28 @@ export async function signInWithGoogle(options: { forceConsent?: boolean } = {})
 
     const popup = window.open(authUrl, 'google_auth', 'width=500,height=600')
     if (!popup) {
-      reject(new Error('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.'))
+      sessionStorage.removeItem('oauth_state')
+      reject(new Error('팝업이 차단되었습니다. 팝업 차단을 해제해 주세요.'))
       return
     }
 
-    // Use postMessage instead of polling popup.location (avoids COOP issues)
-    const onMessage = async (event: MessageEvent) => {
+    let timeoutTimer: number | null = null
+
+    const cleanup = () => {
+      window.removeEventListener('message', onMessage)
+      if (timeoutTimer !== null) {
+        window.clearTimeout(timeoutTimer)
+        timeoutTimer = null
+      }
+    }
+
+    // Use postMessage only. Reading cross-origin popup state can trigger COOP warnings
+    // while the popup is on accounts.google.com.
+    async function onMessage(event: MessageEvent) {
       if (event.origin !== window.location.origin) return
       if (event.data?.type !== 'google_oauth_callback') return
 
-      window.removeEventListener('message', onMessage)
-      clearInterval(closedTimer)
+      cleanup()
 
       const { code, error, state: returnedState } = event.data
 
@@ -121,15 +149,11 @@ export async function signInWithGoogle(options: { forceConsent?: boolean } = {})
     }
 
     window.addEventListener('message', onMessage)
-
-    // Detect manual close without completing auth
-    const closedTimer = setInterval(() => {
-      if (popup.closed) {
-        clearInterval(closedTimer)
-        window.removeEventListener('message', onMessage)
-        reject(new Error('로그인이 취소되었습니다.'))
-      }
-    }, 500)
+    timeoutTimer = window.setTimeout(() => {
+      cleanup()
+      sessionStorage.removeItem('oauth_state')
+      reject(new Error('로그인이 제한 시간 안에 완료되지 않았습니다. 다시 시도해 주세요.'))
+    }, AUTH_TIMEOUT_MS)
   })
 }
 

@@ -19,6 +19,8 @@ import { useLocaleRouter } from '@/hooks/useLocalePath'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
+import { signInWithGoogle } from '@/lib/google-auth'
+import { useAuthStore } from '@/stores/authStore'
 import { isValidVideoUrl, isValidYouTubeUrl } from '@/utils/validators'
 import { formatDuration } from '@/utils/formatters'
 import { getPersoFileUrl } from '@/lib/api-client'
@@ -42,7 +44,17 @@ export function VideoInputStep() {
   const channelTabActive = activeTab === 'channel'
   const { data: channel, isLoading: channelLoading, error: channelError } = useChannelStats(channelTabActive)
   const isConnected = !!channel
-  const { data: myVideos = [], isLoading: myVideosLoading, error: myVideosError } = useMyVideos(50, channelTabActive && isConnected)
+  const [myVideosLoaded, setMyVideosLoaded] = useState(false)
+  const [requestingMyVideos, setRequestingMyVideos] = useState(false)
+  const [myVideosPermissionError, setMyVideosPermissionError] = useState<string | null>(null)
+  const {
+    data: myVideos = [],
+    isLoading: loadingMyVideos,
+    isFetching: fetchingMyVideos,
+    error: myVideosError,
+    refetch: refetchMyVideos,
+  } = useMyVideos(50, false)
+  const myVideosLoading = loadingMyVideos || fetchingMyVideos || requestingMyVideos
   const [videoSearch, setVideoSearch] = useState('')
 
   const publicVideos = useMemo(
@@ -55,6 +67,26 @@ export function VideoInputStep() {
     return publicVideos.filter((v) => v.title.toLowerCase().includes(q))
   }, [publicVideos, videoSearch])
   const hiddenCount = myVideos.length - publicVideos.length
+
+  const handleLoadMyVideos = async () => {
+    setRequestingMyVideos(true)
+    setMyVideosPermissionError(null)
+    try {
+      const { user } = await signInWithGoogle({ forceConsent: true, scopeMode: 'youtube-readonly' })
+      useAuthStore.getState().setUser(user)
+      const result = await refetchMyVideos()
+      if (result.error) throw result.error
+      setMyVideosLoaded(true)
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : t('features.dubbing.components.steps.videoInputStep.couldNotLoadYouTubeVideos')
+      setMyVideosPermissionError(message)
+    } finally {
+      setRequestingMyVideos(false)
+    }
+  }
 
   const handleMyVideoSelect = async (videoId: string) => {
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
@@ -247,6 +279,27 @@ export function VideoInputStep() {
               <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t('features.dubbing.components.steps.videoInputStep.connectYourYouTubeChannelToChooseFromYour')}</p>
               <Button variant="outline" className="mt-4" onClick={() => localeRouter.push('/settings?section=youtube')}>{t('features.dubbing.components.steps.videoInputStep.connectChannel')}</Button>
+            </Card>
+          ) : !myVideosLoaded ? (
+            <Card className="py-12 text-center">
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">
+                {t('features.dubbing.components.steps.videoInputStep.loadMyVideosDescription')}
+              </p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={handleLoadMyVideos}
+                loading={myVideosLoading}
+                disabled={myVideosLoading}
+              >
+                {t('features.dubbing.components.steps.videoInputStep.loadMyVideos')}
+              </Button>
+              {myVideosPermissionError && (
+                <p className="mx-auto mt-3 max-w-md text-sm text-red-500">
+                  {myVideosPermissionError}
+                </p>
+              )}
             </Card>
           ) : myVideosLoading ? (
             <Card className="py-12 text-center">

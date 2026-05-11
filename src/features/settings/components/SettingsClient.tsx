@@ -424,7 +424,7 @@ function YouTubeConnectionCard() {
   const handleReconnect = async () => {
     setConnecting(true)
     try {
-      const { user } = await signInWithGoogle({ forceConsent: true })
+      const { user } = await signInWithGoogle({ forceConsent: true, scopeMode: 'youtube-write' })
       useAuthStore.getState().setUser(user)
       window.location.reload()
     } catch {
