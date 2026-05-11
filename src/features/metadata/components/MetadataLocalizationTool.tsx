@@ -11,7 +11,11 @@ import {
   ytUploadVideo,
 } from '@/lib/api-client/youtube'
 import type { MetadataTranslation } from '@/lib/api-client/translate'
-import { getMarketLanguagePreset, MARKET_LANGUAGE_PRESETS } from '@/lib/i18n/config'
+import {
+  getMarketLanguagePreset,
+  getMetadataTargetLanguageCodes,
+  METADATA_TARGET_PRESET_OPTIONS,
+} from '@/lib/i18n/config'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useI18nStore } from '@/stores/i18nStore'
 import { useNotificationStore } from '@/stores/notificationStore'
@@ -22,15 +26,24 @@ import { cn } from '@/utils/cn'
 
 type Mode = 'new' | 'existing'
 
-function buildInitialTargets(presetId: string, sourceLang: string, exclude: Set<string> = new Set()) {
-  return getMarketLanguagePreset(presetId)
-    .languageCodes
+function buildInitialTargets(
+  presetId: string,
+  customLanguageCodes: readonly string[],
+  sourceLang: string,
+  exclude: Set<string> = new Set(),
+) {
+  return getMetadataTargetLanguageCodes(presetId, customLanguageCodes)
     .filter((code) => code !== sourceLang && !exclude.has(code))
 }
 
 export function MetadataLocalizationTool() {
   const addToast = useNotificationStore((state) => state.addToast)
-  const { metadataTargetPreset, setMetadataTargetPreset } = useI18nStore()
+  const {
+    metadataTargetPreset,
+    metadataTargetLanguages,
+    setMetadataTargetPreset,
+    setMetadataTargetLanguages,
+  } = useI18nStore()
   const appLocale = useAppLocale()
   const t = useLocaleText()
   const isEnglish = appLocale === 'en'
@@ -40,7 +53,7 @@ export function MetadataLocalizationTool() {
       ? `${language.flag} ${language.name} (${language.nativeName})`
       : `${language.flag} ${language.nativeName} (${language.name})`,
   }))
-  const presetOptions = MARKET_LANGUAGE_PRESETS.map((preset) => ({
+  const presetOptions = METADATA_TARGET_PRESET_OPTIONS.map((preset) => ({
     value: preset.id,
     label: t(preset.labelKey),
   }))
@@ -74,7 +87,7 @@ export function MetadataLocalizationTool() {
     setTags(parsed)
   }
   const [targetLangs, setTargetLangs] = useState<string[]>(
-    () => buildInitialTargets(metadataTargetPreset, defaultLanguage),
+    () => buildInitialTargets(metadataTargetPreset, metadataTargetLanguages, defaultLanguage),
   )
   const [translations, setTranslations] = useState<Record<string, MetadataTranslation>>({})
   /** 내 영상 모드에서 YouTube로부터 가져온 기존 localization 언어 코드 (Perso 코드 기준). */
@@ -137,7 +150,7 @@ export function MetadataLocalizationTool() {
     setTranslations({})
     setExistingLocalizationLangs(new Set())
     setMetadataLoaded(false)
-    setTargetLangs(buildInitialTargets(metadataTargetPreset, sourceLang))
+    setTargetLangs(buildInitialTargets(metadataTargetPreset, metadataTargetLanguages, sourceLang))
   }
 
   const handleLoadMetadata = async () => {
@@ -174,7 +187,7 @@ export function MetadataLocalizationTool() {
       setTranslations(normalizedTranslations)
 
       // 이미 번역된 언어는 picker 기본 선택에서 제외 — 사용자는 추가하고 싶은 것만 선택.
-      setTargetLangs(buildInitialTargets(metadataTargetPreset, nextSourceLang, existingPersoCodes))
+      setTargetLangs(buildInitialTargets(metadataTargetPreset, metadataTargetLanguages, nextSourceLang, existingPersoCodes))
       setMetadataLoaded(true)
 
       addToast({ type: 'success', title: t('features.metadata.components.metadataLocalizationTool.loadedYouTubeTitleAndDescription') })
@@ -490,7 +503,7 @@ export function MetadataLocalizationTool() {
             onChange={(event) => {
               const nextSourceLang = event.target.value
               setSourceLang(nextSourceLang)
-              setTargetLangs(buildInitialTargets(metadataTargetPreset, nextSourceLang, existingLocalizationLangs))
+              setTargetLangs(buildInitialTargets(metadataTargetPreset, metadataTargetLanguages, nextSourceLang, existingLocalizationLangs))
             }}
             options={languageOptions}
           />
@@ -499,8 +512,10 @@ export function MetadataLocalizationTool() {
             value={metadataTargetPreset}
             onChange={(event) => {
               const nextPreset = event.target.value
+              const nextTargetLanguages = getMetadataTargetLanguageCodes(nextPreset, metadataTargetLanguages)
               setMetadataTargetPreset(nextPreset)
-              setTargetLangs(buildInitialTargets(nextPreset, sourceLang, existingLocalizationLangs))
+              setMetadataTargetLanguages(nextTargetLanguages)
+              setTargetLangs(buildInitialTargets(nextPreset, nextTargetLanguages, sourceLang, existingLocalizationLangs))
             }}
             options={presetOptions}
           />
