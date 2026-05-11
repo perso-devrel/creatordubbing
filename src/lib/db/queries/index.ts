@@ -34,7 +34,14 @@ export {
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
+  getDubbingJobLanguageWorkItem,
+  getDubbingJobLanguageWorkItems,
+  getJobLanguageTerminalSummary,
   deleteDubbingJob,
+} from './jobs'
+
+export type {
+  DubbingJobLanguageWorkItem,
 } from './jobs'
 
 export {

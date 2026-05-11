@@ -63,6 +63,14 @@ describe('mutationActionSchema', () => {
     expect(() => mutationActionSchema.parse(action)).not.toThrow()
   })
 
+  it('accepts queueJobLanguageYouTubeUpload', () => {
+    const action = {
+      type: 'queueJobLanguageYouTubeUpload',
+      payload: { jobId: 1, langCode: 'en' },
+    }
+    expect(() => mutationActionSchema.parse(action)).not.toThrow()
+  })
+
   it('rejects unknown type', () => {
     const action = { type: 'unknownAction', payload: {} }
     expect(() => mutationActionSchema.parse(action)).toThrow()

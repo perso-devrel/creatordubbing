@@ -22,6 +22,12 @@ function splitStatements(sql) {
     .filter(Boolean)
 }
 
+function isDuplicateColumnError(statement, err) {
+  const message = err instanceof Error ? err.message : String(err)
+  return /^ALTER\s+TABLE\s+.+\s+ADD\s+COLUMN\s+/i.test(statement) &&
+    /duplicate column name/i.test(message)
+}
+
 await db.execute(`
   CREATE TABLE IF NOT EXISTS schema_migrations (
     id TEXT PRIMARY KEY,
@@ -46,7 +52,15 @@ for (const file of files) {
   const tx = await db.transaction('write')
   try {
     for (const statement of statements) {
-      await tx.execute(statement)
+      try {
+        await tx.execute(statement)
+      } catch (err) {
+        if (isDuplicateColumnError(statement, err)) {
+          console.log(`skip duplicate column in ${file}: ${statement}`)
+          continue
+        }
+        throw err
+      }
     }
     await tx.execute({
       sql: 'INSERT INTO schema_migrations (id) VALUES (?)',

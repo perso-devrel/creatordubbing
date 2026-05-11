@@ -22,6 +22,7 @@ import {
 import type { DownloadTarget } from '@/lib/perso/types'
 import type { LanguageProgress } from '../types/dubbing.types'
 import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
+import { extractVideoId } from '@/utils/validators'
 
 const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
@@ -82,6 +83,11 @@ async function saveJobToDb(
   const userId = useAuthStore.getState().user?.uid
   const videoMeta = store.getState().videoMeta
   const isShort = store.getState().isShort
+  const state = store.getState()
+  const originalYouTubeId =
+    state.videoSource?.type === 'url' && state.videoSource.url
+      ? extractVideoId(state.videoSource.url)
+      : null
   if (!userId) {
     throw new Error(t('features.dubbing.hooks.usePersoFlow.pleaseSignInFirst'))
   }
@@ -99,6 +105,10 @@ async function saveJobToDb(
         spaceSeq,
         lipSyncEnabled,
         isShort,
+        deliverableMode: state.deliverableMode,
+        uploadSettings: state.uploadSettings,
+        originalVideoUrl: state.originalVideoUrl,
+        originalYouTubeUrl: originalYouTubeId ? `https://www.youtube.com/watch?v=${originalYouTubeId}` : null,
       },
       languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
     },

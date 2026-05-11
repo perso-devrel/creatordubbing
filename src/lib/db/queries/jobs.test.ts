@@ -33,7 +33,16 @@ describe('job queries', () => {
   })
 
   it('creates all language rows with the explicit dubbing job id', async () => {
-    mockExecute.mockResolvedValueOnce({ lastInsertRowid: 35 })
+    mockExecute
+      .mockResolvedValueOnce({
+        rows: [
+          { name: 'upload_settings_json' },
+          { name: 'deliverable_mode' },
+          { name: 'original_video_url' },
+          { name: 'original_youtube_url' },
+        ],
+      })
+      .mockResolvedValueOnce({ lastInsertRowid: 35 })
     mockBatch.mockResolvedValueOnce([])
 
     const jobId = await createDubbingJobWithLanguages(job, [
