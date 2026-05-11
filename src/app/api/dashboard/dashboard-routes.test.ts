@@ -40,6 +40,18 @@ vi.mock('@/lib/ops/observability', () => ({
   recordOperationalEventSafe: vi.fn(async () => undefined),
 }))
 
+vi.mock('@/lib/upload-queue/process', () => ({
+  processUploadQueue: vi.fn(async () => ({ processed: 0, results: [] })),
+}))
+
+vi.mock('@/lib/upload-queue/enqueue', () => ({
+  enqueueYouTubeUpload: vi.fn(async () => ({ status: 'queued', queueId: 10 })),
+}))
+
+vi.mock('@/lib/dubbing/process', () => ({
+  enqueueCompletedDubbingUpload: vi.fn(async () => ({ status: 'queued', queueId: 11 })),
+}))
+
 vi.mock('@/lib/youtube/server', () => ({
   fetchVideoStatistics: vi.fn(async () => []),
   YouTubeError: class YouTubeError extends Error {
@@ -648,6 +660,23 @@ describe('/api/dashboard/mutations', () => {
     const body = await res.json()
     expect(res.status).toBe(200)
     expect(body.data).toEqual({ status: 'reserved' })
+  })
+
+  it('queues completed job language uploads on the server', async () => {
+    mockAuth('user1')
+    const req = new NextRequest('http://localhost/api/dashboard/mutations', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'queueJobLanguageYouTubeUpload',
+        payload: { jobId: 1, langCode: 'ko' },
+      }),
+    })
+
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data).toEqual({ status: 'queued', queueId: 11 })
   })
 
   it('returns 200 for failJobLanguageYouTubeUpload', async () => {
