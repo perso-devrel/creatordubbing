@@ -11,30 +11,48 @@ async function youtubeResponseError(
   code: string,
 ): Promise<YouTubeError> {
   const body = await res.text().catch(() => '')
+  return youtubeErrorFromBody(res.status, body, fallbackMessage, code)
+}
+
+function parseYouTubeErrorBody(body: string): {
+  reason?: string
+  message?: string
+} {
+  if (!body) return {}
+
+  try {
+    const parsed = JSON.parse(body) as {
+      error?: {
+        message?: string
+        errors?: Array<{ reason?: string }>
+      }
+    }
+    return {
+      reason: parsed.error?.errors?.[0]?.reason,
+      message: parsed.error?.message,
+    }
+  } catch {
+    return {}
+  }
+}
+
+function youtubeErrorFromBody(
+  status: number,
+  body: string,
+  fallbackMessage: string,
+  code: string,
+): YouTubeError {
+  const parsed = parseYouTubeErrorBody(body)
   let message = fallbackMessage
 
-  if (body) {
-    try {
-      const parsed = JSON.parse(body) as {
-        error?: {
-          message?: string
-          errors?: Array<{ reason?: string }>
-        }
-      }
-      const reason = parsed.error?.errors?.[0]?.reason
-      const googleMessage = parsed.error?.message
-      if (reason === 'quotaExceeded') {
-        message =
-          'YouTube API quota가 초과되어 내 영상을 불러올 수 없습니다. quota가 리셋된 뒤 다시 시도해주세요.'
-      } else if (googleMessage) {
-        message = fallbackMessage
-      }
-    } catch {
-      message = fallbackMessage
-    }
+  if (parsed.reason === 'quotaExceeded') {
+    message =
+      'YouTube API quota가 초과되어 내 영상을 불러올 수 없습니다. quota가 리셋된 뒤 다시 시도해주세요.'
+  } else if (parsed.message) {
+    message = fallbackMessage
   }
 
-  return new YouTubeError(res.status, message, code)
+  return new YouTubeError(status, message, code)
 }
 
 export async function fetchVideoStatistics(
@@ -131,18 +149,24 @@ export async function fetchMyVideos(
     }>
   }
   const uploadsPlaylistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads
-  if (!uploadsPlaylistId) return []
+  if (!uploadsPlaylistId) return fetchMyVideosBySearch(accessToken, maxResults)
 
   const res = await fetch(
     `${YOUTUBE_API_BASE}/youtube/v3/playlistItems?part=snippet&playlistId=${encodeURIComponent(uploadsPlaylistId)}&maxResults=${maxResults}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   )
   if (!res.ok) {
-    throw await youtubeResponseError(
-      res,
-      'YouTube 영상 목록을 불러오지 못했습니다',
-      'MY_VIDEOS_FAILED',
-    )
+    const body = await res.text().catch(() => '')
+    const parsed = parseYouTubeErrorBody(body)
+    if (parsed.reason === 'quotaExceeded') {
+      throw youtubeErrorFromBody(
+        res.status,
+        body,
+        'YouTube 영상 목록을 불러오지 못했습니다',
+        'MY_VIDEOS_FAILED',
+      )
+    }
+    return fetchMyVideosBySearch(accessToken, maxResults)
   }
 
   const data = (await res.json()) as {
@@ -169,9 +193,67 @@ export async function fetchMyVideos(
     })
     .filter((item): item is Omit<MyVideoItem, 'privacyStatus'> => item !== null)
 
+  if (base.length === 0) return fetchMyVideosBySearch(accessToken, maxResults)
+
   // playlistItems.list does not include privacy status, so fetch it separately.
   const privacyById = await fetchPrivacyStatuses(accessToken, base.map((v) => v.videoId))
 
+  return base.map((v) => ({
+    ...v,
+    privacyStatus: privacyById.get(v.videoId) ?? 'unknown',
+  }))
+}
+
+async function fetchMyVideosBySearch(
+  accessToken: string,
+  maxResults: number,
+): Promise<MyVideoItem[]> {
+  const params = new URLSearchParams({
+    part: 'snippet',
+    forMine: 'true',
+    type: 'video',
+    order: 'date',
+    maxResults: String(maxResults),
+  })
+  const res = await fetch(
+    `${YOUTUBE_API_BASE}/youtube/v3/search?${params}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  if (!res.ok) {
+    throw await youtubeResponseError(
+      res,
+      'YouTube 영상 목록을 불러오지 못했습니다',
+      'MY_VIDEOS_FAILED',
+    )
+  }
+
+  const data = (await res.json()) as {
+    items?: Array<{
+      id?: { videoId?: string }
+      snippet?: {
+        title?: string
+        publishedAt?: string
+        thumbnails?: {
+          medium?: { url?: string }
+          default?: { url?: string }
+        }
+      }
+    }>
+  }
+  const base = (data.items || [])
+    .map((item) => {
+      const videoId = item.id?.videoId
+      if (!videoId) return null
+      return {
+        videoId,
+        title: item.snippet?.title || '',
+        thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || '',
+        publishedAt: item.snippet?.publishedAt || '',
+      }
+    })
+    .filter((item): item is Omit<MyVideoItem, 'privacyStatus'> => item !== null)
+
+  const privacyById = await fetchPrivacyStatuses(accessToken, base.map((v) => v.videoId))
   return base.map((v) => ({
     ...v,
     privacyStatus: privacyById.get(v.videoId) ?? 'unknown',
