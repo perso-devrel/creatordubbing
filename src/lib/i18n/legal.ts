@@ -2,7 +2,7 @@ import type { AppLocale } from './config'
 import { interpolate, type MessageParams } from './messages'
 import { text, type LocalizedText } from './text'
 
-export const legalMessages = {
+const legalMessages = {
   'legal.common.lastUpdated': { ko: '최종 업데이트: {date}' },
   'legal.common.relatedDocuments': { ko: '관련 문서:' },
   'legal.common.emailSuffix': { ko: '으로 보내주세요.' },

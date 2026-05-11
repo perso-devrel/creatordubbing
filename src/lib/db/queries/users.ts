@@ -88,26 +88,10 @@ export async function getUser(userId: string) {
   return result.rows[0] || null
 }
 
-export async function updateUserCredits(userId: string, credits: number) {
-  const db = getDb()
-  await db.execute({
-    sql: `UPDATE users SET credits_remaining = ?, updated_at = datetime('now') WHERE id = ?`,
-    args: [credits, userId],
-  })
-}
-
 export async function deductUserMinutes(userId: string, minutes: number) {
   const db = getDb()
   await db.execute({
     sql: `UPDATE users SET credits_remaining = MAX(0, credits_remaining - ?), updated_at = datetime('now') WHERE id = ?`,
-    args: [minutes, userId],
-  })
-}
-
-export async function addUserCredits(userId: string, minutes: number) {
-  const db = getDb()
-  await db.execute({
-    sql: `UPDATE users SET credits_remaining = credits_remaining + ?, updated_at = datetime('now') WHERE id = ?`,
     args: [minutes, userId],
   })
 }

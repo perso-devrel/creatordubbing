@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 const trimmedNonEmptyString = z.string().trim().min(1)
-export const ttsModelSchema = z.enum(['ELEVEN_V2', 'ELEVEN_V3'])
+const ttsModelSchema = z.enum(['ELEVEN_V2', 'ELEVEN_V3'])
 
 export const externalMetadataBodySchema = z.object({
   spaceSeq: z.number().int().positive(),

@@ -14,7 +14,7 @@ function getAdminEmails() {
     .filter(Boolean)
 }
 
-export function isOperationsAdmin(session: Session): boolean {
+function isOperationsAdmin(session: Session): boolean {
   const adminEmails = getAdminEmails()
   if (adminEmails.length === 0) {
     return process.env.NODE_ENV !== 'production'

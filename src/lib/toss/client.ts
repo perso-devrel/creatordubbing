@@ -19,7 +19,7 @@ export interface TossPayment {
   [key: string]: unknown
 }
 
-export class TossApiError extends Error {
+class TossApiError extends Error {
   status: number
   code: string
   details: unknown

@@ -78,7 +78,7 @@ export interface TranslateResponse {
  * Perso API spec also documents human-readable forms (Enqueue Pending, Transcribing, etc.)
  * — both forms are accepted to handle API version differences.
  */
-export type ProgressReason =
+type ProgressReason =
   | 'PENDING'
   | 'CREATED'
   | 'READY'
@@ -184,8 +184,3 @@ export interface PersoLanguage {
   name: string
   experiment: boolean
 }
-
-/** Standard response envelope used by all Next.js /api/perso/* routes. */
-export type ApiResponse<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: { code: string; message: string; details?: unknown } }

@@ -285,17 +285,13 @@ const baseMessages = {
   },
 } as const satisfies Record<string, LocalizedText>
 
-export const messages = {
+const messages = {
   ...baseMessages,
   ...generatedMessages,
 } as const satisfies Record<string, LocalizedText>
 
 export type MessageKey = keyof typeof messages
 export type MessageParams = Record<string, string | number | boolean | null | undefined>
-
-export function isMessageKey(value: string): value is MessageKey {
-  return Object.prototype.hasOwnProperty.call(messages, value)
-}
 
 export function interpolate(template: string, params?: MessageParams): string {
   if (!params) return template
@@ -307,9 +303,4 @@ export function interpolate(template: string, params?: MessageParams): string {
 
 export function message(locale: AppLocale, key: MessageKey, params?: MessageParams): string {
   return interpolate(text(locale, messages[key]), params)
-}
-
-export function countMessage(locale: AppLocale, count: number, key: MessageKey): string {
-  const unit = message(locale, key)
-  return locale === 'ko' ? `${count}${unit}` : `${count} ${unit}`
 }

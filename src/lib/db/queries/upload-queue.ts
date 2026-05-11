@@ -3,7 +3,7 @@ import 'server-only'
 import { getDb } from '@/lib/db/client'
 import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
-export type QueueStatus = 'pending' | 'processing' | 'done' | 'failed'
+type QueueStatus = 'pending' | 'processing' | 'done' | 'failed'
 
 export interface UploadQueueItem {
   id: number
@@ -138,16 +138,6 @@ export async function createUploadQueueItem(item: {
   return Number(result.lastInsertRowid)
 }
 
-export async function getPendingUploads(limit = 5): Promise<UploadQueueItem[]> {
-  await ensureTable()
-  const db = getDb()
-  const result = await db.execute({
-    sql: `SELECT * FROM upload_queue WHERE status IN ('pending', 'failed') AND retries < 3 ORDER BY created_at ASC LIMIT ?`,
-    args: [limit],
-  })
-  return result.rows.map(rowToItem)
-}
-
 export async function claimPendingUploads(
   limit = 5,
   options: ClaimUploadQueueOptions = {},
@@ -236,41 +226,6 @@ export async function failQueueItem(id: number, error: string): Promise<boolean>
     })
   }
   return Boolean(row)
-}
-
-export async function updateQueueItemStatus(
-  id: number,
-  status: QueueStatus,
-  extra?: { error?: string; youtubeVideoId?: string },
-) {
-  await ensureTable()
-  const db = getDb()
-  if (extra?.youtubeVideoId) {
-    await db.execute({
-      sql: `UPDATE upload_queue SET status = ?, youtube_video_id = ?, error = NULL, updated_at = datetime('now') WHERE id = ?`,
-      args: [status, extra.youtubeVideoId, id],
-    })
-  } else if (extra?.error) {
-    await db.execute({
-      sql: `UPDATE upload_queue SET status = ?, error = ?, retries = retries + 1, updated_at = datetime('now') WHERE id = ?`,
-      args: [status, extra.error, id],
-    })
-  } else {
-    await db.execute({
-      sql: `UPDATE upload_queue SET status = ?, updated_at = datetime('now') WHERE id = ?`,
-      args: [status, id],
-    })
-  }
-}
-
-export async function getUserQueueItems(userId: string): Promise<UploadQueueItem[]> {
-  await ensureTable()
-  const db = getDb()
-  const result = await db.execute({
-    sql: `SELECT * FROM upload_queue WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
-    args: [userId],
-  })
-  return result.rows.map(rowToItem)
 }
 
 function rowToItem(row: Record<string, unknown>): UploadQueueItem {

@@ -21,7 +21,7 @@ export const userPreferencesSchema = z.object({
 
 export type UserPreferences = z.infer<typeof userPreferencesSchema>
 
-export const DEFAULT_USER_PREFERENCES: Required<UserPreferences> = {
+const DEFAULT_USER_PREFERENCES: Required<UserPreferences> = {
   appLocale: DEFAULT_APP_LOCALE,
   metadataTargetPreset: DEFAULT_METADATA_TARGET_PRESET,
   defaultPrivacy: 'private',

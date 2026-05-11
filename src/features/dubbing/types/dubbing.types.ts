@@ -68,7 +68,7 @@ export interface LanguageProgress {
   dubbingVideoUrl?: string
 }
 
-export type YouTubeUploadStatus = 'uploading' | 'done' | 'error'
+type YouTubeUploadStatus = 'uploading' | 'done' | 'error'
 
 export interface YouTubeUploadState {
   status: YouTubeUploadStatus
@@ -77,28 +77,9 @@ export interface YouTubeUploadState {
   error?: string
 }
 
-export interface DubbingJob {
-  id: string
-  videoMeta: VideoMetadata
-  selectedLanguages: string[]
-  lipSyncEnabled: boolean
-  languageProgress: LanguageProgress[]
-  overallProgress: number
-  status: JobStatus
-  createdAt: string
-}
-
 export interface GlossaryEntry {
   id: string
   original: string
   translations: Record<string, string>
   locked: boolean
-}
-
-// Perso-specific
-export interface PersoUploadResult {
-  mediaSeq: number
-  filePath: string
-  thumbnailPath: string
-  durationMs: number
 }

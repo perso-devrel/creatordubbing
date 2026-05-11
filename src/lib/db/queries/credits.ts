@@ -185,11 +185,6 @@ function insufficientCredits(available: number, required: number) {
   return err
 }
 
-export async function getUserAvailableCredits(userId: string) {
-  await ensureCreditTables()
-  return getCreditBalanceWithExecutor(userId, getDb())
-}
-
 export async function createPaymentOrder(order: {
   orderId: string
   userId: string

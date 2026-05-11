@@ -10,7 +10,7 @@ import { PersoError } from '@/lib/perso/errors'
  * - 'file' → https://api.perso.ai
  *   Used for /file/* endpoints (metadata, upload, external, SAS, validate)
  */
-export type PersoBase = 'api' | 'file'
+type PersoBase = 'api' | 'file'
 
 const FILE_BASE = 'https://api.perso.ai'
 
@@ -135,4 +135,3 @@ export async function persoFetch<T = unknown>(
   }
   return payload as T
 }
-

@@ -4,7 +4,7 @@ import { getDb } from '@/lib/db/client'
 
 let sessionsTableReady = false
 
-export async function ensureSessionTable() {
+async function ensureSessionTable() {
   if (sessionsTableReady) return
   const db = getDb()
   await db.batch([
