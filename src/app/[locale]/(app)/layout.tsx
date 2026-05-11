@@ -1,13 +1,25 @@
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { Topbar } from '@/components/layout/Topbar'
 import { ClientMessagesProvider } from '@/lib/i18n/clientMessages'
 import { appShellMessages } from '@/lib/i18n/client-messages/appShell'
+import { SESSION_COOKIE, verifySessionCookie } from '@/lib/auth/session-cookie'
+import { resolveAppLocale } from '@/lib/i18n/config'
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
+  params,
 }: {
   children: React.ReactNode
+  params: Promise<{ locale: string }>
 }) {
+  const [{ locale }, cookieStore] = await Promise.all([params, cookies()])
+  const rawSession = cookieStore.get(SESSION_COOKIE)?.value
+  if (!rawSession || !(await verifySessionCookie(rawSession))) {
+    redirect(`/${resolveAppLocale(locale)}`)
+  }
+
   return (
     <ClientMessagesProvider messages={appShellMessages}>
       <div className="min-h-screen">

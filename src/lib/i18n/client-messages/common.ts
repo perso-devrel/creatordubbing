@@ -236,6 +236,11 @@ export const commonMessages = {
     en: 'Prioritize languages with large YouTube audiences and practical localization potential.',
   },
   'marketPreset.creatorGrowth.label': { ko: '크리에이터 추천 언어', en: 'Creator language picks' },
+  'marketPreset.custom.description': {
+    ko: '직접 선택한 출시 대상 언어를 사용합니다.',
+    en: 'Use your selected launch languages.',
+  },
+  'marketPreset.custom.label': { ko: '내 설정', en: 'My settings' },
   'marketPreset.globalBroad.description': {
     ko: '초기 성과가 확인된 뒤 유럽과 중동 주요 언어까지 확장합니다.',
     en: 'Expand into major European and Middle Eastern languages after initial traction.',
@@ -287,9 +292,53 @@ export const commonMessages = {
     ko: '언어, 테마 및 YouTube 기본값',
     en: 'Language, theme, and YouTube defaults',
   },
+  'settings.launchLanguages.allLanguages': {
+    ko: '언어 직접 선택',
+    en: 'Choose languages',
+  },
+  'settings.launchLanguages.applySelection': {
+    ko: '선택 적용',
+    en: 'Apply selection',
+  },
+  'settings.launchLanguages.modalTitle': {
+    ko: '출시 언어 선택',
+    en: 'Select launch languages',
+  },
+  'settings.launchLanguages.presets': {
+    ko: '빠른 선택',
+    en: 'Quick presets',
+  },
+  'settings.launchLanguageSelection': {
+    ko: '출시 언어 선택',
+    en: 'Launch languages',
+  },
+  'settings.launchLanguageSelection.edit': {
+    ko: '변경',
+    en: 'Edit',
+  },
+  'settings.launchLanguageSelection.selectedCount': {
+    ko: '{count}개 언어 선택됨',
+    en: '{count} languages selected',
+  },
   'settings.metadataLanguage': {
     ko: '제목·설명 작성 기본 언어',
     en: 'Default metadata source language',
+  },
+  'settings.preferences.saveChanges': {
+    ko: '변경사항 저장',
+    en: 'Save changes',
+  },
+  'settings.preferences.saved': {
+    ko: '설정을 저장했습니다.',
+    en: 'Settings saved.',
+  },
+  'settings.preferences.saveFailed': {
+    ko: '설정 저장 실패',
+    en: 'Could not save settings',
+  },
+  'settings.preferences.unsavedChanges': {
+    ko: '저장하지 않은 설정 변경사항이 있습니다.',
+    en: 'You have unsaved settings changes.',
   },
   'settings.recommendedLanguageSet': {
     ko: '추천 대상 언어 묶음',

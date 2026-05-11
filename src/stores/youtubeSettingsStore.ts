@@ -30,7 +30,7 @@ const INITIAL_YOUTUBE_SETTINGS = {
 /**
  * 인메모리 캐시. 서버(/api/user/preferences)가 source of truth이며,
  * 로그인 직후 useUserPreferencesSync 훅이 hydrate한다.
- * 사용자가 값을 바꾸면 동일 훅이 debounced PUT으로 서버에 반영한다.
+ * 저장은 설정 화면에서 명시적으로 수행한다.
  *
  * localStorage 영속화는 일부러 사용하지 않는다 — 다른 사용자가 같은 브라우저로
  * 로그인했을 때 이전 사용자의 설정이 새는 것을 방지하기 위함.

@@ -145,7 +145,7 @@ function ScrollToTopOnNavigation() {
   return null
 }
 
-/** youtubeSettingsStore ↔ /api/user/preferences 양방향 동기화. QueryClientProvider 안쪽에서 mount되어야 함. */
+/** /api/user/preferences 서버 설정을 클라이언트 store에 hydrate한다. QueryClientProvider 안쪽에서 mount되어야 함. */
 function UserPreferencesSync() {
   useUserPreferencesSync()
   return null

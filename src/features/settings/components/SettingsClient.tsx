@@ -1,13 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import { Globe, Globe2, Loader2, Settings, Unlink, Video } from 'lucide-react'
-import { Card, CardTitle, Select, Button, Badge, Input } from '@/components/ui'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Check, Globe, Globe2, Languages, Loader2, Save, Settings, Unlink, Video } from 'lucide-react'
+import { Card, CardTitle, Select, Button, Badge, Input, Modal } from '@/components/ui'
 import {
   APP_LOCALE_LABELS,
   APP_LOCALES,
+  CUSTOM_METADATA_TARGET_PRESET,
+  getMarketLanguagePreset,
+  getMetadataTargetLanguageCodes,
   MARKET_LANGUAGE_PRESETS,
+  normalizeMetadataTargetLanguages,
   type AppLocale,
 } from '@/lib/i18n/config'
 import { useI18nStore } from '@/stores/i18nStore'
@@ -22,17 +27,55 @@ import { signInWithGoogle } from '@/lib/google-auth'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
+import { saveUserPreferences } from '@/lib/api-client/user-preferences'
 
 const APP_LOCALE_OPTIONS = APP_LOCALES.map((locale) => ({
   value: locale,
   label: `${APP_LOCALE_LABELS[locale].nativeLabel} / ${APP_LOCALE_LABELS[locale].label}`,
 }))
 
+function formatTags(tags: readonly string[]) {
+  return tags.join(', ')
+}
+
+function parseTagsInput(value: string): string[] {
+  return value
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+}
+
+function sameLanguageSet(a: readonly string[], b: readonly string[]) {
+  if (a.length !== b.length) return false
+  const bSet = new Set(b)
+  return a.every((code) => bSet.has(code))
+}
+
+function orderLanguageCodes(codes: readonly string[]) {
+  const selected = new Set(codes)
+  return SUPPORTED_LANGUAGES
+    .filter((language) => selected.has(language.code))
+    .map((language) => language.code)
+}
+
+function resolvePresetForLanguageSet(languageCodes: readonly string[]) {
+  return MARKET_LANGUAGE_PRESETS.find((preset) => sameLanguageSet(preset.languageCodes, languageCodes))
+}
+
 export function SettingsClient() {
   const t = useLocaleText()
-  const { metadataTargetPreset, setAppLocale, setMetadataTargetPreset } = useI18nStore()
+  const {
+    metadataTargetPreset,
+    metadataTargetLanguages,
+    setAppLocale,
+    setMetadataTargetPreset,
+    setMetadataTargetLanguages,
+  } = useI18nStore()
   const { preference: themePreference, setPreference: setThemePreference } = useThemeStore()
   const appLocale = useAppLocale()
+  const user = useAuthStore((s) => s.user)
+  const queryClient = useQueryClient()
+  const addToast = useNotificationStore((state) => state.addToast)
   const {
     defaultPrivacy,
     defaultLanguage,
@@ -49,17 +92,54 @@ export function SettingsClient() {
       ? `${language.flag} ${language.name} (${language.nativeName})`
       : `${language.flag} ${language.nativeName} (${language.name})`,
   }))
-  const presetOptions = MARKET_LANGUAGE_PRESETS.map((preset) => ({
-    value: preset.id,
-    label: t(preset.labelKey),
-  }))
-  const [defaultTagsInput, setDefaultTagsInput] = useState(() => defaultTags.join(', '))
+  const [draftAppLocale, setDraftAppLocale] = useState<AppLocale>(appLocale)
+  const [draftDefaultPrivacy, setDraftDefaultPrivacy] = useState<PrivacyStatus>(defaultPrivacy)
+  const [draftDefaultLanguage, setDraftDefaultLanguage] = useState(defaultLanguage)
+  const [draftMetadataTargetPreset, setDraftMetadataTargetPreset] = useState(metadataTargetPreset)
+  const [draftMetadataTargetLanguages, setDraftMetadataTargetLanguages] = useState<string[]>(
+    () => getMetadataTargetLanguageCodes(metadataTargetPreset, metadataTargetLanguages),
+  )
+  const [defaultTagsInput, setDefaultTagsInput] = useState(() => formatTags(defaultTags))
+  const [languageModalOpen, setLanguageModalOpen] = useState(false)
+  const [modalLanguageCodes, setModalLanguageCodes] = useState<string[]>(
+    () => getMetadataTargetLanguageCodes(metadataTargetPreset, metadataTargetLanguages),
+  )
   const youtubeSectionRef = useRef<HTMLDivElement>(null)
 
-  const selectedPreset = MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === metadataTargetPreset)
-  const presetLanguages = selectedPreset
-    ? selectedPreset.languageCodes.map((code) => getLanguageByCode(code)).filter(Boolean)
-    : []
+  const draftTags = useMemo(() => parseTagsInput(defaultTagsInput), [defaultTagsInput])
+  const targetLanguageCodes = useMemo(
+    () => getMetadataTargetLanguageCodes(draftMetadataTargetPreset, draftMetadataTargetLanguages),
+    [draftMetadataTargetLanguages, draftMetadataTargetPreset],
+  )
+  const selectedPreset = getMarketLanguagePreset(draftMetadataTargetPreset)
+  const presetLanguages = targetLanguageCodes.map((code) => getLanguageByCode(code)).filter(Boolean)
+  const persistedPreferenceSnapshot = useMemo(() => ({
+    appLocale,
+    metadataTargetPreset,
+    metadataTargetLanguages: getMetadataTargetLanguageCodes(metadataTargetPreset, metadataTargetLanguages),
+    defaultPrivacy,
+    defaultLanguage,
+    defaultTags,
+  }), [appLocale, defaultLanguage, defaultPrivacy, defaultTags, metadataTargetLanguages, metadataTargetPreset])
+  const draftPreferenceSnapshot = useMemo(() => ({
+    appLocale: draftAppLocale,
+    metadataTargetPreset: draftMetadataTargetPreset,
+    metadataTargetLanguages: targetLanguageCodes,
+    defaultPrivacy: draftDefaultPrivacy,
+    defaultLanguage: draftDefaultLanguage,
+    defaultTags: draftTags,
+  }), [
+    draftAppLocale,
+    draftDefaultLanguage,
+    draftDefaultPrivacy,
+    draftMetadataTargetPreset,
+    draftTags,
+    targetLanguageCodes,
+  ])
+  const hasPendingPreferenceChanges = JSON.stringify(persistedPreferenceSnapshot) !== JSON.stringify(draftPreferenceSnapshot)
+  const selectedModalPresetId = resolvePresetForLanguageSet(modalLanguageCodes)?.id ?? null
+
+  const saveMutation = useMutation({ mutationFn: saveUserPreferences })
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('section') !== 'youtube') return
@@ -73,17 +153,65 @@ export function SettingsClient() {
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      setDefaultTagsInput(defaultTags.join(', '))
+      setDraftAppLocale(appLocale)
+      setDraftDefaultPrivacy(defaultPrivacy)
+      setDraftDefaultLanguage(defaultLanguage)
+      setDraftMetadataTargetPreset(metadataTargetPreset)
+      setDraftMetadataTargetLanguages(getMetadataTargetLanguageCodes(metadataTargetPreset, metadataTargetLanguages))
+      setDefaultTagsInput(formatTags(defaultTags))
     }, 0)
     return () => window.clearTimeout(timeout)
-  }, [defaultTags])
+  }, [appLocale, defaultLanguage, defaultPrivacy, defaultTags, metadataTargetLanguages, metadataTargetPreset])
 
-  const commitDefaultTags = () => {
-    const parsed = defaultTagsInput
-      .split(',')
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-    setDefaultTags(parsed)
+  const openLaunchLanguageModal = () => {
+    setModalLanguageCodes(targetLanguageCodes)
+    setLanguageModalOpen(true)
+  }
+
+  const toggleModalLanguage = (code: string) => {
+    setModalLanguageCodes((current) => {
+      if (current.includes(code)) {
+        if (current.length <= 1) return current
+        return current.filter((item) => item !== code)
+      }
+      return orderLanguageCodes([...current, code])
+    })
+  }
+
+  const applyLanguagePreset = (languageCodes: readonly string[]) => {
+    setModalLanguageCodes(orderLanguageCodes(languageCodes))
+  }
+
+  const applyLaunchLanguages = () => {
+    const normalized = normalizeMetadataTargetLanguages(modalLanguageCodes)
+    const matchedPreset = resolvePresetForLanguageSet(normalized)
+    setDraftMetadataTargetLanguages(normalized)
+    setDraftMetadataTargetPreset(matchedPreset?.id ?? CUSTOM_METADATA_TARGET_PRESET)
+    setLanguageModalOpen(false)
+  }
+
+  const savePreferences = async () => {
+    try {
+      const saved = await saveMutation.mutateAsync(draftPreferenceSnapshot)
+      queryClient.setQueryData(['user-preferences', user?.uid ?? null], saved)
+      setDefaultPrivacy(saved.defaultPrivacy)
+      setDefaultLanguage(saved.defaultLanguage)
+      setDefaultTags(saved.defaultTags)
+      setAppLocale(saved.appLocale)
+      setMetadataTargetPreset(saved.metadataTargetPreset)
+      setMetadataTargetLanguages(saved.metadataTargetLanguages)
+      setDefaultTagsInput(formatTags(saved.defaultTags))
+      addToast({ type: 'success', title: t('settings.preferences.saved') })
+      if (saved.appLocale !== appLocale) {
+        localeRouter.replaceLocale(saved.appLocale)
+      }
+    } catch (error) {
+      addToast({
+        type: 'error',
+        title: t('settings.preferences.saveFailed'),
+        message: error instanceof Error ? error.message : t('common.unknownError'),
+      })
+    }
   }
 
   return (
@@ -104,11 +232,10 @@ export function SettingsClient() {
         <div className="grid gap-4 md:grid-cols-2">
           <Select
             label={t('settings.appLocale')}
-            value={appLocale}
+            value={draftAppLocale}
             onChange={(event) => {
               const nextLocale = event.target.value as AppLocale
-              setAppLocale(nextLocale)
-              localeRouter.replaceLocale(nextLocale)
+              setDraftAppLocale(nextLocale)
             }}
             options={APP_LOCALE_OPTIONS}
           />
@@ -124,14 +251,14 @@ export function SettingsClient() {
           />
           <Select
             label={t('settings.metadataLanguage')}
-            value={defaultLanguage}
-            onChange={(event) => setDefaultLanguage(event.target.value)}
+            value={draftDefaultLanguage}
+            onChange={(event) => setDraftDefaultLanguage(event.target.value)}
             options={languageOptions}
           />
           <Select
             label={t('app.app.youtube.page.defaultVisibility')}
-            value={defaultPrivacy}
-            onChange={(event) => setDefaultPrivacy(event.target.value as PrivacyStatus)}
+            value={draftDefaultPrivacy}
+            onChange={(event) => setDraftDefaultPrivacy(event.target.value as PrivacyStatus)}
             options={[
               { value: 'public', label: t('app.app.youtube.page.public') },
               { value: 'unlisted', label: t('app.app.youtube.page.unlisted') },
@@ -142,39 +269,139 @@ export function SettingsClient() {
             label={t('app.app.youtube.page.defaultTags')}
             value={defaultTagsInput}
             onChange={(event) => setDefaultTagsInput(event.target.value)}
-            onBlur={commitDefaultTags}
             placeholder={t('app.app.youtube.page.commaSeparatedEGDubtubeAIDubbingVlog')}
           />
-          <Select
-            label={t('settings.recommendedLanguageSet')}
-            value={metadataTargetPreset}
-            onChange={(event) => setMetadataTargetPreset(event.target.value)}
-            options={presetOptions}
-            className="md:col-span-2"
-          />
+          <div className="md:col-span-2">
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">
+                {t('settings.launchLanguageSelection')}
+              </label>
+              <Button type="button" variant="outline" size="sm" onClick={openLaunchLanguageModal}>
+                <Languages className="h-4 w-4" />
+                {t('settings.launchLanguageSelection.edit')}
+              </Button>
+            </div>
+            <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-850">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                    {t(selectedPreset.labelKey)}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-300">
+                    {t('settings.launchLanguageSelection.selectedCount', { count: targetLanguageCodes.length })}
+                  </p>
+                </div>
+                <Badge variant="brand">{t(selectedPreset.labelKey)}</Badge>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {presetLanguages.map((language) => language && (
+                  <span
+                    key={language.code}
+                    className="max-w-full rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
+                  >
+                    {language.flag} {isEnglish ? language.name : language.nativeName}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {selectedPreset && (
-          <div className="mt-4 rounded-lg border border-surface-200 bg-surface-100/70 p-3 dark:border-surface-700 dark:bg-surface-850">
-            <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
-              {t(selectedPreset.labelKey)}
+        {hasPendingPreferenceChanges && (
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3 dark:border-brand-500/60 dark:bg-surface-850 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium text-brand-800 dark:text-surface-100">
+              {t('settings.preferences.unsavedChanges')}
             </p>
-            <p className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-300">
-              {t(selectedPreset.descriptionKey)}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {presetLanguages.map((language) => language && (
-                <span
-                  key={language.code}
-                  className="max-w-full rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
-                >
-                  {language.flag} {isEnglish ? language.name : language.nativeName}
-                </span>
-              ))}
-            </div>
+            <Button onClick={savePreferences} loading={saveMutation.isPending} className="w-full sm:w-auto">
+              <Save className="h-4 w-4" />
+              {t('settings.preferences.saveChanges')}
+            </Button>
           </div>
         )}
       </Card>
+
+      <Modal
+        open={languageModalOpen}
+        onClose={() => setLanguageModalOpen(false)}
+        title={t('settings.launchLanguages.modalTitle')}
+        size="xl"
+      >
+        <div className="space-y-5">
+          <div>
+            <p className="mb-2 text-sm font-medium text-surface-800 dark:text-surface-100">
+              {t('settings.launchLanguages.presets')}
+            </p>
+            <div className="grid gap-2 md:grid-cols-3">
+              {MARKET_LANGUAGE_PRESETS.map((preset) => {
+                const active = selectedModalPresetId === preset.id
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyLanguagePreset(preset.languageCodes)}
+                    className={`rounded-lg border p-3 text-left transition focus-ring ${
+                      active
+                        ? 'border-brand-500 bg-brand-50 text-brand-900 dark:border-brand-400 dark:bg-surface-800 dark:text-surface-50'
+                        : 'border-surface-200 bg-white text-surface-800 hover:bg-surface-50 dark:border-surface-600 dark:bg-surface-850 dark:text-surface-100 dark:hover:bg-surface-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-semibold">{t(preset.labelKey)}</span>
+                      {active && <Check className="h-4 w-4" />}
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-surface-600 dark:text-surface-300">
+                      {t(preset.descriptionKey)}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
+                {t('settings.launchLanguages.allLanguages')}
+              </p>
+              <Badge variant="brand">
+                {t('settings.launchLanguageSelection.selectedCount', { count: modalLanguageCodes.length })}
+              </Badge>
+            </div>
+            <div className="grid max-h-[320px] gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+              {SUPPORTED_LANGUAGES.map((language) => {
+                const selected = modalLanguageCodes.includes(language.code)
+                return (
+                  <button
+                    key={language.code}
+                    type="button"
+                    onClick={() => toggleModalLanguage(language.code)}
+                    className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition focus-ring ${
+                      selected
+                        ? 'border-brand-400 bg-brand-50 text-brand-800 dark:border-brand-400 dark:bg-surface-800 dark:text-surface-50'
+                        : 'border-surface-200 bg-white text-surface-700 hover:bg-surface-50 dark:border-surface-600 dark:bg-surface-850 dark:text-surface-200 dark:hover:bg-surface-800'
+                    }`}
+                  >
+                    <span className="min-w-0 truncate">
+                      {language.flag} {isEnglish ? `${language.name} (${language.nativeName})` : `${language.nativeName} (${language.name})`}
+                    </span>
+                    {selected && <Check className="h-4 w-4 shrink-0" />}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => setLanguageModalOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="button" onClick={applyLaunchLanguages}>
+              <Check className="h-4 w-4" />
+              {t('settings.launchLanguages.applySelection')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <div ref={youtubeSectionRef} id="youtube-settings" className="scroll-mt-20">
         <YouTubeConnectionCard />

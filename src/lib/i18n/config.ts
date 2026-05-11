@@ -91,6 +91,16 @@ export interface MarketLanguagePreset {
   languageCodes: string[]
 }
 
+export const CUSTOM_METADATA_TARGET_PRESET = 'custom'
+export const DEFAULT_METADATA_TARGET_LANGUAGES = ['ko', 'en']
+
+export const CUSTOM_MARKET_LANGUAGE_PRESET: MarketLanguagePreset = {
+  id: CUSTOM_METADATA_TARGET_PRESET,
+  labelKey: 'marketPreset.custom.label',
+  descriptionKey: 'marketPreset.custom.description',
+  languageCodes: [...DEFAULT_METADATA_TARGET_LANGUAGES],
+}
+
 export const MARKET_LANGUAGE_PRESETS: MarketLanguagePreset[] = [
   {
     id: 'core',
@@ -113,11 +123,44 @@ export const MARKET_LANGUAGE_PRESETS: MarketLanguagePreset[] = [
 ]
 
 export const DEFAULT_METADATA_TARGET_PRESET = 'creator-growth'
+export const METADATA_TARGET_PRESET_OPTIONS: MarketLanguagePreset[] = [
+  CUSTOM_MARKET_LANGUAGE_PRESET,
+  ...MARKET_LANGUAGE_PRESETS,
+]
+
+export function normalizeMetadataTargetLanguages(languageCodes: readonly string[] | null | undefined): string[] {
+  const normalized = Array.from(new Set(
+    (languageCodes ?? [])
+      .map((code) => code.trim())
+      .filter(Boolean),
+  ))
+  return normalized.length > 0 ? normalized : [...DEFAULT_METADATA_TARGET_LANGUAGES]
+}
+
+export function resolveMetadataTargetPresetId(id: string | null | undefined): string {
+  if (id === CUSTOM_METADATA_TARGET_PRESET) return CUSTOM_METADATA_TARGET_PRESET
+  return (
+    MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === id)?.id ??
+    DEFAULT_METADATA_TARGET_PRESET
+  )
+}
 
 export function getMarketLanguagePreset(id: string): MarketLanguagePreset {
+  if (id === CUSTOM_METADATA_TARGET_PRESET) return CUSTOM_MARKET_LANGUAGE_PRESET
   return (
     MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === id) ??
     MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === DEFAULT_METADATA_TARGET_PRESET) ??
     MARKET_LANGUAGE_PRESETS[0]
   )
+}
+
+export function getMetadataTargetLanguageCodes(
+  presetId: string,
+  customLanguageCodes: readonly string[] | null | undefined = DEFAULT_METADATA_TARGET_LANGUAGES,
+): string[] {
+  const preset = getMarketLanguagePreset(presetId)
+  if (preset.id === CUSTOM_METADATA_TARGET_PRESET) {
+    return normalizeMetadataTargetLanguages(customLanguageCodes)
+  }
+  return [...preset.languageCodes]
 }
