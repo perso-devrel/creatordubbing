@@ -1,15 +1,17 @@
-name: Process upload queue
+name: Process background jobs
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    # GitHub Actions schedules can be delayed around the top of the hour.
+    # Start at minute 2 and keep a 5-minute cadence.
+    - cron: '2/5 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: upload-cron
+  group: background-cron
   cancel-in-progress: false
 
 jobs:
@@ -19,6 +21,7 @@ jobs:
     steps:
       - name: Validate config
         run: |
+          set -euo pipefail
           if [ -z "${{ vars.PROD_BASE_URL }}" ]; then
             echo "::error::Missing repo variable PROD_BASE_URL (Settings → Secrets and variables → Actions → Variables)"
             exit 1
@@ -28,20 +31,26 @@ jobs:
             exit 1
           fi
 
-      - name: Hit upload-queue endpoint
+      - name: Process dubbing jobs and upload queue
         env:
           BASE_URL: ${{ vars.PROD_BASE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          URL="${BASE_URL%/}/api/cron/process-uploads"
-          echo "Calling $URL"
-          HTTP_CODE=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
-            -X POST "$URL" \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            --max-time 280)
-          echo "HTTP $HTTP_CODE"
-          cat /tmp/body.txt
-          echo
-          if [ "$HTTP_CODE" -ge 400 ]; then
-            exit 1
-          fi
+          set -euo pipefail
+          for PATH in /api/cron/process-dubbing-jobs /api/cron/process-uploads; do
+            URL="${BASE_URL%/}${PATH}"
+            echo "Calling $URL"
+            HTTP_CODE=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
+              -X POST "$URL" \
+              -H "Authorization: Bearer $CRON_SECRET" \
+              --max-time 280 \
+              --retry 2 \
+              --retry-delay 10 \
+              --retry-all-errors)
+            echo "HTTP $HTTP_CODE"
+            cat /tmp/body.txt
+            echo
+            if [ "$HTTP_CODE" -ge 400 ]; then
+              exit 1
+            fi
+          done
