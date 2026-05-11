@@ -1,25 +1,20 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18nStore } from '@/stores/i18nStore'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
-import {
-  fetchUserPreferences,
-  saveUserPreferences,
-} from '@/lib/api-client/user-preferences'
-
-const SAVE_DEBOUNCE_MS = 800
+import { fetchUserPreferences } from '@/lib/api-client/user-preferences'
 
 /**
- * youtubeSettingsStore와 서버(/api/user/preferences) 간 양방향 동기화.
+ * youtubeSettingsStore와 i18nStore에 서버(/api/user/preferences) 설정을 주입한다.
  *
  * 1. 사용자 uid 변경(로그인/로그아웃/계정 전환) 시 store를 즉시 reset → 잔존 데이터 노출 방지
  * 2. 서버에서 preferences를 fetch해 store hydrate
- * 3. 사용자가 store를 변경하면 debounced로 서버에 PUT
  *
- * Providers에서 1회 마운트하면 앱 전역에서 자동 동작.
+ * 저장은 설정 화면에서 명시적으로 수행한다. 태그 입력 중 자동 PUT이 발생하지 않도록
+ * 이 훅은 더 이상 store 변경을 서버로 autosave하지 않는다.
  */
 export function useUserPreferencesSync() {
   const user = useAuthStore((s) => s.user)
@@ -27,8 +22,6 @@ export function useUserPreferencesSync() {
   const queryClient = useQueryClient()
 
   const previousUidRef = useRef<string | null>(uid)
-  /** 서버에서 받은 값을 store에 주입하는 동안엔 PUT을 트리거하지 않도록 잠그는 플래그. */
-  const hydratingRef = useRef(false)
 
   // ── 1. uid가 바뀌면 즉시 reset (서버 fetch 시작 전 stale 데이터 차단)
   useEffect(() => {
@@ -52,7 +45,6 @@ export function useUserPreferencesSync() {
   // ── 2b. 받은 값을 store에 주입
   useEffect(() => {
     if (!serverPrefs) return
-    hydratingRef.current = true
     const store = useYouTubeSettingsStore.getState()
     store.setDefaultPrivacy(serverPrefs.defaultPrivacy)
     store.setDefaultLanguage(serverPrefs.defaultLanguage)
@@ -60,52 +52,6 @@ export function useUserPreferencesSync() {
     const i18nStore = useI18nStore.getState()
     i18nStore.setAppLocale(serverPrefs.appLocale)
     i18nStore.setMetadataTargetPreset(serverPrefs.metadataTargetPreset)
-    // 다음 tick에 잠금 해제 — subscribe 콜백이 위 set 호출들을 처리한 뒤 PUT이 안 나가도록.
-    const handle = setTimeout(() => { hydratingRef.current = false }, 0)
-    return () => clearTimeout(handle)
+    i18nStore.setMetadataTargetLanguages(serverPrefs.metadataTargetLanguages)
   }, [serverPrefs])
-
-  // ── 3. store 변경 → debounced 서버 PUT
-  const saveMutation = useMutation({ mutationFn: saveUserPreferences })
-
-  useEffect(() => {
-    if (!uid) return
-    let timer: ReturnType<typeof setTimeout> | null = null
-    let lastSerialized = ''
-
-    const readSnapshot = () => {
-      const youtubeState = useYouTubeSettingsStore.getState()
-      const i18nState = useI18nStore.getState()
-      return {
-        appLocale: i18nState.appLocale,
-        metadataTargetPreset: i18nState.metadataTargetPreset,
-        defaultPrivacy: youtubeState.defaultPrivacy,
-        defaultLanguage: youtubeState.defaultLanguage,
-        defaultTags: youtubeState.defaultTags,
-      }
-    }
-
-    lastSerialized = JSON.stringify(readSnapshot())
-
-    const scheduleSave = () => {
-      if (hydratingRef.current) return
-      const next = readSnapshot()
-      const serialized = JSON.stringify(next)
-      if (serialized === lastSerialized) return
-      lastSerialized = serialized
-      if (timer) clearTimeout(timer)
-      timer = setTimeout(() => {
-        saveMutation.mutate(next)
-      }, SAVE_DEBOUNCE_MS)
-    }
-
-    const unsubscribeYoutube = useYouTubeSettingsStore.subscribe(scheduleSave)
-    const unsubscribeI18n = useI18nStore.subscribe(scheduleSave)
-
-    return () => {
-      unsubscribeYoutube()
-      unsubscribeI18n()
-      if (timer) clearTimeout(timer)
-    }
-  }, [uid, saveMutation])
 }
