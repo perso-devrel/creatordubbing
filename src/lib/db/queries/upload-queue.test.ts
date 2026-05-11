@@ -48,11 +48,14 @@ describe('upload queue queries', () => {
     })
 
     const failed = await failQueueItem(10, 'upload failed')
-    const call = execute.mock.calls.at(-1)?.[0]
+    const call = execute.mock.calls
+      .map((args) => args[0])
+      .find((query) => query.sql.includes('UPDATE upload_queue'))
 
     expect(failed).toBe(true)
-    expect(call.sql).toContain('retries = retries + 1')
-    expect(call.sql).toContain("WHERE id = ? AND status = 'processing'")
-    expect(call.args).toEqual(['upload failed', 10])
+    expect(call).toBeDefined()
+    expect(call!.sql).toContain('retries = retries + 1')
+    expect(call!.sql).toContain("WHERE id = ? AND status = 'processing'")
+    expect(call!.args).toEqual(['upload failed', 10])
   })
 })

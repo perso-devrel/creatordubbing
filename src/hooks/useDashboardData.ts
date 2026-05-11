@@ -7,7 +7,9 @@ import type { DashboardSummary, DubbingJob, CreditUsageRow, LanguagePerformanceR
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init)
   const json = await res.json()
-  if (!json.ok) throw new Error(json.error?.message || 'Request failed')
+  if (!json.ok) {
+    throw new Error(json.error?.message || '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+  }
   return json.data as T
 }
 

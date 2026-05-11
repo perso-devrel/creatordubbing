@@ -3,6 +3,20 @@ import { z } from 'zod'
 import { cookies } from 'next/headers'
 import { ytOk, ytFail, ytHandle, requireAccessToken, parseQuery, parseYtBody } from './route-helpers'
 import { YouTubeError } from './server'
+import { verifySessionCookie } from '@/lib/auth/session-cookie'
+import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
+
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(),
+}))
+
+vi.mock('@/lib/auth/session-cookie', () => ({
+  verifySessionCookie: vi.fn(),
+}))
+
+vi.mock('@/lib/auth/token-refresh', () => ({
+  getOrRefreshAccessToken: vi.fn(),
+}))
 
 describe('ytOk', () => {
   it('returns JSON with ok: true envelope', async () => {
@@ -28,7 +42,11 @@ describe('ytFail', () => {
     expect(res.status).toBe(403)
     expect(body).toEqual({
       ok: false,
-      error: { code: 'QUOTA_EXCEEDED', message: 'Quota exceeded', details: null },
+      error: {
+        code: 'QUOTA_EXCEEDED',
+        message: 'YouTube API 사용량 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.',
+        details: null,
+      },
     })
   })
 
@@ -42,14 +60,14 @@ describe('ytFail', () => {
     const res = ytFail(new Error('something broke'))
     const body = await res.json()
     expect(res.status).toBe(500)
-    expect(body.error).toEqual({ code: 'INTERNAL_ERROR', message: 'Internal Server Error', details: null })
+    expect(body.error).toEqual({ code: 'INTERNAL_ERROR', message: '일시적인 서버 오류가 발생했습니다.', details: null })
   })
 
   it('handles non-Error values', async () => {
     const res = ytFail('string error')
     const body = await res.json()
     expect(res.status).toBe(500)
-    expect(body.error).toEqual({ code: 'UNKNOWN', message: 'Internal Server Error', details: null })
+    expect(body.error).toEqual({ code: 'UNKNOWN', message: '일시적인 서버 오류가 발생했습니다.', details: null })
   })
 })
 
@@ -159,50 +177,58 @@ describe('parseYtBody', () => {
 })
 
 describe('requireAccessToken', () => {
-  it('returns token from httpOnly cookie', async () => {
+  it('returns token from verified app session and encrypted DB token', async () => {
     vi.mocked(cookies).mockResolvedValueOnce({
       get: vi.fn((name: string) =>
-        name === 'google_access_token' ? { name, value: 'cookie-token' } : undefined,
+        name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
       ),
     } as never)
+    vi.mocked(verifySessionCookie).mockResolvedValueOnce('user-1')
+    vi.mocked(getOrRefreshAccessToken).mockResolvedValueOnce('db-token')
 
     const req = new Request('http://localhost')
     const token = await requireAccessToken(req)
-    expect(token).toBe('cookie-token')
+    expect(token).toBe('db-token')
+    expect(getOrRefreshAccessToken).toHaveBeenCalledWith('user-1', { force: undefined })
   })
 
-  it('returns token from Authorization bearer header', async () => {
+  it('passes force refresh through to the token loader', async () => {
+    vi.mocked(cookies).mockResolvedValueOnce({
+      get: vi.fn((name: string) =>
+        name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+      ),
+    } as never)
+    vi.mocked(verifySessionCookie).mockResolvedValueOnce('user-1')
+    vi.mocked(getOrRefreshAccessToken).mockResolvedValueOnce('fresh-token')
+
+    const req = new Request('http://localhost')
+    const token = await requireAccessToken(req, { forceRefresh: true })
+    expect(token).toBe('fresh-token')
+    expect(getOrRefreshAccessToken).toHaveBeenCalledWith('user-1', { force: true })
+  })
+
+  it('does not accept raw Authorization or x-google-access-token headers', async () => {
     vi.mocked(cookies).mockResolvedValueOnce({
       get: vi.fn(() => undefined),
     } as never)
 
     const req = new Request('http://localhost', {
-      headers: { Authorization: 'Bearer header-token' },
+      headers: {
+        Authorization: 'Bearer header-token',
+        'x-google-access-token': 'custom-token',
+      },
     })
-    const token = await requireAccessToken(req)
-    expect(token).toBe('header-token')
+    await expect(requireAccessToken(req)).rejects.toThrow(YouTubeError)
   })
 
-  it('returns token from x-google-access-token header', async () => {
-    vi.mocked(cookies).mockResolvedValueOnce({
-      get: vi.fn(() => undefined),
-    } as never)
-
-    const req = new Request('http://localhost', {
-      headers: { 'x-google-access-token': 'custom-token' },
-    })
-    const token = await requireAccessToken(req)
-    expect(token).toBe('custom-token')
-  })
-
-  it('throws YouTubeError(401) when no token found', async () => {
+  it('throws YouTubeError(401) when no app session token can be resolved', async () => {
     vi.mocked(cookies).mockResolvedValueOnce({
       get: vi.fn(() => undefined),
     } as never)
 
     const req = new Request('http://localhost')
     await expect(requireAccessToken(req)).rejects.toThrow(YouTubeError)
-    await vi.mocked(cookies).mockResolvedValueOnce({
+    vi.mocked(cookies).mockResolvedValueOnce({
       get: vi.fn(() => undefined),
     } as never)
     try {

@@ -4,6 +4,7 @@ import { decryptToken, encryptToken } from './token-crypto'
 describe('token-crypto', () => {
   const originalTokenKey = process.env.TOKEN_ENCRYPTION_KEY
   const originalSessionSecret = process.env.SESSION_SECRET
+  const originalLegacyPlaintext = process.env.ALLOW_LEGACY_PLAINTEXT_TOKENS
 
   afterEach(() => {
     if (originalTokenKey === undefined) delete process.env.TOKEN_ENCRYPTION_KEY
@@ -11,6 +12,9 @@ describe('token-crypto', () => {
 
     if (originalSessionSecret === undefined) delete process.env.SESSION_SECRET
     else process.env.SESSION_SECRET = originalSessionSecret
+
+    if (originalLegacyPlaintext === undefined) delete process.env.ALLOW_LEGACY_PLAINTEXT_TOKENS
+    else process.env.ALLOW_LEGACY_PLAINTEXT_TOKENS = originalLegacyPlaintext
 
     vi.unstubAllEnvs()
   })
@@ -34,6 +38,14 @@ describe('token-crypto', () => {
     expect(await decryptToken('legacy-plain-token')).toBe('legacy-plain-token')
   })
 
+  it('rejects legacy plaintext tokens in production unless explicitly allowed', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    expect(await decryptToken('legacy-plain-token')).toBeNull()
+
+    vi.stubEnv('ALLOW_LEGACY_PLAINTEXT_TOKENS', 'true')
+    expect(await decryptToken('legacy-plain-token')).toBe('legacy-plain-token')
+  })
+
   it('returns null for invalid encrypted values', async () => {
     process.env.TOKEN_ENCRYPTION_KEY = 'test-token-key'
     expect(await decryptToken('enc:v1:not-valid:not-valid')).toBeNull()
@@ -45,7 +57,7 @@ describe('token-crypto', () => {
     vi.stubEnv('NODE_ENV', 'production')
 
     await expect(encryptToken('token')).rejects.toThrow(
-      'TOKEN_ENCRYPTION_KEY or SESSION_SECRET is required in production',
+      'TOKEN_ENCRYPTION_KEY is required in production',
     )
   })
 })

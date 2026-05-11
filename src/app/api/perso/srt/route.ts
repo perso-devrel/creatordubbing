@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { requireSession } from '@/lib/auth/session'
 import { persoFetch } from '@/lib/perso/client'
 import { fail, requireIntParam } from '@/lib/perso/route-helpers'
+import { PersoError } from '@/lib/perso/errors'
 import { getPersoFileUrl } from '@/lib/api-client/perso'
 import type { DownloadResponse } from '@/lib/perso/types'
 import { assertPersoProjectOwner } from '@/lib/perso/ownership'
@@ -61,22 +62,14 @@ export async function GET(req: NextRequest) {
     }
 
     if (!path) {
-      throw Object.assign(new Error(`No ${kind} subtitle link in audioScript response`), {
-        name: 'PersoError',
-        code: 'SRT_NOT_AVAILABLE',
-        status: 404,
-      })
+      throw new PersoError('SRT_NOT_AVAILABLE', '자막 파일을 찾을 수 없습니다.', 404)
     }
 
     const fileUrl = path.startsWith('http') ? path : getPersoFileUrl(path)
     const res = await fetch(fileUrl)
     if (!res.ok) {
-      const body = await res.text().catch(() => '')
-      throw Object.assign(new Error(`Failed to fetch SRT: ${body}`), {
-        name: 'PersoError',
-        code: 'SRT_FETCH_FAILED',
-        status: res.status,
-      })
+      await res.text().catch(() => '')
+      throw new PersoError('SRT_FETCH_FAILED', '자막 파일을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.', res.status)
     }
 
     const srt = await res.text()

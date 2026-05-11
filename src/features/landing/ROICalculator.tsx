@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { TrendingUp } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { formatNumber } from '@/utils/formatters'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 const BASE_VIEWS = 100000
 
@@ -32,6 +33,7 @@ const LANGUAGE_LIFT_RATES = [
 
 export function ROICalculator() {
   const [selectedCount, setSelectedCount] = useState(5)
+  const t = useLocaleText()
 
   const lift = LANGUAGE_LIFT_RATES.slice(0, selectedCount).reduce((a, b) => a + b, 0)
   const growthPct = Math.round(lift * 100)
@@ -42,12 +44,12 @@ export function ROICalculator() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            성장 가능성 시뮬레이터
+            {t('features.landing.rOICalculator.estimatedReachCalculator')}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            YouTube 공식 데이터 및 Jamie Oliver(3배 도달)·MrBeast 등 공개 사례 기반 추정치.
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-600 dark:text-surface-300">
+            {t('features.landing.rOICalculator.aReferenceEstimateBasedOnPublicCasesAnd')}
             <br className="hidden sm:block" />
-            실제 성과는 콘텐츠·썸네일·업로드 빈도·채널 규모에 따라 크게 달라집니다.
+            {t('features.landing.rOICalculator.actualPerformanceDependsOnContentThumbnailsUploadCadence')}
           </p>
         </div>
 
@@ -56,9 +58,9 @@ export function ROICalculator() {
             <div>
               <div className="mb-3 flex items-center justify-between">
                 <label htmlFor="roi-langs" className="text-sm font-medium text-surface-700 dark:text-surface-300">
-                  더빙 언어 수
+                  {t('features.landing.rOICalculator.numberOfDubbingLanguages')}
                 </label>
-                <span className="text-lg font-bold text-surface-900 dark:text-white">{selectedCount}개</span>
+                <span className="text-lg font-bold text-surface-900 dark:text-white">{t('features.landing.rOICalculator.value', { selectedCount: selectedCount })}</span>
               </div>
               <input
                 id="roi-langs"
@@ -67,27 +69,28 @@ export function ROICalculator() {
                 max={10}
                 value={selectedCount}
                 onChange={(e) => setSelectedCount(Number(e.target.value))}
-                aria-label="더빙 언어 수"
-                className="w-full accent-brand-500"
+                aria-label={t('features.landing.rOICalculator.numberOfDubbingLanguages2')}
+                className="w-full accent-brand-600"
               />
-              <div className="mt-1 flex justify-between text-xs text-surface-400"><span>1</span><span>10</span></div>
+              <div className="mt-1 flex justify-between text-xs text-surface-600 dark:text-surface-300"><span>1</span><span>10</span></div>
             </div>
 
-            <div className="rounded-xl bg-gradient-to-r from-brand-50 to-pink-50 p-6 dark:from-brand-900/20 dark:to-pink-900/20">
+            <div className="rounded-lg border border-brand-100 bg-brand-50 p-6 dark:border-brand-900/50 dark:bg-brand-900/20">
               <div className="flex items-center gap-2 text-sm font-medium text-brand-700 dark:text-brand-400">
                 <TrendingUp className="h-4 w-4" />
-                예상 도달 증가율
+                {t('features.landing.rOICalculator.referenceEstimateForSelectedLanguages')}
               </div>
               <div className="mt-2 text-5xl font-extrabold text-surface-900 dark:text-white">
                 +{growthPct}%
               </div>
               <div className="mt-3 text-sm text-surface-600 dark:text-surface-400">
-                월 조회수 <span className="font-semibold">{formatNumber(BASE_VIEWS)}회</span> 기준{' '}
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatNumber(projectedViews)}회</span>까지 도달 가능
+                {t('features.landing.rOICalculator.from')}{' '}
+                <span className="font-semibold">{formatNumber(BASE_VIEWS)}{t('features.landing.rOICalculator.monthlyViews')}</span>{' '}
+                {t('features.landing.rOICalculator.toAnEstimated')}{' '}
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatNumber(projectedViews)}{t('features.landing.rOICalculator.views')}</span>
               </div>
-              <p className="mt-3 text-xs text-surface-500 dark:text-surface-400">
-                * YouTube 공식 멀티오디오 통계(평균 +25% 시청시간)와 Jamie Oliver 3배 등
-                공개 사례를 언어별로 분배한 추정치입니다. 채널별 실측치는 아닙니다.
+              <p className="mt-3 text-xs text-surface-600 dark:text-surface-300">
+                {t('features.landing.rOICalculator.thisIsAReferenceEstimateFromPublicCases')}
               </p>
             </div>
           </div>

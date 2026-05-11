@@ -3,6 +3,7 @@ import type {
   OutboundEvent,
 } from './messages'
 import {
+  USER_UPLOAD_FAILURE_MESSAGE,
   isPingMessage,
   isUploadToYouTubeMessage,
   isUploadProgressEvent,
@@ -15,7 +16,6 @@ import { STORAGE_KEY } from './background-types'
 import { generateJobId, buildStudioUrl, createJob } from './background-utils'
 import { getUploadMode } from './settings'
 
-// ── Storage helpers ──────────────────────────────────────
 async function saveJob(job: Job): Promise<void> {
   const { [STORAGE_KEY]: existing } = await chrome.storage.local.get(STORAGE_KEY)
   const jobs: Job[] = Array.isArray(existing) ? existing : []
@@ -48,7 +48,6 @@ async function updateJobStatus(
   }
 }
 
-// ── UPLOAD_TO_YOUTUBE 처리 ───────────────────────────────
 async function handleUpload(
   msg: UploadToYouTubeMessage,
 ): Promise<{ ok: true; jobId: string } | { ok: false; error: string }> {
@@ -74,8 +73,10 @@ async function handleUpload(
     return { ok: true, jobId }
   } catch (err) {
     job.status = 'error'
+    job.error = err instanceof Error ? err.message : String(err)
     await saveJob(job)
-    return { ok: false, error: String(err) }
+    console.debug('[Dubtube] Failed to start upload job', err)
+    return { ok: false, error: USER_UPLOAD_FAILURE_MESSAGE }
   }
 }
 
@@ -93,7 +94,7 @@ function waitForTabLoad(tabId: number, callback: () => void): void {
 }
 
 const WEBAPP_URL_PATTERNS = [
-  'http://localhost:3000/*',
+  'http://localhost/*',
   'https://*.dubtube.com/*',
 ]
 
@@ -104,17 +105,16 @@ async function relayToWebApp(event: OutboundEvent): Promise<void> {
       for (const tab of tabs) {
         if (tab.id != null) {
           chrome.tabs.sendMessage(tab.id, event).catch(() => {
-            // tab may not have a content script listener — ignore
+            // The web app tab may not have a content script listener.
           })
         }
       }
     } catch {
-      // pattern may not match any tabs — ignore
+      // Some URL patterns may have no matching tabs.
     }
   }
 }
 
-// ── 웹앱 → 확장 외부 메시지 수신 ────────────────────────
 chrome.runtime.onMessageExternal.addListener(
   (message: unknown, _sender, sendResponse) => {
     if (isPingMessage(message)) {
@@ -123,7 +123,12 @@ chrome.runtime.onMessageExternal.addListener(
     }
 
     if (isUploadToYouTubeMessage(message)) {
-      handleUpload(message).then(sendResponse).catch(() => sendResponse({ ok: false, error: 'upload failed' }))
+      handleUpload(message)
+        .then(sendResponse)
+        .catch((err) => {
+          console.debug('[Dubtube] Upload message handling failed', err)
+          sendResponse({ ok: false, error: USER_UPLOAD_FAILURE_MESSAGE })
+        })
       return true
     }
 
@@ -137,7 +142,6 @@ chrome.runtime.onMessageExternal.addListener(
   },
 )
 
-// ── content script → background 내부 메시지 (진행 릴레이) ─
 chrome.runtime.onMessage.addListener(
   (message: unknown, _sender, sendResponse) => {
     if (isUploadProgressEvent(message)) {
@@ -168,7 +172,6 @@ chrome.runtime.onMessage.addListener(
   },
 )
 
-// ── 설치 이벤트 ──────────────────────────────────────────
 chrome.runtime.onInstalled.addListener(() => {
   console.log('[Dubtube] Extension installed')
 })

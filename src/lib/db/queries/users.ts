@@ -66,6 +66,19 @@ export async function updateUserTokens(
   })
 }
 
+export async function clearUserGoogleTokens(userId: string) {
+  const db = getDb()
+  await db.execute({
+    sql: `UPDATE users
+          SET google_access_token = NULL,
+              google_refresh_token = NULL,
+              token_expires_at = NULL,
+              updated_at = datetime('now')
+          WHERE id = ?`,
+    args: [userId],
+  })
+}
+
 export async function getUser(userId: string) {
   const db = getDb()
   const result = await db.execute({
@@ -73,14 +86,6 @@ export async function getUser(userId: string) {
     args: [userId],
   })
   return result.rows[0] || null
-}
-
-export async function updateUserCredits(userId: string, credits: number) {
-  const db = getDb()
-  await db.execute({
-    sql: `UPDATE users SET credits_remaining = ?, updated_at = datetime('now') WHERE id = ?`,
-    args: [credits, userId],
-  })
 }
 
 export async function deductUserMinutes(userId: string, minutes: number) {
@@ -91,10 +96,21 @@ export async function deductUserMinutes(userId: string, minutes: number) {
   })
 }
 
-export async function addUserCredits(userId: string, minutes: number) {
+export async function getUserPreferencesRaw(userId: string): Promise<string | null> {
+  const db = getDb()
+  const result = await db.execute({
+    sql: 'SELECT preferences FROM users WHERE id = ?',
+    args: [userId],
+  })
+  const row = result.rows[0]
+  if (!row) return null
+  return (row.preferences as string | null) ?? null
+}
+
+export async function setUserPreferencesRaw(userId: string, preferences: string): Promise<void> {
   const db = getDb()
   await db.execute({
-    sql: `UPDATE users SET credits_remaining = credits_remaining + ?, updated_at = datetime('now') WHERE id = ?`,
-    args: [minutes, userId],
+    sql: `UPDATE users SET preferences = ?, updated_at = datetime('now') WHERE id = ?`,
+    args: [preferences, userId],
   })
 }

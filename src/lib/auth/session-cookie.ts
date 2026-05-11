@@ -3,7 +3,7 @@ const SEPARATOR = '.'
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
 const enc = new TextEncoder()
 
-export interface SessionCookiePayload {
+interface SessionCookiePayload {
   v: 2
   uid: string
   sid: string
@@ -132,15 +132,17 @@ export async function verifySessionCookiePayload(cookie: string): Promise<Verifi
   }
 
   const json = base64UrlDecode(encoded)
-  if (!json) return null
+  if (!json) return verifyLegacySessionCookie(cookie)
 
   try {
     const payload = JSON.parse(json) as Partial<SessionCookiePayload>
-    if (payload.v !== 2 || !payload.uid || !payload.sid || !payload.exp) return null
+    if (payload.v !== 2 || !payload.uid || !payload.sid || !payload.exp) {
+      return verifyLegacySessionCookie(cookie)
+    }
     if (payload.exp <= Math.floor(Date.now() / 1000)) return null
     return { uid: payload.uid, sid: payload.sid, exp: payload.exp, legacy: false }
   } catch {
-    return null
+    return verifyLegacySessionCookie(cookie)
   }
 }
 

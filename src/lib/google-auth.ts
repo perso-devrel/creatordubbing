@@ -13,7 +13,7 @@ export interface GoogleUser {
 
 const STORAGE_KEY_USER = 'google_user'
 
-export function getStoredUser(): GoogleUser | null {
+function getStoredUser(): GoogleUser | null {
   if (typeof window === 'undefined') return null
   try {
     const raw = localStorage.getItem(STORAGE_KEY_USER)
@@ -27,11 +27,11 @@ function storeUser(user: GoogleUser) {
   localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user))
 }
 
-export async function signInWithGoogle(): Promise<{
+export async function signInWithGoogle(options: { forceConsent?: boolean } = {}): Promise<{
   user: GoogleUser
 }> {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-  if (!clientId) throw new Error('NEXT_PUBLIC_GOOGLE_CLIENT_ID를 .env.local에 설정해주세요')
+  if (!clientId) throw new Error('Google 로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.')
 
   return new Promise((resolve, reject) => {
     const redirectUri = `${window.location.origin}/auth/callback`
@@ -56,7 +56,7 @@ export async function signInWithGoogle(): Promise<{
       `&scope=${encodeURIComponent(scope)}` +
       `&access_type=offline` +
       `&include_granted_scopes=true` +
-      `&prompt=consent` +
+      `&prompt=${options.forceConsent ? 'consent' : 'select_account'}` +
       `&state=${encodeURIComponent(stateNonce)}`
 
     const popup = window.open(authUrl, 'google_auth', 'width=500,height=600')
@@ -76,7 +76,7 @@ export async function signInWithGoogle(): Promise<{
       const { code, error, state: returnedState } = event.data
 
       if (error) {
-        reject(new Error(`Google 인증 오류: ${error}`))
+        reject(new Error('Google 인증을 완료하지 못했습니다. 다시 시도해 주세요.'))
         return
       }
       if (!code) {
@@ -87,7 +87,7 @@ export async function signInWithGoogle(): Promise<{
       const expectedState = sessionStorage.getItem('oauth_state')
       sessionStorage.removeItem('oauth_state')
       if (!expectedState || returnedState !== expectedState) {
-        reject(new Error('OAuth state 불일치 — CSRF 방지를 위해 요청이 거부되었습니다.'))
+        reject(new Error('로그인 요청을 확인할 수 없습니다. 다시 시도해 주세요.'))
         return
       }
 
@@ -141,4 +141,3 @@ export function signOut(): void {
 export function restoreSession(): { user: GoogleUser | null } {
   return { user: getStoredUser() }
 }
-

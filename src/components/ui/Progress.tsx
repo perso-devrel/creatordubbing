@@ -21,10 +21,7 @@ export function Progress({ value, max = 100, className, showLabel, size = 'md' }
         </div>
       )}
       <div className={cn('w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-800', heights[size])}>
-        <div
-          className={cn('h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-500 transition-all duration-500')}
-          style={{ width: `${pct}%` }}
-        />
+        <div className={cn('h-full rounded-full bg-brand-600 transition-all duration-500')} style={{ width: `${pct}%` }} />
       </div>
     </div>
   )

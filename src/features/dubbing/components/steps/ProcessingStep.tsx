@@ -4,46 +4,52 @@ import { useEffect, useRef, useState } from 'react'
 import { Loader2, CheckCircle2, AlertCircle, XCircle } from 'lucide-react'
 import { Card, Progress, Badge, Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { getLanguageByCode } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
 import type { JobStatus } from '../../types/dubbing.types'
+import type { MessageKey } from '@/lib/i18n/clientMessages'
 
-const statusLabels: Record<JobStatus, string> = {
-  idle: '대기 중',
-  transcribing: '전사 중',
-  translating: '번역 중',
-  synthesizing: '대기열',
-  'lip-syncing': '립싱크 중',
-  merging: '처리 중',
-  completed: '완료',
-  failed: '실패',
+const statusLabels: Record<JobStatus, MessageKey> = {
+  idle: 'dubbing.processing.status.idle',
+  transcribing: 'dubbing.processing.status.transcribing',
+  translating: 'dubbing.processing.status.translating',
+  synthesizing: 'dubbing.processing.status.synthesizing',
+  'lip-syncing': 'dubbing.processing.status.lipSyncing',
+  merging: 'dubbing.processing.status.merging',
+  completed: 'dubbing.processing.status.completed',
+  failed: 'dubbing.processing.status.failed',
 }
 
-const reasonLabels: Record<string, string> = {
-  PENDING: '대기열에서 대기 중...',
-  CREATED: '초기화 중...',
-  READY: '전사 준비 중...',
-  READY_TARGET_LANGUAGES: '번역 중...',
-  ENQUEUED: '합성 대기 중...',
-  PROCESSING: '더빙 오디오 생성 중...',
-  COMPLETED: '완료!',
-  Completed: '완료!',
-  FAILED: '처리 실패',
-  Failed: '처리 실패',
-  CANCELED: '취소됨',
+const reasonLabels: Record<string, MessageKey> = {
+  PENDING: 'dubbing.processing.reason.pending',
+  CREATED: 'dubbing.processing.reason.created',
+  READY: 'dubbing.processing.reason.ready',
+  READY_TARGET_LANGUAGES: 'dubbing.processing.reason.readyTargetLanguages',
+  ENQUEUED: 'dubbing.processing.reason.enqueued',
+  PROCESSING: 'dubbing.processing.reason.processing',
+  COMPLETED: 'dubbing.processing.reason.completed',
+  Completed: 'dubbing.processing.reason.completed',
+  FAILED: 'dubbing.processing.reason.failed',
+  Failed: 'dubbing.processing.reason.failed',
+  CANCELED: 'dubbing.processing.reason.canceled',
 }
 
-function getProgressLabel(lp: { progressReason: string; progress: number }) {
+function getProgressLabel(t: ReturnType<typeof useLocaleText>, lp: { progressReason: string; progress: number }) {
   if (lp.progress >= 100 && lp.progressReason !== 'COMPLETED' && lp.progressReason !== 'Completed' && lp.progressReason !== 'FAILED' && lp.progressReason !== 'Failed' && lp.progressReason !== 'CANCELED') {
-    return '마무리 중...'
+    return t('features.dubbing.components.steps.processingStep.finalizing')
   }
-  return reasonLabels[lp.progressReason] || lp.progressReason
+  return reasonLabels[lp.progressReason]
+    ? t(reasonLabels[lp.progressReason])
+    : t('features.dubbing.components.steps.processingStep.processing')
 }
 
 export function ProcessingStep() {
-  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted, deliverableMode } = useDubbingStore()
+  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted, deliverableMode, reset } = useDubbingStore()
   const { submitDubbing, startPolling, stopPolling, cancelAll } = usePersoFlow()
+  const locale = useAppLocale()
+  const t = useLocaleText()
   const [cancelling, setCancelling] = useState(false)
   const submittedRef = useRef(isSubmitted)
 
@@ -89,21 +95,21 @@ export function ProcessingStep() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">
-          {allCompleted ? '더빙 완료!' : '영상 처리 중'}
+          {allCompleted ? t('features.dubbing.components.steps.processingStep.processingComplete') : t('features.dubbing.components.steps.processingStep.processingVideo')}
         </h2>
-        <p className="mt-1 text-surface-500">
+        <p className="mt-1 text-surface-500 dark:text-surface-300">
           {allCompleted
-            ? '모든 언어 처리가 완료되었습니다.'
+            ? t('features.dubbing.components.steps.processingStep.reviewTheFinishedFilesAndContinueWithThe')
             : deliverableMode === 'originalWithMultiAudio'
-              ? 'AI가 전사, 번역, 자막 생성을 진행하고 있습니다.'
-              : 'AI가 전사, 번역, 더빙 오디오를 생성하고 있습니다. 몇 분 정도 소요됩니다.'}
+              ? t('features.dubbing.components.steps.processingStep.creatingCaptionsProcessingTimeDependsOnVideoLength')
+              : t('features.dubbing.components.steps.processingStep.creatingCaptionsAndDubbedAudioProcessingTimeDepends')}
         </p>
       </div>
 
       {/* Overall progress */}
       <Card>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-surface-700 dark:text-surface-300">전체 진행률</span>
+          <span className="text-sm font-medium text-surface-700 dark:text-surface-300">{t('features.dubbing.components.steps.processingStep.overallProgress')}</span>
           <span className="text-sm font-bold text-surface-900 dark:text-white">{overallProgress}%</span>
         </div>
         <Progress value={overallProgress} size="lg" />
@@ -117,15 +123,19 @@ export function ProcessingStep() {
             size="sm"
             onClick={async () => {
               setCancelling(true)
-              await cancelAll()
-              setCancelling(false)
+              try {
+                await cancelAll()
+                reset()
+              } catch {
+                setCancelling(false)
+              }
             }}
             loading={cancelling}
             disabled={cancelling}
             className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20"
           >
             <XCircle className="h-4 w-4" />
-            더빙 취소
+            {t('features.dubbing.components.steps.processingStep.cancelJob')}
           </Button>
         </div>
       )}
@@ -151,9 +161,9 @@ export function ProcessingStep() {
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xl">{lang.flag}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-surface-900 dark:text-white">{lang.name}</p>
-                  <p className="text-xs text-surface-500">
-                    {getProgressLabel(lp)}
+                  <p className="text-sm font-semibold text-surface-900 dark:text-white">{locale === 'ko' ? lang.nativeName : lang.name}</p>
+                  <p className="text-xs text-surface-500 dark:text-surface-300">
+                {getProgressLabel(t, lp)}
                   </p>
                 </div>
                 {isCompleted ? (
@@ -173,14 +183,11 @@ export function ProcessingStep() {
                     isCompleted ? 'success' : isFailed ? 'error' : 'brand'
                   }
                 >
-                  {statusLabels[lp.status]}
+                  {t(statusLabels[lp.status])}
                 </Badge>
-                <span className="text-xs text-surface-400">{Math.round(lp.progress)}%</span>
+                <span className="text-xs text-surface-500 dark:text-surface-300">{Math.round(lp.progress)}%</span>
               </div>
 
-              {lp.projectSeq > 0 && (
-                <p className="mt-1 text-[10px] text-surface-400">Project #{lp.projectSeq}</p>
-              )}
             </Card>
           )
         })}
@@ -189,7 +196,7 @@ export function ProcessingStep() {
       {jobStatus === 'failed' && (
         <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/10">
           <p className="text-sm text-red-700 dark:text-red-400">
-            일부 언어 처리에 실패했습니다. 완료된 언어는 다운로드할 수 있습니다.
+            {t('features.dubbing.components.steps.processingStep.someLanguagesFailedCompletedLanguagesAreStillAvailable')}
           </p>
         </Card>
       )}

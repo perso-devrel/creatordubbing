@@ -111,7 +111,7 @@ describe('processUploadQueue', () => {
       accessToken: 'access-token',
       videoId: 'yt-123',
       language: 'en',
-      name: '',
+      name: 'English',
       srtContent: queueItem.srtContent,
     })
     expect(completeQueueItem).toHaveBeenCalledWith(10, 'yt-123')

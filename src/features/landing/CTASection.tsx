@@ -1,34 +1,38 @@
-import Link from 'next/link'
+'use client'
+
 import { ArrowRight } from 'lucide-react'
+import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { Button } from '@/components/ui'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 export function CTASection() {
+  const t = useLocaleText()
+
   return (
     <section className="py-24">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-500 to-pink-500 p-12 text-center shadow-2xl shadow-brand-500/25 sm:p-16">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.1),transparent_50%)]" />
-          <div className="relative">
-            <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
-              전 세계를 만날 준비 되셨나요?
+        <div className="rounded-xl border border-surface-800 bg-surface-950 p-12 text-center shadow-xl shadow-surface-900/10 dark:border-surface-700 dark:bg-surface-900 sm:p-16">
+          <div>
+            <h2 className="break-keep text-3xl font-extrabold text-white sm:text-4xl">
+              {t('features.landing.cTASection.prepareYourNextVideoInMoreLanguages')}
             </h2>
-            <p className="mx-auto mt-4 text-lg text-white/80 break-keep sm:whitespace-nowrap">
-              AI 더빙으로 글로벌 시청자를 확보하고 있는 수천 명의 크리에이터와 함께하세요.
+            <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-surface-200">
+              {t('features.landing.cTASection.reviewTheDubbedResultsPrepareCaptionsTitlesAnd')}
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <Link href="/dashboard">
-                <Button size="lg" className="bg-white text-brand-600 shadow-lg hover:bg-surface-50">
-                  지금 시작하기
+              <LocaleLink href="/dashboard">
+                <Button size="lg" className="bg-white text-surface-950 shadow-sm hover:bg-surface-100">
+                  {t('features.landing.cTASection.startANewDub')}
                   <ArrowRight className="h-5 w-5" />
                 </Button>
-              </Link>
+              </LocaleLink>
               <a href="#pricing">
                 <Button
                   variant="ghost"
                   size="lg"
                   className="border-2 border-white/80 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:border-white"
                 >
-                  요금제 보기
+                  {t('features.landing.cTASection.viewPricing')}
                 </Button>
               </a>
             </div>

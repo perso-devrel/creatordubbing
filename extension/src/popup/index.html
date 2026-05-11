@@ -3,113 +3,148 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dubtube</title>
+  <title>Dubtube YouTube 업로드 도우미</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      width: 340px;
-      min-height: 240px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      width: 360px;
+      min-height: 260px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
       padding: 16px;
       background: #fff;
-      color: #1a1a1a;
+      color: #1f2937;
+      letter-spacing: 0;
     }
     header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 12px;
+      gap: 12px;
+      margin-bottom: 14px;
     }
-    h1 { font-size: 15px; font-weight: 600; }
-    .version { font-size: 11px; color: #999; }
+    h1 { font-size: 15px; font-weight: 700; line-height: 1.35; }
+    .subtitle {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #4b5563;
+    }
+    .version { font-size: 11px; color: #9ca3af; flex-shrink: 0; }
 
     .status {
-      padding: 8px 12px;
+      padding: 9px 12px;
       border-radius: 6px;
       font-size: 13px;
-      margin-bottom: 12px;
+      line-height: 1.4;
+      margin-bottom: 14px;
     }
-    .status.ok { background: #e8f5e9; color: #2e7d32; }
-    .status.warn { background: #fff3e0; color: #e65100; }
-    .status.active { background: #e3f2fd; color: #1565c0; }
+    .status.ok { background: #ecfdf5; color: #047857; }
+    .status.warn { background: #fff7ed; color: #c2410c; }
+    .status.active { background: #eff6ff; color: #1d4ed8; }
 
-    .mode-section { margin-bottom: 12px; }
+    .mode-section { margin-bottom: 14px; }
     .mode-label {
-      display: flex; align-items: center; gap: 8px; cursor: pointer;
-      font-size: 13px; font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
     }
     .mode-label input { display: none; }
     .toggle-track {
-      position: relative; width: 36px; height: 20px;
-      background: #ccc; border-radius: 10px; transition: background 0.2s;
+      position: relative;
+      width: 36px;
+      height: 20px;
+      background: #d1d5db;
+      border-radius: 10px;
+      transition: background 0.2s;
+      flex-shrink: 0;
     }
     .toggle-thumb {
-      position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
-      background: #fff; border-radius: 50%; transition: left 0.2s;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      transition: left 0.2s;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
     }
-    .mode-label input:checked + .toggle-track { background: #4caf50; }
+    .mode-label input:checked + .toggle-track { background: #2563eb; }
     .mode-label input:checked + .toggle-track .toggle-thumb { left: 18px; }
-    .mode-desc { font-size: 11px; color: #999; margin-top: 4px; }
+    .mode-desc { font-size: 12px; line-height: 1.45; color: #4b5563; margin-top: 6px; }
 
-    h2 { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 8px; }
+    h2 { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 8px; }
 
     .empty {
       font-size: 12px;
-      color: #999;
+      color: #6b7280;
       text-align: center;
       padding: 16px 0;
+      line-height: 1.45;
     }
 
     .job-list { list-style: none; }
     .job-item {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 8px;
-      padding: 8px 0;
-      border-bottom: 1px solid #f0f0f0;
+      padding: 9px 0;
+      border-bottom: 1px solid #f3f4f6;
       font-size: 12px;
     }
     .job-item:last-child { border-bottom: none; }
 
     .job-badge {
       display: inline-block;
-      padding: 2px 6px;
+      min-width: 44px;
+      padding: 3px 6px;
       border-radius: 4px;
       font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-weight: 700;
+      text-align: center;
       flex-shrink: 0;
     }
-    .badge-pending { background: #f5f5f5; color: #757575; }
-    .badge-running { background: #e3f2fd; color: #1565c0; }
-    .badge-done { background: #e8f5e9; color: #2e7d32; }
-    .badge-error { background: #ffebee; color: #c62828; }
+    .badge-pending { background: #f3f4f6; color: #4b5563; }
+    .badge-running { background: #eff6ff; color: #1d4ed8; }
+    .badge-done { background: #ecfdf5; color: #047857; }
+    .badge-error { background: #fef2f2; color: #b91c1c; }
 
-    .job-info { flex: 1; min-width: 0; }
-    .job-video { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .job-lang { color: #888; }
-    .job-time { color: #bbb; font-size: 10px; flex-shrink: 0; }
+    .job-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .job-video { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #111827; }
+    .job-meta { color: #6b7280; }
+    .job-step { color: #4b5563; }
+    .job-error { color: #b91c1c; line-height: 1.4; }
+    .job-time { color: #9ca3af; font-size: 10px; flex-shrink: 0; padding-top: 2px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Dubtube</h1>
+    <div>
+      <h1>Dubtube YouTube 업로드 도우미</h1>
+      <p class="subtitle">Dubtube에서 생성한 더빙 오디오를 YouTube Studio에 업로드합니다.</p>
+    </div>
     <span id="version" class="version"></span>
   </header>
-  <div id="status" class="status warn">로딩 중…</div>
+
+  <div id="status" class="status warn">불러오는 중...</div>
+
   <div class="mode-section">
     <label class="mode-label">
-      <span>자동 게시</span>
+      <span>자동 모드</span>
       <input type="checkbox" id="mode-toggle" />
       <span class="toggle-track"><span class="toggle-thumb"></span></span>
     </label>
-    <p class="mode-desc" id="mode-desc">assisted — 파일 주입까지만 자동</p>
+    <p class="mode-desc" id="mode-desc">도움 모드: 파일 추가까지만 진행</p>
   </div>
 
   <h2>최근 업로드</h2>
   <div id="jobs-container">
-    <p class="empty">로딩 중…</p>
+    <p class="empty">불러오는 중...</p>
   </div>
+
   <script type="module" src="./main.ts"></script>
 </body>
 </html>

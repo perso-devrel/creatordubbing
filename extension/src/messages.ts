@@ -1,7 +1,8 @@
-// ── 업로드 모드 ──────────────────────────────────────────
 export type UploadMode = 'auto' | 'assisted'
 
-// ── 업로드 단계 ──────────────────────────────────────────
+export const USER_UPLOAD_FAILURE_MESSAGE =
+  '업로드를 완료하지 못했습니다. YouTube Studio에서 직접 확인해 주세요.'
+
 export type UploadStep =
   | 'NAVIGATING'
   | 'OPENING_LANGUAGES'
@@ -10,7 +11,6 @@ export type UploadStep =
   | 'WAITING_PUBLISH'
   | 'PUBLISHING'
 
-// ── 웹앱 → 확장 메시지 ──────────────────────────────────
 export interface PingMessage {
   type: 'PING'
 }
@@ -27,25 +27,6 @@ export interface UploadToYouTubeMessage {
 
 export type InboundMessage = PingMessage | UploadToYouTubeMessage
 
-// ── 확장 → 웹앱 응답 ────────────────────────────────────
-export interface PongResponse {
-  ok: true
-  version: string
-}
-
-export interface UploadAcceptedResponse {
-  ok: true
-  jobId: string
-}
-
-export interface ErrorResponse {
-  ok: false
-  error: string
-}
-
-export type InboundResponse = PongResponse | UploadAcceptedResponse | ErrorResponse
-
-// ── 확장 → 웹앱 이벤트 (progress / done / error) ────────
 export interface UploadProgressEvent {
   type: 'UPLOAD_PROGRESS'
   payload: {
@@ -76,10 +57,6 @@ export interface UploadErrorEvent {
 
 export type OutboundEvent = UploadProgressEvent | UploadDoneEvent | UploadErrorEvent
 
-// ── 모든 메시지 유니언 ───────────────────────────────────
-export type Message = InboundMessage | OutboundEvent
-
-// ── 타입 가드 ────────────────────────────────────────────
 export function isPingMessage(msg: unknown): msg is PingMessage {
   return isObject(msg) && msg.type === 'PING'
 }
@@ -116,7 +93,6 @@ export function isOutboundEvent(msg: unknown): msg is OutboundEvent {
   return isUploadProgressEvent(msg) || isUploadDoneEvent(msg) || isUploadErrorEvent(msg)
 }
 
-// ── 유틸 ─────────────────────────────────────────────────
 export function isObject(val: unknown): val is Record<string, unknown> {
   return val !== null && typeof val === 'object' && !Array.isArray(val)
 }

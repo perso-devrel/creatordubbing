@@ -5,7 +5,6 @@ export const syncBodySchema = z.object({
   email: z.string().email(),
   displayName: z.string().nullable().optional(),
   photoURL: z.string().url().nullable().optional(),
-  accessToken: z.string().nullable().optional(),
 })
 
 export const callbackBodySchema = z.object({

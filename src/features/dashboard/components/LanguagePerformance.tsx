@@ -1,14 +1,13 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import { Card, CardTitle } from '@/components/ui'
 import { formatNumber } from '@/utils/formatters'
 import { useLanguagePerformance } from '@/hooks/useDashboardData'
 import { getLanguageByCode } from '@/utils/languages'
-
-const COLORS = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#ffe4e6', '#fda4af', '#fb7185', '#f43f5e']
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 export function LanguagePerformance() {
+  const t = useLocaleText()
   const { data: rawData } = useLanguagePerformance()
 
   const chartData = (rawData || []).map((r) => {
@@ -19,14 +18,15 @@ export function LanguagePerformance() {
       flag: lang?.flag || '',
     }
   })
+  const maxViews = Math.max(1, ...chartData.map((item) => item.views))
 
   if (chartData.length === 0) {
     return (
       <Card>
-        <CardTitle>언어별 성과</CardTitle>
-        <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">더빙 언어별 조회수</p>
-        <div className="flex h-64 items-center justify-center text-sm text-surface-400">
-          YouTube에 업로드한 영상이 있으면 여기에 성과가 표시됩니다
+        <CardTitle>{t('features.dashboard.components.languagePerformance.languagePerformance')}</CardTitle>
+        <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t('features.dashboard.components.languagePerformance.viewsByDubbingLanguage')}</p>
+        <div className="flex h-64 items-center justify-center text-center text-sm text-surface-500 dark:text-surface-300">
+          {t('features.dashboard.components.languagePerformance.performanceAppearsHereAfterYouUploadVideosTo')}
         </div>
       </Card>
     )
@@ -34,30 +34,30 @@ export function LanguagePerformance() {
 
   return (
     <Card>
-      <CardTitle>언어별 성과</CardTitle>
-      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">더빙 언어별 조회수</p>
+      <CardTitle>{t('features.dashboard.components.languagePerformance.languagePerformance2')}</CardTitle>
+      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">{t('features.dashboard.components.languagePerformance.viewsByDubbingLanguage2')}</p>
 
-      <div className="h-64 w-full min-w-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} horizontal={false} />
-            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#a1a1aa' }} tickFormatter={(v) => formatNumber(v)} />
-            <YAxis
-              dataKey="language" type="category" axisLine={false} tickLine={false}
-              tick={{ fontSize: 12, fill: '#a1a1aa' }} width={80}
-              tickFormatter={(v, i) => `${chartData[i]?.flag || ''} ${v}`}
-            />
-            <Tooltip
-              contentStyle={{ backgroundColor: '#18181b', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff', fontSize: '13px' }}
-              formatter={(value) => [formatNumber(Number(value)), '조회수']}
-            />
-            <Bar dataKey="views" radius={[0, 4, 4, 0]} barSize={20}>
-              {chartData.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="h-64 w-full min-w-0 space-y-3 overflow-hidden" role="img" aria-label={t('features.dashboard.components.languagePerformance.viewsByDubbingLanguage2')}>
+        {chartData.slice(0, 8).map((item) => {
+          const width = Math.max(4, (item.views / maxViews) * 100)
+          return (
+            <div key={item.language} className="grid grid-cols-[5.75rem_1fr_4.5rem] items-center gap-3">
+              <div className="truncate text-xs font-medium text-surface-600 dark:text-surface-300">
+                {item.flag} {item.language}
+              </div>
+              <div className="h-5 rounded-full bg-surface-100 dark:bg-surface-800">
+                <div
+                  className="h-full rounded-full bg-brand-600"
+                  style={{ width: `${width}%` }}
+                  title={`${item.language}: ${formatNumber(item.views)} ${t('features.dashboard.components.languagePerformance.views')}`}
+                />
+              </div>
+              <div className="text-right text-xs font-medium text-surface-700 dark:text-surface-200">
+                {formatNumber(item.views)}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </Card>
   )

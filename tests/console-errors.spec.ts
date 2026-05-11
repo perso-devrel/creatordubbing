@@ -18,7 +18,6 @@ const ROUTES = [
 async function injectMockAuth(page: Page) {
   await page.context().addCookies([
     { name: 'dubtube_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
-    { name: 'google_access_token', value: 'mock-token', domain: 'localhost', path: '/' },
   ])
   await page.addInitScript(() => {
     try {
@@ -35,6 +34,12 @@ async function injectMockAuth(page: Page) {
       /* noop */
     }
   })
+}
+
+async function setKoreanLocale(page: Page) {
+  await page.context().addCookies([
+    { name: 'dubtube_locale', value: 'ko', domain: 'localhost', path: '/' },
+  ])
 }
 
 test.describe('console error audit (Next.js)', () => {
@@ -62,6 +67,7 @@ test.describe('console error audit (Next.js)', () => {
         }
       })
 
+      await setKoreanLocale(page)
       if (needsAuth) await injectMockAuth(page)
 
       const res = await page.goto(`http://localhost:3000${route}`, {
@@ -71,7 +77,16 @@ test.describe('console error audit (Next.js)', () => {
 
       await page.waitForTimeout(1000)
 
+      const expectedPath = route === '/'
+        ? '/ko'
+        : route === '/youtube'
+          ? '/ko/settings'
+          : `/ko${route}`
       expect(res?.status(), `HTTP status for ${route}`).toBeLessThan(500)
+      expect(new URL(page.url()).pathname, `Final path for ${route}`).toBe(expectedPath)
+      if (route === '/youtube') {
+        expect(new URL(page.url()).searchParams.get('section'), 'YouTube settings section').toBe('youtube')
+      }
       expect(errors, `console errors on ${route}:\n${errors.join('\n')}`).toHaveLength(0)
     })
   }

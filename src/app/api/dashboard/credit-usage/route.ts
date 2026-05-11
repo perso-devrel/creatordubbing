@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     uid: req.nextUrl.searchParams.get('uid'),
   })
   if (!parsed.success) {
-    return apiFail('BAD_REQUEST', 'uid required', 400)
+    return apiFail('BAD_REQUEST', '로그인 정보를 확인해 주세요.', 400)
   }
 
   if (parsed.data.uid !== auth.session.uid) return forbiddenUidMismatch()
@@ -24,6 +24,6 @@ export async function GET(req: NextRequest) {
     const data = await getCreditUsageByMonth(auth.session.uid)
     return apiOk(data)
   } catch {
-    return apiFail('DB_ERROR', 'Failed to load credit usage', 500)
+    return apiFail('DB_ERROR', '사용 시간 내역을 불러오지 못했습니다.', 500)
   }
 }

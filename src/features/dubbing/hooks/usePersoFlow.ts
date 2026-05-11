@@ -4,6 +4,9 @@ import { useCallback, useRef } from 'react'
 import { useDubbingStore } from '../store/dubbingStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { useAuthStore } from '@/stores/authStore'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+
+import type { AppLocale } from '@/lib/i18n/config'
 import {
   getSpaces,
   uploadVideoFile as persoUploadVideoFile,
@@ -19,6 +22,7 @@ import {
 import type { DownloadTarget } from '@/lib/perso/types'
 import type { LanguageProgress } from '../types/dubbing.types'
 import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
+import { extractVideoId } from '@/utils/validators'
 
 const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
@@ -26,6 +30,12 @@ const POLL_BACKOFF = 1.5          // 매 폴링마다 1.5배씩 증가
 const POLL_FINALIZING = 2_000     // 100%인데 COMPLETED 아직 안 온 경우 빠르게 재확인
 const DEFAULT_SOURCE_LANGUAGE = 'auto'
 const DEFAULT_SPEAKER_COUNT = 1
+type LocaleText = ReturnType<typeof useLocaleText>
+
+function countLocaleMessage(locale: AppLocale, count: number, key: string, t: LocaleText): string {
+  const unit = t(key)
+  return locale === 'ko' ? `${count}${unit}` : `${count} ${unit}`
+}
 
 function mapProgressReasonToStatus(reason: string) {
   switch (reason) {
@@ -68,11 +78,19 @@ async function saveJobToDb(
   projectMap: Record<string, number>,
   lipSyncEnabled: boolean,
   sourceLanguage: string,
+  t: LocaleText,
 ): Promise<number> {
   const userId = useAuthStore.getState().user?.uid
   const videoMeta = store.getState().videoMeta
   const isShort = store.getState().isShort
-  if (!userId) throw new Error('로그인이 필요합니다')
+  const state = store.getState()
+  const originalYouTubeId =
+    state.videoSource?.type === 'url' && state.videoSource.url
+      ? extractVideoId(state.videoSource.url)
+      : null
+  if (!userId) {
+    throw new Error(t('features.dubbing.hooks.usePersoFlow.pleaseSignInFirst'))
+  }
 
   const result = await dbMutationStrict<{ jobId: number }>({
     type: 'createDubbingJobWithLanguages',
@@ -87,6 +105,10 @@ async function saveJobToDb(
         spaceSeq,
         lipSyncEnabled,
         isShort,
+        deliverableMode: state.deliverableMode,
+        uploadSettings: state.uploadSettings,
+        originalVideoUrl: state.originalVideoUrl,
+        originalYouTubeUrl: originalYouTubeId ? `https://www.youtube.com/watch?v=${originalYouTubeId}` : null,
       },
       languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
     },
@@ -101,6 +123,7 @@ async function pollLanguage(
   spaceSeq: number,
   pollTimers: Record<string, ReturnType<typeof setTimeout>>,
   addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
+  t: LocaleText,
 ): Promise<boolean | 'finalizing'> { // true = terminal, 'finalizing' = 100% but not COMPLETED yet
   const progress = await getProjectProgress(projectSeq, spaceSeq)
   const status = mapProgressReasonToStatus(progress.progressReason)
@@ -188,7 +211,9 @@ async function pollLanguage(
   }
   addToast({
     type: anyFailed ? 'warning' : 'success',
-    title: anyFailed ? 'Dubbing completed with errors' : 'All dubbing complete!',
+    title: anyFailed
+      ? t('features.dubbing.hooks.usePersoFlow.dubbingFinishedWithSomeErrors')
+      : t('features.dubbing.hooks.usePersoFlow.dubbingComplete'),
   })
   return true
 }
@@ -233,6 +258,8 @@ async function cancelAllProjects(
 
 export function usePersoFlow() {
   const addToast = useNotificationStore((s) => s.addToast)
+  const locale = useAppLocale()
+  const t = useLocaleText()
   const pollTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   const initSpace = useCallback(async () => {
@@ -243,19 +270,19 @@ export function usePersoFlow() {
         store.getState().setSpaceSeq(space.spaceSeq)
         return space.spaceSeq
       }
-      throw new Error('No spaces found. Check your API key.')
+      throw new Error(t('features.dubbing.hooks.usePersoFlow.noWorkspaceWasFoundCheckYourAPISettings'))
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to load spaces'
-      addToast({ type: 'error', title: 'Space Error', message: msg })
+      const msg = err instanceof Error ? err.message : t('features.dubbing.hooks.usePersoFlow.failedToLoadWorkspace')
+      addToast({ type: 'error', title: t('features.dubbing.hooks.usePersoFlow.workspaceError'), message: msg })
       throw err
     }
-  }, [addToast])
+  }, [addToast, t])
 
   const uploadLocalVideo = useCallback(async (file: File) => {
     let spaceSeq = store.getState().spaceSeq
     if (!spaceSeq) spaceSeq = await initSpace()
 
-    addToast({ type: 'info', title: 'Uploading video...', message: file.name })
+    addToast({ type: 'info', title: t('features.dubbing.hooks.usePersoFlow.uploadingVideo'), message: file.name })
 
     try {
       const result = await persoUploadVideoFile(spaceSeq!, file)
@@ -269,16 +296,20 @@ export function usePersoFlow() {
         thumbnail: result.thumbnailFilePath ? getPersoFileUrl(result.thumbnailFilePath) : '',
         duration: Math.round(result.durationMs / 1000),
         durationMs: result.durationMs,
-        channelTitle: 'Local file',
+        channelTitle: t('features.dubbing.hooks.usePersoFlow.uploadedFile'),
       })
-      addToast({ type: 'success', title: 'Video uploaded', message: `${file.name} ready for dubbing` })
+      addToast({
+        type: 'success',
+        title: t('features.dubbing.hooks.usePersoFlow.videoUploaded'),
+        message: t('features.dubbing.hooks.usePersoFlow.valueIsReadyForDubbing', { fileName: file.name }),
+      })
       return result
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Upload failed'
-      addToast({ type: 'error', title: 'Upload Error', message: msg })
+      const msg = err instanceof Error ? err.message : t('features.dubbing.hooks.usePersoFlow.uploadFailed')
+      addToast({ type: 'error', title: t('features.dubbing.hooks.usePersoFlow.uploadFailed2'), message: msg })
       throw err
     }
-  }, [initSpace, addToast])
+  }, [initSpace, addToast, t])
 
   const importVideoByUrl = useCallback(async (url: string) => {
     let spaceSeq = store.getState().spaceSeq
@@ -287,7 +318,9 @@ export function usePersoFlow() {
     const isYouTube = /(?:youtube\.com|youtu\.be)/.test(url)
     addToast({
       type: 'info',
-      title: isYouTube ? 'YouTube에서 가져오는 중...' : '영상 URL 가져오는 중...',
+      title: isYouTube
+        ? t('features.dubbing.hooks.usePersoFlow.importingFromYouTube')
+        : t('features.dubbing.hooks.usePersoFlow.importingVideoURL'),
       duration: 8000,
     })
 
@@ -295,11 +328,11 @@ export function usePersoFlow() {
       const meta = await getExternalMetadata(spaceSeq!, url, DEFAULT_SOURCE_LANGUAGE)
       store.getState().setVideoMeta({
         id: url,
-        title: meta.originalName || (isYouTube ? 'YouTube Video' : 'External Video'),
+        title: meta.originalName || (isYouTube ? t('features.dubbing.hooks.usePersoFlow.youTubeVideo') : t('features.dubbing.hooks.usePersoFlow.externalVideo')),
         thumbnail: meta.thumbnailFilePath ? getPersoFileUrl(meta.thumbnailFilePath) : '',
         duration: Math.round(meta.durationMs / 1000),
         durationMs: meta.durationMs,
-        channelTitle: isYouTube ? 'YouTube' : 'External',
+        channelTitle: isYouTube ? 'YouTube' : t('features.dubbing.hooks.usePersoFlow.externalLink'),
         width: meta.width,
         height: meta.height,
       })
@@ -307,21 +340,27 @@ export function usePersoFlow() {
       const result = await uploadExternalVideo(spaceSeq!, url, DEFAULT_SOURCE_LANGUAGE)
       store.getState().setMediaSeq(result.seq)
 
-      addToast({ type: 'success', title: '영상 가져오기 완료' })
+      addToast({ type: 'success', title: t('features.dubbing.hooks.usePersoFlow.videoImported') })
       return result
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '영상 가져오기 실패'
-      addToast({ type: 'error', title: 'Import Error', message: msg })
+      const msg = err instanceof Error ? err.message : t('features.dubbing.hooks.usePersoFlow.failedToImportVideo')
+      addToast({ type: 'error', title: t('features.dubbing.hooks.usePersoFlow.importFailed'), message: msg })
       throw err
     }
-  }, [initSpace, addToast])
+  }, [initSpace, addToast, t])
 
   const submitDubbing = useCallback(async () => {
     const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, videoMeta } = store.getState()
-    if (!spaceSeq || !mediaSeq) throw new Error('Missing space or media')
+    if (!spaceSeq || !mediaSeq) {
+      throw new Error(t('features.dubbing.hooks.usePersoFlow.missingVideoInformationPleaseStartAgain'))
+    }
     const targetLanguages = Array.from(new Set(selectedLanguages))
 
-    addToast({ type: 'info', title: 'Submitting dubbing job...', message: `${targetLanguages.length} languages` })
+    addToast({
+      type: 'info',
+      title: t('features.dubbing.hooks.usePersoFlow.startingDubbingJob'),
+      message: countLocaleMessage(locale, targetLanguages.length, 'features.dubbing.hooks.usePersoFlow.unitLanguages', t),
+    })
 
     try {
       try {
@@ -338,6 +377,7 @@ export function usePersoFlow() {
         pendingProjectMap,
         lipSyncEnabled,
         DEFAULT_SOURCE_LANGUAGE,
+        t,
       )
       await dbMutationStrict({ type: 'reserveJobCredits', payload: { jobId: dbJobId } })
 
@@ -380,11 +420,15 @@ export function usePersoFlow() {
         },
       })
 
-      addToast({ type: 'success', title: '더빙 시작됨', message: `${projectIds.length}개 프로젝트 생성` })
+      addToast({
+        type: 'success',
+        title: t('features.dubbing.hooks.usePersoFlow.dubbingStarted'),
+        message: countLocaleMessage(locale, projectIds.length, 'features.dubbing.hooks.usePersoFlow.unitLanguagesProcessing', t),
+      })
       return projectMap
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Submission failed'
-      addToast({ type: 'error', title: 'Dubbing Error', message: msg })
+      const msg = err instanceof Error ? err.message : t('features.dubbing.hooks.usePersoFlow.failedToStartDubbing')
+      addToast({ type: 'error', title: t('features.dubbing.hooks.usePersoFlow.dubbingFailed'), message: msg })
       const dbJobId = store.getState().dbJobId
       if (dbJobId) {
         dbMutation({ type: 'releaseJobCredits', payload: { jobId: dbJobId, reason: 'submission_failed' } }).catch(() => {})
@@ -393,7 +437,7 @@ export function usePersoFlow() {
       store.getState().setJobStatus('failed')
       throw err
     }
-  }, [addToast])
+  }, [addToast, locale, t])
 
   const startPolling = useCallback(() => {
     const { spaceSeq, projectMap } = store.getState()
@@ -405,7 +449,7 @@ export function usePersoFlow() {
     function scheduleNext(langCode: string, projectSeq: number, interval: number) {
       pollTimers.current[langCode] = setTimeout(async () => {
         try {
-          const done = await pollLanguage(langCode, projectSeq, spaceSeq!, pollTimers.current, addToast)
+          const done = await pollLanguage(langCode, projectSeq, spaceSeq!, pollTimers.current, addToast, t)
           if (!done) {
             const next = Math.min(interval * POLL_BACKOFF, POLL_INTERVAL_MAX)
             scheduleNext(langCode, projectSeq, next)
@@ -421,7 +465,7 @@ export function usePersoFlow() {
     Object.entries(projectMap).forEach(([langCode, projectSeq]) => {
       scheduleNext(langCode, projectSeq, POLL_INTERVAL_MIN)
     })
-  }, [addToast])
+  }, [addToast, t])
 
   const stopPolling = useCallback(() => {
     Object.values(pollTimers.current).forEach(clearTimeout)
@@ -430,8 +474,8 @@ export function usePersoFlow() {
 
   const cancelAll = useCallback(async () => {
     stopPolling()
-    await cancelAllProjects(addToast, '더빙이 취소되었습니다.')
-  }, [stopPolling, addToast])
+    await cancelAllProjects(addToast, t('features.dubbing.hooks.usePersoFlow.dubbingJobCanceled'))
+  }, [stopPolling, addToast, t])
 
   const fetchDownloads = useCallback(async (langCode: string, target: DownloadTarget = 'all') => {
     const { spaceSeq, projectMap } = store.getState()
@@ -441,11 +485,11 @@ export function usePersoFlow() {
     try {
       return await getDownloadLinks(projectSeq, spaceSeq, target)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Download failed'
-      addToast({ type: 'error', title: 'Download Error', message: msg })
+      const msg = err instanceof Error ? err.message : t('features.dubbing.hooks.usePersoFlow.downloadFailed')
+      addToast({ type: 'error', title: t('features.dubbing.hooks.usePersoFlow.downloadFailed2'), message: msg })
       return null
     }
-  }, [addToast])
+  }, [addToast, t])
 
   return {
     uploadLocalVideo,

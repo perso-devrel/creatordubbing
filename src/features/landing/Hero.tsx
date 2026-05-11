@@ -1,52 +1,108 @@
-import { Globe, Puzzle, Shield, Zap } from 'lucide-react'
+'use client'
+
+import { CheckCircle2, Globe, Languages, PlayCircle, UploadCloud } from 'lucide-react'
 import { HeroUrlInput } from './HeroUrlInput'
 import { SUPPORTED_LANGUAGE_COUNT } from '@/utils/languages'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 export function Hero() {
+  const t = useLocaleText()
+
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-white to-pink-50 dark:from-surface-950 dark:via-surface-950 dark:to-brand-950/20" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(244,63,94,0.08),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,#ffffff_0%,#f7f8fa_100%)] dark:bg-[linear-gradient(180deg,#0f1115_0%,#171a21_100%)]" />
 
       <div className="relative mx-auto max-w-7xl px-6 pb-20 pt-20 lg:pt-28">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-sm font-medium text-brand-700 dark:border-brand-800 dark:bg-brand-900/20 dark:text-brand-400">
-            <Zap className="h-3.5 w-3.5" />
-            YouTube 크리에이터를 위한 AI 더빙
+        <div className="grid items-center gap-12 lg:grid-cols-[1fr_480px]">
+          <div>
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand-200 bg-white px-4 py-1.5 text-sm font-medium text-brand-700 shadow-sm dark:border-brand-900/60 dark:bg-surface-900 dark:text-brand-300">
+              <Languages className="h-3.5 w-3.5" />
+              {t('features.landing.hero.youTubeVideoLocalization')}
+            </div>
+
+            <h1 className="max-w-3xl break-keep text-5xl font-extrabold leading-[1.1] text-surface-950 dark:text-white sm:text-6xl lg:text-7xl">
+              {t('features.landing.hero.createMultilingualDubsFromOneVideo')}
+            </h1>
+
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-surface-600 dark:text-surface-300 sm:text-xl">
+              {t('features.landing.hero.addAYouTubeLinkOrFileChooseLanguages')}
+            </p>
+
+            <HeroUrlInput />
+
+            <div className="mt-10 grid max-w-2xl gap-4 sm:grid-cols-3">
+              {[
+                {
+                  icon: Globe,
+                  label: t('features.landing.hero.valueSupportedLanguages', { SUPPORTED_LANGUAGE_COUNT: SUPPORTED_LANGUAGE_COUNT }),
+                  desc: t('features.landing.hero.dubsCaptionsMetadata'),
+                },
+                {
+                  icon: UploadCloud,
+                  label: t('features.landing.hero.youTubeUploadSupport'),
+                  desc: t('features.landing.hero.privacyAndDisclosureChecks'),
+                },
+                {
+                  icon: CheckCircle2,
+                  label: t('features.landing.hero.reviewBeforePublishing'),
+                  desc: t('features.landing.hero.checkEachLanguageResult'),
+                },
+              ].map(({ icon: Icon, label, desc }) => (
+                <div key={label} className="rounded-lg border border-surface-200 bg-white p-4 shadow-sm dark:border-surface-800 dark:bg-surface-900">
+                  <Icon className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+                  <div className="mt-3 text-sm font-semibold text-surface-950 dark:text-white">{label}</div>
+                  <div className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-400">{desc}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <h1 className="text-5xl font-extrabold tracking-tight text-surface-900 dark:text-white sm:text-6xl lg:text-7xl">
-            클릭 한 번으로{' '}
-            <span className="bg-gradient-to-r from-brand-600 to-pink-500 bg-clip-text text-transparent">
-              {SUPPORTED_LANGUAGE_COUNT}개국 더빙
-            </span>
-            <br />
-            내 채널을 세계에 알리세요
-          </h1>
-
-          <p className="mx-auto mt-6 text-lg text-surface-600 break-keep dark:text-surface-400 sm:text-xl">
-            <span className="block sm:whitespace-nowrap">
-              영상 하나만 올리면 {SUPPORTED_LANGUAGE_COUNT}개 언어로 프로급 더빙이 완성됩니다.
-            </span>
-            <span className="block sm:whitespace-nowrap">
-              보이스 클론이 내 목소리를 그대로 살려, 구독자를 글로벌로 확장하세요.
-            </span>
-          </p>
-
-          <HeroUrlInput />
-
-          <div className="mt-16 grid grid-cols-3 gap-8 border-t border-surface-200 pt-10 dark:border-surface-800">
-            {[
-              { icon: Globe, label: `${SUPPORTED_LANGUAGE_COUNT}개 언어`, desc: '지원' },
-              { icon: Puzzle, label: '확장 프로그램', desc: '원클릭 연결' },
-              { icon: Shield, label: '보이스 클론', desc: '내 목소리 유지' },
-            ].map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex flex-col items-center gap-2">
-                <Icon className="h-6 w-6 text-brand-500" />
-                <div className="text-xl font-bold text-surface-900 dark:text-white">{label}</div>
-                <div className="text-sm font-medium text-surface-700 dark:text-surface-300">{desc}</div>
+          <div className="rounded-xl border border-surface-200 bg-white p-5 shadow-xl shadow-surface-200/60 dark:border-surface-800 dark:bg-surface-900 dark:shadow-black/20">
+            <div className="flex items-center justify-between border-b border-surface-200 pb-4 dark:border-surface-800">
+              <div>
+                <p className="text-sm font-semibold text-surface-950 dark:text-white">{t('features.landing.hero.localizationJob')}</p>
+                <p className="mt-1 text-xs text-surface-600 dark:text-surface-400">{t('features.landing.hero.youTubeVideo0842')}</p>
               </div>
-            ))}
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                {t('features.landing.hero.ready')}
+              </span>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div className="flex items-center gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-600 dark:bg-brand-900/30 dark:text-brand-300">
+                  <PlayCircle className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-surface-950 dark:text-white">{t('features.landing.hero.importSourceVideo')}</p>
+                  <p className="text-xs text-surface-600 dark:text-surface-400">{t('features.landing.hero.youTubeLinkOrFileUpload')}</p>
+                </div>
+              </div>
+
+              {[
+                [t('features.landing.hero.spanish'), t('features.landing.hero.dubbedVideoCaptionsTitleTranslation')],
+                [t('features.landing.hero.japanese'), t('features.landing.hero.dubbedVideoCaptionsTitleTranslation2')],
+                [t('features.landing.hero.english'), t('features.landing.hero.dubbedVideoCaptionsTitleTranslation3')],
+              ].map(([lang, detail]) => (
+                <div key={lang} className="flex items-center justify-between rounded-lg border border-surface-200 bg-surface-100/70 px-3 py-2.5 dark:border-surface-700 dark:bg-surface-850">
+                  <div>
+                    <p className="text-sm font-medium text-surface-900 dark:text-surface-100">{lang}</p>
+                    <p className="text-xs text-surface-600 dark:text-surface-300">{detail}</p>
+                  </div>
+                  <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">{t('features.landing.hero.done')}</span>
+                </div>
+              ))}
+
+              <div className="rounded-lg bg-surface-950 p-4 text-white dark:bg-black">
+                <p className="text-sm font-semibold">{t('features.landing.hero.youTubeUploadSettings')}</p>
+                <div className="mt-3 grid grid-cols-2 gap-3 text-xs text-surface-300">
+                  <span>{t('features.landing.hero.visibilityPrivate')}</span>
+                  <span>{t('features.landing.hero.aIVoiceOn')}</span>
+                  <span>{t('features.landing.hero.captionsOn')}</span>
+                  <span>{t('features.landing.hero.sourceLinkAdded')}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

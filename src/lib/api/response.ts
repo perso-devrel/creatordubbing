@@ -3,7 +3,7 @@ import 'server-only'
 import { NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
 
-export interface ApiErrorInfo {
+interface ApiErrorInfo {
   code: string
   message: string
   details: unknown | null
@@ -59,9 +59,9 @@ function normalizeError(err: unknown): NormalizedError {
       status,
       code: typeof e.code === 'string' ? e.code : 'INTERNAL_ERROR',
       // Hide internal error details from clients on 500+ errors (may contain SQL/table names)
-      message: status >= 500 ? 'Internal Server Error' : e.message,
+      message: status >= 500 ? '일시적인 서버 오류가 발생했습니다.' : e.message,
       details: status >= 500 ? null : (e.details ?? null),
     }
   }
-  return { status: 500, code: 'UNKNOWN', message: 'Internal Server Error', details: null }
+  return { status: 500, code: 'UNKNOWN', message: '일시적인 서버 오류가 발생했습니다.', details: null }
 }

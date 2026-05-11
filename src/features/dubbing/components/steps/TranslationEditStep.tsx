@@ -1,18 +1,20 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { ArrowLeft, ArrowRight, Info } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button, Card, Badge } from '@/components/ui'
 import { cn } from '@/utils/cn'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { getLanguageByCode } from '@/utils/languages'
 import { useAuthStore } from '@/stores/authStore'
+import { useChannelStats } from '@/hooks/useYouTubeData'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
 const PRIVACY_LABELS: Record<PrivacyStatus, string> = {
-  private: '비공개 (권장)',
-  unlisted: '일부 공개',
-  public: '공개',
+  private: 'privacyStatus.private',
+  unlisted: 'privacyStatus.unlisted',
+  public: 'privacyStatus.public',
 }
 
 export function TranslationEditStep() {
@@ -26,36 +28,46 @@ export function TranslationEditStep() {
     nextStep,
   } = useDubbingStore()
   const user = useAuthStore((s) => s.user)
+  const { data: channel } = useChannelStats()
+  const locale = useAppLocale()
+  const t = useLocaleText()
 
   const needsAutoUploadReview = uploadSettings.autoUpload
   const canStart = !needsAutoUploadReview || uploadSettings.uploadReviewConfirmed
-  const privacyLabel = PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus
-  const targetChannelLabel = user?.email ?? 'Google 로그인 후 연결된 YouTube 채널'
+  const privacyLabel = t(PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus)
+  const targetChannelLabel = channel
+    ? t('features.dubbing.components.steps.translationEditStep.channelWithSubscriberCount', {
+      title: channel.title,
+      count: channel.subscriberCount.toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US'),
+    })
+    : user?.displayName ?? t('features.dubbing.components.steps.translationEditStep.noConnectedYouTubeChannel')
   const uploadsVideoToYouTube =
     deliverableMode === 'newDubbedVideos' ||
     (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload')
   const showsAiDisclosureSetting = deliverableMode === 'newDubbedVideos'
   const showsCaptionSetting = deliverableMode === 'newDubbedVideos' || deliverableMode === 'originalWithMultiAudio'
   const deliverableModeLabel = deliverableMode === 'newDubbedVideos'
-    ? '새 더빙 영상 업로드'
+    ? t('features.dubbing.components.steps.translationEditStep.uploadNewDubbedVideos')
     : deliverableMode === 'originalWithMultiAudio'
-      ? '원본 영상에 자막 추가'
-      : '다운로드만'
+      ? t('features.dubbing.components.steps.translationEditStep.addCaptionsToOriginalVideo')
+      : t('features.dubbing.components.steps.translationEditStep.downloadFilesOnly')
   const metadataLanguageLabel =
-    getLanguageByCode(uploadSettings.metadataLanguage)?.name ?? uploadSettings.metadataLanguage
-  const tagsLabel = uploadSettings.tags.length > 0 ? uploadSettings.tags.join(', ') : '없음'
+    (() => {
+      const language = getLanguageByCode(uploadSettings.metadataLanguage)
+      if (!language) return uploadSettings.metadataLanguage
+      return locale === 'ko' ? language.nativeName : language.name
+    })()
+  const tagsLabel = uploadSettings.tags.length > 0 ? uploadSettings.tags.join(', ') : t('features.dubbing.components.steps.translationEditStep.none')
   const autoUploadConfirmationText = uploadsVideoToYouTube
-    ? showsAiDisclosureSetting
-      ? '위 채널, 공개 범위, 작성 언어, 태그, 자막, 아동용, AI 합성 고지 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.'
-      : '위 채널, 공개 범위, 작성 언어, 태그, 자막, 아동용 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.'
-    : '위 대상 언어, 결과물 모드, 자동 업로드, 자막 설정을 확인했으며 처리 완료 후 자동 업로드를 실행합니다.'
+    ? t('features.dubbing.components.steps.translationEditStep.iReviewedTheSettingsAndWantToUpload')
+    : t('features.dubbing.components.steps.translationEditStep.iReviewedTheSettingsAndWantToUpload2')
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">설정 확인</h2>
-        <p className="mt-1 text-surface-500">
-          진행 전 설정을 확인하세요.
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.dubbing.components.steps.translationEditStep.reviewSettings')}</h2>
+        <p className="mt-1 text-surface-500 dark:text-surface-300">
+          {t('features.dubbing.components.steps.translationEditStep.reviewUploadSettingsBeforeStartingDubbing')}
         </p>
       </div>
 
@@ -63,11 +75,11 @@ export function TranslationEditStep() {
       <Card>
         <div className="space-y-3">
           {uploadsVideoToYouTube && (
-            <SummaryRow label="채널" value={targetChannelLabel} />
+            <SummaryRow label={t('features.dubbing.components.steps.translationEditStep.channel')} value={targetChannelLabel} />
           )}
 
           <SummaryRow
-            label={`대상 언어 (${selectedLanguages.length})`}
+            label={t('features.dubbing.components.steps.translationEditStep.targetLanguagesValue', { selectedLanguagesLength: selectedLanguages.length })}
             value={(
               <div className="flex flex-wrap justify-end gap-2">
                 {selectedLanguages.map((code) => {
@@ -75,7 +87,7 @@ export function TranslationEditStep() {
                   if (!lang) return null
                   return (
                     <Badge key={code} variant="brand">
-                      {lang.flag} {lang.name}
+                      {lang.flag} {locale === 'ko' ? lang.nativeName : lang.name}
                     </Badge>
                   )
                 })}
@@ -91,7 +103,7 @@ export function TranslationEditStep() {
             <div className="flex items-center justify-between rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
               <div>
                 <span className="text-sm text-surface-600 dark:text-surface-400">립싱크</span>
-                <p className="text-xs text-surface-400 mt-0.5">더빙 오디오에 맞춰 입 모양을 조절합니다</p>
+                <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-300">더빙 오디오에 맞춰 입 모양을 조절합니다</p>
               </div>
               <Toggle checked={lipSyncEnabled} onChange={setLipSync} />
             </div>
@@ -99,19 +111,19 @@ export function TranslationEditStep() {
           */}
 
           {uploadsVideoToYouTube && (
-            <SummaryRow label="공개 범위" value={privacyLabel} />
+            <SummaryRow label={t('features.dubbing.components.steps.translationEditStep.visibility')} value={privacyLabel} />
           )}
 
-          <SummaryRow label="결과물 모드" value={deliverableModeLabel} />
+          <SummaryRow label={t('features.dubbing.components.steps.translationEditStep.output')} value={deliverableModeLabel} />
 
           <SummaryRow
-            label="자동 업로드"
+            label={t('features.dubbing.components.steps.translationEditStep.autoUpload')}
             value={<StatusValue active={uploadSettings.autoUpload} />}
           />
 
           {showsCaptionSetting && (
             <SummaryRow
-              label="자막"
+              label={t('features.dubbing.components.steps.translationEditStep.captions')}
               value={<StatusValue active={uploadSettings.autoUpload && uploadSettings.uploadCaptions} />}
             />
           )}
@@ -119,20 +131,20 @@ export function TranslationEditStep() {
           {uploadsVideoToYouTube && (
             <>
               <SummaryRow
-                label="작성 언어"
-                value={`${metadataLanguageLabel} 기준`}
+                label={t('features.dubbing.components.steps.translationEditStep.writingLanguage')}
+                value={t('features.dubbing.components.steps.translationEditStep.metadataBasedOn', { language: metadataLanguageLabel })}
               />
               <SummaryRow
-                label="태그"
+                label={t('features.dubbing.components.steps.translationEditStep.tags')}
                 value={tagsLabel}
               />
               <SummaryRow
-                label="아동용"
-                value={uploadSettings.selfDeclaredMadeForKids ? '예' : '아니오'}
+                label={t('features.dubbing.components.steps.translationEditStep.madeForKids')}
+                value={uploadSettings.selfDeclaredMadeForKids ? t('features.dubbing.components.steps.translationEditStep.yes') : t('features.dubbing.components.steps.translationEditStep.no')}
               />
               {showsAiDisclosureSetting && (
                 <SummaryRow
-                  label="AI 합성 고지"
+                  label={t('features.dubbing.components.steps.translationEditStep.aIVoiceDisclosure')}
                   value={<StatusValue active={uploadSettings.containsSyntheticMedia} />}
                 />
               )}
@@ -155,26 +167,13 @@ export function TranslationEditStep() {
         )}
       </Card>
 
-      {/* Info note */}
-      <Card className="flex items-start gap-3 bg-blue-50 border-blue-200 dark:bg-blue-900/10 dark:border-blue-800">
-        <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-sm font-medium text-blue-900 dark:text-blue-300">처리 과정</p>
-          <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
-            {deliverableMode === 'originalWithMultiAudio'
-              ? 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 자막을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'
-              : 'AI가 자동으로 영상을 전사하고, 선택한 모든 언어로 번역한 뒤, 보이스 클론으로 더빙 영상을 생성합니다. 처리 완료 후 번역을 수정할 수 있습니다. 처리 시간은 영상 길이에 따라 달라집니다.'}
-          </p>
-        </div>
-      </Card>
-
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
-          이전
+          {t('features.dubbing.components.steps.translationEditStep.back')}
         </Button>
         <Button onClick={nextStep} disabled={!canStart}>
-          더빙 시작
+          {t('features.dubbing.components.steps.translationEditStep.startDubbing')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
@@ -194,9 +193,9 @@ function SummaryRow({
   return (
     <div className="flex items-start justify-between gap-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
       <div className="min-w-0">
-        <span className="text-sm text-surface-600 dark:text-surface-400">{label}</span>
+        <span className="text-sm text-surface-600 dark:text-surface-300">{label}</span>
         {description && (
-          <p className="mt-0.5 text-xs text-surface-400">{description}</p>
+          <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-300">{description}</p>
         )}
       </div>
       <div className="max-w-[60%] break-words text-right text-sm font-medium text-surface-900 dark:text-white">
@@ -207,11 +206,13 @@ function SummaryRow({
 }
 
 function StatusValue({ active }: { active: boolean }) {
+  const t = useLocaleText()
+
   return (
     <span className={cn(
-      active ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-500',
+      active ? 'text-emerald-600 dark:text-emerald-400' : 'text-surface-500 dark:text-surface-300',
     )}>
-      {active ? 'ON' : 'OFF'}
+      {active ? t('features.dubbing.components.steps.translationEditStep.on') : t('features.dubbing.components.steps.translationEditStep.off')}
     </span>
   )
 }

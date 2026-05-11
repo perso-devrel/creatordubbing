@@ -1,14 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { ArrowRight, Play } from 'lucide-react'
 import { Card, CardTitle, Button, Input } from '@/components/ui'
 import { isValidYouTubeUrl } from '@/utils/validators'
+import { useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
 
 export function QuickStart() {
+  const t = useLocaleText()
   const [url, setUrl] = useState('')
-  const router = useRouter()
+  const router = useLocaleRouter()
   const isValid = url.length > 0 && isValidYouTubeUrl(url)
 
   const handleStart = () => {
@@ -16,12 +18,12 @@ export function QuickStart() {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-brand-50 to-pink-50 dark:from-brand-900/10 dark:to-pink-900/10">
-      <CardTitle>빠른 시작</CardTitle>
-      <p className="mb-4 text-sm text-surface-500 dark:text-surface-400">
-        YouTube URL을 붙여넣어 바로 더빙을 시작하세요
+    <Card className="border-brand-200 dark:border-brand-900/60">
+      <CardTitle>{t('features.dashboard.components.quickStart.quickStart')}</CardTitle>
+      <p className="mb-4 text-sm text-surface-600 dark:text-surface-400">
+        {t('features.dashboard.components.quickStart.pasteAYouTubeLinkToStartANew')}
       </p>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <Input
           placeholder="https://youtube.com/watch?v=..."
           value={url}
@@ -30,7 +32,7 @@ export function QuickStart() {
           className="bg-white dark:bg-surface-900"
         />
         <Button onClick={handleStart} disabled={!isValid} className="shrink-0">
-          시작
+          {t('features.dashboard.components.quickStart.start')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

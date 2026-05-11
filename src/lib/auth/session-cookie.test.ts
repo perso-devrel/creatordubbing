@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
+import { createHmac } from 'node:crypto'
 import {
   signSessionCookie,
   verifySessionCookie,
@@ -73,6 +74,23 @@ describe('session-cookie', () => {
     it('handles uid containing dots', async () => {
       const signed = await signSessionCookie('user.with.dots')
       expect(await verifySessionCookie(signed)).toBe('user.with.dots')
+    })
+
+    it('accepts legacy uid.signature cookies used by existing Playwright helpers', async () => {
+      const uid = 'legacy-user'
+      const secret = process.env.SESSION_SECRET || 'dubtube-dev-secret-do-not-use-in-prod'
+      const sig = createHmac('sha256', secret)
+        .update(uid)
+        .digest('hex')
+
+      const verified = await verifySessionCookiePayload(`${uid}.${sig}`)
+
+      expect(verified).toEqual({
+        uid,
+        sid: null,
+        exp: null,
+        legacy: true,
+      })
     })
 
     it('returns v2 payload metadata for valid signed cookie', async () => {

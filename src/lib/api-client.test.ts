@@ -138,16 +138,16 @@ describe('json envelope edge cases', () => {
       status: 500,
       json: async () => { throw new SyntaxError('Unexpected token') },
     })
-    await expect(getSpaces()).rejects.toThrow(/invalid response body/)
+    await expect(getSpaces()).rejects.toThrow('요청 결과를 읽지 못했습니다. 잠시 후 다시 시도해 주세요.')
   })
 
-  it('throws HTTP status when error has no message', async () => {
+  it('throws safe fallback when error has no message', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       status: 403,
       json: async () => ({ ok: false }),
     })
-    await expect(getSpaces()).rejects.toThrow('HTTP 403')
+    await expect(getSpaces()).rejects.toThrow('요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.')
   })
 })
 
@@ -359,6 +359,34 @@ describe('ytUploadVideo', () => {
     expect(sessionBody.selfDeclaredMadeForKids).toBeUndefined()
     expect(sessionBody.containsSyntheticMedia).toBeUndefined()
     expect(sessionBody.language).toBeUndefined()
+  })
+
+  it('binary 모드: YouTube 직접 업로드 실패 시 raw 응답을 사용자 메시지에 노출하지 않음', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mockFetch.mockResolvedValueOnce(okResponse({ uploadUrl: 'https://upload.googleapis.com/x/y' }))
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      text: async () => 'quotaExceeded: developer detail',
+    } as unknown as Response)
+
+    const blob = new Blob(['fake'], { type: 'video/mp4' })
+    try {
+      await ytUploadVideo({
+        video: blob,
+        title: 'Test',
+        description: '',
+        tags: [],
+      })
+      expect.fail('expected upload to fail')
+    } catch (err) {
+      expect(err).toBeInstanceOf(Error)
+      const message = (err as Error).message
+      expect(message).toBe('YouTube 업로드를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+      expect(message).not.toMatch(/quotaExceeded|403|developer detail/)
+    } finally {
+      warn.mockRestore()
+    }
   })
 
   it('videoUrl 모드: FormData로 /upload에 POST (서버가 fetch + 업로드)', async () => {

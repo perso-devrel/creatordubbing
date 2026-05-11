@@ -173,9 +173,33 @@ describe('fetchMyVideos', () => {
     })
   })
 
-  it('returns empty array when uploads playlist is missing', async () => {
-    mockFetch.mockResolvedValueOnce(jsonResponse({ items: [{}] }))
-    expect(await fetchMyVideos('tok')).toEqual([])
+  it('falls back to search when uploads playlist is missing', async () => {
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse({ items: [{}] }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          items: [{
+            id: { videoId: 'v-search' },
+            snippet: {
+              title: 'Search video',
+              publishedAt: '2026-02-01',
+              thumbnails: { medium: { url: 'http://search-thumb' } },
+            },
+          }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ items: [{ id: 'v-search', status: { privacyStatus: 'unlisted' } }] }),
+      )
+    expect(await fetchMyVideos('tok')).toEqual([{
+      videoId: 'v-search',
+      title: 'Search video',
+      thumbnail: 'http://search-thumb',
+      publishedAt: '2026-02-01',
+      privacyStatus: 'unlisted',
+    }])
+    expect(String(mockFetch.mock.calls[1][0])).toContain('/youtube/v3/search?')
+    expect(String(mockFetch.mock.calls[1][0])).toContain('forMine=true')
   })
 
   it('handles undefined items in response', async () => {
@@ -183,6 +207,7 @@ describe('fetchMyVideos', () => {
       .mockResolvedValueOnce(
         jsonResponse({ items: [{ contentDetails: { relatedPlaylists: { uploads: 'UU1' } } }] }),
       )
+      .mockResolvedValueOnce(jsonResponse({}))
       .mockResolvedValueOnce(jsonResponse({}))
     expect(await fetchMyVideos('tok')).toEqual([])
   })
@@ -217,6 +242,40 @@ describe('fetchMyVideos', () => {
       code: 'MY_VIDEOS_FAILED',
     })
     await expect(promise).rejects.toThrow(/quota/)
+  })
+
+  it('falls back to search when uploads playlist request fails for non-quota errors', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse({ items: [{ contentDetails: { relatedPlaylists: { uploads: 'UU1' } } }] }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ error: { message: 'playlist forbidden' } }, 403))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          items: [{
+            id: { videoId: 'v2' },
+            snippet: {
+              title: 'Fallback',
+              publishedAt: '2026-03-01',
+              thumbnails: { default: { url: 'http://fallback-thumb' } },
+            },
+          }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ items: [{ id: 'v2', status: { privacyStatus: 'private' } }] }),
+      )
+
+    const vids = await fetchMyVideos('tok')
+
+    expect(vids).toEqual([{
+      videoId: 'v2',
+      title: 'Fallback',
+      thumbnail: 'http://fallback-thumb',
+      publishedAt: '2026-03-01',
+      privacyStatus: 'private',
+    }])
+    expect(String(mockFetch.mock.calls[2][0])).toContain('/youtube/v3/search?')
   })
 })
 
@@ -414,6 +473,20 @@ describe('uploadCaptionToYouTube', () => {
         srtContent: '1\n00:00:00,000 --> 00:00:01,000\n안녕\n',
       }),
     ).resolves.toBeUndefined()
+  })
+
+  it('falls back to language name when caption name is empty', async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse({}))
+    await uploadCaptionToYouTube({
+      accessToken: 'tok',
+      videoId: 'v1',
+      language: 'en',
+      name: '',
+      srtContent: 'x',
+    })
+
+    const [, init] = mockFetch.mock.calls[0]
+    expect(String(init.body)).toContain('"name":"English"')
   })
 
   it('throws on caption upload failure', async () => {

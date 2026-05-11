@@ -3,9 +3,10 @@ export {
   getUser,
   getUserTokens,
   updateUserTokens,
-  updateUserCredits,
+  clearUserGoogleTokens,
   deductUserMinutes,
-  addUserCredits,
+  getUserPreferencesRaw,
+  setUserPreferencesRaw,
 } from './users'
 
 export {
@@ -15,8 +16,6 @@ export {
 } from './sessions'
 
 export {
-  ensureCreditTables,
-  getUserAvailableCredits,
   createPaymentOrder,
   updatePaymentOrderCheckout,
   updatePaymentOrderStatus,
@@ -35,7 +34,14 @@ export {
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
+  getDubbingJobLanguageWorkItem,
+  getDubbingJobLanguageWorkItems,
+  getJobLanguageTerminalSummary,
   deleteDubbingJob,
+} from './jobs'
+
+export type {
+  DubbingJobLanguageWorkItem,
 } from './jobs'
 
 export {
@@ -48,12 +54,6 @@ export {
 
 export {
   createUploadQueueItem,
-  claimPendingUploads,
-  completeQueueItem,
-  failQueueItem,
-  getPendingUploads,
-  updateQueueItemStatus,
-  getUserQueueItems,
 } from './upload-queue'
 
 export {

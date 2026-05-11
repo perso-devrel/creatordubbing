@@ -21,6 +21,8 @@ const serverSchema = z.object({
   TURSO_URL: z.string().min(1, "TURSO_URL is required"),
   TURSO_AUTH_TOKEN: z.string().min(1, "TURSO_AUTH_TOKEN is required"),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  TOKEN_ENCRYPTION_KEY: z.string().min(32).optional(),
+  ALLOW_LEGACY_PLAINTEXT_TOKENS: z.enum(["true", "false"]).optional(),
   // AI Studio (현재 미사용 — Vertex 무료 크레딧 소진 후 재활성화)
   GEMINI_API_KEY: z.string().min(1).optional(),
   // Vertex AI (메타데이터 번역에 현재 사용 중)
@@ -70,6 +72,8 @@ export function getServerEnv(): ServerEnv {
     TURSO_URL: process.env.TURSO_URL,
     TURSO_AUTH_TOKEN: process.env.TURSO_AUTH_TOKEN,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    TOKEN_ENCRYPTION_KEY: process.env.TOKEN_ENCRYPTION_KEY,
+    ALLOW_LEGACY_PLAINTEXT_TOKENS: process.env.ALLOW_LEGACY_PLAINTEXT_TOKENS,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     GOOGLE_VERTEX_PROJECT_ID: process.env.GOOGLE_VERTEX_PROJECT_ID,
     GOOGLE_VERTEX_LOCATION: process.env.GOOGLE_VERTEX_LOCATION,

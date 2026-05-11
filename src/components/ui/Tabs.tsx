@@ -52,7 +52,7 @@ export function TabsTrigger({ value, children, className }: { value: string; chi
         'rounded-md px-3 py-1.5 text-sm font-medium transition-all cursor-pointer focus-ring',
         isActive
           ? 'bg-white text-surface-900 shadow-sm dark:bg-surface-700 dark:text-surface-100'
-          : 'text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200',
+          : 'text-surface-600 hover:text-surface-800 dark:text-surface-300 dark:hover:text-surface-100',
         className,
       )}
     >

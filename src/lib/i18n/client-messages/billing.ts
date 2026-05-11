@@ -1,0 +1,22 @@
+import type { LocalizedText } from '../text'
+
+export const billingMessages = {
+  "app.app.billing.page.addDubbingMinutes": { ko: "더빙 시간 충전", en: "Add dubbing minutes" },
+  "app.app.billing.page.addDubbingMinutesAndReviewPaymentHistory": { ko: "더빙 시간을 충전하고 결제 내역을 확인하세요.", en: "Add dubbing minutes and review payment history." },
+  "app.app.billing.page.addValueMinutes": { ko: "{selectedPack}분 충전", en: "Add {selectedPack} minutes" },
+  "app.app.billing.page.chooseAMinutesPack": { ko: "충전할 시간 선택", en: "Choose a minutes pack" },
+  "app.app.billing.page.noPaymentHistoryYet": { ko: "결제 내역이 없습니다", en: "No payment history yet" },
+  "app.app.billing.page.openingCheckout": { ko: "결제창을 여는 중...", en: "Opening checkout..." },
+  "app.app.billing.page.paymentHistory": { ko: "결제 내역", en: "Payment history" },
+  "app.app.billing.page.paymentsAreProcessedInKRW": { ko: "결제는 원화(KRW)로 처리됩니다.", en: "Payments are processed in KRW." },
+  "app.app.billing.page.purchasedMinutesDoNotExpire": { ko: "충전한 시간은 만료 없이 사용할 수 있습니다.", en: "Purchased minutes do not expire." },
+  "app.app.billing.page.remainingDubbingTime": { ko: "남은 더빙 시간", en: "Remaining dubbing time" },
+  "app.app.billing.success.billingSuccessClient.backToBilling": { ko: "결제 페이지로 돌아가기", en: "Back to billing" },
+  "app.app.billing.success.billingSuccessClient.confirmingPayment": { ko: "결제 확인 중", en: "Confirming payment" },
+  "app.app.billing.success.billingSuccessClient.confirmingPaymentAndAddingDubbingMinutes": { ko: "결제를 승인하고 더빙 시간을 충전하는 중입니다.", en: "Confirming payment and adding dubbing minutes." },
+  "app.app.billing.success.billingSuccessClient.minutesAdded": { ko: "충전 완료", en: "Minutes added" },
+  "app.app.billing.success.billingSuccessClient.paymentConfirmationFailed": { ko: "결제 승인에 실패했습니다.", en: "Payment confirmation failed." },
+  "app.app.billing.success.billingSuccessClient.paymentConfirmationFailed2": { ko: "결제 확인 실패", en: "Payment confirmation failed" },
+  "app.app.billing.success.billingSuccessClient.requiredPaymentConfirmationValuesAreMissing": { ko: "결제 승인에 필요한 값이 없습니다.", en: "Required payment confirmation values are missing." },
+  "app.app.billing.success.billingSuccessClient.valueMinutesWereAdded": { ko: "{bodyDataMinutes}분이 충전되었습니다.", en: "{bodyDataMinutes} minutes were added." },
+} as const satisfies Record<string, LocalizedText>

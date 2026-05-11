@@ -60,7 +60,7 @@ export const AUDIO_ADD_BUTTON = chain(
 )
 
 // NEEDS_VERIFICATION
-export const AUDIO_UPLOAD_OPTION = chain(
+const AUDIO_UPLOAD_OPTION = chain(
   'audio-upload-option',
   'tp-yt-paper-item[test-id="upload-audio"]',
   'tp-yt-paper-item:has(yt-icon[icon="upload"])',
@@ -86,7 +86,7 @@ export const PUBLISH_BUTTON = chain(
 )
 
 // NEEDS_VERIFICATION
-export const SAVE_BUTTON = chain(
+const SAVE_BUTTON = chain(
   'save-button',
   'ytcp-button#save-button',
   'button[aria-label="저장"]',
@@ -95,7 +95,7 @@ export const SAVE_BUTTON = chain(
 
 // ── 7. 업로드 진행 상태 표시 ─────────────────────────────
 // NEEDS_VERIFICATION
-export const UPLOAD_PROGRESS_BAR = chain(
+const UPLOAD_PROGRESS_BAR = chain(
   'upload-progress-bar',
   'ytcp-uploads-progress-bar',
   '.upload-progress',
@@ -103,7 +103,7 @@ export const UPLOAD_PROGRESS_BAR = chain(
 )
 
 // NEEDS_VERIFICATION
-export const SUCCESS_TOAST = chain(
+const SUCCESS_TOAST = chain(
   'success-toast',
   'ytcp-toast[type="success"]',
   '#toast-container tp-yt-paper-toast',

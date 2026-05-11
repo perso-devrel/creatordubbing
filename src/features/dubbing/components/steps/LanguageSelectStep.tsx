@@ -4,6 +4,8 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Search, X } from 'lucide-react'
 import { Button, Card } from '@/components/ui'
 import { cn } from '@/utils/cn'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+
 import {
   REGION_LABELS,
   SUPPORTED_LANGUAGES,
@@ -11,36 +13,43 @@ import {
   type LanguageRegion,
 } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
+import { useDashboardSummary } from '@/hooks/useDashboardData'
 
 type RegionFilter = 'all' | LanguageRegion
+type LocaleText = ReturnType<typeof useLocaleText>
 
-const REGION_TABS: { id: RegionFilter; label: string }[] = [
-  { id: 'all', label: '전체' },
-  { id: 'popular', label: REGION_LABELS.popular },
-  { id: 'asia', label: REGION_LABELS.asia },
-  { id: 'europe', label: REGION_LABELS.europe },
-  { id: 'middle-east', label: REGION_LABELS['middle-east'] },
-]
+function countLocaleMessage(
+  locale: ReturnType<typeof useAppLocale>,
+  count: number,
+  key: string,
+  t: LocaleText,
+) {
+  const unit = t(key)
+  return locale === 'ko' ? `${count}${unit}` : `${count} ${unit}`
+}
 
 export function LanguageSelectStep() {
   const {
     selectedLanguages,
+    videoMeta,
     toggleLanguage,
     deliverableMode,
     prevStep,
     nextStep,
   } = useDubbingStore()
+  const locale = useAppLocale()
+  const t = useLocaleText()
 
   const [region, setRegion] = useState<RegionFilter>('popular')
   const [query, setQuery] = useState('')
-
-  // Lip sync UI is temporarily hidden. Keep the state/reset logic here for easy restore.
-  // const lipSyncEnabled = useDubbingStore((s) => s.lipSyncEnabled)
-  // const setLipSync = useDubbingStore((s) => s.setLipSync)
-  // const lipSyncApplicable = deliverableMode !== 'originalWithMultiAudio'
-  // useEffect(() => {
-  //   if (!lipSyncApplicable && lipSyncEnabled) setLipSync(false)
-  // }, [lipSyncApplicable, lipSyncEnabled, setLipSync])
+  const { data: summary, isLoading: summaryLoading } = useDashboardSummary()
+  const regionTabs: { id: RegionFilter; label: string }[] = useMemo(() => [
+    { id: 'all', label: t('features.dubbing.components.steps.languageSelectStep.all') },
+    { id: 'popular', label: locale === 'ko' ? REGION_LABELS.popular : 'Popular' },
+    { id: 'asia', label: locale === 'ko' ? REGION_LABELS.asia : 'Asia' },
+    { id: 'europe', label: locale === 'ko' ? REGION_LABELS.europe : 'Europe' },
+    { id: 'middle-east', label: locale === 'ko' ? REGION_LABELS['middle-east'] : 'Middle East' },
+  ], [locale, t])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -56,18 +65,23 @@ export function LanguageSelectStep() {
     })
   }, [region, query])
 
-  const estimatedCredits = selectedLanguages.length * 15
-  // const estimatedCredits = selectedLanguages.length * 15 + (lipSyncEnabled ? selectedLanguages.length * 8 : 0)
+  const videoMinutes = videoMeta
+    ? Math.max(1, Math.ceil((videoMeta.durationMs || videoMeta.duration * 1000) / 60_000))
+    : 0
+  const estimatedMinutes = selectedLanguages.length * videoMinutes
+  const remainingMinutes = summary ? Number(summary.credits_remaining) : null
+  const remainingAfter = remainingMinutes === null ? null : remainingMinutes - estimatedMinutes
+  const hasInsufficientMinutes = remainingAfter !== null && selectedLanguages.length > 0 && remainingAfter < 0
   const selectionDescription = deliverableMode === 'originalWithMultiAudio'
-    ? '자막을 생성할 언어를 선택하세요'
-    : '더빙할 언어를 선택하세요'
+    ? t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesForTranslatedCaptions')
+    : t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesToDubInto')
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">대상 언어 선택</h2>
-        <p className="mt-1 text-surface-500">
-          {selectionDescription} ({selectedLanguages.length}개 선택됨)
+        <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.dubbing.components.steps.languageSelectStep.chooseTargetLanguages')}</h2>
+        <p className="mt-1 text-surface-600 dark:text-surface-400">
+          {selectionDescription} ({countLocaleMessage(locale, selectedLanguages.length, 'features.dubbing.components.steps.languageSelectStep.unitSelected', t)})
         </p>
       </div>
 
@@ -84,7 +98,7 @@ export function LanguageSelectStep() {
                 className="inline-flex items-center gap-1.5 rounded-full border border-brand-500 bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700 transition hover:bg-brand-100 dark:bg-brand-900/30 dark:text-brand-200 dark:hover:bg-brand-900/50"
               >
                 <span>{lang.flag}</span>
-                <span>{lang.name}</span>
+                <span>{locale === 'ko' ? lang.nativeName : lang.name}</span>
                 <X className="h-3.5 w-3.5" />
               </button>
             )
@@ -100,7 +114,7 @@ export function LanguageSelectStep() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="언어 검색 (예: Korean, 한국어, ko)"
+            placeholder={t('features.dubbing.components.steps.languageSelectStep.searchLanguages')}
             className="w-full rounded-md border border-surface-300 bg-white py-2 pl-9 pr-9 text-sm text-surface-900 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-surface-700 dark:bg-surface-900 dark:text-white"
           />
           {query && (
@@ -115,14 +129,14 @@ export function LanguageSelectStep() {
 
         {!query && (
           <div className="flex flex-wrap gap-2">
-            {REGION_TABS.map((tab) => (
+            {regionTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setRegion(tab.id)}
                 className={cn(
                   'rounded-full px-3 py-1 text-sm font-medium transition',
                   region === tab.id
-                    ? 'bg-brand-500 text-white'
+                    ? 'bg-brand-600 text-white'
                     : 'bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700',
                 )}
               >
@@ -135,8 +149,8 @@ export function LanguageSelectStep() {
 
       {/* Language grid */}
       {filtered.length === 0 ? (
-        <p className="py-8 text-center text-sm text-surface-500">
-          검색 결과가 없습니다
+        <p className="py-8 text-center text-sm text-surface-500 dark:text-surface-300">
+          {t('features.dubbing.components.steps.languageSelectStep.noMatchingLanguages')}
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
@@ -147,20 +161,24 @@ export function LanguageSelectStep() {
                 key={lang.code}
                 onClick={() => toggleLanguage(lang.code)}
                 className={cn(
-                  'relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all cursor-pointer',
+                  'relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all cursor-pointer',
                   isSelected
-                    ? 'border-brand-500 bg-brand-50 shadow-md shadow-brand-500/10 dark:bg-brand-900/20'
+                    ? 'border-brand-600 bg-brand-50 shadow-sm dark:bg-brand-900/20'
                     : 'border-surface-200 bg-white hover:border-surface-300 dark:border-surface-800 dark:bg-surface-900 dark:hover:border-surface-700',
                 )}
               >
                 {isSelected && (
-                  <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-white">
+                  <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-white">
                     <Check className="h-3 w-3" />
                   </div>
                 )}
                 <span className="text-2xl">{lang.flag}</span>
-                <span className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</span>
-                <span className="text-xs text-surface-400">{lang.nativeName}</span>
+                <span className="text-sm font-medium text-surface-900 dark:text-white">
+                  {locale === 'ko' ? lang.nativeName : lang.name}
+                </span>
+                <span className="max-w-full truncate text-xs text-surface-500 dark:text-surface-400">
+                  {locale === 'ko' ? lang.name : lang.nativeName}
+                </span>
               </button>
             )
           })}
@@ -169,42 +187,82 @@ export function LanguageSelectStep() {
 
       {/* Dub options */}
       <Card>
-        {/*
-        <p className="mb-3 text-sm font-semibold text-surface-900 dark:text-white">더빙 옵션</p>
-        {lipSyncApplicable && (
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-surface-900 dark:text-white">립싱크</span>
-                <Tooltip content="AI가 더빙 오디오에 맞춰 입 모양을 조절합니다. 실사 영상에 최적화.">
-                  <span className="cursor-help text-xs text-surface-400">(?)</span>
-                </Tooltip>
-              </div>
-              <p className="text-xs text-surface-500 mt-0.5">언어당 크레딧 50% 추가</p>
-            </div>
-            <Toggle checked={lipSyncEnabled} onChange={setLipSync} />
-          </div>
-        )}
-        */}
-
-        <div className="rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-surface-600 dark:text-surface-400">예상 크레딧</span>
-            <span className="font-bold text-surface-900 dark:text-white">{estimatedCredits} 크레딧</span>
-          </div>
+        <div className="space-y-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800">
+          <EstimateRow
+            label={t('features.dubbing.components.steps.languageSelectStep.videoLengthRounded')}
+            value={videoMinutes > 0
+              ? countLocaleMessage(locale, videoMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin', t)
+              : t('common.loading')}
+          />
+          <EstimateRow
+            label={t('features.dubbing.components.steps.languageSelectStep.selectedLanguageCount')}
+            value={countLocaleMessage(locale, selectedLanguages.length, 'features.dubbing.components.steps.languageSelectStep.unitSelected', t)}
+          />
+          <EstimateRow
+            label={t('features.dubbing.components.steps.languageSelectStep.estimatedUsage')}
+            value={countLocaleMessage(locale, estimatedMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin', t)}
+            strong
+          />
+          <EstimateRow
+            label={t('features.dubbing.components.steps.languageSelectStep.remainingDubbingTime')}
+            value={summaryLoading
+              ? t('common.loading')
+              : remainingMinutes === null
+                ? '-'
+                : countLocaleMessage(locale, remainingMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin', t)}
+          />
+          {remainingAfter !== null && selectedLanguages.length > 0 && (
+            <EstimateRow
+              label={t('features.dubbing.components.steps.languageSelectStep.remainingAfterThisJob')}
+              value={countLocaleMessage(locale, Math.max(0, remainingAfter), 'features.dubbing.components.steps.languageSelectStep.unitMin', t)}
+              danger={hasInsufficientMinutes}
+            />
+          )}
+          {hasInsufficientMinutes && (
+            <p className="pt-1 text-xs text-red-600 dark:text-red-400">
+              {t('features.dubbing.components.steps.languageSelectStep.notEnoughDubbingTime')}
+            </p>
+          )}
         </div>
       </Card>
 
       <div className="flex justify-between">
         <Button variant="secondary" onClick={prevStep}>
           <ArrowLeft className="h-4 w-4" />
-          이전
+          {t('features.dubbing.components.steps.languageSelectStep.back')}
         </Button>
-        <Button onClick={nextStep} disabled={selectedLanguages.length === 0}>
-          {deliverableMode === 'downloadOnly' ? '다음: 번역 확인' : '다음: 업로드 설정'}
+        <Button onClick={nextStep} disabled={selectedLanguages.length === 0 || hasInsufficientMinutes}>
+          {deliverableMode === 'downloadOnly'
+            ? t('features.dubbing.components.steps.languageSelectStep.nextReviewSettings')
+            : t('features.dubbing.components.steps.languageSelectStep.nextUploadSettings')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
+    </div>
+  )
+}
+
+function EstimateRow({
+  label,
+  value,
+  strong,
+  danger,
+}: {
+  label: string
+  value: string
+  strong?: boolean
+  danger?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 text-sm">
+      <span className="text-surface-600 dark:text-surface-400">{label}</span>
+      <span className={cn(
+        'whitespace-nowrap text-right',
+        strong ? 'font-bold text-surface-900 dark:text-white' : 'font-medium text-surface-700 dark:text-surface-200',
+        danger && 'text-red-600 dark:text-red-400',
+      )}>
+        {value}
+      </span>
     </div>
   )
 }

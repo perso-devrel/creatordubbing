@@ -6,6 +6,7 @@ import { Button, Badge } from '@/components/ui'
 import { getLanguageByCode } from '@/utils/languages'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { useExtensionDetect, sendToExtension } from '@/hooks/useExtensionDetect'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 
 interface Props {
   videoId: string
@@ -36,22 +37,58 @@ interface LangJobState {
 }
 
 const STEP_LABELS: Record<string, string> = {
-  NAVIGATING: '페이지 이동 중',
-  OPENING_LANGUAGES: '번역 페이지 확인',
-  SELECTING_LANGUAGE: '언어 선택 중',
-  INJECTING_AUDIO: '오디오 주입 중',
-  WAITING_PUBLISH: '게시 대기',
-  PUBLISHING: '게시 중',
-  COMPLETED: '완료',
+  NAVIGATING: 'extension.step.navigating',
+  OPENING_LANGUAGES: 'extension.step.openingLanguages',
+  SELECTING_LANGUAGE: 'extension.step.selectingLanguage',
+  INJECTING_AUDIO: 'extension.step.injectingAudio',
+  WAITING_PUBLISH: 'extension.step.waitingPublish',
+  PUBLISHING: 'extension.step.publishing',
+  COMPLETED: 'extension.step.completed',
+}
+
+const STEP_ALIASES: Record<string, string> = {
+  OPENING_TRANSLATIONS: 'OPENING_LANGUAGES',
+  OPENING_TRANSLATION_PAGE: 'OPENING_LANGUAGES',
+  CHECKING_TRANSLATIONS: 'OPENING_LANGUAGES',
+  ADDING_LANGUAGE: 'SELECTING_LANGUAGE',
+  SELECT_LANGUAGE: 'SELECTING_LANGUAGE',
+  LANGUAGE_SELECT: 'SELECTING_LANGUAGE',
+  DOWNLOADING_AUDIO: 'INJECTING_AUDIO',
+  ADDING_AUDIO: 'INJECTING_AUDIO',
+  AUDIO_INJECTING: 'INJECTING_AUDIO',
+  WAITING_FOR_PUBLISH: 'WAITING_PUBLISH',
+  PUBLISH_READY: 'WAITING_PUBLISH',
+  PUBLISHED: 'COMPLETED',
+  DONE: 'COMPLETED',
+}
+
+function normalizeStep(step: string) {
+  const normalized = step.trim().replace(/[\s-]+/g, '_').toUpperCase()
+  return STEP_ALIASES[normalized] ?? normalized
 }
 
 export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, autoTrigger = false }: Props) {
   const { status: extensionStatus, version, recheck } = useExtensionDetect()
+  const locale = useAppLocale()
+  const t = useLocaleText()
   const [uploadingLang, setUploadingLang] = useState<string | null>(null)
   const [langJobs, setLangJobs] = useState<Record<string, LangJobState>>({})
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoTriggered = useRef(false)
+  const loggedExtensionErrors = useRef<Set<string>>(new Set())
   const addToast = useNotificationStore((s) => s.addToast)
+
+  const getDisplayLanguageName = useCallback((langCode: string) => {
+    const lang = getLanguageByCode(langCode)
+    if (!lang) return langCode
+    return locale === 'ko' ? lang.nativeName : lang.name
+  }, [locale])
+
+  const getStepLabel = useCallback((step?: string) => {
+    if (!step) return t('features.dubbing.components.youTubeExtensionUpload.inProgress')
+    const label = STEP_LABELS[normalizeStep(step)]
+    return label ? t(label) : t('features.dubbing.components.youTubeExtensionUpload.inProgress2')
+  }, [t])
 
   const pollJobs = useCallback(async () => {
     try {
@@ -61,6 +98,18 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
       const updated: Record<string, LangJobState> = {}
       for (const job of response.jobs) {
         if (job.videoId === videoId) {
+          if (job.error) {
+            const errorKey = `${job.jobId}:${job.error}`
+            if (!loggedExtensionErrors.current.has(errorKey)) {
+              loggedExtensionErrors.current.add(errorKey)
+              console.warn('[Dubtube] Extension upload error', {
+                jobId: job.jobId,
+                languageCode: job.languageCode,
+                step: job.step,
+                error: job.error,
+              })
+            }
+          }
           updated[job.languageCode] = {
             jobId: job.jobId,
             status: job.status,
@@ -101,7 +150,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
     try {
       const audioUrl = await getAudioUrl(langCode)
       if (!audioUrl) {
-        addToast({ type: 'error', title: '오디오 URL을 찾을 수 없습니다' })
+        addToast({ type: 'error', title: t('features.dubbing.components.youTubeExtensionUpload.couldNotPrepareTheAudioFile') })
         return
       }
 
@@ -117,18 +166,30 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
         }))
         addToast({
           type: 'success',
-          title: `${lang.name} 확장 업로드 시작`,
-          message: 'YouTube Studio에서 자동 진행됩니다.',
+          title: t('features.dubbing.components.youTubeExtensionUpload.valueAudioTrackStarted', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
+          message: t('features.dubbing.components.youTubeExtensionUpload.checkTheProgressInYouTubeStudio'),
         })
       } else {
-        addToast({ type: 'error', title: '확장 업로드 실패', message: response.error || '알 수 없는 오류' })
+        if (response.error) {
+          console.warn('[Dubtube] Extension upload request failed', response.error)
+        }
+        addToast({
+          type: 'error',
+          title: t('features.dubbing.components.youTubeExtensionUpload.audioTrackUploadFailed'),
+          message: t('features.dubbing.components.youTubeExtensionUpload.tryAgainShortlyOrAddItManually'),
+        })
       }
     } catch (err) {
-      addToast({ type: 'error', title: '확장 통신 실패', message: err instanceof Error ? err.message : String(err) })
+      console.warn('[Dubtube] Extension connection failed', err)
+      addToast({
+        type: 'error',
+        title: t('features.dubbing.components.youTubeExtensionUpload.extensionConnectionFailed'),
+        message: t('features.dubbing.components.youTubeExtensionUpload.checkThatTheChromeExtensionIsEnabled'),
+      })
     } finally {
       setUploadingLang(null)
     }
-  }, [videoId, getAudioUrl, addToast])
+  }, [videoId, getAudioUrl, addToast, getDisplayLanguageName, t])
 
   // Auto-trigger: sequentially upload all languages without user clicking
   useEffect(() => {
@@ -152,21 +213,21 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
   if (extensionStatus === 'not-installed') {
     return (
       <div className="flex items-center gap-3 rounded-lg border border-dashed border-surface-300 p-3 dark:border-surface-700">
-        <AlertCircle className="h-5 w-5 flex-shrink-0 text-surface-400" />
+        <AlertCircle className="h-5 w-5 flex-shrink-0 text-surface-500 dark:text-surface-300" />
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-surface-600 dark:text-surface-400">
-            Dubtube 확장 미설치
+          <p className="text-sm font-medium text-surface-700 dark:text-surface-200">
+            {t('features.dubbing.components.youTubeExtensionUpload.chromeExtensionRequired')}
           </p>
-          <p className="text-xs text-surface-400 mb-2">
-            Chrome 확장을 설치하면 오디오 트랙 업로드를 자동화할 수 있습니다.
+          <p className="mb-2 text-xs text-surface-500 dark:text-surface-300">
+            {t('features.dubbing.components.youTubeExtensionUpload.installTheExtensionToAddAudioTracksIn')}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => window.open(INSTALL_GUIDE_URL, '_blank')}>
               <ExternalLink className="h-3 w-3" />
-              설치 가이드
+              {t('features.dubbing.components.youTubeExtensionUpload.installGuide')}
             </Button>
             <Button variant="ghost" size="sm" onClick={recheck}>
-              다시 감지
+              {t('features.dubbing.components.youTubeExtensionUpload.checkAgain')}
             </Button>
           </div>
         </div>
@@ -179,12 +240,12 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
       <div className="flex items-center gap-2 mb-2">
         <Puzzle className="h-4 w-4 text-brand-500" />
         <span className="text-sm font-medium text-surface-700 dark:text-surface-300">
-          확장 자동 업로드
+          {t('features.dubbing.components.youTubeExtensionUpload.audioTrackAssistant')}
         </span>
-        <Badge variant="success">연결됨{version ? ` v${version}` : ''}</Badge>
+        <Badge variant="success">{t('features.dubbing.components.youTubeExtensionUpload.connected')}{version ? ` v${version}` : ''}</Badge>
       </div>
-      <p className="text-xs text-surface-500 mb-3">
-        Dubtube 확장이 YouTube Studio를 자동으로 열고 오디오 트랙을 추가합니다.
+      <p className="mb-3 text-xs text-surface-500 dark:text-surface-300">
+        {t('features.dubbing.components.youTubeExtensionUpload.theChromeExtensionOpensYouTubeStudioAndAdds')}
       </p>
       {completedLangs.map((code) => {
         const lang = getLanguageByCode(code)
@@ -197,25 +258,27 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
             className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800"
           >
             <div className="flex items-center gap-3 min-w-0">
-              <span className="text-lg">{lang.flag}</span>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+                <span className="text-lg">{lang.flag}</span>
+                <div className="min-w-0">
+                <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
                 {job?.status === 'running' && (
                   <p className="text-xs text-brand-500">
-                    {job.step ? STEP_LABELS[job.step] || job.step : '진행 중...'}
+                    {getStepLabel(job.step)}
                   </p>
                 )}
                 {job?.status === 'done' && (
-                  <p className="text-xs text-emerald-600">업로드 완료</p>
+                  <p className="text-xs text-emerald-600">{t('features.dubbing.components.youTubeExtensionUpload.audioTrackAdded')}</p>
                 )}
                 {job?.status === 'error' && (
                   <div>
-                    <p className="text-xs text-red-500">자동 업로드 실패</p>
-                    {job.error && (
-                      <p className="text-[10px] text-red-400 mt-0.5 break-all">{job.error}</p>
-                    )}
+                    <p className="text-xs text-red-500">{t('features.dubbing.components.youTubeExtensionUpload.autoAddFailed')}</p>
+                    <p className="text-[10px] text-red-400">
+                      {t('features.dubbing.components.youTubeExtensionUpload.uploadCouldNotBeCompletedPleaseCheckIn')}
+                    </p>
                     {job.step && (
-                      <p className="text-[10px] text-red-400">실패 단계: {STEP_LABELS[job.step] || job.step}</p>
+                      <p className="text-[10px] text-red-400">
+                        {t('features.dubbing.components.youTubeExtensionUpload.stoppedAt')}: {getStepLabel(job.step)}
+                      </p>
                     )}
                   </div>
                 )}
@@ -236,7 +299,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
                     disabled={uploadingLang !== null}
                   >
                     <XCircle className="h-3.5 w-3.5" />
-                    재시도
+                    {t('features.dubbing.components.youTubeExtensionUpload.retry')}
                   </Button>
                 </div>
                 <div className="flex items-center gap-2">
@@ -249,7 +312,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
                     }}
                   >
                     <Download className="h-3 w-3" />
-                    오디오
+                    {t('features.dubbing.components.youTubeExtensionUpload.downloadAudio')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -262,7 +325,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
                     }
                   >
                     <ExternalLink className="h-3 w-3" />
-                    Studio
+                    {t('features.dubbing.components.youTubeExtensionUpload.openStudio')}
                   </Button>
                 </div>
               </div>
@@ -275,7 +338,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
                 disabled={uploadingLang !== null}
               >
                 <Upload className="h-3.5 w-3.5" />
-                자동 업로드
+                {t('features.dubbing.components.youTubeExtensionUpload.autoAdd')}
               </Button>
             )}
           </div>
@@ -285,12 +348,12 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
       {Object.values(langJobs).some((j) => j.status === 'error') && (
         <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 p-3 dark:bg-amber-900/10 dark:border-amber-800">
           <p className="text-xs font-medium text-amber-800 dark:text-amber-300 mb-1">
-            수동 업로드 안내
+            {t('features.dubbing.components.youTubeExtensionUpload.addManually')}
           </p>
           <ol className="text-xs text-amber-700 dark:text-amber-400 list-decimal list-inside space-y-0.5">
-            <li>위에서 &quot;오디오&quot; 버튼을 눌러 파일을 다운로드하세요.</li>
-            <li>&quot;Studio&quot; 버튼을 눌러 YouTube Studio 번역 페이지를 여세요.</li>
-            <li>해당 언어의 오디오 트랙에 다운로드한 파일을 업로드하세요.</li>
+            <li>{t('features.dubbing.components.youTubeExtensionUpload.downloadTheAudioFile')}</li>
+            <li>{t('features.dubbing.components.youTubeExtensionUpload.openTheTranslationsPageInYouTubeStudio')}</li>
+            <li>{t('features.dubbing.components.youTubeExtensionUpload.addTheFileToTheAudioTrackFor')}</li>
           </ol>
         </div>
       )}

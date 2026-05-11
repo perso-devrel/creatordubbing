@@ -29,6 +29,22 @@ const createDubbingJobSchema = z.object({
     spaceSeq: z.number().int(),
     lipSyncEnabled: z.boolean(),
     isShort: z.boolean(),
+    deliverableMode: z.enum(['newDubbedVideos', 'originalWithMultiAudio', 'downloadOnly']).optional(),
+    originalVideoUrl: z.string().nullable().optional(),
+    originalYouTubeUrl: z.string().nullable().optional(),
+    uploadSettings: z.object({
+      autoUpload: z.boolean(),
+      attachOriginalLink: z.boolean(),
+      title: z.string(),
+      description: z.string(),
+      tags: z.array(z.string()),
+      privacyStatus: z.enum(['public', 'unlisted', 'private']),
+      uploadCaptions: z.boolean(),
+      selfDeclaredMadeForKids: z.boolean(),
+      containsSyntheticMedia: z.boolean(),
+      uploadReviewConfirmed: z.boolean(),
+      metadataLanguage: z.string(),
+    }).optional(),
   }),
 })
 
@@ -183,6 +199,15 @@ const queueYouTubeUploadSchema = z.object({
     srtContent: z.string().nullable().optional(),
     selfDeclaredMadeForKids: z.boolean().optional(),
     containsSyntheticMedia: z.boolean().optional(),
+    resetFailed: z.boolean().optional(),
+  }),
+})
+
+const queueJobLanguageYouTubeUploadSchema = z.object({
+  type: z.literal('queueJobLanguageYouTubeUpload'),
+  payload: z.object({
+    jobId: z.number().int(),
+    langCode: z.string().min(1),
   }),
 })
 
@@ -204,6 +229,7 @@ export const mutationActionSchema = z.discriminatedUnion('type', [
   updateJobLanguageProjectsSchema,
   deleteDubbingJobSchema,
   queueYouTubeUploadSchema,
+  queueJobLanguageYouTubeUploadSchema,
 ])
 
 export type MutationAction = z.infer<typeof mutationActionSchema>
@@ -260,6 +286,8 @@ export function getJobIdFromAction(action: MutationAction): number | null {
     case 'updateJobLanguageProjects':
       return action.payload.jobId
     case 'queueYouTubeUpload':
+      return action.payload.jobId
+    case 'queueJobLanguageYouTubeUpload':
       return action.payload.jobId
     default:
       return null

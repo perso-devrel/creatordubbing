@@ -1,42 +1,47 @@
+'use client'
+
 import { FileVideo, Languages, FileText, Upload } from 'lucide-react'
+import { useLocaleText } from '@/hooks/useLocaleText'
 
 const steps = [
   {
     icon: FileVideo,
     step: '01',
-    title: '동영상 선택',
-    description: 'YouTube URL 붙여넣기, 내 채널 영상 불러오기, 직접 업로드 중 원하는 방식을 고르세요. 오디오 추출과 언어 감지가 자동으로 진행됩니다.',
+    title: 'features.landing.howItWorks.titleAddVideo',
+    description: 'features.landing.howItWorks.descriptionPasteAYouTubeLinkOrUploadA',
   },
   {
     icon: Languages,
     step: '02',
-    title: '언어 & 보이스 설정',
-    description: '지원 언어 중 원하는 대상을 골라 추가하고, 내 목소리를 그대로 살릴 보이스 클론을 활성화하세요. 화자별 음성 매핑도 가능합니다.',
+    title: 'features.landing.howItWorks.titleChooseLanguages',
+    description: 'features.landing.howItWorks.descriptionChooseTargetLanguagesAndReviewTitleAnd',
   },
   {
     icon: FileText,
     step: '03',
-    title: '번역 검토 & 편집',
-    description: '자동 생성된 번역과 자막을 검토하고 다듬으세요. 고유명사 보호, 문장 단위 수정, 미리듣기로 디테일을 잡을 수 있습니다.',
+    title: 'features.landing.howItWorks.titleReviewAndEdit',
+    description: 'features.landing.howItWorks.descriptionReviewEachDubCaptionTitleAndDescription',
   },
   {
     icon: Upload,
     step: '04',
-    title: '더빙 생성 & 업로드',
-    description: 'AI 더빙이 완성되면 파일로 다운로드하거나 YouTube 채널에 다국어 트랙으로 바로 업로드하세요.',
+    title: 'features.landing.howItWorks.titlePublishToYouTube',
+    description: 'features.landing.howItWorks.descriptionDownloadFilesOrContinueDirectlyToYouTube',
   },
 ]
 
 export function HowItWorks() {
+  const t = useLocaleText()
+
   return (
     <section id="how-it-works" className="py-24">
       <div className="mx-auto max-w-7xl px-6">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
-            4단계로 글로벌 진출
+          <h2 className="break-keep text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
+            {t('features.landing.howItWorks.startMultilingualDubbingInFourSteps')}
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-500 dark:text-surface-400">
-            동영상 선택부터 다국어 업로드까지, 한 흐름으로
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-surface-600 dark:text-surface-300">
+            {t('features.landing.howItWorks.moveFromVideoSelectionToYouTubeUploadIn')}
           </p>
         </div>
 
@@ -44,16 +49,16 @@ export function HowItWorks() {
           {steps.map(({ icon: Icon, step, title, description }, i) => (
             <div key={step} className="relative text-center">
               {i < steps.length - 1 && (
-                <div className="absolute left-[calc(50%+40px)] top-10 hidden h-0.5 w-[calc(100%-80px)] bg-gradient-to-r from-brand-300 to-brand-100 dark:from-brand-700 dark:to-brand-900 lg:block" />
+                <div className="absolute left-[calc(50%+40px)] top-10 hidden h-px w-[calc(100%-80px)] bg-surface-200 dark:bg-surface-800 lg:block" />
               )}
-              <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 shadow-lg shadow-brand-500/25">
-                <Icon className="h-9 w-9 text-white" />
-                <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-bold text-brand-600 shadow dark:bg-surface-800 dark:text-brand-400">
+              <div className="relative mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-brand-600 dark:border-brand-900/60 dark:bg-brand-900/20 dark:text-brand-300">
+                <Icon className="h-9 w-9" />
+                <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white text-xs font-bold text-brand-600 shadow-sm dark:bg-surface-800 dark:text-brand-400">
                   {step}
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-surface-900 dark:text-white">{title}</h3>
-              <p className="mt-3 text-surface-500 dark:text-surface-400">{description}</p>
+              <h3 className="break-keep text-xl font-bold text-surface-900 dark:text-white">{t(title)}</h3>
+              <p className="mt-3 text-surface-600 dark:text-surface-300">{t(description)}</p>
             </div>
           ))}
         </div>

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { getLanguagePerformance, getUserYouTubeUploads, updateYouTubeStats } from '@/lib/db/queries'
 import { fetchVideoStatistics } from '@/lib/youtube/server'
 import { requireSession, forbiddenUidMismatch } from '@/lib/auth/session'
+import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 import { languagePerformanceQuerySchema } from '@/lib/validators/dashboard'
 import { apiOk, apiFail, apiFailFromError } from '@/lib/api/response'
 
@@ -20,13 +21,13 @@ export async function GET(req: NextRequest) {
     uid: req.nextUrl.searchParams.get('uid'),
   })
   if (!parsed.success) {
-    return apiFail('BAD_REQUEST', 'uid required', 400)
+    return apiFail('BAD_REQUEST', '로그인 정보를 확인해 주세요.', 400)
   }
 
   if (parsed.data.uid !== auth.session.uid) return forbiddenUidMismatch()
 
   const uid = auth.session.uid
-  const accessToken = req.cookies.get('google_access_token')?.value || req.headers.get('x-google-access-token')
+  const accessToken = await getOrRefreshAccessToken(uid)
 
   try {
     const dbData = await getLanguagePerformance(uid)

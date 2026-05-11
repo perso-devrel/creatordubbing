@@ -5,9 +5,6 @@ export {
   uploadVideoToYouTube,
   uploadCaptionToYouTube,
   initYouTubeResumableUpload,
-  type YouTubeUploadInput,
-  type YouTubeUploadSessionInput,
-  type CaptionUploadInput,
 } from '@/lib/youtube/upload'
 export {
   fetchVideoStatistics,
@@ -22,4 +19,3 @@ export {
   fetchVideoMetadata,
   updateVideoLocalizations,
 } from '@/lib/youtube/metadata'
-export type { YouTubeVideoMetadata } from '@/lib/youtube/types'

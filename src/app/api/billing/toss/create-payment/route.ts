@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   const orderId = createOrderId()
-  const orderName = `Dubtube ${pack.minutes}분 크레딧`
+  const orderName = `Dubtube ${pack.minutes}분 더빙 시간`
   const origin = req.nextUrl.origin
 
   try {

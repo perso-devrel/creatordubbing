@@ -1,13 +1,14 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { cn } from '@/utils/cn'
-import { useI18nStore } from '@/stores/i18nStore'
+import { stripLocalePrefix } from '@/lib/i18n/config'
+import { useLocaleText } from '@/hooks/useLocaleText'
+import { useOperationsAccess } from '@/features/ops/hooks/useOperationsAccess'
 import {
   LayoutDashboard,
   Languages,
-  Video,
   CreditCard,
   Layers,
   Settings,
@@ -17,62 +18,109 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/dashboard', label: { ko: '대시보드', en: 'Dashboard' }, icon: LayoutDashboard },
-  { to: '/dubbing', label: { ko: '새 더빙', en: 'New dubbing' }, icon: Languages },
-  { to: '/metadata', label: { ko: '메타데이터 번역', en: 'Metadata' }, icon: Globe2 },
-  { to: '/batch', label: { ko: '배치 큐', en: 'Batch queue' }, icon: Layers },
-  { to: '/uploads', label: { ko: 'YouTube 업로드', en: 'YouTube uploads' }, icon: Upload },
-  { to: '/ops', label: { ko: '운영 관측', en: 'Operations' }, icon: Activity, opsAdminOnly: true },
-  { to: '/youtube', label: { ko: 'YouTube', en: 'YouTube' }, icon: Video },
-  { to: '/billing', label: { ko: '결제', en: 'Billing' }, icon: CreditCard },
+  { to: '/dashboard', label: 'components.layout.sidebar.labelDashboard', mobileLabel: 'components.layout.sidebar.mobileLabelHome', icon: LayoutDashboard },
+  { to: '/dubbing', label: 'components.layout.sidebar.labelNewDubbing', mobileLabel: 'components.layout.sidebar.mobileLabelDub', icon: Languages },
+  { to: '/metadata', label: 'components.layout.sidebar.labelTitleDescription', mobileLabel: 'components.layout.sidebar.mobileLabelTitle', icon: Globe2 },
+  { to: '/batch', label: 'components.layout.sidebar.labelDubbingJobs', mobileLabel: 'components.layout.sidebar.mobileLabelJobs', icon: Layers },
+  { to: '/uploads', label: 'components.layout.sidebar.labelYouTubeUploads', mobileLabel: 'components.layout.sidebar.mobileLabelUpload', icon: Upload },
+  { to: '/ops', label: 'components.layout.sidebar.labelOperations', mobileLabel: 'components.layout.sidebar.mobileLabelOps', icon: Activity, opsAdminOnly: true },
+  { to: '/billing', label: 'components.layout.sidebar.labelBilling', mobileLabel: 'components.layout.sidebar.mobileLabelBilling', icon: CreditCard },
 ]
 
 export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
   const pathname = usePathname()
-  const appLocale = useI18nStore((state) => state.appLocale)
-  const visibleItems = navItems.filter((item) => !item.opsAdminOnly || isOpsAdmin)
+  const activePathname = stripLocalePrefix(pathname || '/')
+  const t = useLocaleText()
+  const opsAccess = useOperationsAccess({ enabled: isOpsAdmin })
+  const canViewOps = isOpsAdmin || opsAccess.data?.isOpsAdmin === true
+  const visibleItems = navItems.filter((item) => !item.opsAdminOnly || canViewOps)
+  const settingsLabel = t('components.layout.sidebar.labelSettings')
+
+  const renderNavItem = ({ to, label, icon: Icon }: (typeof navItems)[number]) => {
+    const isActive = activePathname === to || activePathname.startsWith(to + '/')
+    return (
+      <LocaleLink
+        key={to}
+        href={to}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+          isActive
+            ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400'
+            : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+        )}
+      >
+        <Icon className="h-5 w-5 shrink-0" />
+        {t(label)}
+      </LocaleLink>
+    )
+  }
+
+  const renderMobileNavItem = ({ to, label, mobileLabel, icon: Icon }: (typeof navItems)[number]) => {
+    const isActive = activePathname === to || activePathname.startsWith(to + '/')
+    return (
+      <LocaleLink
+        key={to}
+        href={to}
+        className={cn(
+          'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition-colors',
+          isActive
+            ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
+            : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+        )}
+      >
+        <Icon className="h-5 w-5" />
+        <span className="max-w-[4.25rem] truncate">{t(mobileLabel ?? label)}</span>
+      </LocaleLink>
+    )
+  }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900">
-      <div className="flex h-16 items-center gap-2.5 border-b border-surface-200 px-6 dark:border-surface-800">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-500">
-          <Languages className="h-4.5 w-4.5 text-white" />
+    <>
+      <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900 lg:flex">
+        <div className="flex h-16 items-center gap-2.5 border-b border-surface-200 px-6 dark:border-surface-800">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
+            <Languages className="h-4.5 w-4.5 text-white" />
+          </div>
+          <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
+            Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
+          </span>
         </div>
-        <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
-          Dub<span className="text-brand-500">tube</span>
-        </span>
-      </div>
 
-      <nav className="flex-1 space-y-1 p-3">
-        {visibleItems.map(({ to, label, icon: Icon }) => {
-          const isActive = pathname === to || pathname?.startsWith(to + '/')
-          return (
-            <Link
-              key={to}
-              href={to}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400'
-                  : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              {label[appLocale]}
-            </Link>
-          )
-        })}
+        <nav className="flex-1 space-y-1 p-3">
+          {visibleItems.map(renderNavItem)}
+        </nav>
+
+        <div className="border-t border-surface-200 p-3 dark:border-surface-800">
+          <LocaleLink
+            href="/settings"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800"
+          >
+            <Settings className="h-5 w-5 shrink-0" />
+            {settingsLabel}
+          </LocaleLink>
+        </div>
+      </aside>
+
+      <nav
+        aria-label={t('components.layout.sidebar.appNavigation')}
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-200 bg-white/95 px-2 py-2 backdrop-blur-md dark:border-surface-800 dark:bg-surface-900/95 lg:hidden"
+      >
+        <div className="flex gap-0.5">
+          {visibleItems.map(renderMobileNavItem)}
+          <LocaleLink
+            href="/settings"
+            className={cn(
+              'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition-colors',
+              activePathname === '/settings' || activePathname.startsWith('/settings/')
+                ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
+              : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+            )}
+          >
+            <Settings className="h-5 w-5" />
+            <span className="max-w-[4.25rem] truncate">{settingsLabel}</span>
+          </LocaleLink>
+        </div>
       </nav>
-
-      <div className="border-t border-surface-200 p-3 dark:border-surface-800">
-        <Link
-          href="/settings"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800"
-        >
-          <Settings className="h-5 w-5" />
-          {appLocale === 'en' ? 'Settings' : '설정'}
-        </Link>
-      </div>
-    </aside>
+    </>
   )
 }

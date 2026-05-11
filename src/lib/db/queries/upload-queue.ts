@@ -3,7 +3,7 @@ import 'server-only'
 import { getDb } from '@/lib/db/client'
 import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
-export type QueueStatus = 'pending' | 'processing' | 'done' | 'failed'
+type QueueStatus = 'pending' | 'processing' | 'done' | 'failed'
 
 export interface UploadQueueItem {
   id: number
@@ -106,9 +106,67 @@ export async function createUploadQueueItem(item: {
   srtContent?: string | null
   selfDeclaredMadeForKids?: boolean
   containsSyntheticMedia?: boolean
+  resetFailed?: boolean
 }): Promise<number> {
   await ensureTable()
   const db = getDb()
+  const existing = await db.execute({
+    sql: `SELECT id, status
+          FROM upload_queue
+          WHERE job_id = ? AND lang_code = ?
+          ORDER BY id DESC
+          LIMIT 1`,
+    args: [item.jobId, item.langCode],
+  })
+  const existingRow = existing.rows[0]
+  if (existingRow) {
+    const id = Number(existingRow.id)
+    const status = String(existingRow.status)
+    if (status === 'pending' || status === 'processing' || status === 'done' || !item.resetFailed) {
+      return id
+    }
+    await db.execute({
+      sql: `UPDATE upload_queue
+            SET user_id = ?,
+                video_url = ?,
+                title = ?,
+                description = ?,
+                tags = ?,
+                privacy_status = ?,
+                language = ?,
+                is_short = ?,
+                upload_captions = ?,
+                caption_language = ?,
+                caption_name = ?,
+                srt_content = ?,
+                self_declared_made_for_kids = ?,
+                contains_synthetic_media = ?,
+                status = 'pending',
+                retries = 0,
+                error = NULL,
+                youtube_video_id = NULL,
+                updated_at = datetime('now')
+            WHERE id = ?`,
+      args: [
+        item.userId,
+        item.videoUrl,
+        item.title,
+        item.description,
+        item.tags.join(','),
+        item.privacyStatus,
+        item.language,
+        item.isShort ? 1 : 0,
+        (item.uploadCaptions ?? true) ? 1 : 0,
+        item.captionLanguage ?? null,
+        item.captionName ?? null,
+        item.srtContent ?? null,
+        item.selfDeclaredMadeForKids ? 1 : 0,
+        item.containsSyntheticMedia ? 1 : 0,
+        id,
+      ],
+    })
+    return id
+  }
   const result = await db.execute({
     sql: `INSERT INTO upload_queue (
             user_id, job_id, lang_code, video_url, title, description, tags,
@@ -136,16 +194,6 @@ export async function createUploadQueueItem(item: {
     ],
   })
   return Number(result.lastInsertRowid)
-}
-
-export async function getPendingUploads(limit = 5): Promise<UploadQueueItem[]> {
-  await ensureTable()
-  const db = getDb()
-  const result = await db.execute({
-    sql: `SELECT * FROM upload_queue WHERE status IN ('pending', 'failed') AND retries < 3 ORDER BY created_at ASC LIMIT ?`,
-    args: [limit],
-  })
-  return result.rows.map(rowToItem)
 }
 
 export async function claimPendingUploads(
@@ -218,6 +266,12 @@ export async function failQueueItem(id: number, error: string): Promise<boolean>
   const row = result.rows[0]
   if (row) {
     const retries = Number(row.retries ?? 0)
+    await db.execute({
+      sql: `UPDATE job_languages
+            SET youtube_upload_status = 'failed', updated_at = datetime('now')
+            WHERE job_id = ? AND language_code = ? AND COALESCE(youtube_video_id, '') = ''`,
+      args: [Number(row.job_id), String(row.lang_code)],
+    }).catch(() => undefined)
     await recordOperationalEventSafe({
       category: 'upload_queue',
       eventType: 'upload_queue_failed',
@@ -236,41 +290,6 @@ export async function failQueueItem(id: number, error: string): Promise<boolean>
     })
   }
   return Boolean(row)
-}
-
-export async function updateQueueItemStatus(
-  id: number,
-  status: QueueStatus,
-  extra?: { error?: string; youtubeVideoId?: string },
-) {
-  await ensureTable()
-  const db = getDb()
-  if (extra?.youtubeVideoId) {
-    await db.execute({
-      sql: `UPDATE upload_queue SET status = ?, youtube_video_id = ?, error = NULL, updated_at = datetime('now') WHERE id = ?`,
-      args: [status, extra.youtubeVideoId, id],
-    })
-  } else if (extra?.error) {
-    await db.execute({
-      sql: `UPDATE upload_queue SET status = ?, error = ?, retries = retries + 1, updated_at = datetime('now') WHERE id = ?`,
-      args: [status, extra.error, id],
-    })
-  } else {
-    await db.execute({
-      sql: `UPDATE upload_queue SET status = ?, updated_at = datetime('now') WHERE id = ?`,
-      args: [status, id],
-    })
-  }
-}
-
-export async function getUserQueueItems(userId: string): Promise<UploadQueueItem[]> {
-  await ensureTable()
-  const db = getDb()
-  const result = await db.execute({
-    sql: `SELECT * FROM upload_queue WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
-    args: [userId],
-  })
-  return result.rows.map(rowToItem)
 }
 
 function rowToItem(row: Record<string, unknown>): UploadQueueItem {

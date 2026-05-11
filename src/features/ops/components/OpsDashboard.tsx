@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import { Badge, Button, Card, CardTitle, Select } from '@/components/ui'
 import { cn } from '@/utils/cn'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import type { AppLocale } from '@/lib/i18n/config'
 
 type AlertSeverity = 'info' | 'warning' | 'error' | 'critical'
 
@@ -73,13 +75,6 @@ interface OpsSummary {
   recentEvents: OperationalEvent[]
 }
 
-const WINDOW_OPTIONS = [
-  { value: '6', label: 'Last 6 hours' },
-  { value: '24', label: 'Last 24 hours' },
-  { value: '72', label: 'Last 3 days' },
-  { value: '168', label: 'Last 7 days' },
-]
-
 const severityTone: Record<AlertSeverity, string> = {
   info: 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-200',
   warning:
@@ -90,10 +85,37 @@ const severityTone: Record<AlertSeverity, string> = {
 }
 
 const categoryLabel: Record<OperationalEvent['category'], string> = {
-  upload_queue: 'Upload queue',
-  perso: 'Perso',
-  credit: 'Credit',
-  toss: 'Toss',
+  upload_queue: 'ops.category.uploadQueue',
+  perso: 'ops.category.perso',
+  credit: 'ops.category.credit',
+  toss: 'ops.category.toss',
+}
+
+const severityLabel: Record<AlertSeverity, string> = {
+  info: 'ops.severity.info',
+  warning: 'ops.severity.warning',
+  error: 'ops.severity.error',
+  critical: 'ops.severity.critical',
+}
+
+const eventMessageLabel: Record<string, string> = {
+  'Perso language processing failed': 'ops.event.persoLanguageProcessingFailed',
+  'Dubbing job failed': 'ops.event.dubbingJobFailed',
+  'Toss webhook body validation failed': 'ops.event.tossWebhookBodyValidationFailed',
+  'Toss webhook payment verification failed': 'ops.event.tossWebhookPaymentVerificationFailed',
+  'Toss webhook processing failed': 'ops.event.tossWebhookProcessingFailed',
+  'Reserved credits were released': 'ops.event.reservedCreditsWereReleased',
+  'Unused reserved credits were released after finalization': 'ops.event.unusedReservedCreditsWereReleasedAfterFinalization',
+  'YouTube upload queue item failed': 'ops.event.youTubeUploadQueueItemFailed',
+}
+
+function formatDate(value: string, locale: AppLocale) {
+  return new Intl.DateTimeFormat(locale === 'ko' ? 'ko-KR' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
 }
 
 async function fetchOpsSummary(hours: number): Promise<OpsSummary> {
@@ -107,10 +129,6 @@ async function fetchOpsSummary(hours: number): Promise<OpsSummary> {
   return body.data as OpsSummary
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleString('ko-KR')
-}
-
 function severityVariant(severity: AlertSeverity) {
   if (severity === 'critical' || severity === 'error') return 'error'
   if (severity === 'warning') return 'warning'
@@ -119,6 +137,14 @@ function severityVariant(severity: AlertSeverity) {
 
 export function OpsDashboard() {
   const [hours, setHours] = useState(24)
+  const locale = useAppLocale()
+  const t = useLocaleText()
+  const windowOptions = [
+    { value: '6', label: t('features.ops.components.opsDashboard.last6Hours') },
+    { value: '24', label: t('features.ops.components.opsDashboard.last24Hours') },
+    { value: '72', label: t('features.ops.components.opsDashboard.last3Days') },
+    { value: '168', label: t('features.ops.components.opsDashboard.last7Days') },
+  ]
   const query = useQuery({
     queryKey: ['ops-summary', hours],
     queryFn: () => fetchOpsSummary(hours),
@@ -127,14 +153,14 @@ export function OpsDashboard() {
   })
 
   const summary = query.data
-  const generatedLabel = summary?.generatedAt ? formatDate(summary.generatedAt) : null
+  const generatedLabel = summary?.generatedAt ? new Date(summary.generatedAt).toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US') : null
 
   if (query.isError) {
     return (
       <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/10">
-        <CardTitle>Operations access unavailable</CardTitle>
+        <CardTitle>{t('features.ops.components.opsDashboard.operationsAccessUnavailable')}</CardTitle>
         <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
-          {query.error instanceof Error ? query.error.message : 'Admin permission is required.'}
+          {t('features.ops.components.opsDashboard.adminPermissionIsRequiredOrOperationsDataCould')}
         </p>
       </Card>
     )
@@ -144,23 +170,23 @@ export function OpsDashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">Operations</h1>
-          <p className="text-surface-500 dark:text-surface-400">
-            Monitor upload queue failures, Perso failures, credit releases, and Toss webhook failures.
+          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.ops.components.opsDashboard.operations')}</h1>
+          <p className="text-surface-500 dark:text-surface-300">
+            {t('features.ops.components.opsDashboard.monitorUploadQueueDubbingJobsMinuteReleasesAnd')}
           </p>
-          {generatedLabel && <p className="mt-1 text-xs text-surface-400">Last updated: {generatedLabel}</p>}
+          {generatedLabel && <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">{t('features.ops.components.opsDashboard.lastUpdated')}: {generatedLabel}</p>}
         </div>
         <div className="flex items-end gap-2">
           <Select
-            label="Window"
+            label={t('features.ops.components.opsDashboard.window')}
             value={String(hours)}
             onChange={(event) => setHours(Number(event.target.value))}
-            options={WINDOW_OPTIONS}
+            options={windowOptions}
             className="min-w-36"
           />
           <Button variant="outline" onClick={() => query.refetch()} loading={query.isFetching}>
             <RefreshCw className="h-4 w-4" />
-            Refresh
+            {t('features.ops.components.opsDashboard.refresh')}
           </Button>
         </div>
       </div>
@@ -170,30 +196,42 @@ export function OpsDashboard() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               icon={<UploadCloud className="h-5 w-5" />}
-              title="Upload queue failure rate"
+              title={t('features.ops.components.opsDashboard.uploadFailureRate')}
               value={`${summary.metrics.uploadQueue.failureRate}%`}
-              detail={`${summary.metrics.uploadQueue.failed}/${summary.metrics.uploadQueue.total} failed, ${summary.metrics.uploadQueue.terminalFailed} terminal`}
+              detail={t('ops.metric.uploadQueueDetail', {
+                total: summary.metrics.uploadQueue.total,
+                failed: summary.metrics.uploadQueue.failed,
+                terminalFailed: summary.metrics.uploadQueue.terminalFailed,
+              })}
               tone={summary.metrics.uploadQueue.failureRate >= 10 ? 'danger' : 'normal'}
             />
             <MetricCard
               icon={<Languages className="h-5 w-5" />}
-              title="Perso failure rate"
+              title={t('features.ops.components.opsDashboard.dubbingFailureRate')}
               value={`${summary.metrics.perso.failureRate}%`}
-              detail={`${summary.metrics.perso.failed} failed, ${summary.metrics.perso.canceled} canceled / ${summary.metrics.perso.total} language jobs`}
+              detail={t('ops.metric.persoDetail', {
+                total: summary.metrics.perso.total,
+                failed: summary.metrics.perso.failed,
+                canceled: summary.metrics.perso.canceled,
+              })}
               tone={summary.metrics.perso.failureRate >= 10 ? 'danger' : 'normal'}
             />
             <MetricCard
               icon={<CreditCard className="h-5 w-5" />}
-              title="Credit release events"
+              title={t('features.ops.components.opsDashboard.minuteReleaseEvents')}
               value={`${summary.metrics.creditRefunds.events}`}
-              detail={`${summary.metrics.creditRefunds.releasedMinutes} minutes released`}
+              detail={t('ops.metric.creditRefundDetail', {
+                releasedMinutes: summary.metrics.creditRefunds.releasedMinutes,
+              })}
               tone={summary.metrics.creditRefunds.events > 0 ? 'warn' : 'normal'}
             />
             <MetricCard
               icon={<Webhook className="h-5 w-5" />}
-              title="Toss webhook failures"
+              title={t('features.ops.components.opsDashboard.paymentWebhookFailures')}
               value={`${summary.metrics.toss.failureEvents}`}
-              detail={`${summary.metrics.toss.affectedOrders} affected orders`}
+              detail={t('ops.metric.tossDetail', {
+                affectedOrders: summary.metrics.toss.affectedOrders,
+              })}
               tone={summary.metrics.toss.failureEvents > 0 ? 'danger' : 'normal'}
             />
           </div>
@@ -201,19 +239,21 @@ export function OpsDashboard() {
           <Card>
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <CardTitle>Alerts</CardTitle>
+                <CardTitle>{t('features.ops.components.opsDashboard.alerts')}</CardTitle>
                 <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
-                  Threshold alerts generated from the current operations window.
+                  {t('features.ops.components.opsDashboard.thresholdAlertsForTheSelectedWindow')}
                 </p>
               </div>
               <Badge variant={summary.alerts.length > 0 ? 'error' : 'success'}>
-                {summary.alerts.length > 0 ? `${summary.alerts.length} active` : 'Healthy'}
+                {summary.alerts.length > 0
+                  ? t('features.ops.components.opsDashboard.valueActive', { summaryAlertsLength: summary.alerts.length })
+                  : t('features.ops.components.opsDashboard.healthy')}
               </Badge>
             </div>
             {summary.alerts.length === 0 ? (
               <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-4 text-sm text-surface-500 dark:bg-surface-800/60 dark:text-surface-400">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                No active operations alerts for this window.
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                {t('features.ops.components.opsDashboard.noActiveOperationsAlertsForThisWindow')}
               </div>
             ) : (
               <div className="space-y-2">
@@ -233,38 +273,38 @@ export function OpsDashboard() {
           </Card>
 
           <Card>
-            <CardTitle>Recent Events</CardTitle>
+            <CardTitle>{t('features.ops.components.opsDashboard.recentEvents')}</CardTitle>
             <div className="mt-4 overflow-hidden rounded-lg border border-surface-200 dark:border-surface-800">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-left text-sm">
                   <thead className="bg-surface-50 text-xs text-surface-500 dark:bg-surface-800 dark:text-surface-400">
                     <tr>
-                      <th className="px-3 py-2 font-medium">Time</th>
-                      <th className="px-3 py-2 font-medium">Category</th>
-                      <th className="px-3 py-2 font-medium">Severity</th>
-                      <th className="px-3 py-2 font-medium">Message</th>
-                      <th className="px-3 py-2 font-medium">Reference</th>
+                      <th className="px-3 py-2 font-medium">{t('features.ops.components.opsDashboard.time')}</th>
+                      <th className="px-3 py-2 font-medium">{t('features.ops.components.opsDashboard.category')}</th>
+                      <th className="px-3 py-2 font-medium">{t('features.ops.components.opsDashboard.severity')}</th>
+                      <th className="px-3 py-2 font-medium">{t('features.ops.components.opsDashboard.message')}</th>
+                      <th className="px-3 py-2 font-medium">{t('features.ops.components.opsDashboard.reference')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-200 dark:divide-surface-800">
                     {summary.recentEvents.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-3 py-8 text-center text-surface-400">
-                          No recent operational events.
+                        <td colSpan={5} className="px-3 py-8 text-center text-surface-500 dark:text-surface-300">
+                          {t('features.ops.components.opsDashboard.noRecentOperationalEvents')}
                         </td>
                       </tr>
                     ) : (
                       summary.recentEvents.map((event) => (
                         <tr key={event.id} className="text-surface-700 dark:text-surface-200">
-                          <td className="whitespace-nowrap px-3 py-2 text-xs text-surface-400">
-                            {formatDate(event.createdAt)}
+                          <td className="whitespace-nowrap px-3 py-2 text-xs text-surface-500 dark:text-surface-300">
+                            {formatDate(event.createdAt, locale)}
                           </td>
-                          <td className="px-3 py-2">{categoryLabel[event.category]}</td>
+                          <td className="px-3 py-2">{t(categoryLabel[event.category])}</td>
                           <td className="px-3 py-2">
-                            <Badge variant={severityVariant(event.severity)}>{event.severity}</Badge>
+                            <Badge variant={severityVariant(event.severity)}>{t(severityLabel[event.severity])}</Badge>
                           </td>
-                          <td className="px-3 py-2">{event.message}</td>
-                          <td className="px-3 py-2 text-xs text-surface-400">
+                          <td className="px-3 py-2">{eventMessageLabel[event.message] ? t(eventMessageLabel[event.message]) : event.message}</td>
+                          <td className="px-3 py-2 text-xs text-surface-500 dark:text-surface-300">
                             {event.referenceType && event.referenceId
                               ? `${event.referenceType}:${event.referenceId}`
                               : '-'}
@@ -280,9 +320,9 @@ export function OpsDashboard() {
         </>
       ) : (
         <Card>
-          <div className="flex items-center gap-2 text-sm text-surface-500">
+          <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-300">
             <Clock className="h-4 w-4 animate-pulse" />
-            Loading operations summary.
+            {t('features.ops.components.opsDashboard.loadingOperationsSummary')}
           </div>
         </Card>
       )}
@@ -312,9 +352,9 @@ function MetricCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm text-surface-500 dark:text-surface-400">{title}</p>
+          <p className="text-sm text-surface-500 dark:text-surface-300">{title}</p>
           <p className="mt-2 text-2xl font-bold text-surface-900 dark:text-white">{value}</p>
-          <p className="mt-1 text-xs text-surface-400">{detail}</p>
+          <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">{detail}</p>
         </div>
         <div
           className={cn(

@@ -1,22 +1,35 @@
 'use client'
 
 import Image from 'next/image'
-import { Moon, Sun, LogOut } from 'lucide-react'
-import { useThemeStore } from '@/stores/themeStore'
+import { LogOut } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 import { signOut } from '@/lib/google-auth'
 import { Button } from '@/components/ui'
-import { useRouter } from 'next/navigation'
 import { OpsAlertButton } from '@/features/ops/components/OpsAlertButton'
+import { useChannelStats } from '@/hooks/useYouTubeData'
+import { AppLocaleSelect } from '@/components/layout/AppLocaleSelect'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
+import { useOperationsAccess } from '@/features/ops/hooks/useOperationsAccess'
 
 interface TopbarProps {
   isOpsAdmin?: boolean
 }
 
 export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
-  const { mode, toggle } = useThemeStore()
   const { user, clear } = useAuthStore()
-  const router = useRouter()
+  const router = useLocaleRouter()
+  const { data: channel } = useChannelStats()
+  const opsAccess = useOperationsAccess({ enabled: isOpsAdmin })
+  const locale = useAppLocale()
+  const t = useLocaleText()
+  const canViewOps = isOpsAdmin || opsAccess.data?.isOpsAdmin === true
+  const accountName = channel?.title || user?.displayName || t('components.layout.topbar.user')
+  const subscriberLabel = channel
+    ? t('components.layout.topbar.subscriberCount', {
+      count: channel.subscriberCount.toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US'),
+    })
+    : null
 
   const handleSignOut = async () => {
     signOut()
@@ -30,34 +43,34 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
       <div />
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={toggle} aria-label="테마 전환">
-          {mode === 'dark' ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
-        </Button>
-        {isOpsAdmin && <OpsAlertButton />}
+        <AppLocaleSelect className="w-28 sm:w-32" />
+        {canViewOps && <OpsAlertButton />}
 
         {user && (
           <div className="ml-2 flex items-center gap-3">
-            <div className="hidden sm:block text-right">
-              <p className="text-sm font-medium text-surface-900 dark:text-white leading-tight">
-                {user.displayName || '사용자'}
+            <div className="hidden text-right sm:block">
+              <p className="max-w-48 truncate text-sm font-medium leading-snug text-surface-900 dark:text-white">
+                {accountName}
               </p>
-              <p className="text-xs text-surface-400 leading-tight">{user.email}</p>
+              {subscriberLabel && (
+                <p className="whitespace-nowrap text-xs leading-snug text-surface-600 dark:text-surface-400">{subscriberLabel}</p>
+              )}
             </div>
             {user.photoURL ? (
               <Image
                 src={user.photoURL}
-                alt={user.displayName || ''}
+                alt={accountName}
                 width={32}
                 height={32}
                 className="rounded-full object-cover"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-600 text-sm font-bold text-white">
-                {(user.displayName || user.email || 'U')[0].toUpperCase()}
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-bold text-white">
+                {accountName[0].toUpperCase()}
               </div>
             )}
-            <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label="로그아웃">
+            <Button variant="ghost" size="sm" onClick={handleSignOut} aria-label={t('components.layout.topbar.signOut')}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

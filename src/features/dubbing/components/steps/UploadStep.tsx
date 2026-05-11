@@ -2,8 +2,9 @@
 
 import { Download, Check, RotateCcw, Upload, Loader2, Volume2 } from 'lucide-react'
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button, Card, CardTitle, Badge, Progress } from '@/components/ui'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
 import { getLanguageByCode } from '@/utils/languages'
 import { extractVideoId } from '@/utils/validators'
 import { useNotificationStore } from '@/stores/notificationStore'
@@ -21,11 +22,12 @@ import {
   type MetadataTranslation,
 } from '@/lib/api-client'
 import { toBcp47 } from '@/utils/languages'
-import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
+import { dbMutationStrict } from '@/lib/api/dbMutation'
 import { SubtitleScriptEditor } from '../SubtitleScriptEditor'
 import { YouTubeExtensionUpload } from '../YouTubeExtensionUpload'
 import { appendAiDisclosureFooter, appendTextFooter, stripAiDisclosureFooter } from '../../utils/aiDisclosure'
 import type { YouTubeUploadState } from '../../types/dubbing.types'
+import { resolveCaptionTrackName } from '@/lib/youtube/captions'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
@@ -33,21 +35,17 @@ function isYouTubeUploadLocked(state: YouTubeUploadState | undefined) {
   return state?.status === 'uploading' || state?.status === 'done'
 }
 
-interface YouTubeUploadReservation {
-  status: 'reserved' | 'already_uploaded' | 'already_uploading' | 'not_found'
-  youtubeVideoId?: string | null
-}
-
 export function UploadStep() {
   const {
     selectedLanguages, videoMeta, videoSource, languageProgress, dbJobId,
     spaceSeq, projectMap, youtubeUploads: ytUploads, setYouTubeUploadState,
-    uploadSettings, deliverableMode, originalVideoUrl, isShort, reset,
+    uploadSettings, deliverableMode, originalVideoUrl, reset,
   } = useDubbingStore()
   const { fetchDownloads } = usePersoFlow()
   const addToast = useNotificationStore((s) => s.addToast)
-  const userId = useAuthStore((s) => s.user?.uid)
-  const router = useRouter()
+  const router = useLocaleRouter()
+  const locale = useAppLocale()
+  const t = useLocaleText()
 
   const originalYouTubeId =
     videoSource?.type === 'url' && videoSource.url ? extractVideoId(videoSource.url) : null
@@ -77,10 +75,21 @@ export function UploadStep() {
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [captionUploads, setCaptionUploads] = useState<Record<string, UploadStatus>>({})
   const [audioTrackEnabled, setAudioTrackEnabled] = useState(false)
+  const allowDialogueEditingInOutput = deliverableMode !== 'originalWithMultiAudio' || audioTrackEnabled
   const [studioOpenedLang, setStudioOpenedLang] = useState<string | null>(null)
   const autoChainTriggered = useRef(false)
   const existingVideoMetadataSyncRef = useRef<Set<string>>(new Set())
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const getDisplayLanguageName = useCallback((langCode: string) => {
+    const language = getLanguageByCode(langCode)
+    if (!language) return langCode
+    return locale === 'ko' ? language.nativeName : language.name
+  }, [locale])
+  const privacyLabel = privacyStatus === 'public'
+    ? t('features.dubbing.components.steps.uploadStep.public')
+    : privacyStatus === 'unlisted'
+      ? t('features.dubbing.components.steps.uploadStep.unlisted')
+      : t('features.dubbing.components.steps.uploadStep.private')
 
   // ─── Metadata translations (Gemini) ─────────────────────────────────
   // Upload Step에 진입한 시점의 (title, description, metadataLanguage, selectedLanguages) 조합으로
@@ -102,7 +111,7 @@ export function UploadStep() {
     }
     if (translatePromiseRef.current) return translatePromiseRef.current
 
-    const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
+    const baseTitle = settingsTitle?.trim() || videoMeta?.title || t('features.dubbing.components.steps.uploadStep.dubbedVideo')
     if (!baseTitle || selectedLanguages.length === 0) return {}
     translationCacheKeyRef.current = cacheKey
 
@@ -125,8 +134,8 @@ export function UploadStep() {
         setTranslations(fallback)
         addToast({
           type: 'warning',
-          title: '메타데이터 번역 실패',
-          message: err instanceof Error ? err.message : '원문으로 업로드합니다',
+          title: t('features.dubbing.components.steps.uploadStep.titleAndDescriptionTranslationFailed'),
+          message: err instanceof Error ? err.message : t('features.dubbing.components.steps.uploadStep.uploadingWithTheOriginalTitleAndDescription'),
         })
         return fallback
       } finally {
@@ -135,7 +144,7 @@ export function UploadStep() {
     })()
     translatePromiseRef.current = p
     return p
-  }, [translations, settingsTitle, videoMeta?.title, editableDescription, metadataLanguage, selectedLanguages, addToast])
+  }, [translations, settingsTitle, videoMeta?.title, editableDescription, metadataLanguage, selectedLanguages, addToast, t])
 
   // Original video upload state (for upload + originalWithMultiAudio)
   const [originalUploadState, setOriginalUploadState] = useState<{
@@ -153,11 +162,11 @@ export function UploadStep() {
     (desc: string, languageCode: string) => {
       let next = stripAiDisclosureFooter(desc)
       if (attachOriginalLink && originalYouTubeUrl) {
-        next = appendTextFooter(next, `원본 영상: ${originalYouTubeUrl}`)
+        next = appendTextFooter(next, `${t('features.dubbing.components.steps.uploadStep.originalVideo')}: ${originalYouTubeUrl}`)
       }
       return appendAiDisclosureFooter(next, languageCode, shouldApplyAiDisclosure)
     },
-    [attachOriginalLink, originalYouTubeUrl, shouldApplyAiDisclosure],
+    [attachOriginalLink, originalYouTubeUrl, shouldApplyAiDisclosure, t],
   )
 
   const applyMetadataToExistingVideo = useCallback(async (targetVideoId: string) => {
@@ -204,7 +213,7 @@ export function UploadStep() {
       await ytUpdateVideoLocalizations({
         videoId: targetVideoId,
         sourceLang: metadata.defaultLanguage || toBcp47(metadataLanguage),
-        title: metadata.title || settingsTitle?.trim() || videoMetaTitle || 'Untitled',
+        title: metadata.title || settingsTitle?.trim() || videoMetaTitle || t('features.dubbing.components.steps.uploadStep.untitled'),
         description: metadata.description,
         tags: mergedTags,
         localizations: mergedLocalizations,
@@ -212,8 +221,8 @@ export function UploadStep() {
     } catch (err) {
       addToast({
         type: 'warning',
-        title: 'YouTube 메타데이터 적용 실패',
-        message: err instanceof Error ? err.message : '자막 업로드는 계속 진행합니다.',
+        title: t('features.dubbing.components.steps.uploadStep.couldNotUpdateYouTubeTitleAndDescription'),
+        message: err instanceof Error ? err.message : t('features.dubbing.components.steps.uploadStep.captionUploadWillContinue'),
       })
     }
   }, [
@@ -225,6 +234,7 @@ export function UploadStep() {
     selectedLanguages,
     settingsTags,
     settingsTitle,
+    t,
     videoMetaTitle,
   ])
 
@@ -253,7 +263,7 @@ export function UploadStep() {
 
       const result = await ytUploadVideo({
         videoUrl: originalVideoUrl,
-        title: settingsTitle?.trim() || videoMeta?.title || 'Original Video',
+        title: settingsTitle?.trim() || videoMeta?.title || t('features.dubbing.components.steps.uploadStep.originalVideo2'),
         description: applyDescriptionFooter(editableDescription, metadataLanguage),
         tags: settingsTags,
         privacyStatus,
@@ -265,17 +275,18 @@ export function UploadStep() {
       setOriginalUploadState({ status: 'done', videoId: result.videoId })
       addToast({
         type: 'success',
-        title: '원본 영상 YouTube 업로드 완료',
-        message: `영상 ID: ${result.videoId}`,
+        title: t('features.dubbing.components.steps.uploadStep.originalVideoUploaded'),
+        message: t('features.dubbing.components.steps.uploadStep.youCanReviewTheVideoOnYouTube'),
       })
       return result.videoId
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '원본 업로드 실패'
+      console.warn('[Dubtube] Original video upload failed', err)
+      const msg = t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheOriginalVideoUploadPlease')
       setOriginalUploadState({ status: 'idle', error: msg })
-      addToast({ type: 'error', title: '원본 영상 업로드 실패', message: msg })
+      addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.originalUploadFailed'), message: msg })
       return null
     }
-  }, [isAuthenticated, originalVideoUrl, settingsTitle, editableDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, shouldApplyAiDisclosure, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage, applyDescriptionFooter])
+  }, [isAuthenticated, originalVideoUrl, settingsTitle, editableDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, shouldApplyAiDisclosure, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage, applyDescriptionFooter, t])
 
   // ─── Audio → Studio helper ──────────────────────────────────────────
   const handleAudioToStudio = useCallback(async (langCode: string, targetVideoId?: string) => {
@@ -307,13 +318,13 @@ export function UploadStep() {
 
       addToast({
         type: 'info',
-        title: `${lang.name} 오디오 준비 완료`,
-        message: '오디오 다운로드 + Studio 팝업 열림. 언어 코드가 클립보드에 복사됐습니다.',
+        title: t('features.dubbing.components.steps.uploadStep.valueAudioReady', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
+        message: t('features.dubbing.components.steps.uploadStep.downloadedTheAudioFileOpenedYouTubeStudioAnd'),
       })
     } finally {
       setTimeout(() => setStudioOpenedLang(null), 1500)
     }
-  }, [fetchDownloads, originalYouTubeId, addToast])
+  }, [fetchDownloads, originalYouTubeId, addToast, getDisplayLanguageName, t])
 
   // ─── File download ──────────────────────────────────────────────────
   const handleDownload = useCallback(async (langCode: string, type: 'video' | 'voiceAudio' | 'translatedSubtitle') => {
@@ -367,230 +378,56 @@ export function UploadStep() {
     if (isYouTubeUploadLocked(existingUpload)) return
 
     if (!isAuthenticated) {
-      addToast({ type: 'error', title: 'YouTube에 먼저 로그인해주세요' })
+      addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.pleaseSignInToYouTubeFirst') })
       return
     }
 
-    const lang = getLanguageByCode(langCode)
-    if (!lang) return
+    if (!getLanguageByCode(langCode)) return
 
-    setYouTubeUploadState(langCode, { status: 'uploading', progress: 0 })
-    let uploadReserved = false
-
-    try {
-      if (dbJobId) {
-        const reservation = await dbMutationStrict<YouTubeUploadReservation>({
-          type: 'startJobLanguageYouTubeUpload',
-          payload: { jobId: dbJobId, langCode },
-        })
-        if (reservation.status === 'already_uploaded') {
-          setYouTubeUploadState(langCode, {
-            status: 'done',
-            progress: 100,
-            videoId: reservation.youtubeVideoId || undefined,
-          })
-          return
-        }
-        if (reservation.status === 'already_uploading') {
-          setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
-          return
-        }
-        if (reservation.status !== 'reserved') {
-          throw new Error('YouTube 업로드 상태를 확인할 수 없습니다.')
-        }
-        uploadReserved = true
-      }
-
-      const downloads = await fetchDownloads(langCode, 'dubbingVideo')
-      const rawVideoUrl = downloads?.videoFile?.videoDownloadLink
-      if (!rawVideoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
-      const videoUrl = rawVideoUrl.startsWith('http') ? rawVideoUrl : getPersoFileUrl(rawVideoUrl)
-
-      setYouTubeUploadState(langCode, { status: 'uploading', progress: 20 })
-      // 번역된 제목·설명을 가져와 그 언어 영상의 메타로 사용한다.
-      const allTranslations = await ensureTranslations()
-      const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
-      const translated = allTranslations[langCode] ?? { title: baseTitle, description: editableDescription }
-      const ytTitle = translated.title
-      const ytDescription = applyDescriptionFooter(translated.description, langCode)
-      const langTags = Array.from(new Set([
-        ...settingsTags,
-        lang.name,
-      ]))
-      const result = await ytUploadVideo({
-        videoUrl,
-        title: ytTitle,
-        description: ytDescription,
-        tags: langTags,
-        privacyStatus,
-        selfDeclaredMadeForKids,
-        containsSyntheticMedia: shouldApplyAiDisclosure,
-        language: langCode,
-      })
-      setYouTubeUploadState(langCode, { status: 'uploading', progress: 90 })
-
-      // Upload SRT caption — use Perso's official translated SRT (audioScript target)
-      setYouTubeUploadState(langCode, { status: 'uploading', progress: 92 })
-      if (shouldUploadCaptions) {
-        try {
-          const pSeq = projectMap[langCode]
-          if (pSeq && spaceSeq) {
-            const srtText = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
-            if (srtText.trim().length > 0) {
-              await ytUploadCaption({
-                videoId: result.videoId,
-                language: toBcp47(langCode),
-                name: `${lang.name} subtitles`,
-                srtContent: srtText,
-              })
-            }
-          }
-        } catch { /* caption upload is optional */ }
-      }
-
-      setYouTubeUploadState(langCode, { status: 'done', progress: 100, videoId: result.videoId })
-
-      try {
-        if (dbJobId) {
-          await dbMutationStrict({
-            type: 'updateJobLanguageYouTube',
-            payload: { jobId: dbJobId, langCode, youtubeVideoId: result.videoId },
-          })
-        }
-        if (userId) {
-          await dbMutation({
-            type: 'createYouTubeUpload',
-            payload: {
-              userId,
-              youtubeVideoId: result.videoId,
-              title: ytTitle,
-              languageCode: langCode,
-              privacyStatus,
-              isShort,
-            },
-          })
-        }
-      } catch { /* DB save best-effort */ }
-
-      const privacyLabel = privacyStatus === 'public' ? '공개' : privacyStatus === 'unlisted' ? '일부 공개' : '비공개'
-      addToast({
-        type: 'success',
-        title: `${lang.name} YouTube 업로드 완료`,
-        message: `영상 ID: ${result.videoId} (${privacyLabel})`,
-      })
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : '업로드 실패'
-      if (uploadReserved && dbJobId) {
-        await dbMutation({
-          type: 'failJobLanguageYouTubeUpload',
-          payload: { jobId: dbJobId, langCode },
-        })
-      }
-      setYouTubeUploadState(langCode, { status: 'error', progress: 0, error: msg })
-      addToast({ type: 'error', title: `${lang?.name} 업로드 실패`, message: msg })
-    }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, isShort, isAuthenticated, settingsTitle, editableDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, shouldApplyAiDisclosure, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter, setYouTubeUploadState])
-
-  // ─── Queue upload (background — survives tab close) ─────────────────
-  const queueYouTubeUpload = useCallback(async (langCode: string) => {
-    const existingUpload = useDubbingStore.getState().youtubeUploads[langCode]
-    if (isYouTubeUploadLocked(existingUpload)) return
-
-    if (!userId || !dbJobId) return
-
-    const lang = getLanguageByCode(langCode)
-    if (!lang) return
+    if (!dbJobId) return
 
     setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
-    let uploadReserved = false
 
     try {
-      const reservation = await dbMutationStrict<YouTubeUploadReservation>({
-        type: 'startJobLanguageYouTubeUpload',
+      const result = await dbMutationStrict<{
+        status: string
+        queueId?: number
+        youtubeVideoId?: string | null
+      }>({
+        type: 'queueJobLanguageYouTubeUpload',
         payload: { jobId: dbJobId, langCode },
       })
-      if (reservation.status === 'already_uploaded') {
+      if (result.status === 'already_uploaded') {
         setYouTubeUploadState(langCode, {
           status: 'done',
           progress: 100,
-          videoId: reservation.youtubeVideoId || undefined,
+          videoId: result.youtubeVideoId || undefined,
         })
         return
       }
-      if (reservation.status === 'already_uploading') {
+      if (result.status === 'queued' || result.status === 'already_queued' || result.status === 'already_uploading') {
         setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
-        return
-      }
-      if (reservation.status !== 'reserved') {
-        throw new Error('YouTube 업로드 상태를 확인할 수 없습니다.')
-      }
-      uploadReserved = true
-
-      const downloads = await fetchDownloads(langCode, 'dubbingVideo')
-      const rawVideoUrl = downloads?.videoFile?.videoDownloadLink
-      if (!rawVideoUrl) throw new Error('더빙 영상 다운로드 링크를 찾을 수 없습니다')
-      const videoUrl = rawVideoUrl.startsWith('http') ? rawVideoUrl : getPersoFileUrl(rawVideoUrl)
-
-      const allTranslations = await ensureTranslations()
-      const baseTitle = settingsTitle?.trim() || videoMeta?.title || 'Dubbed Video'
-      const translated = allTranslations[langCode] ?? { title: baseTitle, description: editableDescription }
-      const ytTitle = translated.title
-      const langTags = Array.from(new Set([
-        ...settingsTags,
-        lang.name,
-      ]))
-      let srtContent: string | null = null
-      if (shouldUploadCaptions) {
-        const pSeq = projectMap[langCode]
-        if (pSeq && spaceSeq) {
-          try {
-            const srtText = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
-            srtContent = srtText.trim().length > 0 ? srtText : null
-          } catch { /* queue caption is optional */ }
-        }
+      } else {
+        throw new Error(result.status || t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry'))
       }
 
-      await dbMutation({
-        type: 'queueYouTubeUpload',
-        payload: {
-          userId,
-          jobId: dbJobId,
-          langCode,
-          videoUrl,
-          title: ytTitle,
-          description: applyDescriptionFooter(translated.description, langCode),
-          tags: langTags,
-          privacyStatus,
-          language: langCode,
-          isShort,
-          uploadCaptions: shouldUploadCaptions,
-          captionLanguage: toBcp47(langCode),
-          // 빈 문자열로 두면 YouTube가 시청자 로케일에 맞춰 언어 이름 자동 표시.
-          captionName: '',
-          srtContent,
-          selfDeclaredMadeForKids,
-          containsSyntheticMedia: shouldApplyAiDisclosure,
-        },
-      })
-
-      setYouTubeUploadState(langCode, { status: 'done', progress: 100 })
       addToast({
         type: 'success',
-        title: `${lang.name} 업로드 예약됨`,
-        message: '서버에서 백그라운드로 업로드합니다. 탭을 닫아도 됩니다.',
+        title: t('features.dubbing.components.steps.uploadStep.valueUploadScheduled', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
+        message: t('features.dubbing.components.steps.uploadStep.theServerWillUploadItInTheBackground'),
       })
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '큐 등록 실패'
-      if (uploadReserved) {
-        await dbMutation({
-          type: 'failJobLanguageYouTubeUpload',
-          payload: { jobId: dbJobId, langCode },
-        })
-      }
+      console.warn('[Dubtube] YouTube upload scheduling failed', err)
+      const msg = t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry')
       setYouTubeUploadState(langCode, { status: 'error', progress: 0, error: msg })
-      addToast({ type: 'error', title: `${lang?.name} 큐 등록 실패`, message: msg })
+      addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.valueUploadSchedulingFailed', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }), message: msg })
     }
-  }, [fetchDownloads, videoMeta, addToast, userId, dbJobId, isShort, settingsTitle, editableDescription, settingsTags, privacyStatus, shouldUploadCaptions, selfDeclaredMadeForKids, shouldApplyAiDisclosure, projectMap, spaceSeq, ensureTranslations, applyDescriptionFooter, setYouTubeUploadState])
+  }, [addToast, dbJobId, isAuthenticated, setYouTubeUploadState, getDisplayLanguageName, t])
+
+  // ─── Queue upload (background — survives tab close) ─────────────────
+  const queueYouTubeUpload = useCallback(async (langCode: string) => {
+    await handleYouTubeUpload(langCode)
+  }, [handleYouTubeUpload])
 
   const completedLangs = useMemo(() => selectedLanguages.filter((code) => {
     const lp = languageProgress.find((p) => p.langCode === code)
@@ -640,18 +477,19 @@ export function UploadStep() {
         await ytUploadCaption({
           videoId: targetVideoId,
           language: toBcp47(langCode),
-          name: `${lang.name} subtitles`,
+          name: resolveCaptionTrackName(toBcp47(langCode), lang.name),
           srtContent,
         })
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'done' }))
-        addToast({ type: 'success', title: `${lang.name} 자막 업로드 완료` })
+        addToast({ type: 'success', title: t('features.dubbing.components.steps.uploadStep.valueCaptionsUploaded', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }) })
       } catch (err) {
+        console.warn('[Dubtube] Caption upload failed', err)
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'error' }))
-        const msg = err instanceof Error ? err.message : '자막 업로드 실패'
-        addToast({ type: 'error', title: `${lang.name} 자막 업로드 실패`, message: msg })
+        const msg = t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheCaptionUploadPleaseTry')
+        addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.valueCaptionUploadFailed', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }), message: msg })
       }
     }
-  }, [projectMap, spaceSeq, addToast])
+  }, [projectMap, spaceSeq, addToast, getDisplayLanguageName, t])
 
   const uploadCaptionsWithMetadata = useCallback(async (targetVideoId: string, langs: string[]) => {
     if (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'channel') {
@@ -713,15 +551,20 @@ export function UploadStep() {
           <Check className="h-8 w-8 text-emerald-600" />
         </div>
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">
-          {failedLangs.length > 0 ? '더빙 부분 완료' : '더빙된 영상이 준비되었습니다!'}
+          {failedLangs.length > 0
+            ? t('features.dubbing.components.steps.uploadStep.someLanguagesFinished')
+            : t('features.dubbing.components.steps.uploadStep.dubbingFilesAreReady')}
         </h2>
-        <p className="mt-1 text-surface-500">
-          {completedLangs.length} / {selectedLanguages.length}개 언어 완료.
+        <p className="mt-1 text-surface-500 dark:text-surface-300">
+          {t('features.dubbing.components.steps.uploadStep.completedLanguageProgress', {
+            completed: completedLangs.length,
+            total: selectedLanguages.length,
+          })}
           {deliverableMode === 'downloadOnly'
-            ? ' 파일을 다운로드하세요.'
+            ? t('features.dubbing.components.steps.uploadStep.downloadTheFilesYouNeed')
             : deliverableMode === 'originalWithMultiAudio'
-              ? ' 원본 영상에 오디오 트랙을 추가합니다.'
-              : ' 다운로드하거나 YouTube에 업로드하세요.'}
+              ? t('features.dubbing.components.steps.uploadStep.youCanAddCaptionsToTheOriginalVideo')
+              : t('features.dubbing.components.steps.uploadStep.downloadThemOrUploadToYouTube')}
         </p>
       </div>
 
@@ -731,12 +574,12 @@ export function UploadStep() {
           {/* Original upload status (file upload only) */}
           {videoSource?.type === 'upload' && (
             <Card>
-              <CardTitle>원본 영상 YouTube 업로드</CardTitle>
+              <CardTitle>{t('features.dubbing.components.steps.uploadStep.originalVideoYouTubeUpload')}</CardTitle>
               <div className="mt-3">
                 {originalUploadState.status === 'idle' && (
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-surface-500">
-                      원본 영상을 YouTube에 업로드해야 오디오 트랙을 추가할 수 있습니다.
+                    <p className="text-sm text-surface-500 dark:text-surface-300">
+                      {t('features.dubbing.components.steps.uploadStep.afterTheOriginalVideoIsUploadedToYouTube')}
                     </p>
                     <Button
                       size="sm"
@@ -744,14 +587,14 @@ export function UploadStep() {
                       disabled={!isAuthenticated}
                     >
                       <Upload className="h-4 w-4" />
-                      원본 업로드
+                      {t('features.dubbing.components.steps.uploadStep.uploadOriginal')}
                     </Button>
                   </div>
                 )}
                 {originalUploadState.status === 'uploading' && (
                   <div className="flex items-center gap-3">
                     <Loader2 className="h-5 w-5 animate-spin text-brand-500" />
-                    <p className="text-sm text-surface-600 dark:text-surface-400">원본 영상 업로드 중...</p>
+                    <p className="text-sm text-surface-600 dark:text-surface-400">{t('features.dubbing.components.steps.uploadStep.uploadingOriginalVideo')}</p>
                   </div>
                 )}
                 {originalUploadState.status === 'done' && originalUploadState.videoId && (
@@ -759,15 +602,15 @@ export function UploadStep() {
                     <div className="flex items-center gap-2">
                       <Check className="h-5 w-5 text-emerald-500" />
                       <p className="text-sm text-emerald-700 dark:text-emerald-400">
-                        업로드 완료 — <a
+                        {t('features.dubbing.components.steps.uploadStep.uploaded')} - <a
                           href={`https://youtube.com/watch?v=${originalUploadState.videoId}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="underline"
-                        >영상 보기</a>
+                        >{t('features.dubbing.components.steps.uploadStep.viewVideo')}</a>
                       </p>
                     </div>
-                    <Badge variant="success">완료</Badge>
+                    <Badge variant="success">{t('features.dubbing.components.steps.uploadStep.done')}</Badge>
                   </div>
                 )}
                 {originalUploadState.error && (
@@ -783,7 +626,7 @@ export function UploadStep() {
               <div className="flex items-center gap-2">
                 <Check className="h-5 w-5 text-emerald-500" />
                 <p className="text-sm text-surface-700 dark:text-surface-300">
-                  기존 YouTube 영상에 오디오 트랙을 추가합니다.
+                  {t('features.dubbing.components.steps.uploadStep.translatedCaptionsWillBeAddedToTheExisting')}
                 </p>
                 <a
                   href={`https://youtube.com/watch?v=${channelVideoId}`}
@@ -791,7 +634,7 @@ export function UploadStep() {
                   rel="noopener noreferrer"
                   className="text-xs text-brand-500 underline"
                 >
-                  영상 보기
+                  {t('features.dubbing.components.steps.uploadStep.viewVideo2')}
                 </a>
               </div>
             </Card>
@@ -801,15 +644,15 @@ export function UploadStep() {
           {multiAudioVideoId && (
             <Card className="border-emerald-200 dark:border-emerald-800">
               <div className="flex items-center justify-between mb-4">
-                <CardTitle>자막(SRT) 업로드</CardTitle>
+                <CardTitle>{t('features.dubbing.components.steps.uploadStep.uploadCaptionsSRT')}</CardTitle>
                 {isAuthenticated ? (
-                  <Badge variant="success">인증됨</Badge>
+                  <Badge variant="success">{t('features.dubbing.components.steps.uploadStep.connected')}</Badge>
                 ) : (
-                  <Badge variant="warning">로그인 필요</Badge>
+                  <Badge variant="warning">{t('features.dubbing.components.steps.uploadStep.signInRequired')}</Badge>
                 )}
               </div>
-              <p className="mb-4 text-sm text-surface-500">
-                번역된 자막을 원본 영상에 자동으로 업로드합니다.
+              <p className="mb-4 text-sm text-surface-500 dark:text-surface-300">
+                {t('features.dubbing.components.steps.uploadStep.uploadTranslatedCaptionsToTheOriginalVideo')}
               </p>
               <div className="space-y-2">
                 {completedLangs.map((code) => {
@@ -821,14 +664,14 @@ export function UploadStep() {
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-lg">{lang.flag}</span>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
-                          {status === 'uploading' && <p className="text-xs text-brand-500">업로드 중...</p>}
-                          {status === 'done' && <p className="text-xs text-emerald-600">자막 업로드 완료</p>}
-                          {status === 'error' && <p className="text-xs text-red-500">업로드 실패</p>}
+                          <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
+                          {status === 'uploading' && <p className="text-xs text-brand-500">{t('features.dubbing.components.steps.uploadStep.uploading')}</p>}
+                          {status === 'done' && <p className="text-xs text-emerald-600">{t('features.dubbing.components.steps.uploadStep.captionsUploaded')}</p>}
+                          {status === 'error' && <p className="text-xs text-red-500">{t('features.dubbing.components.steps.uploadStep.uploadFailed')}</p>}
                         </div>
                       </div>
                       {status === 'done' ? (
-                        <Badge variant="success">완료</Badge>
+                        <Badge variant="success">{t('features.dubbing.components.steps.uploadStep.done2')}</Badge>
                       ) : status === 'uploading' ? (
                         <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
                       ) : (
@@ -839,7 +682,7 @@ export function UploadStep() {
                           disabled={!isAuthenticated}
                         >
                           <Upload className="h-3.5 w-3.5" />
-                          {status === 'error' ? '재시도' : '업로드'}
+                          {status === 'error' ? t('features.dubbing.components.steps.uploadStep.retry') : t('features.dubbing.components.steps.uploadStep.upload')}
                         </Button>
                       )}
                     </div>
@@ -854,7 +697,7 @@ export function UploadStep() {
                   disabled={!isAuthenticated || completedLangs.every((c) => captionUploads[c] === 'done')}
                 >
                   <Upload className="h-4 w-4" />
-                  전체 자막 업로드
+                  {t('features.dubbing.components.steps.uploadStep.uploadAllCaptions')}
                 </Button>
               )}
             </Card>
@@ -863,29 +706,29 @@ export function UploadStep() {
           {/* Audio track toggle + extension upload */}
           {multiAudioVideoId && (
             <Card className="border-surface-200 dark:border-surface-700">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <CardTitle>멀티 오디오 트랙 추가</CardTitle>
-                  <p className="mt-1 text-xs text-surface-500">
-                    더빙된 오디오를 원본 영상에 멀티 트랙으로 추가합니다.
+                  <CardTitle>{t('features.dubbing.components.steps.uploadStep.addMultilingualAudioTracks')}</CardTitle>
+                  <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">
+                    {t('features.dubbing.components.steps.uploadStep.addDubbedAudioAsAudioTracksOnThe')}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setAudioTrackEnabled((v) => !v)}
-                  className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer ${
+                  className={`shrink-0 self-start rounded-full px-3 py-1 text-xs font-medium transition-all cursor-pointer sm:self-auto ${
                     audioTrackEnabled
                       ? 'bg-brand-500 text-white'
                       : 'bg-surface-200 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
                   }`}
                 >
-                  {audioTrackEnabled ? 'ON' : 'OFF'}
+                  {audioTrackEnabled ? t('features.dubbing.components.steps.uploadStep.on') : t('features.dubbing.components.steps.uploadStep.off')}
                 </button>
               </div>
 
               {!audioTrackEnabled && (
                 <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                  YouTube 멀티 오디오 트랙 기능 허가가 필요합니다. 허가 후 ON으로 전환하세요.
+                  {t('features.dubbing.components.steps.uploadStep.thisRequiresMultilingualAudioAccessOnYourYouTube')}
                 </p>
               )}
 
@@ -903,8 +746,8 @@ export function UploadStep() {
                   />
 
                   <div className="border-t border-surface-200 pt-4 dark:border-surface-700">
-                    <p className="text-xs text-surface-500 mb-3">
-                      확장 프로그램 없이 수동으로 진행하려면 아래 버튼을 사용하세요.
+                    <p className="mb-3 text-xs text-surface-500 dark:text-surface-300">
+                      {t('features.dubbing.components.steps.uploadStep.toProceedManuallyWithoutTheExtensionUseThe')}
                     </p>
                     <div className="space-y-2">
                       {completedLangs.map((code) => {
@@ -912,14 +755,14 @@ export function UploadStep() {
                         if (!lang) return null
                         const opening = studioOpenedLang === code
                         return (
-                          <div key={code} className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+                          <div key={code} className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-3">
                               <span className="text-lg">{lang.flag}</span>
-                              <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+                              <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
                             </div>
-                            <Button variant="outline" size="sm" onClick={() => handleAudioToStudio(code, multiAudioVideoId)} loading={opening}>
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => handleAudioToStudio(code, multiAudioVideoId)} loading={opening}>
                               <Volume2 className="h-3.5 w-3.5" />
-                              오디오 + Studio
+                              {t('features.dubbing.components.steps.uploadStep.downloadAudioAndOpenStudio')}
                             </Button>
                           </div>
                         )
@@ -936,9 +779,9 @@ export function UploadStep() {
       {/* ─── Audio preview for manual mode ─── */}
       {!autoUpload && completedLangs.length > 0 && (
         <Card>
-          <CardTitle>오디오 미리듣기</CardTitle>
-          <p className="mb-4 mt-1 text-xs text-surface-500">
-            업로드 전에 더빙된 오디오를 확인하세요.
+          <CardTitle>{t('features.dubbing.components.steps.uploadStep.reviewDubbedAudio')}</CardTitle>
+          <p className="mb-4 mt-1 text-xs text-surface-500 dark:text-surface-300">
+            {t('features.dubbing.components.steps.uploadStep.reviewTheDubbedAudioBeforeUploading')}
           </p>
           <div className="space-y-3">
             {completedLangs.map((code) => {
@@ -949,7 +792,7 @@ export function UploadStep() {
                 <div key={code} className="flex items-center gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800">
                   <span className="text-lg">{lang.flag}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-surface-900 dark:text-white mb-1">{lang.name}</p>
+                    <p className="text-sm font-medium text-surface-900 dark:text-white mb-1">{getDisplayLanguageName(code)}</p>
                     <audio controls preload="none" className="w-full h-8" src={lp.audioUrl}>
                       <track kind="captions" />
                     </audio>
@@ -965,35 +808,35 @@ export function UploadStep() {
       {deliverableMode === 'newDubbedVideos' && (
         <Card className="border-brand-200 dark:border-brand-800">
           <div className="flex items-center justify-between mb-4">
-            <CardTitle>YouTube 업로드</CardTitle>
+            <CardTitle>{t('features.dubbing.components.steps.uploadStep.youTubeUpload')}</CardTitle>
             {isAuthenticated ? (
-              <Badge variant="success">인증됨</Badge>
+              <Badge variant="success">{t('features.dubbing.components.steps.uploadStep.connected2')}</Badge>
             ) : (
-              <Badge variant="warning">Google 로그인 시 자동 인증</Badge>
+              <Badge variant="warning">{t('features.dubbing.components.steps.uploadStep.googleSignInRequired')}</Badge>
             )}
           </div>
 
           {isAuthenticated ? (
             <>
-              <p className="text-sm text-surface-500 mb-4">
-                더빙된 영상을 YouTube에 새 영상으로 업로드합니다.
+              <p className="mb-4 text-sm text-surface-500 dark:text-surface-300">
+                {t('features.dubbing.components.steps.uploadStep.uploadEachLanguageAsANewDubbedYouTube')}
               </p>
 
-              <div className="mb-4 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 text-xs text-surface-500 space-y-1">
+              <div className="mb-4 space-y-1 rounded-lg bg-surface-50 p-3 text-xs text-surface-500 dark:bg-surface-800/50 dark:text-surface-300">
                 <p>
-                  자동 업로드: <span className="font-medium text-surface-700 dark:text-surface-300">{autoUpload ? 'ON' : 'OFF'}</span>
+                  {t('features.dubbing.components.steps.uploadStep.autoUpload')}: <span className="font-medium text-surface-700 dark:text-surface-300">{autoUpload ? t('features.dubbing.components.steps.uploadStep.on2') : t('features.dubbing.components.steps.uploadStep.off2')}</span>
                   {' · '}
-                  공개: <span className="font-medium text-surface-700 dark:text-surface-300">{privacyStatus === 'public' ? '공개' : privacyStatus === 'unlisted' ? '일부 공개' : '비공개'}</span>
+                  {t('features.dubbing.components.steps.uploadStep.visibility')}: <span className="font-medium text-surface-700 dark:text-surface-300">{privacyLabel}</span>
                 </p>
                 <p>
-                  자막: <span className="font-medium text-surface-700 dark:text-surface-300">{shouldUploadCaptions ? 'ON' : 'OFF'}</span>
+                  {t('features.dubbing.components.steps.uploadStep.captions')}: <span className="font-medium text-surface-700 dark:text-surface-300">{shouldUploadCaptions ? t('features.dubbing.components.steps.uploadStep.on3') : t('features.dubbing.components.steps.uploadStep.off3')}</span>
                   {' · '}
-                  아동용: <span className="font-medium text-surface-700 dark:text-surface-300">{selfDeclaredMadeForKids ? '예' : '아니오'}</span>
+                  {t('features.dubbing.components.steps.uploadStep.madeForKids')}: <span className="font-medium text-surface-700 dark:text-surface-300">{selfDeclaredMadeForKids ? t('features.dubbing.components.steps.uploadStep.yes') : t('features.dubbing.components.steps.uploadStep.no')}</span>
                   {' · '}
-                  AI 합성 고지: <span className="font-medium text-surface-700 dark:text-surface-300">{shouldApplyAiDisclosure ? '설명에 추가' : '추가 안 함'}</span>
+                  {t('features.dubbing.components.steps.uploadStep.aIDisclosure')}: <span className="font-medium text-surface-700 dark:text-surface-300">{shouldApplyAiDisclosure ? t('features.dubbing.components.steps.uploadStep.addedToDescription') : t('features.dubbing.components.steps.uploadStep.notAdded')}</span>
                 </p>
                 {attachOriginalLink && originalYouTubeUrl && (
-                  <p className="break-words">원본 링크 첨부: {originalYouTubeUrl}</p>
+                  <p className="break-words">{t('features.dubbing.components.steps.uploadStep.originalLink')}: {originalYouTubeUrl}</p>
                 )}
               </div>
 
@@ -1006,23 +849,23 @@ export function UploadStep() {
                   return (
                     <div
                       key={code}
-                      className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800"
+                      className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-lg">{lang.flag}</span>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
+                          <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
                           {state?.status === 'uploading' && (
                             <Progress value={state.progress} size="sm" className="mt-1 w-32" />
                           )}
                           {state?.status === 'done' && state.videoId && (
                             <p className="text-xs text-emerald-600">
-                              업로드 완료 — <a
+                              {t('features.dubbing.components.steps.uploadStep.uploaded2')} - <a
                                 href={`https://youtube.com/watch?v=${state.videoId}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="underline"
-                              >영상 보기</a>
+                              >{t('features.dubbing.components.steps.uploadStep.viewVideo3')}</a>
                             </p>
                           )}
                           {state?.status === 'error' && (
@@ -1032,27 +875,29 @@ export function UploadStep() {
                       </div>
 
                       {state?.status === 'done' ? (
-                        <Badge variant="success">완료</Badge>
+                        <Badge variant="success">{t('features.dubbing.components.steps.uploadStep.uploaded3')}</Badge>
                       ) : state?.status === 'uploading' ? (
                         <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
                       ) : (
-                        <div className="flex gap-1">
+                        <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
                           <Button
                             variant="outline"
                             size="sm"
+                            className="min-w-0 justify-center"
                             onClick={() => handleYouTubeUpload(code)}
                             disabled={anyUploading || isYouTubeUploadLocked(state)}
                           >
                             <Upload className="h-3.5 w-3.5" />
-                            즉시
+                            {t('features.dubbing.components.steps.uploadStep.uploadNow')}
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
+                            className="min-w-0 justify-center"
                             onClick={() => queueYouTubeUpload(code)}
                             disabled={anyUploading || isYouTubeUploadLocked(state)}
                           >
-                            예약
+                            {t('features.dubbing.components.steps.uploadStep.uploadLater')}
                           </Button>
                         </div>
                       )}
@@ -1062,31 +907,31 @@ export function UploadStep() {
               </div>
 
               {completedLangs.length > 1 && (
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <Button
-                    className="flex-1"
+                    className="min-w-0 justify-center"
                     onClick={handleUploadAll}
                     disabled={anyUploading || !hasPendingYouTubeUploads}
                     loading={anyUploading}
                   >
                     <Upload className="h-4 w-4" />
-                    즉시 업로드
+                    {t('features.dubbing.components.steps.uploadStep.uploadAllNow')}
                   </Button>
                   <Button
                     variant="secondary"
-                    className="flex-1"
+                    className="min-w-0 justify-center"
                     onClick={handleQueueAll}
                     disabled={anyUploading || !hasPendingYouTubeUploads}
                   >
                     <Upload className="h-4 w-4" />
-                    예약 (탭 닫아도 OK)
+                    {t('features.dubbing.components.steps.uploadStep.queueAllForLater')}
                   </Button>
                 </div>
               )}
             </>
           ) : (
-            <p className="text-sm text-surface-500">
-              YouTube에 로그인하면 더빙된 영상을 자동으로 채널에 업로드할 수 있습니다.
+            <p className="text-sm text-surface-500 dark:text-surface-300">
+              {t('features.dubbing.components.steps.uploadStep.signInToYouTubeToUploadDubbedVideos')}
             </p>
           )}
         </Card>
@@ -1095,9 +940,9 @@ export function UploadStep() {
       {/* ─── Caption upload to original video (URL source) ─── */}
       {deliverableMode === 'newDubbedVideos' && originalYouTubeId && completedLangs.length > 0 && isAuthenticated && (
         <Card>
-          <CardTitle>원본 영상에 자막 추가</CardTitle>
-          <p className="mb-4 mt-1 text-sm text-surface-500">
-            번역된 자막(SRT)을 원본 YouTube 영상에 업로드합니다.
+          <CardTitle>{t('features.dubbing.components.steps.uploadStep.addCaptionsToOriginalVideo')}</CardTitle>
+          <p className="mb-4 mt-1 text-sm text-surface-500 dark:text-surface-300">
+            {t('features.dubbing.components.steps.uploadStep.uploadTranslatedCaptionsSRTToTheOriginalYouTube')}
           </p>
           <div className="space-y-2">
             {completedLangs.map((code) => {
@@ -1105,23 +950,23 @@ export function UploadStep() {
               if (!lang) return null
               const status = captionUploads[code]
               return (
-                <div key={code} className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800">
+                <div key={code} className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{lang.flag}</span>
                     <div>
-                      <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
-                      {status === 'done' && <p className="text-xs text-emerald-600">자막 업로드 완료</p>}
-                      {status === 'error' && <p className="text-xs text-red-500">업로드 실패</p>}
+                      <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
+                      {status === 'done' && <p className="text-xs text-emerald-600">{t('features.dubbing.components.steps.uploadStep.captionsUploaded2')}</p>}
+                      {status === 'error' && <p className="text-xs text-red-500">{t('features.dubbing.components.steps.uploadStep.uploadFailed2')}</p>}
                     </div>
                   </div>
                   {status === 'done' ? (
-                    <Badge variant="success">완료</Badge>
+                    <Badge variant="success">{t('features.dubbing.components.steps.uploadStep.done3')}</Badge>
                   ) : status === 'uploading' ? (
                     <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
                   ) : (
-                    <Button variant="outline" size="sm" onClick={() => uploadCaptions(originalYouTubeId, [code])}>
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => uploadCaptions(originalYouTubeId, [code])}>
                       <Upload className="h-3.5 w-3.5" />
-                      자막 업로드
+                      {t('features.dubbing.components.steps.uploadStep.uploadCaptions')}
                     </Button>
                   )}
                 </div>
@@ -1134,7 +979,7 @@ export function UploadStep() {
       {/* ─── Download section ─── */}
       {completedLangs.length > 0 && (
         <Card>
-          <CardTitle>더빙 파일 다운로드</CardTitle>
+          <CardTitle>{t('features.dubbing.components.steps.uploadStep.downloadDubbingFiles')}</CardTitle>
           <div className="mt-4 space-y-2">
             {completedLangs.map((code) => {
               const lang = getLanguageByCode(code)
@@ -1143,31 +988,33 @@ export function UploadStep() {
               return (
                 <div
                   key={code}
-                  className="flex items-center justify-between rounded-lg border border-surface-200 p-3 dark:border-surface-800"
+                  className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{lang.flag}</span>
                     <div>
-                      <p className="text-sm font-medium text-surface-900 dark:text-white">{lang.name}</p>
-                      <p className="text-xs text-surface-400">
-                        {deliverableMode === 'originalWithMultiAudio' ? 'Audio + SRT' : 'Video + Audio + SRT'}
+                      <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
+                      <p className="text-xs text-surface-500 dark:text-surface-300">
+                        {deliverableMode === 'originalWithMultiAudio'
+                          ? t('features.dubbing.components.steps.uploadStep.audioCaptions')
+                          : t('features.dubbing.components.steps.uploadStep.videoAudioCaptions')}
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
                     {deliverableMode !== 'originalWithMultiAudio' && (
-                      <Button variant="outline" size="sm" onClick={() => handleDownload(code, 'video')}
+                      <Button variant="outline" size="sm" className="min-w-0 justify-center" onClick={() => handleDownload(code, 'video')}
                         loading={loadingDownload === `${code}-video`}>
-                        <Download className="h-3.5 w-3.5" /> Video
+                        <Download className="h-3.5 w-3.5" /> {t('features.dubbing.components.steps.uploadStep.video')}
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" onClick={() => handleDownload(code, 'voiceAudio')}
+                    <Button variant="outline" size="sm" className="min-w-0 justify-center" onClick={() => handleDownload(code, 'voiceAudio')}
                       loading={loadingDownload === `${code}-voiceAudio`}>
-                      <Download className="h-3.5 w-3.5" /> Audio
+                      <Download className="h-3.5 w-3.5" /> {t('features.dubbing.components.steps.uploadStep.audio')}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDownload(code, 'translatedSubtitle')}
+                    <Button variant="outline" size="sm" className="min-w-0 justify-center" onClick={() => handleDownload(code, 'translatedSubtitle')}
                       loading={loadingDownload === `${code}-translatedSubtitle`}>
-                      <Download className="h-3.5 w-3.5" /> SRT
+                      <Download className="h-3.5 w-3.5" /> {t('features.dubbing.components.steps.uploadStep.captions2')}
                     </Button>
                   </div>
                 </div>
@@ -1180,15 +1027,15 @@ export function UploadStep() {
       {/* ─── Failed languages ─── */}
       {failedLangs.length > 0 && (
         <Card className="border-red-200 dark:border-red-800">
-          <CardTitle>실패한 언어</CardTitle>
+          <CardTitle>{t('features.dubbing.components.steps.uploadStep.failedLanguages')}</CardTitle>
           <div className="mt-2 flex flex-wrap gap-2">
             {failedLangs.map((code) => {
               const lang = getLanguageByCode(code)
-              return lang ? <Badge key={code} variant="error">{lang.flag} {lang.name}</Badge> : null
+              return lang ? <Badge key={code} variant="error">{lang.flag} {getDisplayLanguageName(code)}</Badge> : null
             })}
           </div>
-          <p className="mt-2 text-xs text-surface-500">
-            이 언어들은 처리에 실패했습니다. 새 더빙 작업으로 다시 시도할 수 있습니다.
+          <p className="mt-2 text-xs text-surface-500 dark:text-surface-300">
+            {t('features.dubbing.components.steps.uploadStep.theseLanguagesFailedYouCanTryThemAgain')}
           </p>
         </Card>
       )}
@@ -1196,22 +1043,36 @@ export function UploadStep() {
       {/* ─── Subtitle & Script editor (merged) ─── */}
       {completedLangs.length > 0 && spaceSeq && (
         <Card>
-          <CardTitle>자막 · 스크립트 편집</CardTitle>
-          <p className="mb-4 mt-1 text-xs text-surface-500">
-            번역 텍스트는 Perso에 저장되어 더빙 오디오에 반영되며(재생성 필요),
-            시간 변경은 SRT 다운로드와 YouTube 자막 트랙에만 적용됩니다.
-            업로드된 영상이 있으면 한 번에 YouTube 자막을 교체할 수 있습니다.
+          <CardTitle>
+            {t(
+              allowDialogueEditingInOutput
+                ? 'features.dubbing.components.steps.uploadStep.editCaptionsAndDialogue'
+                : 'features.dubbing.components.steps.uploadStep.editCaptionsOnly',
+            )}
+          </CardTitle>
+          <p className="mb-4 mt-1 text-xs text-surface-500 dark:text-surface-300">
+            {t(
+              allowDialogueEditingInOutput
+                ? 'features.dubbing.components.steps.uploadStep.textEditsApplyToRegeneratedDubbingAudioTiming'
+                : 'features.dubbing.components.steps.uploadStep.captionOnlyEditsApplyToCaptionFiles',
+            )}
           </p>
           <div className="space-y-2">
-            {completedLangs.map((code) => (
-              <SubtitleScriptEditor
-                key={code}
-                langCode={code}
-                projectSeq={projectMap[code] || 0}
-                spaceSeq={spaceSeq}
-                youtubeVideoId={ytUploads[code]?.videoId ?? null}
-              />
-            ))}
+            {completedLangs.map((code) => {
+              const projectSeq = projectMap[code]
+              if (!projectSeq) return null
+
+              return (
+                <SubtitleScriptEditor
+                  key={code}
+                  langCode={code}
+                  projectSeq={projectSeq}
+                  spaceSeq={spaceSeq}
+                  allowDialogueEditing={allowDialogueEditingInOutput}
+                  youtubeVideoId={ytUploads[code]?.videoId ?? null}
+                />
+              )
+            })}
           </div>
         </Card>
       )}
@@ -1219,9 +1080,9 @@ export function UploadStep() {
       {/* ─── Actions ─── */}
       <div className="flex gap-3 justify-center">
         <Button variant="secondary" onClick={handleNewDubbing}>
-          <RotateCcw className="h-4 w-4" /> 새 더빙
+          <RotateCcw className="h-4 w-4" /> {t('features.dubbing.components.steps.uploadStep.newDubbing')}
         </Button>
-        <Button onClick={handleGoToDashboard}>대시보드로</Button>
+        <Button onClick={handleGoToDashboard}>{t('features.dubbing.components.steps.uploadStep.goToDashboard')}</Button>
       </div>
     </div>
   )

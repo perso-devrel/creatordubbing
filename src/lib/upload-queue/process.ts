@@ -8,6 +8,7 @@ import {
 import { createYouTubeUpload, updateJobLanguageYouTube } from '@/lib/db/queries'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 import { uploadCaptionToYouTube, uploadVideoToYouTube } from '@/lib/youtube/upload'
+import { resolveCaptionTrackName } from '@/lib/youtube/captions'
 import { logger } from '@/lib/logger'
 
 export interface ProcessUploadQueueOptions {
@@ -69,9 +70,7 @@ export async function processUploadQueue(options: ProcessUploadQueueOptions = {}
             accessToken,
             videoId: result.videoId,
             language: item.captionLanguage || item.langCode,
-            // captionName이 명시적으로 설정된 경우만 사용하고, 그 외엔 빈 문자열로 두어
-            // YouTube가 시청자 로케일에 맞춰 언어 이름을 자동 표시하도록 함.
-            name: item.captionName ?? '',
+            name: resolveCaptionTrackName(item.captionLanguage || item.langCode, item.captionName),
             srtContent: item.srtContent,
           })
         } catch (err) {

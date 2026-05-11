@@ -1,21 +1,22 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Languages, Moon, Sun } from 'lucide-react'
-import { useThemeStore } from '@/stores/themeStore'
+import { Languages } from 'lucide-react'
+import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { useAuthStore } from '@/stores/authStore'
 import { signInWithGoogle } from '@/lib/google-auth'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { Button } from '@/components/ui'
+import { AppLocaleSelect } from '@/components/layout/AppLocaleSelect'
+import { useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
 
 export function LandingNavBar() {
-  const { mode, toggle } = useThemeStore()
   const { isAuthenticated } = useAuthStore()
   const addToast = useNotificationStore((s) => s.addToast)
-  const router = useRouter()
+  const router = useLocaleRouter()
   const [loading, setLoading] = useState(false)
+  const t = useLocaleText()
 
   const handleGoogleLogin = async () => {
     setLoading(true)
@@ -24,7 +25,10 @@ export function LandingNavBar() {
       useAuthStore.getState().setUser(user)
       router.push('/dashboard')
     } catch (err) {
-      addToast({ type: 'error', title: '로그인 실패', message: err instanceof Error ? err.message : '' })
+      const message = err instanceof Error && err.message.includes(t('internal.keyword.popup'))
+        ? t('components.layout.landingNavBar.allowPopUpsThenSignInAgain')
+        : t('components.layout.landingNavBar.pleaseTryAgainShortlyContactUsIfThe')
+      addToast({ type: 'error', title: t('components.layout.landingNavBar.couldNotSignIn'), message })
     } finally {
       setLoading(false)
     }
@@ -32,36 +36,37 @@ export function LandingNavBar() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-surface-200/50 bg-white/80 backdrop-blur-md dark:border-surface-800/50 dark:bg-surface-950/80">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-500">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+        <LocaleLink href="/" className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
-          <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
-            Dub<span className="text-brand-500">tube</span>
+          <span className="hidden text-lg font-bold text-surface-900 dark:text-surface-100 min-[360px]:inline">
+            Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
           </span>
-        </Link>
+        </LocaleLink>
 
         <div className="hidden items-center gap-6 md:flex">
-          <a href="#features" className="text-sm text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100">기능</a>
-          <a href="#pricing" className="text-sm text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100">요금제</a>
-          <a href="#how-it-works" className="text-sm text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100">이용 방법</a>
+          <a href="#features" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t('components.layout.landingNavBar.features')}</a>
+          <a href="#pricing" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t('components.layout.landingNavBar.pricing')}</a>
+          <a href="#how-it-works" className="text-sm text-surface-700 hover:text-surface-950 dark:text-surface-300 dark:hover:text-white">{t('components.layout.landingNavBar.howItWorks')}</a>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={toggle} aria-label="테마 전환">
-            {mode === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
+          <AppLocaleSelect className="w-28 sm:w-32" />
           {isAuthenticated ? (
-            <Link href="/dashboard">
-              <Button size="sm">대시보드</Button>
-            </Link>
+            <LocaleLink href="/dashboard">
+              <Button size="sm">
+                <span className="hidden sm:inline">{t('components.layout.landingNavBar.dashboard')}</span>
+                <span className="sm:hidden">{t('components.layout.landingNavBar.home')}</span>
+              </Button>
+            </LocaleLink>
           ) : (
             <button
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              aria-label="Google로 시작하기"
+              aria-label={t('components.layout.landingNavBar.startWithGoogle')}
               className="inline-flex h-9 items-center gap-2 rounded-md border border-[#747775] bg-white px-3 text-sm font-medium text-[#1f1f1f] transition-colors hover:bg-[#f8f9fa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0b57d0] disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#8e918f] dark:bg-[#131314] dark:text-[#e3e3e3] dark:hover:bg-[#1f1f1f]"
             >
               {loading ? (
@@ -74,7 +79,8 @@ export function LandingNavBar() {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
               )}
-              <span>Google로 시작하기</span>
+              <span className="hidden sm:inline">{t('components.layout.landingNavBar.startWithGoogle2')}</span>
+              <span className="sm:hidden">{t('components.layout.landingNavBar.start')}</span>
             </button>
           )}
         </div>

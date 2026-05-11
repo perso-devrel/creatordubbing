@@ -3,6 +3,10 @@ export const APP_LOCALES = ['ko', 'en'] as const
 export type AppLocale = (typeof APP_LOCALES)[number]
 
 export const DEFAULT_APP_LOCALE: AppLocale = 'ko'
+export const FALLBACK_APP_LOCALE: AppLocale = 'en'
+export const LOCALE_COOKIE = 'dubtube_locale'
+export const LOCALE_HEADER = 'x-dubtube-locale'
+export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 export const APP_LOCALE_LABELS: Record<AppLocale, { label: string; nativeLabel: string }> = {
   ko: { label: 'Korean', nativeLabel: '한국어' },
@@ -17,48 +21,146 @@ export function resolveAppLocale(value: string | null | undefined): AppLocale {
   return isAppLocale(value) ? value : DEFAULT_APP_LOCALE
 }
 
+export function resolvePreferredLocale(
+  value: string | null | undefined,
+  fallback: AppLocale = DEFAULT_APP_LOCALE,
+): AppLocale {
+  if (!value) return fallback
+  const normalized = value.toLowerCase()
+  const direct = APP_LOCALES.find((locale) => locale === normalized)
+  if (direct) return direct
+  const base = normalized.split('-')[0]
+  return APP_LOCALES.find((locale) => locale === base) ?? fallback
+}
+
+export function resolveLocaleFromAcceptLanguage(
+  acceptLanguage: string | null | undefined,
+  fallback: AppLocale = DEFAULT_APP_LOCALE,
+): AppLocale {
+  if (!acceptLanguage) return fallback
+
+  const candidates = acceptLanguage
+    .split(',')
+    .map((part) => {
+      const [tag, qValue] = part.trim().split(';q=')
+      const quality = qValue ? Number.parseFloat(qValue) : 1
+      return { tag, quality: Number.isFinite(quality) ? quality : 0 }
+    })
+    .filter((candidate) => candidate.tag)
+    .sort((a, b) => b.quality - a.quality)
+
+  for (const candidate of candidates) {
+    const locale = resolvePreferredLocale(candidate.tag, fallback)
+    if (locale !== fallback || candidate.tag.toLowerCase().startsWith(fallback)) {
+      return locale
+    }
+  }
+
+  return fallback
+}
+
+export function getPathLocale(pathname: string | null | undefined): AppLocale | null {
+  if (!pathname) return null
+  const segment = pathname.split('/').filter(Boolean)[0]
+  return isAppLocale(segment) ? segment : null
+}
+
+export function stripLocalePrefix(pathname: string): string {
+  const parts = pathname.split('/')
+  const first = parts[1]
+  if (!isAppLocale(first)) return pathname || '/'
+  const stripped = `/${parts.slice(2).join('/')}`
+  return stripped === '/' ? '/' : stripped.replace(/\/$/, '') || '/'
+}
+
+export function withLocalePath(path: string, locale: AppLocale): string {
+  if (!path || path === '/') return `/${locale}`
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('#')) return path
+
+  const [pathWithoutHash, hash = ''] = path.split('#')
+  const [pathname, query = ''] = pathWithoutHash.split('?')
+  const normalizedPath = stripLocalePrefix(pathname.startsWith('/') ? pathname : `/${pathname}`)
+  const localized = normalizedPath === '/' ? `/${locale}` : `/${locale}${normalizedPath}`
+  return `${localized}${query ? `?${query}` : ''}${hash ? `#${hash}` : ''}`
+}
+
 export interface MarketLanguagePreset {
   id: string
-  labelKo: string
-  labelEn: string
-  descriptionKo: string
-  descriptionEn: string
+  labelKey: string
+  descriptionKey: string
   languageCodes: string[]
+}
+
+export const CUSTOM_METADATA_TARGET_PRESET = 'custom'
+export const DEFAULT_METADATA_TARGET_LANGUAGES = ['ko', 'en']
+
+export const CUSTOM_MARKET_LANGUAGE_PRESET: MarketLanguagePreset = {
+  id: CUSTOM_METADATA_TARGET_PRESET,
+  labelKey: 'marketPreset.custom.label',
+  descriptionKey: 'marketPreset.custom.description',
+  languageCodes: [...DEFAULT_METADATA_TARGET_LANGUAGES],
 }
 
 export const MARKET_LANGUAGE_PRESETS: MarketLanguagePreset[] = [
   {
     id: 'core',
-    labelKo: '기본 출시',
-    labelEn: 'Core launch',
-    descriptionKo: '국내 사용자를 우선으로 하되 영어권 시청자까지 바로 대응합니다.',
-    descriptionEn: 'Start with Korea-first operations while covering English-speaking viewers.',
+    labelKey: 'marketPreset.core.label',
+    descriptionKey: 'marketPreset.core.description',
     languageCodes: ['ko', 'en'],
   },
   {
     id: 'creator-growth',
-    labelKo: '크리에이터 성장 시장',
-    labelEn: 'Creator growth markets',
-    descriptionKo: 'YouTube 소비가 크고 현지화 효율이 좋은 국가권을 우선 공략합니다.',
-    descriptionEn: 'Prioritize regions with large YouTube audiences and efficient localization ROI.',
+    labelKey: 'marketPreset.creatorGrowth.label',
+    descriptionKey: 'marketPreset.creatorGrowth.description',
     languageCodes: ['en', 'ja', 'es', 'pt', 'id', 'vi', 'th', 'hi'],
   },
   {
     id: 'global-broad',
-    labelKo: '글로벌 확장',
-    labelEn: 'Global expansion',
-    descriptionKo: '초기 성과가 확인된 뒤 유럽과 중동 주요 언어까지 확장합니다.',
-    descriptionEn: 'Expand into major European and Middle Eastern languages after initial traction.',
+    labelKey: 'marketPreset.globalBroad.label',
+    descriptionKey: 'marketPreset.globalBroad.description',
     languageCodes: ['en', 'ja', 'es', 'pt', 'fr', 'de', 'id', 'vi', 'th', 'hi', 'ar'],
   },
 ]
 
 export const DEFAULT_METADATA_TARGET_PRESET = 'creator-growth'
+export const METADATA_TARGET_PRESET_OPTIONS: MarketLanguagePreset[] = [
+  CUSTOM_MARKET_LANGUAGE_PRESET,
+  ...MARKET_LANGUAGE_PRESETS,
+]
+
+export function normalizeMetadataTargetLanguages(languageCodes: readonly string[] | null | undefined): string[] {
+  const normalized = Array.from(new Set(
+    (languageCodes ?? [])
+      .map((code) => code.trim())
+      .filter(Boolean),
+  ))
+  return normalized.length > 0 ? normalized : [...DEFAULT_METADATA_TARGET_LANGUAGES]
+}
+
+export function resolveMetadataTargetPresetId(id: string | null | undefined): string {
+  if (id === CUSTOM_METADATA_TARGET_PRESET) return CUSTOM_METADATA_TARGET_PRESET
+  return (
+    MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === id)?.id ??
+    DEFAULT_METADATA_TARGET_PRESET
+  )
+}
 
 export function getMarketLanguagePreset(id: string): MarketLanguagePreset {
+  if (id === CUSTOM_METADATA_TARGET_PRESET) return CUSTOM_MARKET_LANGUAGE_PRESET
   return (
     MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === id) ??
     MARKET_LANGUAGE_PRESETS.find((preset) => preset.id === DEFAULT_METADATA_TARGET_PRESET) ??
     MARKET_LANGUAGE_PRESETS[0]
   )
+}
+
+export function getMetadataTargetLanguageCodes(
+  presetId: string,
+  customLanguageCodes: readonly string[] | null | undefined = DEFAULT_METADATA_TARGET_LANGUAGES,
+): string[] {
+  const preset = getMarketLanguagePreset(presetId)
+  if (preset.id === CUSTOM_METADATA_TARGET_PRESET) {
+    return normalizeMetadataTargetLanguages(customLanguageCodes)
+  }
+  return [...preset.languageCodes]
 }
