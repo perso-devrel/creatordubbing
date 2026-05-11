@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: LocaleMetadataProps): Promise
   return getMarketingMetadata(locale, 'terms')
 }
 
-const LAST_UPDATED = '2026-04-29'
+const LAST_UPDATED = '2026-05-11'
 
 export default async function TermsPage({ params }: LocaleMetadataProps) {
   const locale = await resolveMetadataLocale(params)
@@ -46,7 +46,6 @@ export default async function TermsPage({ params }: LocaleMetadataProps) {
         <p>{t('legal.terms.section.2.body')}</p>
         <ul className="mt-2 list-disc space-y-1 pl-6">
           <li><strong>YouTube Data API v3</strong> — {t('legal.terms.section.2.youtubeDataApi')}</li>
-          <li><strong>YouTube Analytics API</strong> — {t('legal.terms.section.2.youtubeAnalyticsApi')}</li>
           <li><strong>Perso.ai API</strong> — {t('legal.terms.section.2.persoApi')}</li>
         </ul>
       </Section>
@@ -136,10 +135,10 @@ export default async function TermsPage({ params }: LocaleMetadataProps) {
         <p>
           {t('legal.terms.section.12.beforeEmail')}
           <a
-            href="mailto:devrel.365@gmail.com"
+            href="mailto:gyuwon05@gmail.com"
             className="text-brand-600 hover:underline dark:text-brand-400"
           >
-            devrel.365@gmail.com
+            gyuwon05@gmail.com
           </a>
           {t('legal.common.emailSuffix')}
         </p>

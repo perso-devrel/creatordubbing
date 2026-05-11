@@ -262,6 +262,8 @@ export const dubbingMessages = {
   "features.dubbing.components.steps.videoInputStep.importingTheVideoFileLongerVideosCanTake": { ko: "영상 파일을 가져오는 중입니다. 긴 영상은 몇 분 걸릴 수 있습니다.", en: "Importing the video file. Longer videos can take a few minutes." },
   "features.dubbing.components.steps.videoInputStep.loadingChannelInformation": { ko: "채널 정보를 불러오는 중...", en: "Loading channel information..." },
   "features.dubbing.components.steps.videoInputStep.loadingVideos": { ko: "영상 목록을 불러오는 중...", en: "Loading videos..." },
+  "features.dubbing.components.steps.videoInputStep.loadMyVideos": { ko: "내 영상 불러오기", en: "Load my videos" },
+  "features.dubbing.components.steps.videoInputStep.loadMyVideosDescription": { ko: "내 영상 목록을 가져오려면 YouTube 영상 조회 권한을 한 번 더 허용해 주세요.", en: "Allow YouTube video read permission to load your video list." },
   "features.dubbing.components.steps.videoInputStep.mP4MOVAndWebMUpTo30Minutes": { ko: "MP4, MOV, WebM 지원 · 최대 30분", en: "MP4, MOV, and WebM · up to 30 minutes" },
   "features.dubbing.components.steps.videoInputStep.myVideos": { ko: "내 영상", en: "My videos" },
   "features.dubbing.components.steps.videoInputStep.nextChooseOutput": { ko: "다음: 결과물 선택", en: "Next: Choose output" },

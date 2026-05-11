@@ -8,7 +8,7 @@ import {
 
 describe('aiDisclosure', () => {
   it('returns localized disclosure text', () => {
-    expect(getAiDisclosureText('ko')).toBe('Dubtube에서 AI 보이스 클론으로 더빙되었습니다.')
+    expect(getAiDisclosureText('ko')).toBe('Dubtube에서 AI를 활용하여 더빙되었습니다.')
     expect(getAiDisclosureText('ja')).toBe('DubtubeでAI音声クローンにより吹き替えられました。')
     expect(getAiDisclosureText('pt-BR')).toBe('Este video foi dublado pela Dubtube com um clone de voz de IA.')
   })
@@ -24,6 +24,7 @@ describe('aiDisclosure', () => {
   })
 
   it('strips only known disclosure footer text', () => {
+    expect(stripAiDisclosureFooter('사용자 설명\n\nDubtube에서 AI를 활용하여 더빙되었습니다.')).toBe('사용자 설명')
     expect(stripAiDisclosureFooter('사용자 설명\n\nDubtube에서 AI 보이스 클론으로 더빙되었습니다.')).toBe('사용자 설명')
     expect(stripAiDisclosureFooter('사용자 설명\n\n원본 영상에서 AI 보이스 클론으로 더빙되었습니다.')).toBe('사용자 설명')
     expect(stripAiDisclosureFooter('사용자가 직접 작성한 설명')).toBe('사용자가 직접 작성한 설명')
@@ -39,7 +40,7 @@ describe('aiDisclosure', () => {
 
   it('appends disclosure as a non-editable footer when enabled', () => {
     expect(appendAiDisclosureFooter('사용자 설명', 'ko', true)).toBe(
-      '사용자 설명\n\nDubtube에서 AI 보이스 클론으로 더빙되었습니다.',
+      '사용자 설명\n\nDubtube에서 AI를 활용하여 더빙되었습니다.',
     )
   })
 })

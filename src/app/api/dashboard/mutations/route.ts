@@ -29,6 +29,37 @@ import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+export const maxDuration = 300
+
+async function processQueuedUploadNow(
+  userId: string,
+  queueId: number,
+  initialStatus: string,
+) {
+  const processed = await processUploadQueue({ userId, queueId, limit: 1 })
+  const uploadResult = processed.results.find((item) => item.id === queueId)
+
+  if (uploadResult?.status === 'done') {
+    return {
+      status: 'uploaded' as const,
+      queueId,
+      youtubeVideoId: uploadResult.videoId ?? null,
+    }
+  }
+
+  if (uploadResult?.status === 'failed') {
+    return {
+      status: 'failed' as const,
+      queueId,
+      error: uploadResult.error ?? 'upload_failed',
+    }
+  }
+
+  return {
+    status: initialStatus,
+    queueId,
+  }
+}
 
 export async function POST(req: NextRequest) {
   const auth = await requireSession(req)
@@ -182,16 +213,20 @@ export async function POST(req: NextRequest) {
       }
       case 'queueYouTubeUpload': {
         const result = await enqueueYouTubeUpload(action.payload)
-        if ('queueId' in result) {
-          processUploadQueue({ userId: auth.session.uid, queueId: result.queueId, limit: 1 }).catch(() => {})
+        if ('queueId' in result && typeof result.queueId === 'number') {
+          if (action.payload.processNow) {
+            return apiOk(await processQueuedUploadNow(auth.session.uid, result.queueId, result.status))
+          }
         }
         return apiOk(result)
       }
       case 'queueJobLanguageYouTubeUpload': {
         const { jobId: queuedJobId, langCode } = action.payload
         const result = await enqueueCompletedDubbingUpload(queuedJobId, langCode, { force: true })
-        if ('queueId' in result) {
-          processUploadQueue({ userId: auth.session.uid, queueId: result.queueId, limit: 1 }).catch(() => {})
+        if ('queueId' in result && typeof result.queueId === 'number') {
+          if (action.payload.processNow) {
+            return apiOk(await processQueuedUploadNow(auth.session.uid, result.queueId, result.status))
+          }
         }
         return apiOk(result)
       }

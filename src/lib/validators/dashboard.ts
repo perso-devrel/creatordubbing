@@ -200,6 +200,7 @@ const queueYouTubeUploadSchema = z.object({
     selfDeclaredMadeForKids: z.boolean().optional(),
     containsSyntheticMedia: z.boolean().optional(),
     resetFailed: z.boolean().optional(),
+    processNow: z.boolean().optional(),
   }),
 })
 
@@ -208,6 +209,7 @@ const queueJobLanguageYouTubeUploadSchema = z.object({
   payload: z.object({
     jobId: z.number().int(),
     langCode: z.string().min(1),
+    processNow: z.boolean().optional(),
   }),
 })
 

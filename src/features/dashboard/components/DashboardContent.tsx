@@ -64,11 +64,6 @@ const LanguagePerformance = dynamic(
   { ssr: false, loading: () => <ChartSkeleton /> },
 )
 
-const AnalyticsChart = dynamic(
-  () => import('./AnalyticsChart').then((m) => m.AnalyticsChart),
-  { ssr: false, loading: () => <ChartSkeleton /> },
-)
-
 export function DashboardContent({ initial }: { initial: DashboardInitialData }) {
   const t = useLocaleText()
 
@@ -90,10 +85,6 @@ export function DashboardContent({ initial }: { initial: DashboardInitialData })
           <LanguagePerformance />
         </LazyChart>
       </div>
-
-      <LazyChart>
-        <AnalyticsChart videoIds={initial.ytVideoIds} />
-      </LazyChart>
 
       <RecentJobs initialData={initial.jobs} />
     </div>

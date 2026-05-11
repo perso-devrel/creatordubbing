@@ -31,6 +31,15 @@ import { resolveCaptionTrackName } from '@/lib/youtube/captions'
 
 type UploadStatus = 'idle' | 'uploading' | 'done' | 'error'
 
+type JobLanguageUploadStatusResponse = {
+  jobId: number
+  languages: {
+    languageCode: string
+    youtubeVideoId: string | null
+    youtubeUploadStatus: string | null
+  }[]
+}
+
 function isYouTubeUploadLocked(state: YouTubeUploadState | undefined) {
   return state?.status === 'uploading' || state?.status === 'done'
 }
@@ -85,12 +94,6 @@ export function UploadStep() {
     if (!language) return langCode
     return locale === 'ko' ? language.nativeName : language.name
   }, [locale])
-  const privacyLabel = privacyStatus === 'public'
-    ? t('features.dubbing.components.steps.uploadStep.public')
-    : privacyStatus === 'unlisted'
-      ? t('features.dubbing.components.steps.uploadStep.unlisted')
-      : t('features.dubbing.components.steps.uploadStep.private')
-
   // ─── Metadata translations (Gemini) ─────────────────────────────────
   // Upload Step에 진입한 시점의 (title, description, metadataLanguage, selectedLanguages) 조합으로
   // 한 번 번역해두고 캐시. 모든 언어별 업로드와 localizations에서 공용으로 쓴다.
@@ -373,7 +376,7 @@ export function UploadStep() {
   }, [fetchDownloads, projectMap, spaceSeq])
 
   // ─── Upload dubbed video to YouTube (newDubbedVideos mode) ──────────
-  const handleYouTubeUpload = useCallback(async (langCode: string) => {
+  const handleYouTubeUpload = useCallback(async (langCode: string, processNow = true) => {
     const existingUpload = useDubbingStore.getState().youtubeUploads[langCode]
     if (isYouTubeUploadLocked(existingUpload)) return
 
@@ -393,17 +396,21 @@ export function UploadStep() {
         status: string
         queueId?: number
         youtubeVideoId?: string | null
+        error?: string
       }>({
         type: 'queueJobLanguageYouTubeUpload',
-        payload: { jobId: dbJobId, langCode },
+        payload: { jobId: dbJobId, langCode, processNow },
       })
-      if (result.status === 'already_uploaded') {
+      if (result.status === 'already_uploaded' || result.status === 'uploaded') {
         setYouTubeUploadState(langCode, {
           status: 'done',
           progress: 100,
           videoId: result.youtubeVideoId || undefined,
         })
         return
+      }
+      if (result.status === 'failed') {
+        throw new Error(result.error || t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheYouTubeUploadPleaseTry'))
       }
       if (result.status === 'queued' || result.status === 'already_queued' || result.status === 'already_uploading') {
         setYouTubeUploadState(langCode, { status: 'uploading', progress: 10 })
@@ -426,7 +433,7 @@ export function UploadStep() {
 
   // ─── Queue upload (background — survives tab close) ─────────────────
   const queueYouTubeUpload = useCallback(async (langCode: string) => {
-    await handleYouTubeUpload(langCode)
+    await handleYouTubeUpload(langCode, false)
   }, [handleYouTubeUpload])
 
   const completedLangs = useMemo(() => selectedLanguages.filter((code) => {
@@ -543,6 +550,54 @@ export function UploadStep() {
       handleUploadAll()
     }
   }, [deliverableMode, autoUpload, isAuthenticated, uploadReviewConfirmed, hasAutoUploadCandidates, anyUploading, handleUploadAll])
+
+  useEffect(() => {
+    if (!dbJobId || !anyUploading) return
+
+    let cancelled = false
+
+    const syncUploadStatus = async () => {
+      try {
+        const res = await fetch(`/api/dashboard/job-language-status?jobId=${dbJobId}`, {
+          cache: 'no-store',
+        })
+        const json = await res.json()
+        if (!json.ok) throw new Error(json.error?.message || 'status_check_failed')
+        if (cancelled) return
+
+        const data = json.data as JobLanguageUploadStatusResponse
+        const currentUploads = useDubbingStore.getState().youtubeUploads
+
+        for (const item of data.languages) {
+          const current = currentUploads[item.languageCode]
+          if (current?.status !== 'uploading') continue
+
+          if (item.youtubeVideoId || item.youtubeUploadStatus === 'uploaded') {
+            setYouTubeUploadState(item.languageCode, {
+              status: 'done',
+              progress: 100,
+              videoId: item.youtubeVideoId || undefined,
+            })
+          } else if (item.youtubeUploadStatus === 'failed') {
+            setYouTubeUploadState(item.languageCode, {
+              status: 'error',
+              progress: 0,
+              error: t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheYouTubeUploadPleaseTry'),
+            })
+          }
+        }
+      } catch (err) {
+        console.warn('[Dubtube] Could not check YouTube upload status', err)
+      }
+    }
+
+    syncUploadStatus()
+    const interval = window.setInterval(syncUploadStatus, 5_000)
+    return () => {
+      cancelled = true
+      window.clearInterval(interval)
+    }
+  }, [anyUploading, dbJobId, setYouTubeUploadState, t])
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -821,24 +876,6 @@ export function UploadStep() {
               <p className="mb-4 text-sm text-surface-500 dark:text-surface-300">
                 {t('features.dubbing.components.steps.uploadStep.uploadEachLanguageAsANewDubbedYouTube')}
               </p>
-
-              <div className="mb-4 space-y-1 rounded-lg bg-surface-50 p-3 text-xs text-surface-500 dark:bg-surface-800/50 dark:text-surface-300">
-                <p>
-                  {t('features.dubbing.components.steps.uploadStep.autoUpload')}: <span className="font-medium text-surface-700 dark:text-surface-300">{autoUpload ? t('features.dubbing.components.steps.uploadStep.on2') : t('features.dubbing.components.steps.uploadStep.off2')}</span>
-                  {' · '}
-                  {t('features.dubbing.components.steps.uploadStep.visibility')}: <span className="font-medium text-surface-700 dark:text-surface-300">{privacyLabel}</span>
-                </p>
-                <p>
-                  {t('features.dubbing.components.steps.uploadStep.captions')}: <span className="font-medium text-surface-700 dark:text-surface-300">{shouldUploadCaptions ? t('features.dubbing.components.steps.uploadStep.on3') : t('features.dubbing.components.steps.uploadStep.off3')}</span>
-                  {' · '}
-                  {t('features.dubbing.components.steps.uploadStep.madeForKids')}: <span className="font-medium text-surface-700 dark:text-surface-300">{selfDeclaredMadeForKids ? t('features.dubbing.components.steps.uploadStep.yes') : t('features.dubbing.components.steps.uploadStep.no')}</span>
-                  {' · '}
-                  {t('features.dubbing.components.steps.uploadStep.aIDisclosure')}: <span className="font-medium text-surface-700 dark:text-surface-300">{shouldApplyAiDisclosure ? t('features.dubbing.components.steps.uploadStep.addedToDescription') : t('features.dubbing.components.steps.uploadStep.notAdded')}</span>
-                </p>
-                {attachOriginalLink && originalYouTubeUrl && (
-                  <p className="break-words">{t('features.dubbing.components.steps.uploadStep.originalLink')}: {originalYouTubeUrl}</p>
-                )}
-              </div>
 
               <div className="space-y-2">
                 {completedLangs.map((code) => {
