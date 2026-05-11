@@ -1107,6 +1107,7 @@ export function UploadStep() {
                   spaceSeq={spaceSeq}
                   allowDialogueEditing={allowDialogueEditingInOutput}
                   youtubeVideoId={ytUploads[code]?.videoId ?? null}
+                  youtubePreviewVisibility={privacyStatus}
                 />
               )
             })}
