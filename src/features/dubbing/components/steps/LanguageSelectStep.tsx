@@ -13,10 +13,20 @@ import {
   type LanguageRegion,
 } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
-import { countMessage } from '@/lib/i18n/messages'
 import { useDashboardSummary } from '@/hooks/useDashboardData'
 
 type RegionFilter = 'all' | LanguageRegion
+type LocaleText = ReturnType<typeof useLocaleText>
+
+function countLocaleMessage(
+  locale: ReturnType<typeof useAppLocale>,
+  count: number,
+  key: string,
+  t: LocaleText,
+) {
+  const unit = t(key)
+  return locale === 'ko' ? `${count}${unit}` : `${count} ${unit}`
+}
 
 export function LanguageSelectStep() {
   const {
@@ -71,7 +81,7 @@ export function LanguageSelectStep() {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.dubbing.components.steps.languageSelectStep.chooseTargetLanguages')}</h2>
         <p className="mt-1 text-surface-600 dark:text-surface-400">
-          {selectionDescription} ({countMessage(locale, selectedLanguages.length, 'features.dubbing.components.steps.languageSelectStep.unitSelected')})
+          {selectionDescription} ({countLocaleMessage(locale, selectedLanguages.length, 'features.dubbing.components.steps.languageSelectStep.unitSelected', t)})
         </p>
       </div>
 
@@ -181,16 +191,16 @@ export function LanguageSelectStep() {
           <EstimateRow
             label={t('features.dubbing.components.steps.languageSelectStep.videoLengthRounded')}
             value={videoMinutes > 0
-              ? countMessage(locale, videoMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin')
+              ? countLocaleMessage(locale, videoMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin', t)
               : t('common.loading')}
           />
           <EstimateRow
             label={t('features.dubbing.components.steps.languageSelectStep.selectedLanguageCount')}
-            value={countMessage(locale, selectedLanguages.length, 'features.dubbing.components.steps.languageSelectStep.unitSelected')}
+            value={countLocaleMessage(locale, selectedLanguages.length, 'features.dubbing.components.steps.languageSelectStep.unitSelected', t)}
           />
           <EstimateRow
             label={t('features.dubbing.components.steps.languageSelectStep.estimatedUsage')}
-            value={countMessage(locale, estimatedMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin')}
+            value={countLocaleMessage(locale, estimatedMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin', t)}
             strong
           />
           <EstimateRow
@@ -199,12 +209,12 @@ export function LanguageSelectStep() {
               ? t('common.loading')
               : remainingMinutes === null
                 ? '-'
-                : countMessage(locale, remainingMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin')}
+                : countLocaleMessage(locale, remainingMinutes, 'features.dubbing.components.steps.languageSelectStep.unitMin', t)}
           />
           {remainingAfter !== null && selectedLanguages.length > 0 && (
             <EstimateRow
               label={t('features.dubbing.components.steps.languageSelectStep.remainingAfterThisJob')}
-              value={countMessage(locale, Math.max(0, remainingAfter), 'features.dubbing.components.steps.languageSelectStep.unitMin')}
+              value={countLocaleMessage(locale, Math.max(0, remainingAfter), 'features.dubbing.components.steps.languageSelectStep.unitMin', t)}
               danger={hasInsufficientMinutes}
             />
           )}

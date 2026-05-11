@@ -12,7 +12,6 @@ import {
 } from '@/lib/api-client/youtube'
 import type { MetadataTranslation } from '@/lib/api-client/translate'
 import { getMarketLanguagePreset, MARKET_LANGUAGE_PRESETS } from '@/lib/i18n/config'
-import { message, type MessageKey } from '@/lib/i18n/messages'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useI18nStore } from '@/stores/i18nStore'
 import { useNotificationStore } from '@/stores/notificationStore'
@@ -43,7 +42,7 @@ export function MetadataLocalizationTool() {
   }))
   const presetOptions = MARKET_LANGUAGE_PRESETS.map((preset) => ({
     value: preset.id,
-    label: message(appLocale, preset.labelKey as MessageKey),
+    label: t(preset.labelKey),
   }))
   const { defaultLanguage, defaultTags, defaultPrivacy } = useYouTubeSettingsStore()
   const { data: channel } = useChannelStats()
@@ -536,10 +535,10 @@ export function MetadataLocalizationTool() {
           <div className="mb-2 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
-                {message(appLocale, selectedPreset.labelKey as MessageKey)}
+                {t(selectedPreset.labelKey)}
               </p>
               <p className="text-xs text-surface-500 dark:text-surface-300">
-                {message(appLocale, selectedPreset.descriptionKey as MessageKey)}
+                {t(selectedPreset.descriptionKey)}
               </p>
             </div>
             <Badge variant="brand">{t('features.metadata.components.metadataLocalizationTool.valueSelected', { targetLangsLength: targetLangs.length })}</Badge>

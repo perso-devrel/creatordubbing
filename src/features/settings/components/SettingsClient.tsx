@@ -10,7 +10,6 @@ import {
   MARKET_LANGUAGE_PRESETS,
   type AppLocale,
 } from '@/lib/i18n/config'
-import { message, type MessageKey } from '@/lib/i18n/messages'
 import { useI18nStore } from '@/stores/i18nStore'
 import { useThemeStore, type ThemePreference } from '@/stores/themeStore'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
@@ -30,6 +29,7 @@ const APP_LOCALE_OPTIONS = APP_LOCALES.map((locale) => ({
 }))
 
 export function SettingsClient() {
+  const t = useLocaleText()
   const { metadataTargetPreset, setAppLocale, setMetadataTargetPreset } = useI18nStore()
   const { preference: themePreference, setPreference: setThemePreference } = useThemeStore()
   const appLocale = useAppLocale()
@@ -51,7 +51,7 @@ export function SettingsClient() {
   }))
   const presetOptions = MARKET_LANGUAGE_PRESETS.map((preset) => ({
     value: preset.id,
-    label: message(appLocale, preset.labelKey as MessageKey),
+    label: t(preset.labelKey),
   }))
   const defaultTagsString = defaultTags.join(', ')
   const youtubeSectionRef = useRef<HTMLDivElement>(null)
@@ -87,16 +87,16 @@ export function SettingsClient() {
             <Globe2 className="h-5 w-5" />
           </div>
           <div>
-            <CardTitle>{message(appLocale, 'settings.languageDefaults.title')}</CardTitle>
+            <CardTitle>{t('settings.languageDefaults.title')}</CardTitle>
             <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
-              {message(appLocale, 'settings.languageDefaults.description')}
+              {t('settings.languageDefaults.description')}
             </p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <Select
-            label={message(appLocale, 'settings.appLocale')}
+            label={t('settings.appLocale')}
             value={appLocale}
             onChange={(event) => {
               const nextLocale = event.target.value as AppLocale
@@ -106,39 +106,39 @@ export function SettingsClient() {
             options={APP_LOCALE_OPTIONS}
           />
           <Select
-            label={message(appLocale, 'settings.themeMode')}
+            label={t('settings.themeMode')}
             value={themePreference}
             onChange={(event) => setThemePreference(event.target.value as ThemePreference)}
             options={[
-              { value: 'system', label: message(appLocale, 'settings.themeMode.system') },
-              { value: 'light', label: message(appLocale, 'settings.themeMode.light') },
-              { value: 'dark', label: message(appLocale, 'settings.themeMode.dark') },
+              { value: 'system', label: t('settings.themeMode.system') },
+              { value: 'light', label: t('settings.themeMode.light') },
+              { value: 'dark', label: t('settings.themeMode.dark') },
             ]}
           />
           <Select
-            label={message(appLocale, 'settings.metadataLanguage')}
+            label={t('settings.metadataLanguage')}
             value={defaultLanguage}
             onChange={(event) => setDefaultLanguage(event.target.value)}
             options={languageOptions}
           />
           <Select
-            label={message(appLocale, 'app.app.youtube.page.defaultVisibility')}
+            label={t('app.app.youtube.page.defaultVisibility')}
             value={defaultPrivacy}
             onChange={(event) => setDefaultPrivacy(event.target.value as PrivacyStatus)}
             options={[
-              { value: 'public', label: message(appLocale, 'app.app.youtube.page.public') },
-              { value: 'unlisted', label: message(appLocale, 'app.app.youtube.page.unlisted') },
-              { value: 'private', label: message(appLocale, 'app.app.youtube.page.private') },
+              { value: 'public', label: t('app.app.youtube.page.public') },
+              { value: 'unlisted', label: t('app.app.youtube.page.unlisted') },
+              { value: 'private', label: t('app.app.youtube.page.private') },
             ]}
           />
           <Input
-            label={message(appLocale, 'app.app.youtube.page.defaultTags')}
+            label={t('app.app.youtube.page.defaultTags')}
             value={defaultTagsString}
             onChange={(event) => handleDefaultTagsChange(event.target.value)}
-            placeholder={message(appLocale, 'app.app.youtube.page.commaSeparatedEGDubtubeAIDubbingVlog')}
+            placeholder={t('app.app.youtube.page.commaSeparatedEGDubtubeAIDubbingVlog')}
           />
           <Select
-            label={message(appLocale, 'settings.recommendedLanguageSet')}
+            label={t('settings.recommendedLanguageSet')}
             value={metadataTargetPreset}
             onChange={(event) => setMetadataTargetPreset(event.target.value)}
             options={presetOptions}
@@ -149,10 +149,10 @@ export function SettingsClient() {
         {selectedPreset && (
           <div className="mt-4 rounded-lg border border-surface-200 bg-surface-100/70 p-3 dark:border-surface-700 dark:bg-surface-850">
             <p className="text-sm font-medium text-surface-800 dark:text-surface-100">
-              {message(appLocale, selectedPreset.labelKey as MessageKey)}
+              {t(selectedPreset.labelKey)}
             </p>
             <p className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-300">
-              {message(appLocale, selectedPreset.descriptionKey as MessageKey)}
+              {t(selectedPreset.descriptionKey)}
             </p>
             <div className="mt-3 flex flex-wrap gap-1.5">
               {presetLanguages.map((language) => language && (
