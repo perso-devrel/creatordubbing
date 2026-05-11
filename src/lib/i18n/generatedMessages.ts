@@ -687,7 +687,7 @@ export const generatedMessages = {
   "features.metadata.components.metadataLocalizationTool.uploadAndLocalizeNewVideo": { ko: "새 영상 업로드 번역", en: "Upload and localize new video" },
   "features.metadata.components.metadataLocalizationTool.uploadToYouTube": { ko: "YouTube에 업로드", en: "Upload to YouTube" },
   "features.metadata.components.metadataLocalizationTool.uploadWithTheseSettings": { ko: "설정대로 업로드", en: "Upload with these settings" },
-  "features.metadata.components.metadataLocalizationTool.useExistingVideo": { ko: "기존 영상 불러오기", en: "Use existing video" },
+  "features.metadata.components.metadataLocalizationTool.useExistingVideo": { ko: "내 영상 불러오기", en: "Load my videos" },
   "features.metadata.components.metadataLocalizationTool.usingYourDefaultLanguageValueIfThisIs": { ko: "사용자 기본 언어({nextSourceLang})로 설정했습니다. 실제와 다르면 위 \"원문 언어\" 드롭다운에서 변경하세요.", en: "Using your default language ({nextSourceLang}). If this is not correct, change the source language above." },
   "features.metadata.components.metadataLocalizationTool.valueExistingTranslationsCannotBeSelected": { ko: "기존 번역 {existingLocalizationLangsSize}개는 선택할 수 없습니다.", en: "{existingLocalizationLangsSize} existing translations cannot be selected." },
   "features.metadata.components.metadataLocalizationTool.valueSelected": { ko: "{targetLangsLength}개 선택", en: "{targetLangsLength} selected" },

@@ -31,7 +31,7 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
   const pathname = usePathname()
   const activePathname = stripLocalePrefix(pathname || '/')
   const t = useLocaleText()
-  const opsAccess = useOperationsAccess()
+  const opsAccess = useOperationsAccess({ enabled: isOpsAdmin })
   const canViewOps = isOpsAdmin || opsAccess.data?.isOpsAdmin === true
   const visibleItems = navItems.filter((item) => !item.opsAdminOnly || canViewOps)
   const settingsLabel = t('components.layout.sidebar.labelSettings')
