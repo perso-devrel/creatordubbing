@@ -67,7 +67,7 @@ export function Hero() {
               {t('features.landing.hero.youTubeVideoLocalization')}
             </div>
 
-            <h1 className="max-w-3xl break-keep text-5xl font-extrabold leading-[1.1] text-surface-950 dark:text-white sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-3xl whitespace-pre-line break-keep text-5xl font-extrabold leading-[1.1] text-surface-950 dark:text-white sm:text-6xl lg:text-7xl">
               {t('features.landing.hero.createMultilingualDubsFromOneVideo')}
             </h1>
 
