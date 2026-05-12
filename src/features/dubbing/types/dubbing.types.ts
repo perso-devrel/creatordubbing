@@ -2,6 +2,8 @@ export type DubbingStep = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
 export type DeliverableMode = 'newDubbedVideos' | 'originalWithMultiAudio' | 'downloadOnly'
 
+export type CaptionGenerationMode = 'dubbing' | 'stt'
+
 export type PrivacyStatus = 'public' | 'unlisted' | 'private'
 
 export interface UploadSettings {
@@ -15,6 +17,7 @@ export interface UploadSettings {
   selfDeclaredMadeForKids: boolean
   containsSyntheticMedia: boolean
   uploadReviewConfirmed: boolean
+  captionGenerationMode: CaptionGenerationMode
   /**
    * 사용자가 작성한 제목/설명의 언어. 다른 대상 언어로 자동 번역하는 기준.
    * 마이페이지의 `defaultLanguage`로 초기화되며 더빙별로 override 가능.

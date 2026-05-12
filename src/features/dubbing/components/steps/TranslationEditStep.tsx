@@ -55,6 +55,10 @@ export function TranslationEditStep() {
     (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'upload')
   const showsAiDisclosureSetting = deliverableMode === 'newDubbedVideos'
   const showsCaptionSetting = deliverableMode === 'newDubbedVideos' || deliverableMode === 'originalWithMultiAudio'
+  const usesSttCaptionMode =
+    deliverableMode === 'originalWithMultiAudio' &&
+    uploadSettings.uploadCaptions &&
+    uploadSettings.captionGenerationMode === 'stt'
   const deliverableModeLabel = deliverableMode === 'newDubbedVideos'
     ? t('features.dubbing.components.steps.translationEditStep.uploadNewDubbedVideos')
     : deliverableMode === 'originalWithMultiAudio'
@@ -158,6 +162,15 @@ export function TranslationEditStep() {
             />
           )}
 
+          {showsCaptionSetting && uploadSettings.uploadCaptions && deliverableMode === 'originalWithMultiAudio' && (
+            <SummaryRow
+              label={t('features.dubbing.components.steps.translationEditStep.captionProcessing')}
+              value={usesSttCaptionMode
+                ? t('features.dubbing.components.steps.translationEditStep.sttCaptionGeneration')
+                : t('features.dubbing.components.steps.translationEditStep.dubbingCaptionGeneration')}
+            />
+          )}
+
           {uploadsVideoToYouTube && (
             <>
               <SummaryRow
@@ -203,7 +216,9 @@ export function TranslationEditStep() {
           {t('features.dubbing.components.steps.translationEditStep.back')}
         </Button>
         <Button onClick={nextStep} disabled={!canStart}>
-          {t('features.dubbing.components.steps.translationEditStep.startDubbing')}
+          {t(usesSttCaptionMode
+            ? 'features.dubbing.components.steps.translationEditStep.startCaptionProcessing'
+            : 'features.dubbing.components.steps.translationEditStep.startDubbing')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
@@ -228,7 +243,7 @@ function SummaryRow({
           <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-300">{description}</p>
         )}
       </div>
-      <div className="max-w-[60%] break-words text-right text-sm font-medium text-surface-900 dark:text-white">
+      <div className="max-w-[60%] wrap-break-word text-right text-sm font-medium text-surface-900 dark:text-white">
         {value}
       </div>
     </div>
