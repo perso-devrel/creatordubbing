@@ -5,6 +5,9 @@ import { ArrowLeft, ArrowRight, Film, Subtitles, Download, AlertTriangle } from 
 import { Button } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
+import { useChannelStats } from '@/hooks/useYouTubeData'
+import { useAuthStore } from '@/stores/authStore'
 import { useDubbingStore } from '../../store/dubbingStore'
 import type { DeliverableMode, VideoSourceType } from '../../types/dubbing.types'
 
@@ -17,13 +20,21 @@ interface DeliverableOption {
   badge?: string
 }
 
-function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
+function getAvailableOptions(sourceType: VideoSourceType, youtubeUploadDisabled: boolean): DeliverableOption[] {
+  const youtubeRequired = youtubeUploadDisabled
+    ? {
+      disabled: true,
+      badge: 'features.dubbing.components.steps.outputModeStep.youtubeConnectionRequiredBadge',
+    }
+    : {}
+
   const options: DeliverableOption[] = [
     {
       value: 'newDubbedVideos',
       icon: Film,
       title: 'features.dubbing.components.steps.outputModeStep.titleCreateNewVideosForEachLanguage',
       description: 'features.dubbing.components.steps.outputModeStep.descriptionPrepareASeparateDubbedYouTubeVideoFor',
+      ...youtubeRequired,
     },
   ]
 
@@ -33,6 +44,7 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
       icon: Subtitles,
       title: 'features.dubbing.components.steps.outputModeStep.titleAddCaptionsToTheOriginalVideo',
       description: 'features.dubbing.components.steps.outputModeStep.descriptionAddTranslatedCaptionsTitlesAndDescriptionsTo',
+      ...youtubeRequired,
     })
   } else if (sourceType === 'upload') {
     options.push({
@@ -40,6 +52,7 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
       icon: Subtitles,
       title: 'features.dubbing.components.steps.outputModeStep.titleUploadOriginalWithCaptions',
       description: 'features.dubbing.components.steps.outputModeStep.descriptionUploadTheOriginalVideoToYouTubeAnd',
+      ...youtubeRequired,
     })
   }
 
@@ -56,15 +69,24 @@ function getAvailableOptions(sourceType: VideoSourceType): DeliverableOption[] {
 export function OutputModeStep() {
   const { deliverableMode, setDeliverableMode, videoSource, prevStep, nextStep } = useDubbingStore()
   const t = useLocaleText()
+  const router = useLocaleRouter()
+  const { data: channel, isLoading: channelLoading } = useChannelStats()
+  const authLoading = useAuthStore((s) => s.isLoading)
   const sourceType = videoSource?.type ?? 'upload'
-  const options = useMemo(() => getAvailableOptions(sourceType), [sourceType])
+  const checkingYouTubeConnection = authLoading || channelLoading
+  const youtubeUploadDisabled = !checkingYouTubeConnection && !channel
+  const options = useMemo(() => getAvailableOptions(sourceType, youtubeUploadDisabled), [sourceType, youtubeUploadDisabled])
   const isExternalUrl = videoSource?.type === 'url'
+  const needsYouTubeConnection = deliverableMode !== 'downloadOnly'
+  const canContinue = !(checkingYouTubeConnection && needsYouTubeConnection)
 
   useEffect(() => {
-    if (!options.some((o) => o.value === deliverableMode && !o.disabled)) {
-      setDeliverableMode('newDubbedVideos')
-    }
-  }, [sourceType, options, deliverableMode, setDeliverableMode])
+    const selectedOption = options.find((o) => o.value === deliverableMode)
+    if (selectedOption && !selectedOption.disabled) return
+
+    const fallback = options.find((o) => !o.disabled)?.value ?? 'downloadOnly'
+    if (fallback !== deliverableMode) setDeliverableMode(fallback)
+  }, [options, deliverableMode, setDeliverableMode])
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -84,6 +106,23 @@ export function OutputModeStep() {
               {t('features.dubbing.components.steps.outputModeStep.reUploadingVideosYouDoNotOwnCan')}
             </p>
           </div>
+        </div>
+      )}
+
+      {youtubeUploadDisabled && (
+        <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/10 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-500 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-300">{t('features.dubbing.components.steps.outputModeStep.youtubeConnectionRequired')}</p>
+              <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                {t('features.dubbing.components.steps.outputModeStep.connectYouTubeInSettingsToUpload')}
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => router.push('/settings?section=youtube')}>
+            {t('features.dubbing.components.steps.outputModeStep.connectInSettings')}
+          </Button>
         </div>
       )}
 
@@ -145,7 +184,7 @@ export function OutputModeStep() {
           <ArrowLeft className="h-4 w-4" />
           {t('features.dubbing.components.steps.outputModeStep.back')}
         </Button>
-        <Button onClick={nextStep}>
+        <Button onClick={nextStep} disabled={!canContinue}>
           {t('features.dubbing.components.steps.outputModeStep.nextChooseLanguages')}
           <ArrowRight className="h-4 w-4" />
         </Button>
