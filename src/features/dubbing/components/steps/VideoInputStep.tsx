@@ -18,8 +18,7 @@ import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useLocaleRouter } from '@/hooks/useLocalePath'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { usePersoFlow } from '../../hooks/usePersoFlow'
-import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
-import { signInWithGoogle } from '@/lib/google-auth'
+import { isYouTubeConnectionError, useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { useAuthStore } from '@/stores/authStore'
 import { isValidVideoUrl, isValidYouTubeUrl } from '@/utils/validators'
 import { formatDuration } from '@/utils/formatters'
@@ -42,7 +41,9 @@ export function VideoInputStep() {
   const [activeTab, setActiveTab] = useState(initialTab)
 
   const channelTabActive = activeTab === 'channel'
-  const { data: channel, isLoading: channelLoading, error: channelError } = useChannelStats(channelTabActive)
+  const authLoading = useAuthStore((s) => s.isLoading)
+  const { data: channel, isLoading: channelQueryLoading, error: channelError } = useChannelStats(channelTabActive)
+  const channelLoading = authLoading || channelQueryLoading
   const isConnected = !!channel
   const [myVideosLoaded, setMyVideosLoaded] = useState(false)
   const [requestingMyVideos, setRequestingMyVideos] = useState(false)
@@ -68,16 +69,26 @@ export function VideoInputStep() {
   }, [publicVideos, videoSearch])
   const hiddenCount = myVideos.length - publicVideos.length
 
+  const goToYouTubeSettings = () => {
+    localeRouter.push('/settings?section=youtube')
+  }
+
   const handleLoadMyVideos = async () => {
+    if (!isConnected) {
+      goToYouTubeSettings()
+      return
+    }
     setRequestingMyVideos(true)
     setMyVideosPermissionError(null)
     try {
-      const { user } = await signInWithGoogle({ forceConsent: true, scopeMode: 'youtube-readonly' })
-      useAuthStore.getState().setUser(user)
       const result = await refetchMyVideos()
       if (result.error) throw result.error
       setMyVideosLoaded(true)
     } catch (err) {
+      if (isYouTubeConnectionError(err)) {
+        goToYouTubeSettings()
+        return
+      }
       const message =
         err instanceof Error
           ? err.message
@@ -193,16 +204,23 @@ export function VideoInputStep() {
                 {t('features.dubbing.components.steps.videoInputStep.onlyPublicVideosCanBeImportedForPrivate')}
               </p>
             </div>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                placeholder={t('features.dubbing.components.steps.videoInputStep.youTubeLinkOrDirectVideoLink')}
-                value={url}
-                onChange={(e) => { setUrl(e.target.value); setError(null) }}
-                icon={<Play className="h-4 w-4" />}
-                onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
-                error={error && !loading ? error : undefined}
-              />
-              <Button onClick={handleUrlSubmit} loading={loading} disabled={!isValid || loading}>
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <Input
+                  placeholder={t('features.dubbing.components.steps.videoInputStep.youTubeLinkOrDirectVideoLink')}
+                  value={url}
+                  onChange={(e) => { setUrl(e.target.value); setError(null) }}
+                  icon={<Play className="h-4 w-4" />}
+                  onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
+                  error={error && !loading ? error : undefined}
+                />
+              </div>
+              <Button
+                onClick={handleUrlSubmit}
+                loading={loading}
+                disabled={!isValid || loading}
+                className="shrink-0 whitespace-nowrap"
+              >
                 {loading ? t('features.dubbing.components.steps.videoInputStep.importing') : t('features.dubbing.components.steps.videoInputStep.import')}
               </Button>
             </div>
@@ -267,6 +285,12 @@ export function VideoInputStep() {
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t('features.dubbing.components.steps.videoInputStep.loadingChannelInformation')}</p>
             </Card>
+          ) : isYouTubeConnectionError(channelError) ? (
+            <Card className="py-12 text-center">
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t('features.dubbing.components.steps.videoInputStep.connectYourYouTubeChannelToChooseFromYour')}</p>
+              <Button variant="outline" className="mt-4" onClick={goToYouTubeSettings}>{t('features.dubbing.components.steps.videoInputStep.connectChannel')}</Button>
+            </Card>
           ) : channelError ? (
             <Card className="py-12 text-center">
               <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
@@ -278,7 +302,7 @@ export function VideoInputStep() {
             <Card className="py-12 text-center">
               <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t('features.dubbing.components.steps.videoInputStep.connectYourYouTubeChannelToChooseFromYour')}</p>
-              <Button variant="outline" className="mt-4" onClick={() => localeRouter.push('/settings?section=youtube')}>{t('features.dubbing.components.steps.videoInputStep.connectChannel')}</Button>
+              <Button variant="outline" className="mt-4" onClick={goToYouTubeSettings}>{t('features.dubbing.components.steps.videoInputStep.connectChannel')}</Button>
             </Card>
           ) : !myVideosLoaded ? (
             <Card className="py-12 text-center">
@@ -305,6 +329,12 @@ export function VideoInputStep() {
             <Card className="py-12 text-center">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-surface-500 dark:text-surface-400" />
               <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t('features.dubbing.components.steps.videoInputStep.loadingVideos')}</p>
+            </Card>
+          ) : isYouTubeConnectionError(myVideosError) ? (
+            <Card className="py-12 text-center">
+              <Film className="mx-auto h-10 w-10 text-surface-500 dark:text-surface-400" />
+              <p className="mt-3 text-sm text-surface-500 dark:text-surface-300">{t('features.dubbing.components.steps.videoInputStep.connectYourYouTubeChannelToChooseFromYour')}</p>
+              <Button variant="outline" className="mt-4" onClick={goToYouTubeSettings}>{t('features.dubbing.components.steps.videoInputStep.connectChannel')}</Button>
             </Card>
           ) : myVideosError ? (
             <Card className="py-12 text-center">
