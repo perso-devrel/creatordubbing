@@ -1,6 +1,6 @@
 # Dubtube
 
-[🇰🇷 한국어](./README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
+[🇰🇷 한국어](../../README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
 
 > **面向 YouTube 创作者的 AI 多语言配音与上传自动化平台。**
 > 上传一段视频，Dubtube 会将其配音为多种语言，连同字幕一起自动发布到 YouTube，并在同一面板中呈现观看数据分析。
@@ -155,7 +155,7 @@ Git 流程：`main ← develop ← issue 分支`，squash 合并。`main` 与 `d
 
 ## 安全
 
-**请勿在公开 Issue 中报告漏洞。** 请使用 GitHub Private Vulnerability Reporting。详见 [.github/SECURITY.md](./.github/SECURITY.md)。
+**请勿在公开 Issue 中报告漏洞。** 请使用 GitHub Private Vulnerability Reporting。详见 [.github/SECURITY.md](../../.github/SECURITY.md)。
 
 ## 许可证
 

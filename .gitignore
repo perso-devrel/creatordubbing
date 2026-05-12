@@ -46,10 +46,12 @@ extension/node_modules/
 # dubtube migration workspace (agent reports, scratch)
 _workspace/
 
-# claude code (local settings, harness agents/skills)
+# claude code (local settings, harness agents/skills, scratch logs)
 .claude/settings.local.json
 .claude/agents/
 .claude/skills/
+.claude/*.log
+.claude/*.lock
 
 # typescript
 *.tsbuildinfo
