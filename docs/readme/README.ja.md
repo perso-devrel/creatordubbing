@@ -1,6 +1,6 @@
 # Dubtube
 
-[🇰🇷 한국어](./README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
+[🇰🇷 한국어](../../README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
 
 > **クリエイター向け AI 多言語ダビング & YouTube 自動アップロードプラットフォーム。**
 > 一本の動画をアップロードするだけで、複数言語への AI ダビング、字幕付きの YouTube 自動アップロード、視聴分析までダッシュボードで一気通貫に確認できます。
@@ -155,7 +155,7 @@ Git フロー: `main ← develop ← issue ブランチ`、squash マージ。`m
 
 ## セキュリティ
 
-脆弱性情報を **公開 Issue として投稿しないでください。** GitHub Private Vulnerability Reporting をご利用ください。詳細は [.github/SECURITY.md](./.github/SECURITY.md) を参照してください。
+脆弱性情報を **公開 Issue として投稿しないでください。** GitHub Private Vulnerability Reporting をご利用ください。詳細は [.github/SECURITY.md](../../.github/SECURITY.md) を参照してください。
 
 ## ライセンス
 

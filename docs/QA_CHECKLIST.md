@@ -1,10 +1,10 @@
 # QA 체크리스트
 
-> `develop_loop` 브랜치의 산출물을 `develop`에 머지하기 전 수동 QA 가이드.
+> 웹앱 + Chrome 확장 전체에 대한 수동 QA 가이드입니다. 릴리즈 전 또는 큰 변경 머지 전에 사용하세요.
 
 ---
 
-## Phase 1 — 웹앱 QA
+## 1. 웹앱 QA
 
 ### 빌드 & 린트
 - [ ] `npm install` 성공
@@ -25,7 +25,7 @@
 
 ---
 
-## Phase 2 — Chrome 확장 스캐폴드
+## 2. Chrome 확장 스캐폴드
 
 ### 빌드
 - [ ] `cd extension && npm install` 성공
@@ -46,7 +46,7 @@
 
 ---
 
-## Phase 3 — 업로드 로직
+## 3. 업로드 로직
 
 ### 셀렉터
 - [ ] `docs/SELECTORS_TO_VERIFY.md` 체크리스트 검증 (YouTube Studio DevTools)
@@ -63,7 +63,7 @@
 
 ---
 
-## Phase 4 — 웹앱↔확장 통합
+## 4. 웹앱↔확장 통합
 
 ### 확장 감지
 - [ ] 웹앱에서 확장 미설치 시 "Dubtube 확장 미설치" 안내 표시
@@ -87,7 +87,7 @@
 
 ---
 
-## Phase 5 — 문서
+## 5. 문서
 
 ### 문서 존재 확인
 - [ ] `extension/README.md` 존재 + 내용 정확
@@ -95,9 +95,7 @@
 - [ ] `docs/QA_CHECKLIST.md` (이 문서) 존재
 - [ ] `docs/SELECTORS_TO_VERIFY.md` 존재
 - [ ] `docs/SECURITY_SWEEP.md` 존재
-- [ ] `docs/DIAGNOSIS.md` 존재
-- [ ] `CHANGELOG.md` 존재 + `develop_loop` 변경점 포함
-- [ ] `PROGRESS.md` 최종 상태 업데이트됨
+- [ ] `CHANGELOG.md` 최신 변경점 반영
 
 ---
 

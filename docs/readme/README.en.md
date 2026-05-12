@@ -1,6 +1,6 @@
 # Dubtube
 
-[🇰🇷 한국어](./README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
+[🇰🇷 한국어](../../README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
 
 > **AI-powered multilingual dubbing & YouTube upload automation for creators.**
 > Upload one video and Dubtube dubs it into multiple languages, uploads the results to YouTube with captions, and surfaces watch-time analytics in a single dashboard.
@@ -155,7 +155,7 @@ Git flow: `main ← develop ← issue branches`, squash-merge. `main` and `devel
 
 ## Security
 
-**Do not open public issues for vulnerabilities.** Use GitHub Private Vulnerability Reporting. See [.github/SECURITY.md](./.github/SECURITY.md) for details.
+**Do not open public issues for vulnerabilities.** Use GitHub Private Vulnerability Reporting. See [.github/SECURITY.md](../../.github/SECURITY.md) for details.
 
 ## License
 

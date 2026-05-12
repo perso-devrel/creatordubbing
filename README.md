@@ -1,6 +1,6 @@
 # Dubtube
 
-[🇰🇷 한국어](./README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
+[🇰🇷 한국어](./README.md) | [🇺🇸 English](./docs/readme/README.en.md) | [🇯🇵 日本語](./docs/readme/README.ja.md) | [🇨🇳 中文](./docs/readme/README.zh.md)
 
 > **YouTube 크리에이터를 위한 AI 다국어 더빙 & 업로드 자동화 플랫폼.**
 > 영상 한 편을 올리면 여러 언어로 더빙하고, 자막과 함께 YouTube에 자동 업로드한 뒤 대시보드에서 시청 분석까지 확인할 수 있습니다.
@@ -22,7 +22,7 @@
 
 | 영역 | 기술 |
 | ---- | ---- |
-| 프레임워크 | Next.js 16.2.3 (App Router) |
+| 프레임워크 | Next.js 16.2.6 (App Router) |
 | 런타임 | React 19, TypeScript 5 |
 | 스타일 | Tailwind CSS v4 |
 | 상태 관리 | Zustand 5 |
@@ -184,6 +184,17 @@ src/
 
 - YouTube 다중 오디오 트랙 API는 미지원 — 언어별 별도 영상 업로드 방식으로 우회합니다.
 - Perso `progressReason` 값은 UPPERCASE / PascalCase 가 혼재하므로 두 형태 모두 처리해야 합니다.
+
+## 문서
+
+기술 문서는 [`docs/README.md`](./docs/README.md) 인덱스에서 카테고리별로 확인할 수 있습니다.
+
+- 설계 · 운영: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md), [`docs/OPERATIONS_RUNBOOK.md`](./docs/OPERATIONS_RUNBOOK.md), [`docs/EXTENSION_STRUCTURE.md`](./docs/EXTENSION_STRUCTURE.md)
+- 품질 · 보안: [`docs/QA_CHECKLIST.md`](./docs/QA_CHECKLIST.md), [`docs/SECURITY_AUDIT.md`](./docs/SECURITY_AUDIT.md), [`docs/SECURITY_SWEEP.md`](./docs/SECURITY_SWEEP.md), [`docs/PERFORMANCE_RELEASE_AUDIT.md`](./docs/PERFORMANCE_RELEASE_AUDIT.md), [`docs/SELECTORS_TO_VERIFY.md`](./docs/SELECTORS_TO_VERIFY.md)
+- 다국어 README: [`docs/readme/`](./docs/readme/)
+- Chrome 확장: [`extension/README.md`](./extension/README.md)
+
+기획·요구사항·시장 조사 등 비즈니스 산출물은 별도 문서 저장소에서 관리됩니다.
 
 ## 기여하기
 

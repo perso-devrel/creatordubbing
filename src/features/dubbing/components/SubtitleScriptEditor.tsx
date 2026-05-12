@@ -7,10 +7,12 @@ import {
   Download,
   Eye,
   EyeOff,
+  ExternalLink,
   Loader2,
   RotateCcw,
   Save,
   UploadCloud,
+  Video,
 } from 'lucide-react'
 import { Badge, Button } from '@/components/ui'
 import { getLanguageByCode, toBcp47 } from '@/utils/languages'
@@ -32,6 +34,7 @@ import {
 import type { ScriptSentence } from '@/lib/perso/types'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { cn } from '@/utils/cn'
+import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
 
 const ENABLE_SENTENCE_LEVEL_AUDIO_REGENERATION = false
 
@@ -251,6 +254,7 @@ interface SubtitleScriptEditorProps {
   spaceSeq: number
   allowDialogueEditing?: boolean
   youtubeVideoId?: string | null
+  youtubePreviewVisibility?: PrivacyStatus
 }
 
 export function SubtitleScriptEditor({
@@ -259,6 +263,7 @@ export function SubtitleScriptEditor({
   spaceSeq,
   allowDialogueEditing = true,
   youtubeVideoId,
+  youtubePreviewVisibility,
 }: SubtitleScriptEditorProps) {
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -278,9 +283,12 @@ export function SubtitleScriptEditor({
   const [invalidCueIds, setInvalidCueIds] = useState<Set<number>>(() => new Set())
   const [srtLoading, setSrtLoading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [showYouTubePreview, setShowYouTubePreview] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [pushingToYT, setPushingToYT] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const youtubeWatchUrl = youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : null
+  const youtubeEmbedUrl = youtubeVideoId ? `https://www.youtube.com/embed/${youtubeVideoId}` : null
 
   const loadScript = useCallback(async () => {
     if (!projectSeq) return
@@ -480,6 +488,26 @@ export function SubtitleScriptEditor({
     }
   }, [hasInvalidCaptionTiming, buildCurrentSrt, lang, langCode, addToast, t])
 
+  const handleToggleYouTubePreview = useCallback(() => {
+    const nextVisible = !showYouTubePreview
+    if (nextVisible && youtubePreviewVisibility === 'private') {
+      addToast({
+        type: 'warning',
+        title: t('features.dubbing.components.subtitleScriptEditor.youtubePreviewUnavailableForPrivateVideo'),
+        message: t('features.dubbing.components.subtitleScriptEditor.youtubePreviewPublicOrUnlistedOnly'),
+      })
+    }
+    setShowYouTubePreview(nextVisible)
+  }, [showYouTubePreview, youtubePreviewVisibility, addToast, t])
+
+  const handleYouTubePreviewError = useCallback(() => {
+    addToast({
+      type: 'warning',
+      title: t('features.dubbing.components.subtitleScriptEditor.youtubePreviewLoadFailed'),
+      message: t('features.dubbing.components.subtitleScriptEditor.youtubePreviewMayBeUnavailableForPrivateVideos'),
+    })
+  }, [addToast, t])
+
   const handlePushToYouTube = useCallback(async () => {
     if (!youtubeVideoId) return
 
@@ -583,6 +611,53 @@ export function SubtitleScriptEditor({
             </div>
           )}
 
+          {youtubeVideoId && youtubeWatchUrl && youtubeEmbedUrl && (
+            <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-start gap-2">
+                  <Video className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-surface-900 dark:text-white">
+                      {t('features.dubbing.components.subtitleScriptEditor.youtubePreview')}
+                    </p>
+                    <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-300">
+                      {t('features.dubbing.components.subtitleScriptEditor.youtubePreviewPublicOrUnlistedOnly')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={youtubeWatchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-surface-300 bg-white px-3 text-sm font-medium text-surface-700 transition-all duration-200 hover:bg-surface-100 focus-ring dark:border-surface-700 dark:bg-transparent dark:text-surface-300 dark:hover:bg-surface-800"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {t('features.dubbing.components.subtitleScriptEditor.openInYouTube')}
+                  </a>
+                  <Button size="sm" variant="outline" onClick={handleToggleYouTubePreview}>
+                    {showYouTubePreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    {showYouTubePreview
+                      ? t('features.dubbing.components.subtitleScriptEditor.hideYouTubePreview')
+                      : t('features.dubbing.components.subtitleScriptEditor.youtubePreview')}
+                  </Button>
+                </div>
+              </div>
+              {showYouTubePreview && (
+                <div className="mt-3 aspect-video w-full max-w-xl overflow-hidden rounded-lg border border-surface-200 bg-black dark:border-surface-700">
+                  <iframe
+                    title={t('features.dubbing.components.subtitleScriptEditor.youtubePreview')}
+                    src={youtubeEmbedUrl}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    onError={handleYouTubePreviewError}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {allowDialogueEditing && visibleTab === 'dialogue' && (
             <section className="space-y-3">
               <div>
@@ -668,58 +743,6 @@ export function SubtitleScriptEditor({
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDownload}
-                  loading={downloading}
-                  disabled={!cues || hasInvalidCaptionTiming}
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  {t('features.dubbing.components.subtitleScriptEditor.downloadCaptions')}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => setShowPreview((v) => !v)} disabled={!cues}>
-                  {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  {t('features.dubbing.components.subtitleScriptEditor.previewCaptions')}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={handleResetSrt} loading={resetting} disabled={!cues}>
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  {t('features.dubbing.components.subtitleScriptEditor.restoreGeneratedCaptions')}
-                </Button>
-                {youtubeVideoId && (
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    onClick={handlePushToYouTube}
-                    loading={pushingToYT}
-                    disabled={!cues || hasInvalidCaptionTiming}
-                  >
-                    <UploadCloud className="h-3.5 w-3.5" />
-                    {t('features.dubbing.components.subtitleScriptEditor.updateYouTubeCaptions')}
-                  </Button>
-                )}
-              </div>
-              {!youtubeVideoId && (
-                <p className="text-xs text-surface-500 dark:text-surface-300">
-                  {t('features.dubbing.components.subtitleScriptEditor.theYouTubeCaptionButtonBecomesAvailableAfterThis')}
-                </p>
-              )}
-              {hasInvalidCaptionTiming && (
-                <p className="text-xs text-red-600 dark:text-red-400">
-                  {t('features.dubbing.components.subtitleScriptEditor.fixCaptionTimingBeforeExport')}
-                </p>
-              )}
-
-              {showPreview && (
-                <textarea
-                  readOnly
-                  value={srtPreview}
-                  rows={12}
-                  className="w-full resize-y rounded-md border border-surface-300 bg-surface-50 px-3 py-2 font-mono text-xs text-surface-700 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300"
-                />
-              )}
-
               {srtLoading && (
                 <div className="flex items-center gap-2 py-4 text-sm text-surface-500 dark:text-surface-300">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -744,6 +767,71 @@ export function SubtitleScriptEditor({
                       onValidityChange={setCueValidity}
                     />
                   ))}
+                </div>
+              )}
+
+              {showPreview && (
+                <textarea
+                  readOnly
+                  value={srtPreview}
+                  rows={12}
+                  className="w-full resize-y rounded-md border border-surface-300 bg-surface-50 px-3 py-2 font-mono text-xs text-surface-700 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300"
+                />
+              )}
+
+              {cues && cues.length > 0 && (
+                <div className="flex flex-col gap-3 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-surface-900 dark:text-white">
+                      {captionDirty
+                        ? t('features.dubbing.components.subtitleScriptEditor.captionChangesPending')
+                        : t('features.dubbing.components.subtitleScriptEditor.captionFileReady')}
+                    </p>
+                    <p className={cn(
+                      'mt-0.5 text-xs',
+                      hasInvalidCaptionTiming
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-surface-500 dark:text-surface-300',
+                    )}>
+                      {hasInvalidCaptionTiming
+                        ? t('features.dubbing.components.subtitleScriptEditor.fixCaptionTimingBeforeExport')
+                        : youtubeVideoId
+                          ? t('features.dubbing.components.subtitleScriptEditor.captionActionsHelp')
+                          : t('features.dubbing.components.subtitleScriptEditor.theYouTubeCaptionButtonBecomesAvailableAfterThis')}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleDownload}
+                      loading={downloading}
+                      disabled={hasInvalidCaptionTiming}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      {t('features.dubbing.components.subtitleScriptEditor.downloadCaptions')}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setShowPreview((v) => !v)}>
+                      {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      {t('features.dubbing.components.subtitleScriptEditor.previewCaptions')}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleResetSrt} loading={resetting}>
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      {t('features.dubbing.components.subtitleScriptEditor.restoreGeneratedCaptions')}
+                    </Button>
+                    {youtubeVideoId && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={handlePushToYouTube}
+                        loading={pushingToYT}
+                        disabled={hasInvalidCaptionTiming}
+                      >
+                        <UploadCloud className="h-3.5 w-3.5" />
+                        {t('features.dubbing.components.subtitleScriptEditor.updateYouTubeCaptions')}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </section>
