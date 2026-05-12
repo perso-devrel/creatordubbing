@@ -139,6 +139,51 @@ export function submitStt(
   return sendJson(`${PERSO}/stt?spaceSeq=${spaceSeq}`, 'POST', body)
 }
 
+export interface LongSttSegment {
+  segmentIndex: number
+  mediaSeq: number
+  projectSeq: number
+  logicalStartMs: number
+  logicalEndMs: number
+  exportStartMs: number
+  exportEndMs: number
+}
+
+export function submitLongStt(jobId: number): Promise<{ jobId: number; segments: LongSttSegment[] }> {
+  return sendJson(`${PERSO}/stt/long`, 'POST', { jobId })
+}
+
+export interface LongSttCaptionStatus {
+  jobId: number
+  status: 'preparing' | 'transcribing' | 'translating' | 'completed' | 'failed'
+  progress: number
+  segments: Array<{
+    segmentIndex: number
+    projectSeq: number
+    status: string
+    progress: number
+    progressReason: string
+  }>
+  languages: Array<{
+    langCode: string
+    status: string
+    progress: number
+    progressReason: string
+    srtUrl?: string
+    error?: string
+  }>
+}
+
+export function getLongSttCaptionStatus(jobId: number): Promise<LongSttCaptionStatus> {
+  const qs = new URLSearchParams({ jobId: String(jobId) }).toString()
+  return getJson(`${PERSO}/stt/long?${qs}`)
+}
+
+export function cancelLongStt(jobId: number): Promise<{ jobId: number; canceledSegments: number }> {
+  const qs = new URLSearchParams({ jobId: String(jobId) }).toString()
+  return sendJson(`${PERSO}/stt/long?${qs}`, 'DELETE')
+}
+
 export interface GenerateSttCaptionsRequest {
   jobId: number
   projectSeq: number

@@ -9,6 +9,7 @@ import { useLocaleRouter } from '@/hooks/useLocalePath'
 import { useChannelStats } from '@/hooks/useYouTubeData'
 import { useAuthStore } from '@/stores/authStore'
 import { useDubbingStore } from '../../store/dubbingStore'
+import { isOverSinglePersoJobLimit } from '../../utils/videoDurationLimits'
 import type { DeliverableMode, VideoSourceType } from '../../types/dubbing.types'
 
 interface DeliverableOption {
@@ -20,13 +21,24 @@ interface DeliverableOption {
   badge?: string
 }
 
-function getAvailableOptions(sourceType: VideoSourceType, youtubeUploadDisabled: boolean): DeliverableOption[] {
+function getAvailableOptions(sourceType: VideoSourceType, youtubeUploadDisabled: boolean, isLongVideo: boolean): DeliverableOption[] {
   const youtubeRequired = youtubeUploadDisabled
     ? {
       disabled: true,
       badge: 'features.dubbing.components.steps.outputModeStep.youtubeConnectionRequiredBadge',
     }
     : {}
+  const longVideoUnsupported = {
+    disabled: true,
+    badge: 'features.dubbing.components.steps.outputModeStep.longVideoUnsupportedBadge',
+  }
+  const getOptionState = (value: DeliverableMode) => {
+    if (isLongVideo && !(sourceType === 'upload' && value === 'originalWithMultiAudio')) {
+      return longVideoUnsupported
+    }
+    if (value !== 'downloadOnly') return youtubeRequired
+    return {}
+  }
 
   const options: DeliverableOption[] = [
     {
@@ -34,7 +46,7 @@ function getAvailableOptions(sourceType: VideoSourceType, youtubeUploadDisabled:
       icon: Film,
       title: 'features.dubbing.components.steps.outputModeStep.titleCreateNewVideosForEachLanguage',
       description: 'features.dubbing.components.steps.outputModeStep.descriptionPrepareASeparateDubbedYouTubeVideoFor',
-      ...youtubeRequired,
+      ...getOptionState('newDubbedVideos'),
     },
   ]
 
@@ -44,7 +56,7 @@ function getAvailableOptions(sourceType: VideoSourceType, youtubeUploadDisabled:
       icon: Subtitles,
       title: 'features.dubbing.components.steps.outputModeStep.titleAddCaptionsToTheOriginalVideo',
       description: 'features.dubbing.components.steps.outputModeStep.descriptionAddTranslatedCaptionsTitlesAndDescriptionsTo',
-      ...youtubeRequired,
+      ...getOptionState('originalWithMultiAudio'),
     })
   } else if (sourceType === 'upload') {
     options.push({
@@ -52,7 +64,7 @@ function getAvailableOptions(sourceType: VideoSourceType, youtubeUploadDisabled:
       icon: Subtitles,
       title: 'features.dubbing.components.steps.outputModeStep.titleUploadOriginalWithCaptions',
       description: 'features.dubbing.components.steps.outputModeStep.descriptionUploadTheOriginalVideoToYouTubeAnd',
-      ...youtubeRequired,
+      ...getOptionState('originalWithMultiAudio'),
     })
   }
 
@@ -61,13 +73,14 @@ function getAvailableOptions(sourceType: VideoSourceType, youtubeUploadDisabled:
     icon: Download,
     title: 'features.dubbing.components.steps.outputModeStep.titleDownloadFilesOnly',
     description: 'features.dubbing.components.steps.outputModeStep.descriptionDownloadDubbedVideoAudioAndCaptionFiles',
+    ...getOptionState('downloadOnly'),
   })
 
   return options
 }
 
 export function OutputModeStep() {
-  const { deliverableMode, setDeliverableMode, videoSource, prevStep, nextStep } = useDubbingStore()
+  const { deliverableMode, setDeliverableMode, videoMeta, videoSource, prevStep, nextStep } = useDubbingStore()
   const t = useLocaleText()
   const router = useLocaleRouter()
   const { data: channel, isLoading: channelLoading } = useChannelStats()
@@ -75,16 +88,23 @@ export function OutputModeStep() {
   const sourceType = videoSource?.type ?? 'upload'
   const checkingYouTubeConnection = authLoading || channelLoading
   const youtubeUploadDisabled = !checkingYouTubeConnection && !channel
-  const options = useMemo(() => getAvailableOptions(sourceType, youtubeUploadDisabled), [sourceType, youtubeUploadDisabled])
+  const isLongVideo = isOverSinglePersoJobLimit(videoMeta)
+  const options = useMemo(
+    () => getAvailableOptions(sourceType, youtubeUploadDisabled, isLongVideo),
+    [sourceType, youtubeUploadDisabled, isLongVideo],
+  )
   const isExternalUrl = videoSource?.type === 'url'
   const needsYouTubeConnection = deliverableMode !== 'downloadOnly'
-  const canContinue = !(checkingYouTubeConnection && needsYouTubeConnection)
+  const selectedOption = options.find((o) => o.value === deliverableMode)
+  const canContinue = Boolean(selectedOption && !selectedOption.disabled) &&
+    !(checkingYouTubeConnection && needsYouTubeConnection)
 
   useEffect(() => {
     const selectedOption = options.find((o) => o.value === deliverableMode)
     if (selectedOption && !selectedOption.disabled) return
 
-    const fallback = options.find((o) => !o.disabled)?.value ?? 'downloadOnly'
+    const fallback = options.find((o) => !o.disabled)?.value
+    if (!fallback) return
     if (fallback !== deliverableMode) setDeliverableMode(fallback)
   }, [options, deliverableMode, setDeliverableMode])
 
@@ -104,6 +124,22 @@ export function OutputModeStep() {
             <p className="text-sm font-medium text-amber-900 dark:text-amber-300">{t('features.dubbing.components.steps.outputModeStep.copyrightNotice')}</p>
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
               {t('features.dubbing.components.steps.outputModeStep.reUploadingVideosYouDoNotOwnCan')}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {isLongVideo && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/10">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-300">
+              {t('features.dubbing.components.steps.outputModeStep.longVideoNoticeTitle')}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-amber-700 dark:text-amber-400">
+              {sourceType === 'upload'
+                ? t('features.dubbing.components.steps.outputModeStep.longVideoUploadCaptionOnlyNotice')
+                : t('features.dubbing.components.steps.outputModeStep.longVideoUploadRequiredNotice')}
             </p>
           </div>
         </div>
