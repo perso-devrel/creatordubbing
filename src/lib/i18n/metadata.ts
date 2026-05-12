@@ -8,6 +8,7 @@ import {
   type AppLocale,
 } from '@/lib/i18n/config'
 import { message, type MessageKey } from '@/lib/i18n/messages'
+import { SITE_NAME } from '@/lib/seo'
 
 export type LocaleMetadataProps = {
   params: Promise<{ locale: string }>
@@ -22,6 +23,13 @@ type LocalizedPageMetadata = {
 const OPEN_GRAPH_LOCALES: Record<AppLocale, string> = {
   ko: 'ko_KR',
   en: 'en_US',
+}
+
+const sharedOpenGraphImage = {
+  url: '/opengraph-image',
+  width: 1200,
+  height: 630,
+  alt: 'Dubtube - AI caption and dubbing tools for YouTube creators',
 }
 
 const landingTitle = 'metadata.landing.title'
@@ -75,22 +83,27 @@ function localizedAlternates(path: string, locale: AppLocale): Metadata['alterna
 export function getLandingMetadata(locale: AppLocale): Metadata {
   const title = message(locale, landingTitle)
   const description = message(locale, landingDescription, { SUPPORTED_LANGUAGE_COUNT })
+  const path = '/'
 
   return {
     title,
     description,
-    alternates: localizedAlternates('/', locale),
+    alternates: localizedAlternates(path, locale),
     openGraph: {
-      title: `Dubtube - ${title}`,
+      title,
       description,
       type: 'website',
+      url: withLocalePath(path, locale),
       locale: OPEN_GRAPH_LOCALES[locale],
-      siteName: 'Dubtube',
+      alternateLocale: APP_LOCALES.filter((appLocale) => appLocale !== locale).map((appLocale) => OPEN_GRAPH_LOCALES[appLocale]),
+      siteName: SITE_NAME,
+      images: [sharedOpenGraphImage],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
+      images: ['/twitter-image'],
     },
   }
 }
@@ -99,7 +112,7 @@ export function getSoftwareJsonLd(locale: AppLocale) {
   return {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
-    name: 'Dubtube',
+    name: SITE_NAME,
     description: message(locale, landingDescription, { SUPPORTED_LANGUAGE_COUNT }),
     applicationCategory: 'MultimediaApplication',
     operatingSystem: 'Web',
@@ -116,7 +129,16 @@ export function getMarketingMetadata(locale: AppLocale, page: keyof typeof marke
 }
 
 export function getAppRouteMetadata(locale: AppLocale, page: keyof typeof appRouteMetadata): Metadata {
-  return getPageMetadata(locale, appRouteMetadata[page])
+  return getPageMetadata(locale, appRouteMetadata[page], {
+    robots: {
+      index: false,
+      follow: false,
+      googleBot: {
+        index: false,
+        follow: false,
+      },
+    },
+  })
 }
 
 function getPageMetadata(
@@ -126,11 +148,36 @@ function getPageMetadata(
 ): Metadata {
   const title = message(locale, page.title)
   const description = page.description ? message(locale, page.description) : undefined
+  const alternates = localizedAlternates(page.path, locale)
+  const openGraph: NonNullable<Metadata['openGraph']> = {
+    title,
+    description,
+    type: 'website',
+    url: withLocalePath(page.path, locale),
+    locale: OPEN_GRAPH_LOCALES[locale],
+    alternateLocale: APP_LOCALES.filter((appLocale) => appLocale !== locale).map((appLocale) => OPEN_GRAPH_LOCALES[appLocale]),
+    siteName: SITE_NAME,
+    images: [sharedOpenGraphImage],
+  }
+  const twitter: NonNullable<Metadata['twitter']> = {
+    card: 'summary_large_image',
+    title,
+    description,
+    images: ['/twitter-image'],
+  }
 
   return {
     title,
     description,
-    alternates: localizedAlternates(page.path, locale),
+    alternates,
     ...extra,
+    openGraph: {
+      ...openGraph,
+      ...extra.openGraph,
+    },
+    twitter: {
+      ...twitter,
+      ...extra.twitter,
+    },
   }
 }
