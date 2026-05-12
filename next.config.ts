@@ -18,6 +18,7 @@ const cspDirectives = [
   "base-uri 'self'",
   "form-action 'self' https://accounts.google.com",
   "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+  "media-src 'self' blob: https://*.blob.core.windows.net https://perso.ai https://*.perso.ai",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
 ].join('; ');

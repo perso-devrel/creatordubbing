@@ -255,8 +255,10 @@ interface SubtitleScriptEditorProps {
   allowDialogueEditing?: boolean
   youtubeVideoId?: string | null
   youtubePreviewVisibility?: PrivacyStatus
-  /** 원본 영상 URL. 자막 편집 시 영상을 직접 재생하기 위한 fallback player source. */
-  originalVideoUrl?: string | null
+  /** 자막 편집 시 화면에 노출할 영상의 직접 재생 URL.
+   * - 원본+자막 모드: 원본 영상 URL (모든 언어 공유)
+   * - 새 더빙 영상 모드: 해당 언어의 더빙 영상 URL */
+  previewVideoUrl?: string | null
 }
 
 export function SubtitleScriptEditor({
@@ -266,7 +268,7 @@ export function SubtitleScriptEditor({
   allowDialogueEditing = true,
   youtubeVideoId,
   youtubePreviewVisibility,
-  originalVideoUrl,
+  previewVideoUrl,
 }: SubtitleScriptEditorProps) {
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -614,16 +616,16 @@ export function SubtitleScriptEditor({
             </div>
           )}
 
-          {originalVideoUrl ? (
+          {previewVideoUrl ? (
             <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50">
               <div className="mb-3 flex min-w-0 items-start gap-2">
                 <Video className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
                 <p className="text-sm font-medium text-surface-900 dark:text-white">
-                  {t('features.dubbing.components.subtitleScriptEditor.originalVideoPreview')}
+                  {t('features.dubbing.components.subtitleScriptEditor.videoPreview')}
                 </p>
               </div>
               <div className="aspect-video w-full max-w-xl overflow-hidden rounded-lg border border-surface-200 bg-black dark:border-surface-700">
-                <video controls preload="metadata" className="h-full w-full" src={originalVideoUrl}>
+                <video controls preload="metadata" className="h-full w-full" src={previewVideoUrl}>
                   <track kind="captions" />
                 </video>
               </div>
