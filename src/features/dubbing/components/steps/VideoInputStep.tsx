@@ -369,7 +369,7 @@ export function VideoInputStep() {
                 />
               </div>
 
-              <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+              <div className="max-h-105 space-y-2 overflow-y-auto pr-1">
                 {filteredVideos.length === 0 ? (
                   <p className="py-8 text-center text-sm text-surface-500 dark:text-surface-300">{t('features.dubbing.components.steps.videoInputStep.noMatchingVideos')}</p>
                 ) : (

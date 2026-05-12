@@ -213,7 +213,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
   if (extensionStatus === 'not-installed') {
     return (
       <div className="flex items-center gap-3 rounded-lg border border-dashed border-surface-300 p-3 dark:border-surface-700">
-        <AlertCircle className="h-5 w-5 flex-shrink-0 text-surface-500 dark:text-surface-300" />
+        <AlertCircle className="h-5 w-5 shrink-0 text-surface-500 dark:text-surface-300" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-surface-700 dark:text-surface-200">
             {t('features.dubbing.components.youTubeExtensionUpload.chromeExtensionRequired')}
