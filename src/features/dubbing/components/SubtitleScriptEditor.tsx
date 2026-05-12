@@ -780,27 +780,13 @@ export function SubtitleScriptEditor({
               )}
 
               {cues && cues.length > 0 && (
-                <div className="flex flex-col gap-3 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-surface-900 dark:text-white">
-                      {captionDirty
-                        ? t('features.dubbing.components.subtitleScriptEditor.captionChangesPending')
-                        : t('features.dubbing.components.subtitleScriptEditor.captionFileReady')}
+                <div className="space-y-2 rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50">
+                  {hasInvalidCaptionTiming && (
+                    <p className="text-xs text-red-600 dark:text-red-400">
+                      {t('features.dubbing.components.subtitleScriptEditor.fixCaptionTimingBeforeExport')}
                     </p>
-                    <p className={cn(
-                      'mt-0.5 text-xs',
-                      hasInvalidCaptionTiming
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-surface-500 dark:text-surface-300',
-                    )}>
-                      {hasInvalidCaptionTiming
-                        ? t('features.dubbing.components.subtitleScriptEditor.fixCaptionTimingBeforeExport')
-                        : youtubeVideoId
-                          ? t('features.dubbing.components.subtitleScriptEditor.captionActionsHelp')
-                          : t('features.dubbing.components.subtitleScriptEditor.theYouTubeCaptionButtonBecomesAvailableAfterThis')}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
+                  )}
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       size="sm"
                       variant="outline"
