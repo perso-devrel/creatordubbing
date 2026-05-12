@@ -249,12 +249,12 @@ export const commonMessages = {
   },
   'marketPreset.globalBroad.label': { ko: '다국어 확장', en: 'Multilingual expansion' },
   'metadata.landing.description': {
-    ko: 'YouTube 크리에이터를 위한 {SUPPORTED_LANGUAGE_COUNT}개 언어 AI 더빙 및 업로드 도구.',
-    en: 'AI dubbing and upload tools for YouTube creators in {SUPPORTED_LANGUAGE_COUNT} languages.',
+    ko: 'YouTube 크리에이터를 위한 {SUPPORTED_LANGUAGE_COUNT}개 언어 자막 번역, AI 더빙, 업로드 준비 도구.',
+    en: 'Caption translation, AI dubbing, and upload prep for YouTube creators in {SUPPORTED_LANGUAGE_COUNT} languages.',
   },
   'metadata.landing.title': {
-    ko: 'YouTube 크리에이터를 위한 AI 더빙',
-    en: 'AI Dubbing for YouTube Creators',
+    ko: 'YouTube 자막·더빙 AI 도구',
+    en: 'AI Captions and Dubbing for YouTube Creators',
   },
   'ops.category.credit': { ko: '시간 환급', en: 'Minute release' },
   'ops.category.perso': { ko: '더빙 처리', en: 'Dubbing' },

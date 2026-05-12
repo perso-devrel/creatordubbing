@@ -14,7 +14,7 @@ export const youtubeMessages = {
   "app.app.youtube.page.defaultVisibility": { ko: "기본 공개 범위", en: "Default visibility" },
   "app.app.youtube.page.disconnectYouTube": { ko: "YouTube 연결 해제", en: "Disconnect YouTube" },
   "app.app.youtube.page.dubThisVideo": { ko: "이 영상 더빙", en: "Dub this video" },
-  "app.app.youtube.page.dubtubeRequestsYouTubePermissionsForChannelReadsUploads": { ko: "업로드, 자막 추가, 제목·설명 수정에 필요한 YouTube 권한만 요청합니다. 내 영상 목록은 사용자가 ‘내 영상 불러오기’를 누를 때 별도로 요청합니다. 권한은 언제든 해제할 수 있습니다.", en: "Dubtube requests only the YouTube permissions needed to upload videos, add captions, and update titles/descriptions. Permission to list your videos is requested separately when you click Load my videos. You can disconnect at any time." },
+  "app.app.youtube.page.dubtubeRequestsYouTubePermissionsForChannelReadsUploads": { ko: "업로드, 자막 추가, 제목·설명 수정, 내 영상 목록 조회에 필요한 YouTube 권한만 요청합니다. 권한은 언제든 해제할 수 있습니다.", en: "Dubtube requests only the YouTube permissions needed to upload videos, add captions, update titles/descriptions, and list your videos. You can disconnect at any time." },
   "app.app.youtube.page.loadingChannelInformation": { ko: "채널 정보 불러오는 중...", en: "Loading channel information..." },
   "app.app.youtube.page.loadingVideoList": { ko: "영상 목록 불러오는 중...", en: "Loading video list..." },
   "app.app.youtube.page.manageYourYouTubeChannelConnectionAndUploadDefaults": { ko: "YouTube 채널 연결과 업로드 기본값을 관리하세요.", en: "Manage your YouTube channel connection and upload defaults." },

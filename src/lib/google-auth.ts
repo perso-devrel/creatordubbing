@@ -25,7 +25,7 @@ const YOUTUBE_READONLY_SCOPES = ['https://www.googleapis.com/auth/youtube.readon
 function getGoogleScopes(mode: GoogleAuthScopeMode): readonly string[] {
   switch (mode) {
     case 'youtube-write':
-      return [...BASE_SCOPES, ...YOUTUBE_WRITE_SCOPES]
+      return [...BASE_SCOPES, ...YOUTUBE_WRITE_SCOPES, ...YOUTUBE_READONLY_SCOPES]
     case 'youtube-readonly':
       return [...BASE_SCOPES, ...YOUTUBE_READONLY_SCOPES]
     case 'login':

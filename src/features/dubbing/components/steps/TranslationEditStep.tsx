@@ -1,10 +1,11 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button, Card, Badge } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
 import { getLanguageByCode } from '@/utils/languages'
 import { useAuthStore } from '@/stores/authStore'
 import { useChannelStats } from '@/hooks/useYouTubeData'
@@ -28,12 +29,20 @@ export function TranslationEditStep() {
     nextStep,
   } = useDubbingStore()
   const user = useAuthStore((s) => s.user)
-  const { data: channel } = useChannelStats()
+  const authLoading = useAuthStore((s) => s.isLoading)
+  const { data: channel, isLoading: channelLoading } = useChannelStats()
   const locale = useAppLocale()
   const t = useLocaleText()
+  const router = useLocaleRouter()
 
   const needsAutoUploadReview = uploadSettings.autoUpload && deliverableMode !== 'downloadOnly'
-  const canStart = !needsAutoUploadReview || uploadSettings.uploadReviewConfirmed
+  const needsYouTubeConnection = deliverableMode !== 'downloadOnly'
+  const checkingYouTubeConnection = needsYouTubeConnection && (authLoading || channelLoading)
+  const youtubeConnectionMissing = !checkingYouTubeConnection && needsYouTubeConnection && !channel
+  const canStart =
+    !checkingYouTubeConnection &&
+    !youtubeConnectionMissing &&
+    (!needsAutoUploadReview || uploadSettings.uploadReviewConfirmed)
   const privacyLabel = t(PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus)
   const targetChannelLabel = channel
     ? t('features.dubbing.components.steps.translationEditStep.channelWithSubscriberCount', {
@@ -73,6 +82,25 @@ export function TranslationEditStep() {
 
       {/* Summary card */}
       <Card>
+        {youtubeConnectionMissing && (
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/70 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+              <div>
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-300">
+                  {t('features.dubbing.components.steps.outputModeStep.youtubeConnectionRequired')}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-amber-700 dark:text-amber-400">
+                  {t('features.dubbing.components.steps.outputModeStep.connectYouTubeInSettingsToUpload')}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => router.push('/settings?section=youtube')}>
+              {t('features.dubbing.components.steps.outputModeStep.connectInSettings')}
+            </Button>
+          </div>
+        )}
+
         <div className="space-y-3">
           {uploadsVideoToYouTube && (
             <SummaryRow label={t('features.dubbing.components.steps.translationEditStep.channel')} value={targetChannelLabel} />

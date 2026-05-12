@@ -95,12 +95,12 @@ const baseMessages = {
   'internal.keyword.popup': { ko: '팝업' },
   'internal.keyword.youtubeConnection': { ko: 'YouTube 연결' },
   'metadata.landing.title': {
-    ko: 'YouTube 크리에이터를 위한 AI 더빙',
-    en: 'AI Dubbing for YouTube Creators',
+    ko: 'YouTube 자막·더빙 AI 도구',
+    en: 'AI Captions and Dubbing for YouTube Creators',
   },
   'metadata.landing.description': {
-    ko: 'YouTube 크리에이터를 위한 {SUPPORTED_LANGUAGE_COUNT}개 언어 AI 더빙 및 업로드 도구.',
-    en: 'AI dubbing and upload tools for YouTube creators in {SUPPORTED_LANGUAGE_COUNT} languages.',
+    ko: 'YouTube 크리에이터를 위한 {SUPPORTED_LANGUAGE_COUNT}개 언어 자막 번역, AI 더빙, 업로드 준비 도구.',
+    en: 'Caption translation, AI dubbing, and upload prep for YouTube creators in {SUPPORTED_LANGUAGE_COUNT} languages.',
   },
   'marketPreset.core.label': { ko: '기본 출시', en: 'Core launch' },
   'marketPreset.core.description': {

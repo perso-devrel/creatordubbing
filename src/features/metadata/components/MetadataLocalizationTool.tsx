@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, FileVideo, Languages, Loader2, RefreshCw, Search, Upload } from 'lucide-react'
 import { Badge, Button, Card, CardTitle, Input, Modal, Select, Toggle } from '@/components/ui'
-import { useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
-import { signInWithGoogle } from '@/lib/google-auth'
+import { isYouTubeConnectionError, useChannelStats, useMyVideos } from '@/hooks/useYouTubeData'
 import { translateMetadata } from '@/lib/api-client/translate'
 import {
   ytFetchVideoMetadata,
@@ -18,8 +17,8 @@ import {
   METADATA_TARGET_PRESET_OPTIONS,
 } from '@/lib/i18n/config'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import { useLocaleRouter } from '@/hooks/useLocalePath'
 import { useI18nStore } from '@/stores/i18nStore'
-import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
@@ -48,6 +47,7 @@ export function MetadataLocalizationTool() {
   } = useI18nStore()
   const appLocale = useAppLocale()
   const t = useLocaleText()
+  const router = useLocaleRouter()
   const isEnglish = appLocale === 'en'
   const languageOptions = SUPPORTED_LANGUAGES.map((language) => ({
     value: language.code,
@@ -133,12 +133,14 @@ export function MetadataLocalizationTool() {
   const handleLoadVideos = async () => {
     setRequestingVideos(true)
     try {
-      const { user } = await signInWithGoogle({ forceConsent: true, scopeMode: 'youtube-readonly' })
-      useAuthStore.getState().setUser(user)
       const result = await refetchVideos()
       if (result.error) throw result.error
       setVideosLoaded(true)
     } catch (err) {
+      if (isYouTubeConnectionError(err)) {
+        router.push('/settings?section=youtube')
+        return
+      }
       console.error('[MetadataLocalizationTool] Failed to request YouTube videos permission', err)
       addToast({
         type: 'error',
