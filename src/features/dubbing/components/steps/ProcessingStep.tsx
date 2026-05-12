@@ -29,6 +29,7 @@ const reasonLabels: Record<string, MessageKey> = {
   READY_TARGET_LANGUAGES: 'dubbing.processing.reason.readyTargetLanguages',
   ENQUEUED: 'dubbing.processing.reason.enqueued',
   PROCESSING: 'dubbing.processing.reason.processing',
+  STT_CAPTION_TRANSLATING: 'dubbing.processing.reason.sttCaptionTranslating',
   COMPLETED: 'dubbing.processing.reason.completed',
   Completed: 'dubbing.processing.reason.completed',
   FAILED: 'dubbing.processing.reason.failed',
@@ -46,7 +47,7 @@ function getProgressLabel(t: ReturnType<typeof useLocaleText>, lp: { progressRea
 }
 
 export function ProcessingStep() {
-  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted, deliverableMode, reset } = useDubbingStore()
+  const { languageProgress, jobStatus, setStep, isSubmitted, setIsSubmitted, deliverableMode, uploadSettings, reset } = useDubbingStore()
   const { submitDubbing, startPolling, stopPolling, cancelAll } = usePersoFlow()
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -90,6 +91,10 @@ export function ProcessingStep() {
     languageProgress.length > 0
       ? Math.round(languageProgress.reduce((acc, p) => acc + p.progress, 0) / languageProgress.length)
       : 0
+  const usesSttCaptionMode =
+    deliverableMode === 'originalWithMultiAudio' &&
+    uploadSettings.uploadCaptions &&
+    uploadSettings.captionGenerationMode === 'stt'
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -100,7 +105,9 @@ export function ProcessingStep() {
         <p className="mt-1 text-surface-500 dark:text-surface-300">
           {allCompleted
             ? t('features.dubbing.components.steps.processingStep.reviewTheFinishedFilesAndContinueWithThe')
-            : deliverableMode === 'originalWithMultiAudio'
+            : usesSttCaptionMode
+              ? t('features.dubbing.components.steps.processingStep.creatingCaptionsWithSttAndTranslation')
+              : deliverableMode === 'originalWithMultiAudio'
               ? t('features.dubbing.components.steps.processingStep.creatingCaptionsProcessingTimeDependsOnVideoLength')
               : t('features.dubbing.components.steps.processingStep.creatingCaptionsAndDubbedAudioProcessingTimeDepends')}
         </p>

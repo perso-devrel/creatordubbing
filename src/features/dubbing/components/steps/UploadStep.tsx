@@ -18,6 +18,7 @@ import {
   ytUpdateVideoLocalizations,
   getPersoFileUrl,
   getTranslatedSrt,
+  getGeneratedSttCaptionSrt,
   translateMetadata,
   type MetadataTranslation,
 } from '@/lib/api-client'
@@ -80,6 +81,10 @@ export function UploadStep() {
   const shouldUploadCaptions = autoUpload && uploadCaptionsEnabled
   const shouldApplyAiDisclosure = deliverableMode === 'newDubbedVideos' && containsSyntheticMedia
   const videoMetaTitle = videoMeta?.title
+  const isSttCaptionMode =
+    deliverableMode === 'originalWithMultiAudio' &&
+    uploadCaptionsEnabled &&
+    uploadSettings.captionGenerationMode === 'stt'
 
   const [loadingDownload, setLoadingDownload] = useState<string | null>(null)
   const [captionUploads, setCaptionUploads] = useState<Record<string, UploadStatus>>({})
@@ -290,15 +295,25 @@ export function UploadStep() {
   }, [isAuthenticated, originalVideoUrl, settingsTitle, editableDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, shouldApplyAiDisclosure, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage, applyDescriptionFooter, t])
 
   // ─── File download ──────────────────────────────────────────────────
+  const loadCaptionSrt = useCallback(async (langCode: string): Promise<string> => {
+    if (isSttCaptionMode) {
+      if (!dbJobId) return ''
+      return getGeneratedSttCaptionSrt(dbJobId, langCode)
+    }
+
+    const pSeq = projectMap[langCode]
+    if (!pSeq || !spaceSeq) return ''
+    return getTranslatedSrt(pSeq, spaceSeq, 'translated')
+  }, [dbJobId, isSttCaptionMode, projectMap, spaceSeq])
+
   const handleDownload = useCallback(async (langCode: string, type: 'video' | 'voiceAudio' | 'translatedSubtitle') => {
     setLoadingDownload(`${langCode}-${type}`)
     try {
       const lang = getLanguageByCode(langCode)
 
       if (type === 'translatedSubtitle') {
-        const pSeq = projectMap[langCode]
-        if (!pSeq || !spaceSeq) return
-        const srtContent = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
+        const srtContent = await loadCaptionSrt(langCode)
+        if (!srtContent) return
         const blob = new Blob([srtContent], { type: 'application/x-subrip;charset=utf-8' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
@@ -333,7 +348,7 @@ export function UploadStep() {
     } finally {
       setLoadingDownload(null)
     }
-  }, [fetchDownloads, projectMap, spaceSeq])
+  }, [fetchDownloads, loadCaptionSrt])
 
   // ─── Upload dubbed video to YouTube (newDubbedVideos mode) ──────────
   const handleYouTubeUpload = useCallback(async (langCode: string, processNow = true) => {
@@ -431,12 +446,10 @@ export function UploadStep() {
     for (const langCode of langs) {
       const lang = getLanguageByCode(langCode)
       if (!lang) continue
-      const pSeq = projectMap[langCode]
-      if (!pSeq || !spaceSeq) continue
 
       setCaptionUploads((prev) => ({ ...prev, [langCode]: 'uploading' }))
       try {
-        const srtContent = await getTranslatedSrt(pSeq, spaceSeq, 'translated')
+        const srtContent = await loadCaptionSrt(langCode)
         if (srtContent.trim().length === 0) {
           setCaptionUploads((prev) => ({ ...prev, [langCode]: 'error' }))
           continue
@@ -456,7 +469,7 @@ export function UploadStep() {
         addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.valueCaptionUploadFailed', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }), message: msg })
       }
     }
-  }, [projectMap, spaceSeq, addToast, getDisplayLanguageName, t])
+  }, [addToast, getDisplayLanguageName, loadCaptionSrt, t])
 
   const uploadCaptionsWithMetadata = useCallback(async (targetVideoId: string, langs: string[]) => {
     if (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'channel') {
@@ -922,7 +935,9 @@ export function UploadStep() {
                     <div>
                       <p className="text-sm font-medium text-surface-900 dark:text-white">{getDisplayLanguageName(code)}</p>
                       <p className="text-xs text-surface-500 dark:text-surface-300">
-                        {deliverableMode === 'originalWithMultiAudio'
+                        {isSttCaptionMode
+                          ? t('features.dubbing.components.steps.uploadStep.captionsOnlyDownload')
+                          : deliverableMode === 'originalWithMultiAudio'
                           ? t('features.dubbing.components.steps.uploadStep.audioCaptions')
                           : t('features.dubbing.components.steps.uploadStep.videoAudioCaptions')}
                       </p>
@@ -931,7 +946,7 @@ export function UploadStep() {
                   <div
                     className={cn(
                       'grid min-w-0 grid-cols-1 gap-2 sm:ml-auto',
-                      deliverableMode === 'originalWithMultiAudio' ? 'sm:grid-cols-2' : 'sm:grid-cols-3',
+                      isSttCaptionMode ? 'sm:grid-cols-1' : deliverableMode === 'originalWithMultiAudio' ? 'sm:grid-cols-2' : 'sm:grid-cols-3',
                     )}
                   >
                     {deliverableMode !== 'originalWithMultiAudio' && (
@@ -940,10 +955,12 @@ export function UploadStep() {
                         <Download className="h-3.5 w-3.5" /> {t('features.dubbing.components.steps.uploadStep.video')}
                       </Button>
                     )}
-                    <Button variant="outline" size="sm" className="min-w-0 justify-center" onClick={() => handleDownload(code, 'voiceAudio')}
-                      loading={loadingDownload === `${code}-voiceAudio`}>
-                      <Download className="h-3.5 w-3.5" /> {t('features.dubbing.components.steps.uploadStep.audio')}
-                    </Button>
+                    {!isSttCaptionMode && (
+                      <Button variant="outline" size="sm" className="min-w-0 justify-center" onClick={() => handleDownload(code, 'voiceAudio')}
+                        loading={loadingDownload === `${code}-voiceAudio`}>
+                        <Download className="h-3.5 w-3.5" /> {t('features.dubbing.components.steps.uploadStep.audio')}
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" className="min-w-0 justify-center" onClick={() => handleDownload(code, 'translatedSubtitle')}
                       loading={loadingDownload === `${code}-translatedSubtitle`}>
                       <Download className="h-3.5 w-3.5" /> {t('features.dubbing.components.steps.uploadStep.captions2')}
@@ -1012,6 +1029,7 @@ export function UploadStep() {
                   youtubeVideoId={ytUploads[code]?.videoId ?? null}
                   youtubePreviewVisibility={privacyStatus}
                   previewVideoUrl={previewVideoUrl}
+                  sttCaptionJobId={isSttCaptionMode ? dbJobId : null}
                 />
               )
             })}

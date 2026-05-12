@@ -14,6 +14,8 @@ import {
   uploadExternalVideo,
   initializeQueue,
   submitTranslation,
+  submitStt,
+  generateSttCaptions,
   getProjectProgress,
   getDownloadLinks,
   getPersoFileUrl,
@@ -48,6 +50,7 @@ function mapProgressReasonToStatus(reason: string) {
     case 'READY_TARGET_LANGUAGES':
     case 'Transcribing':
     case 'Translating':
+    case 'STT_CAPTION_TRANSLATING':
       return 'translating' as const
     case 'ENQUEUED':
     case 'Uploading':
@@ -70,6 +73,13 @@ function mapProgressReasonToStatus(reason: string) {
 }
 
 const store = useDubbingStore
+
+function isSttCaptionMode() {
+  const state = store.getState()
+  return state.deliverableMode === 'originalWithMultiAudio' &&
+    state.uploadSettings.uploadCaptions &&
+    state.uploadSettings.captionGenerationMode === 'stt'
+}
 
 async function saveJobToDb(
   mediaSeq: number,
@@ -218,6 +228,147 @@ async function pollLanguage(
   return true
 }
 
+async function pollSttCaptionJob(
+  projectSeq: number,
+  spaceSeq: number,
+  pollTimers: Record<string, ReturnType<typeof setTimeout>>,
+  addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
+  t: LocaleText,
+): Promise<boolean | 'finalizing'> {
+  const progress = await getProjectProgress(projectSeq, spaceSeq)
+  const dbJobId = store.getState().dbJobId
+  const langCodes = store.getState().languageProgress.map((lp) => lp.langCode)
+  const sttProgress = Math.min(70, Math.max(0, Math.round(progress.progress * 0.7)))
+  const status = mapProgressReasonToStatus(progress.progressReason)
+
+  for (const langCode of langCodes) {
+    store.getState().updateLanguageProgress(langCode, {
+      status,
+      progress: sttProgress,
+      progressReason: progress.progressReason,
+    })
+    if (dbJobId) {
+      dbMutation({
+        type: 'updateJobLanguageProgress',
+        payload: {
+          jobId: dbJobId,
+          langCode,
+          status,
+          progress: sttProgress,
+          progressReason: progress.progressReason,
+        },
+      }).catch(() => { /* progress update is best-effort */ })
+    }
+  }
+
+  const reason = progress.progressReason
+  const isTerminal = reason === 'COMPLETED' || reason === 'Completed' || reason === 'FAILED' || reason === 'Failed' || reason === 'CANCELED'
+  if (!isTerminal) {
+    if (progress.progress >= 100) return 'finalizing'
+    return false
+  }
+
+  clearTimeout(pollTimers.stt)
+  delete pollTimers.stt
+
+  if (reason === 'COMPLETED' || reason === 'Completed') {
+    for (const langCode of langCodes) {
+      store.getState().updateLanguageProgress(langCode, {
+        status: 'translating',
+        progress: 72,
+        progressReason: 'STT_CAPTION_TRANSLATING',
+      })
+      if (dbJobId) {
+        dbMutation({
+          type: 'updateJobLanguageProgress',
+          payload: {
+            jobId: dbJobId,
+            langCode,
+            status: 'translating',
+            progress: 72,
+            progressReason: 'STT_CAPTION_TRANSLATING',
+          },
+        }).catch(() => { /* progress update is best-effort */ })
+      }
+    }
+
+    if (!dbJobId) throw new Error(t('features.dubbing.hooks.usePersoFlow.missingVideoInformationPleaseStartAgain'))
+
+    try {
+      const result = await generateSttCaptions({
+        jobId: dbJobId,
+        projectSeq,
+        spaceSeq,
+        targetLanguageCodes: langCodes,
+        sourceLanguageCode: DEFAULT_SOURCE_LANGUAGE,
+      })
+      const byLang = new Map(result.languages.map((item) => [item.langCode, item]))
+      const failedLangs = new Set((result.failedLanguages ?? []).map((item) => item.langCode))
+      for (const langCode of langCodes) {
+        const caption = byLang.get(langCode)
+        if (failedLangs.has(langCode) || !caption) {
+          store.getState().updateLanguageProgress(langCode, {
+            status: 'failed',
+            progressReason: 'FAILED',
+          })
+          continue
+        }
+        store.getState().updateLanguageProgress(langCode, {
+          status: 'completed',
+          progress: 100,
+          progressReason: 'COMPLETED',
+          srtUrl: caption.srtUrl,
+        })
+      }
+    } catch (err) {
+      for (const langCode of langCodes) {
+        store.getState().updateLanguageProgress(langCode, {
+          status: 'failed',
+          progressReason: 'FAILED',
+        })
+        if (dbJobId) {
+          dbMutation({
+            type: 'updateJobLanguageProgress',
+            payload: {
+              jobId: dbJobId,
+              langCode,
+              status: 'failed',
+              progress: 0,
+              progressReason: 'FAILED',
+            },
+          }).catch(() => { /* failure update is best-effort */ })
+        }
+      }
+      addToast({
+        type: 'error',
+        title: t('features.dubbing.hooks.usePersoFlow.captionGenerationFailed'),
+        message: err instanceof Error ? err.message : '',
+      })
+    }
+  }
+
+  const allProgress = store.getState().languageProgress
+  const anyFailed = allProgress.some((lp) => lp.progressReason === 'FAILED' || lp.progressReason === 'Failed' || lp.progressReason === 'CANCELED')
+  const newStatus = anyFailed ? 'failed' : 'completed'
+  const prevJobStatus = store.getState().jobStatus
+  const alreadyFinalized = prevJobStatus === 'completed' || prevJobStatus === 'failed'
+  store.getState().setJobStatus(newStatus)
+
+  if (dbJobId && !alreadyFinalized) {
+    await dbMutationStrict({ type: 'finalizeJobCredits', payload: { jobId: dbJobId } })
+  }
+  if (dbJobId) {
+    await dbMutation({ type: 'updateJobStatus', payload: { jobId: dbJobId, status: newStatus } })
+  }
+  addToast({
+    type: anyFailed ? 'warning' : 'success',
+    title: anyFailed
+      ? t('features.dubbing.hooks.usePersoFlow.captionGenerationFinishedWithSomeErrors')
+      : t('features.dubbing.hooks.usePersoFlow.captionGenerationComplete'),
+  })
+  return true
+}
+
 async function cancelAllProjects(
   addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
   reason: string,
@@ -231,10 +382,19 @@ async function cancelAllProjects(
             lp.progressReason !== 'CANCELED',
   )
 
+  const canceledProjects = new Set<number>()
   await Promise.allSettled(
     activeLangs.map(async (lp) => {
       const projectSeq = projectMap[lp.langCode]
       if (!projectSeq) return
+      if (canceledProjects.has(projectSeq)) {
+        store.getState().updateLanguageProgress(lp.langCode, {
+          status: 'failed',
+          progressReason: 'CANCELED',
+        })
+        return
+      }
+      canceledProjects.add(projectSeq)
       try {
         await cancelProject(projectSeq, spaceSeq)
       } catch {
@@ -355,10 +515,13 @@ export function usePersoFlow() {
       throw new Error(t('features.dubbing.hooks.usePersoFlow.missingVideoInformationPleaseStartAgain'))
     }
     const targetLanguages = Array.from(new Set(selectedLanguages))
+    const sttCaptionMode = isSttCaptionMode()
 
     addToast({
       type: 'info',
-      title: t('features.dubbing.hooks.usePersoFlow.startingDubbingJob'),
+      title: t(sttCaptionMode
+        ? 'features.dubbing.hooks.usePersoFlow.startingSttCaptionJob'
+        : 'features.dubbing.hooks.usePersoFlow.startingDubbingJob'),
       message: countLocaleMessage(locale, targetLanguages.length, 'features.dubbing.hooks.usePersoFlow.unitLanguages', t),
     })
 
@@ -380,6 +543,45 @@ export function usePersoFlow() {
         t,
       )
       await dbMutationStrict({ type: 'reserveJobCredits', payload: { jobId: dbJobId } })
+
+      if (sttCaptionMode) {
+        const result = await submitStt(spaceSeq, {
+          mediaSeq,
+          isVideoProject: true,
+          title: videoMeta?.title?.trim() || `Dubtube STT project ${mediaSeq}`,
+        })
+        const projectSeq = result.startGenerateProjectIdList?.[0]
+        if (!projectSeq) {
+          throw new Error(t('features.dubbing.hooks.usePersoFlow.failedToStartDubbing'))
+        }
+
+        const projectMap = Object.fromEntries(targetLanguages.map((lang) => [lang, projectSeq]))
+        store.getState().setProjectMap(projectMap)
+        const initialProgress: LanguageProgress[] = targetLanguages.map((code) => ({
+          langCode: code,
+          projectSeq,
+          status: 'transcribing',
+          progress: 0,
+          progressReason: 'PENDING',
+        }))
+        store.getState().setLanguageProgress(initialProgress)
+        store.getState().setJobStatus('transcribing')
+
+        await dbMutationStrict({
+          type: 'updateJobLanguageProjects',
+          payload: {
+            jobId: dbJobId,
+            languages: targetLanguages.map((code) => ({ code, projectSeq })),
+          },
+        })
+
+        addToast({
+          type: 'success',
+          title: t('features.dubbing.hooks.usePersoFlow.sttCaptionJobStarted'),
+          message: countLocaleMessage(locale, targetLanguages.length, 'features.dubbing.hooks.usePersoFlow.unitLanguagesProcessing', t),
+        })
+        return projectMap
+      }
 
       const result = await submitTranslation(spaceSeq, {
         mediaSeq,
@@ -460,6 +662,28 @@ export function usePersoFlow() {
           scheduleNext(langCode, projectSeq, interval)
         }
       }, interval)
+    }
+
+    function scheduleStt(projectSeq: number, interval: number) {
+      pollTimers.current.stt = setTimeout(async () => {
+        try {
+          const done = await pollSttCaptionJob(projectSeq, spaceSeq!, pollTimers.current, addToast, t)
+          if (!done) {
+            const next = Math.min(interval * POLL_BACKOFF, POLL_INTERVAL_MAX)
+            scheduleStt(projectSeq, next)
+          } else if (done === 'finalizing') {
+            scheduleStt(projectSeq, POLL_FINALIZING)
+          }
+        } catch {
+          scheduleStt(projectSeq, interval)
+        }
+      }, interval)
+    }
+
+    if (isSttCaptionMode()) {
+      const projectSeq = Object.values(projectMap).find((value) => value > 0)
+      if (projectSeq) scheduleStt(projectSeq, POLL_INTERVAL_MIN)
+      return
     }
 
     Object.entries(projectMap).forEach(([langCode, projectSeq]) => {
