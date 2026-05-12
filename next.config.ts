@@ -17,6 +17,7 @@ const cspDirectives = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self' https://accounts.google.com",
+  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
 ].join('; ');
