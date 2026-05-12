@@ -13,6 +13,7 @@ import {
   DEFAULT_APP_LOCALE,
 } from "@/lib/i18n/config";
 import { message } from "@/lib/i18n/messages";
+import { SEO_KEYWORDS, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,15 +27,35 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dubtube.com";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
   title: {
-    default: "Dubtube",
-    template: "%s | Dubtube",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
   description: message(DEFAULT_APP_LOCALE, "metadata.landing.description", { SUPPORTED_LANGUAGE_COUNT }),
+  keywords: SEO_KEYWORDS,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "technology",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 const themeInitScript = `try{var raw=localStorage.getItem('dubtube-theme');var state=null;var preference=null;var mode=null;if(raw){try{var parsed=JSON.parse(raw);state=parsed&&parsed.state||parsed;preference=state&&state.preference;mode=state&&state.mode||state}catch(_){mode=raw}}if(!preference&&(mode==='dark'||mode==='light'))preference=mode;var systemDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;if(preference==='dark'||((!preference||preference==='system')&&systemDark)){document.documentElement.classList.add('dark')}}catch(e){}`;
