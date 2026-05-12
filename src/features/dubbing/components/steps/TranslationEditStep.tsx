@@ -32,7 +32,7 @@ export function TranslationEditStep() {
   const locale = useAppLocale()
   const t = useLocaleText()
 
-  const needsAutoUploadReview = uploadSettings.autoUpload
+  const needsAutoUploadReview = uploadSettings.autoUpload && deliverableMode !== 'downloadOnly'
   const canStart = !needsAutoUploadReview || uploadSettings.uploadReviewConfirmed
   const privacyLabel = t(PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus)
   const targetChannelLabel = channel
@@ -116,10 +116,12 @@ export function TranslationEditStep() {
 
           <SummaryRow label={t('features.dubbing.components.steps.translationEditStep.output')} value={deliverableModeLabel} />
 
-          <SummaryRow
-            label={t('features.dubbing.components.steps.translationEditStep.autoUpload')}
-            value={<StatusValue active={uploadSettings.autoUpload} />}
-          />
+          {deliverableMode !== 'downloadOnly' && (
+            <SummaryRow
+              label={t('features.dubbing.components.steps.translationEditStep.autoUpload')}
+              value={<StatusValue active={uploadSettings.autoUpload} />}
+            />
+          )}
 
           {showsCaptionSetting && (
             <SummaryRow
