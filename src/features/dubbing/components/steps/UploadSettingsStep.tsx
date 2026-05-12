@@ -19,6 +19,7 @@ export function UploadSettingsStep() {
     setUploadSettings,
     syncPrivacyFromGlobalDefault,
     syncMetadataLanguageFromGlobalDefault,
+    syncTagsFromGlobalDefault,
     prevStep,
     nextStep,
   } = useDubbingStore()
@@ -40,7 +41,8 @@ export function UploadSettingsStep() {
   useEffect(() => {
     syncPrivacyFromGlobalDefault()
     syncMetadataLanguageFromGlobalDefault()
-  }, [syncPrivacyFromGlobalDefault, syncMetadataLanguageFromGlobalDefault])
+    syncTagsFromGlobalDefault()
+  }, [syncPrivacyFromGlobalDefault, syncMetadataLanguageFromGlobalDefault, syncTagsFromGlobalDefault])
 
   const originalYouTubeId =
     videoSource?.type === 'url' && videoSource.url ? extractVideoId(videoSource.url) : null

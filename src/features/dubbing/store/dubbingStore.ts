@@ -150,10 +150,13 @@ interface DubbingState {
   privacyOverridden: boolean
   /** Wizard 세션 내에서 사용자가 metadataLanguage를 직접 변경했는지 여부. */
   metadataLanguageOverridden: boolean
+  /** Wizard 세션 내에서 사용자가 tags를 직접 변경했는지 여부. */
+  tagsOverridden: boolean
   setUploadSettings: (patch: Partial<UploadSettings>) => void
   /** YouTube 설정 페이지의 기본값을 wizard에 동기화한다 (사용자 override 없을 때만). */
   syncPrivacyFromGlobalDefault: () => void
   syncMetadataLanguageFromGlobalDefault: () => void
+  syncTagsFromGlobalDefault: () => void
 
   // Glossary
   glossary: GlossaryEntry[]
@@ -189,6 +192,7 @@ const initialState = {
   uploadSettings: buildDefaultUploadSettings() as UploadSettings,
   privacyOverridden: false,
   metadataLanguageOverridden: false,
+  tagsOverridden: false,
 }
 
 export const useDubbingStore = create<DubbingState>((set) => ({
@@ -284,6 +288,8 @@ export const useDubbingStore = create<DubbingState>((set) => ({
         patch.privacyStatus !== undefined ? true : s.privacyOverridden,
       metadataLanguageOverridden:
         patch.metadataLanguage !== undefined ? true : s.metadataLanguageOverridden,
+      tagsOverridden:
+        patch.tags !== undefined ? true : s.tagsOverridden,
     }
   }),
 
@@ -302,6 +308,16 @@ export const useDubbingStore = create<DubbingState>((set) => ({
     if (s.uploadSettings.metadataLanguage === next) return s
     return {
       uploadSettings: { ...s.uploadSettings, metadataLanguage: next, uploadReviewConfirmed: false },
+    }
+  }),
+
+  syncTagsFromGlobalDefault: () => set((s) => {
+    if (s.tagsOverridden) return s
+    const next = readDefaultTags()
+    const current = s.uploadSettings.tags
+    if (current.length === next.length && current.every((tag, index) => tag === next[index])) return s
+    return {
+      uploadSettings: { ...s.uploadSettings, tags: next, uploadReviewConfirmed: false },
     }
   }),
 
