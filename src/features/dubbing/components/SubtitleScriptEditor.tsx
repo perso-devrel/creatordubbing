@@ -255,6 +255,8 @@ interface SubtitleScriptEditorProps {
   allowDialogueEditing?: boolean
   youtubeVideoId?: string | null
   youtubePreviewVisibility?: PrivacyStatus
+  /** 원본 영상 URL. 자막 편집 시 영상을 직접 재생하기 위한 fallback player source. */
+  originalVideoUrl?: string | null
 }
 
 export function SubtitleScriptEditor({
@@ -264,6 +266,7 @@ export function SubtitleScriptEditor({
   allowDialogueEditing = true,
   youtubeVideoId,
   youtubePreviewVisibility,
+  originalVideoUrl,
 }: SubtitleScriptEditorProps) {
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -611,7 +614,32 @@ export function SubtitleScriptEditor({
             </div>
           )}
 
-          {youtubeVideoId && youtubeWatchUrl && youtubeEmbedUrl && (
+          {originalVideoUrl ? (
+            <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50">
+              <div className="mb-3 flex min-w-0 items-start gap-2">
+                <Video className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                <p className="text-sm font-medium text-surface-900 dark:text-white">
+                  {t('features.dubbing.components.subtitleScriptEditor.originalVideoPreview')}
+                </p>
+              </div>
+              <div className="aspect-video w-full max-w-xl overflow-hidden rounded-lg border border-surface-200 bg-black dark:border-surface-700">
+                <video controls preload="metadata" className="h-full w-full" src={originalVideoUrl}>
+                  <track kind="captions" />
+                </video>
+              </div>
+              {youtubeVideoId && youtubeWatchUrl && (
+                <a
+                  href={youtubeWatchUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-surface-300 bg-white px-3 text-sm font-medium text-surface-700 transition-all duration-200 hover:bg-surface-100 focus-ring dark:border-surface-700 dark:bg-transparent dark:text-surface-300 dark:hover:bg-surface-800"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {t('features.dubbing.components.subtitleScriptEditor.openInYouTube')}
+                </a>
+              )}
+            </div>
+          ) : youtubeVideoId && youtubeWatchUrl && youtubeEmbedUrl && (
             <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-start gap-2">

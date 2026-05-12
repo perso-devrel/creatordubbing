@@ -301,6 +301,7 @@ export const dubbingMessages = {
   "features.dubbing.components.subtitleScriptEditor.loadingDialogue": { ko: "대사를 불러오는 중...", en: "Loading dialogue..." },
   "features.dubbing.components.subtitleScriptEditor.noLinesToShow": { ko: "표시할 문장이 없습니다.", en: "No lines to show." },
   "features.dubbing.components.subtitleScriptEditor.openInYouTube": { ko: "YouTube에서 열기", en: "Open in YouTube" },
+  "features.dubbing.components.subtitleScriptEditor.originalVideoPreview": { ko: "원본 영상 미리보기", en: "Original video preview" },
   "features.dubbing.components.subtitleScriptEditor.previewCaptions": { ko: "자막 미리보기", en: "Preview captions" },
   "features.dubbing.components.subtitleScriptEditor.regenerateAudio": { ko: "오디오 다시 만들기", en: "Regenerate audio" },
   "features.dubbing.components.subtitleScriptEditor.restoreGeneratedCaptions": { ko: "되돌리기", en: "Restore" },
