@@ -994,6 +994,14 @@ export function UploadStep() {
               const projectSeq = projectMap[code]
               if (!projectSeq) return null
 
+              // 자막/스크립트 편집 화면에 노출할 영상은 모드에 따라 다르게 가져온다.
+              // - 원본+자막 모드: 원본 영상(모든 언어 공유)
+              // - 새 더빙 영상 모드: 해당 언어의 더빙 영상
+              const lp = languageProgress.find((p) => p.langCode === code)
+              const previewVideoUrl = deliverableMode === 'originalWithMultiAudio'
+                ? originalVideoUrl
+                : (lp?.dubbingVideoUrl ?? null)
+
               return (
                 <SubtitleScriptEditor
                   key={code}
@@ -1003,7 +1011,7 @@ export function UploadStep() {
                   allowDialogueEditing={allowDialogueEditingInOutput}
                   youtubeVideoId={ytUploads[code]?.videoId ?? null}
                   youtubePreviewVisibility={privacyStatus}
-                  originalVideoUrl={originalVideoUrl}
+                  previewVideoUrl={previewVideoUrl}
                 />
               )
             })}

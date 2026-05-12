@@ -509,7 +509,7 @@ export const generatedMessages = {
   "features.dubbing.components.subtitleScriptEditor.valueCaptionsAndDialogue": { ko: "{languageName} 자막 · 대사", en: "{languageName} captions and dialogue" },
   "features.dubbing.components.subtitleScriptEditor.yourTranslationEditHasBeenSaved": { ko: "수정한 번역을 저장했습니다.", en: "Your translation edit has been saved." },
   "features.dubbing.components.subtitleScriptEditor.youTubeCaptionsUpdated": { ko: "YouTube 자막 수정 완료", en: "YouTube captions updated" },
-  "features.dubbing.components.subtitleScriptEditor.originalVideoPreview": { ko: "원본 영상 미리보기", en: "Original video preview" },
+  "features.dubbing.components.subtitleScriptEditor.videoPreview": { ko: "영상 미리보기", en: "Video preview" },
   "features.dubbing.components.subtitleScriptEditor.youtubePreview": { ko: "YouTube 미리보기", en: "YouTube preview" },
   "features.dubbing.components.subtitleScriptEditor.youtubePreviewLoadFailed": { ko: "YouTube 미리보기를 불러오지 못했습니다", en: "Could not load YouTube preview" },
   "features.dubbing.components.subtitleScriptEditor.youtubePreviewMayBeUnavailableForPrivateVideos": { ko: "영상 공개 범위가 비공개이면 앱 안에서 재생되지 않을 수 있습니다. YouTube에서 열어 확인해 주세요.", en: "Private videos may not play inside the app. Open the video in YouTube to check it." },
