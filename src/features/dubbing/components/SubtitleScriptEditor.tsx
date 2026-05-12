@@ -805,7 +805,7 @@ export function SubtitleScriptEditor({
                       <RotateCcw className="h-3.5 w-3.5" />
                       {t('features.dubbing.components.subtitleScriptEditor.restoreGeneratedCaptions')}
                     </Button>
-                    {youtubeVideoId && (
+                    {captionDirty && (
                       <Button
                         size="sm"
                         variant="primary"
