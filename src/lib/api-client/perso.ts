@@ -9,6 +9,8 @@ import type {
   ProjectDetail,
   SasTokenResponse,
   ScriptSentence,
+  SttRequest,
+  SttResponse,
   TranslateRequest,
   TranslateResponse,
   UploadVideoResponse,
@@ -130,6 +132,38 @@ export function submitTranslation(
   return sendJson(`${PERSO}/translate?spaceSeq=${spaceSeq}`, 'POST', body)
 }
 
+export function submitStt(
+  spaceSeq: number,
+  body: SttRequest,
+): Promise<SttResponse> {
+  return sendJson(`${PERSO}/stt?spaceSeq=${spaceSeq}`, 'POST', body)
+}
+
+export interface GenerateSttCaptionsRequest {
+  jobId: number
+  projectSeq: number
+  spaceSeq: number
+  targetLanguageCodes: string[]
+  sourceLanguageCode?: string
+}
+
+export interface GeneratedSttCaptionResult {
+  langCode: string
+  srtUrl: string
+  cueCount: number
+}
+
+export interface FailedSttCaptionResult {
+  langCode: string
+  error: string
+}
+
+export function generateSttCaptions(
+  body: GenerateSttCaptionsRequest,
+): Promise<{ languages: GeneratedSttCaptionResult[]; failedLanguages?: FailedSttCaptionResult[] }> {
+  return sendJson(`${PERSO}/stt/captions`, 'POST', body)
+}
+
 // ─── Cancel ──────────────────────────────────────────────────
 
 export function cancelProject(
@@ -236,6 +270,25 @@ export async function getTranslatedSrt(
       if (body?.error?.message) msg = body.error.message
     } catch {
       // raw error response
+    }
+    throw new Error(msg)
+  }
+  return res.text()
+}
+
+export async function getGeneratedSttCaptionSrt(
+  jobId: number,
+  langCode: string,
+): Promise<string> {
+  const qs = new URLSearchParams({ jobId: String(jobId), langCode }).toString()
+  const res = await fetch(`${PERSO}/stt/captions?${qs}`, { cache: 'no-store' })
+  if (!res.ok) {
+    let msg = 'Could not load the generated caption file. Please try again.'
+    try {
+      const body = await res.json()
+      if (body?.error?.message) msg = body.error.message
+    } catch {
+      // Keep fallback message.
     }
     throw new Error(msg)
   }

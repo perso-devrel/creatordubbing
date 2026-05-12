@@ -33,22 +33,22 @@ export function ToastContainer() {
   if (toasts.length === 0) return null
 
   return (
-    <div role="status" aria-live="polite" aria-atomic="false" className="fixed bottom-4 right-4 z-[100] flex max-w-[calc(100vw-2rem)] flex-col gap-2">
+    <div role="status" aria-live="polite" aria-atomic="false" className="fixed bottom-4 right-4 z-100 flex max-w-[calc(100vw-2rem)] flex-col gap-2">
       {toasts.map((toast) => {
         const Icon = icons[toast.type]
         return (
           <div
             key={toast.id}
             className={cn(
-              'flex w-[calc(100vw-2rem)] max-w-[420px] items-start gap-3 rounded-lg border p-4 shadow-lg animate-slide-up sm:w-[420px]',
+              'flex w-[calc(100vw-2rem)] max-w-105 items-start gap-3 rounded-lg border p-4 shadow-lg animate-slide-up sm:w-105',
               styles[toast.type],
             )}
           >
             <Icon className={cn('h-5 w-5 shrink-0 mt-0.5', iconColors[toast.type])} aria-hidden="true" />
             <div className="flex-1 min-w-0">
-              <p className="break-words text-sm font-medium text-surface-900 dark:text-surface-100">{toast.title}</p>
+              <p className="wrap-break-word text-sm font-medium text-surface-900 dark:text-surface-100">{toast.title}</p>
               {toast.message && (
-                <p className="mt-0.5 break-words text-sm text-surface-600 dark:text-surface-400">{toast.message}</p>
+                <p className="mt-0.5 wrap-break-word text-sm text-surface-600 dark:text-surface-400">{toast.message}</p>
               )}
             </div>
             <button

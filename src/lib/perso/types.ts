@@ -72,6 +72,16 @@ export interface TranslateResponse {
   startGenerateProjectIdList: number[]
 }
 
+export interface SttRequest {
+  mediaSeq: number
+  isVideoProject: boolean
+  title?: string
+}
+
+export interface SttResponse {
+  startGenerateProjectIdList: number[]
+}
+
 /**
  * Progress reason values from Perso API.
  * Internal values (PENDING, PROCESSING, etc.) are used by our polling logic.
@@ -167,6 +177,26 @@ export interface ScriptSentence {
   originalText: string
   translatedText: string
   speakerLabel: string
+}
+
+export interface SttScriptSentence {
+  seq: number
+  externalScriptSeq?: string
+  speakerOrderIndex?: number
+  offsetMs: number
+  durationMs: number
+  originalDraftText?: string
+  originalText: string
+}
+
+export interface SttScriptResponse {
+  hasNext?: boolean
+  nextCursorId?: number | null
+  sentences?: SttScriptSentence[]
+  speakers?: Array<{
+    speakerOrderIndex: number
+    externalSpeakerSeq?: string
+  }>
 }
 
 export interface ProjectDetail {

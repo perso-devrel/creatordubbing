@@ -43,6 +43,7 @@ const createDubbingJobSchema = z.object({
       selfDeclaredMadeForKids: z.boolean(),
       containsSyntheticMedia: z.boolean(),
       uploadReviewConfirmed: z.boolean(),
+      captionGenerationMode: z.enum(['dubbing', 'stt']).optional(),
       metadataLanguage: z.string(),
     }).optional(),
   }),

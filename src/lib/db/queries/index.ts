@@ -64,3 +64,9 @@ export {
   getUserYouTubeUploads,
   getCompletedJobLanguages,
 } from './dashboard'
+
+export {
+  upsertGeneratedCaption,
+  getGeneratedCaption,
+  deleteGeneratedCaptionsForJob,
+} from './generated-captions'

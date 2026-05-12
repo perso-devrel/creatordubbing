@@ -50,6 +50,7 @@ export function UploadSettingsStep() {
     ? `https://www.youtube.com/watch?v=${originalYouTubeId}`
     : null
   const aiDisclosureText = getAiDisclosureText(uploadSettings.metadataLanguage)
+  const isMultiAudio = deliverableMode === 'originalWithMultiAudio'
 
   useEffect(() => {
     const strippedDescription = stripAiDisclosureFooter(uploadSettings.description)
@@ -63,6 +64,12 @@ export function UploadSettingsStep() {
       setUploadSettings({ uploadCaptions: false })
     }
   }, [deliverableMode, uploadSettings.autoUpload, uploadSettings.uploadCaptions, setUploadSettings])
+
+  useEffect(() => {
+    if ((!isMultiAudio || !uploadSettings.uploadCaptions) && uploadSettings.captionGenerationMode !== 'dubbing') {
+      setUploadSettings({ captionGenerationMode: 'dubbing' })
+    }
+  }, [isMultiAudio, uploadSettings.captionGenerationMode, uploadSettings.uploadCaptions, setUploadSettings])
 
   // 영상 정보로 제목/설명을 초기 1회 채워준다. 사용자가 빈 값으로 지웠을 때
   // 다시 채워 넣지 않도록 videoMeta.id 단위로 한 번만 실행. (deps에 입력값을
@@ -100,7 +107,6 @@ export function UploadSettingsStep() {
     setUploadSettings({ tags: parsed })
   }
 
-  const isMultiAudio = deliverableMode === 'originalWithMultiAudio'
   const uploadsVideoToYouTube =
     deliverableMode === 'newDubbedVideos' ||
     (isMultiAudio && videoSource?.type === 'upload')
@@ -289,6 +295,27 @@ export function UploadSettingsStep() {
             />
           )}
 
+          {isMultiAudio && uploadSettings.uploadCaptions && !captionUploadDisabled && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-brand-100 bg-brand-50/60 p-3 text-sm text-surface-700 dark:border-brand-900/60 dark:bg-brand-950/20 dark:text-surface-200">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
+                checked={uploadSettings.captionGenerationMode === 'stt'}
+                onChange={(e) => setUploadSettings({
+                  captionGenerationMode: e.target.checked ? 'stt' : 'dubbing',
+                })}
+              />
+              <span className="min-w-0">
+                <span className="block font-medium">
+                  {t('features.dubbing.components.steps.uploadSettingsStep.generateCaptionsWithStt')}
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-surface-500 dark:text-surface-300">
+                  {t('features.dubbing.components.steps.uploadSettingsStep.generateCaptionsWithSttDescription')}
+                </span>
+              </span>
+            </label>
+          )}
+
           {originalYouTubeUrl && deliverableMode === 'newDubbedVideos' && (
             <ToggleRow
               icon={<Link2 className="h-4 w-4 text-surface-400" />}
@@ -390,7 +417,7 @@ function ToggleRow({ icon, label, description, active, activeLabel, inactiveLabe
   return (
     <div className={`flex flex-col gap-3 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50 sm:flex-row sm:items-start sm:justify-between ${disabled ? 'opacity-75' : ''}`}>
       <div className="flex min-w-0 items-start gap-2">
-        <div className="mt-0.5 flex-shrink-0">{icon}</div>
+        <div className="mt-0.5 shrink-0">{icon}</div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
             <p className="text-sm text-surface-700 dark:text-surface-300">{label}</p>

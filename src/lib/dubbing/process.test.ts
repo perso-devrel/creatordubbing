@@ -53,6 +53,7 @@ const uploadSettings = {
     selfDeclaredMadeForKids: false,
     containsSyntheticMedia: true,
     uploadReviewConfirmed: true,
+    captionGenerationMode: 'dubbing' as const,
     metadataLanguage: 'ko',
   },
 }

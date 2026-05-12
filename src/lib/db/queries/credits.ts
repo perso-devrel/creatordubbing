@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Client, Transaction } from '@libsql/client'
 import { getDb } from '@/lib/db/client'
+import { parseJobUploadSettings } from '@/lib/dubbing/job-upload-settings'
 import { recordOperationalEventSafe } from '@/lib/ops/observability'
 
 type DbExecutor = Pick<Client | Transaction, 'execute'>
@@ -127,7 +128,7 @@ async function getCreditBalanceWithExecutor(userId: string, db: DbExecutor): Pro
 
 async function getJobCreditEstimate(jobId: number, db: DbExecutor) {
   const result = await db.execute({
-    sql: `SELECT dj.user_id, dj.video_duration_ms,
+    sql: `SELECT dj.user_id, dj.video_duration_ms, dj.deliverable_mode, dj.upload_settings_json,
           COUNT(jl.language_code) as language_count,
           SUM(CASE WHEN jl.status = 'completed' THEN 1 ELSE 0 END) as completed_count
           FROM dubbing_jobs dj
@@ -146,12 +147,23 @@ async function getJobCreditEstimate(jobId: number, db: DbExecutor) {
 
   const perLanguageMinutes = Math.max(1, Math.ceil(asNumber(row.video_duration_ms) / 60_000))
   const languageCount = Math.max(1, asNumber(row.language_count))
+  const settings = parseJobUploadSettings(String(row.upload_settings_json ?? ''))
+  const isSttCaptionJob =
+    row.deliverable_mode === 'originalWithMultiAudio' &&
+    settings.uploadSettings.uploadCaptions &&
+    settings.uploadSettings.captionGenerationMode === 'stt'
+  const creditMinutes = calculateJobCreditMinutes({
+    perLanguageMinutes,
+    languageCount,
+    completedCount: asNumber(row.completed_count),
+    isSttCaptionJob,
+  })
   return {
     userId: String(row.user_id),
     perLanguageMinutes,
     languageCount,
-    completedCount: asNumber(row.completed_count),
-    estimatedMinutes: perLanguageMinutes * languageCount,
+    completedCount: creditMinutes.completedBillableUnits,
+    ...creditMinutes,
   }
 }
 
@@ -183,6 +195,28 @@ function insufficientCredits(available: number, required: number) {
   err.code = 'INSUFFICIENT_CREDITS'
   err.details = { available, required }
   return err
+}
+
+export function calculateJobCreditMinutes(args: {
+  perLanguageMinutes: number
+  languageCount: number
+  completedCount: number
+  isSttCaptionJob: boolean
+}) {
+  const perLanguageMinutes = Math.max(1, Math.ceil(args.perLanguageMinutes))
+  const languageCount = Math.max(1, Math.ceil(args.languageCount))
+  const completedCount = Math.max(0, Math.ceil(args.completedCount))
+  const billingMultiplier = args.isSttCaptionJob ? 0.5 : 1
+  return {
+    billingMultiplier,
+    billableUnits: languageCount,
+    completedBillableUnits: completedCount,
+    billingMode: args.isSttCaptionJob ? 'stt_caption_half_per_language' : 'per_language_dubbing',
+    estimatedMinutes: Math.max(1, Math.ceil(perLanguageMinutes * languageCount * billingMultiplier)),
+    completedMinutes: completedCount > 0
+      ? Math.max(1, Math.ceil(perLanguageMinutes * completedCount * billingMultiplier))
+      : 0,
+  }
 }
 
 export async function createPaymentOrder(order: {
@@ -318,6 +352,9 @@ export async function reserveJobCredits(userId: string, jobId: number) {
         JSON.stringify({
           perLanguageMinutes: estimate.perLanguageMinutes,
           languageCount: estimate.languageCount,
+          billableUnits: estimate.billableUnits,
+          billingMultiplier: estimate.billingMultiplier,
+          billingMode: estimate.billingMode,
         }),
       ],
     })
@@ -382,7 +419,7 @@ export async function finalizeJobCredits(userId: string, jobId: number) {
       return { consumed: 0, released: 0, idempotent: true }
     }
 
-    const consumed = Math.min(reserved, estimate.perLanguageMinutes * estimate.completedCount)
+    const consumed = Math.min(reserved, estimate.completedMinutes)
     await tx.execute({
       sql: `UPDATE users
             SET credits_remaining = MAX(0, credits_remaining - ?), updated_at = datetime('now')
@@ -405,6 +442,10 @@ export async function finalizeJobCredits(userId: string, jobId: number) {
         JSON.stringify({
           completedCount: estimate.completedCount,
           languageCount: estimate.languageCount,
+          billableUnits: estimate.billableUnits,
+          completedBillableUnits: estimate.completedBillableUnits,
+          billingMultiplier: estimate.billingMultiplier,
+          billingMode: estimate.billingMode,
           releasedUnused: reserved - consumed,
         }),
       ],

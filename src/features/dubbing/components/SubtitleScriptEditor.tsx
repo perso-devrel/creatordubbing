@@ -20,6 +20,7 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import {
   getProjectScript,
   getTranslatedSrt,
+  getGeneratedSttCaptionSrt,
   regenerateSentenceAudio,
   updateSentenceTranslation,
   ytUploadCaption,
@@ -259,6 +260,7 @@ interface SubtitleScriptEditorProps {
    * - 원본+자막 모드: 원본 영상 URL (모든 언어 공유)
    * - 새 더빙 영상 모드: 해당 언어의 더빙 영상 URL */
   previewVideoUrl?: string | null
+  sttCaptionJobId?: number | null
 }
 
 export function SubtitleScriptEditor({
@@ -269,6 +271,7 @@ export function SubtitleScriptEditor({
   youtubeVideoId,
   youtubePreviewVisibility,
   previewVideoUrl,
+  sttCaptionJobId,
 }: SubtitleScriptEditorProps) {
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -321,7 +324,9 @@ export function SubtitleScriptEditor({
 
     setSrtLoading(true)
     try {
-      const text = await getTranslatedSrt(projectSeq, spaceSeq, 'translated')
+      const text = sttCaptionJobId
+        ? await getGeneratedSttCaptionSrt(sttCaptionJobId, langCode)
+        : await getTranslatedSrt(projectSeq, spaceSeq, 'translated')
       const parsed = parseSRT(text)
       const editableCues = parsed.map((c, i) => ({ ...c, id: i }))
       setCues(editableCues)
@@ -337,7 +342,7 @@ export function SubtitleScriptEditor({
     } finally {
       setSrtLoading(false)
     }
-  }, [projectSeq, spaceSeq, addToast, t])
+  }, [langCode, projectSeq, spaceSeq, sttCaptionJobId, addToast, t])
 
   const handleToggle = useCallback(() => {
     if (open) {
@@ -713,7 +718,7 @@ export function SubtitleScriptEditor({
               )}
 
               {!scriptLoading && sentences && sentences.length > 0 && (
-                <div className="max-h-[24rem] space-y-2 overflow-y-auto">
+                <div className="max-h-96 space-y-2 overflow-y-auto">
                   {sentences.map((s) => (
                     <ScriptRow
                       key={s.sentenceSeq}
@@ -787,7 +792,7 @@ export function SubtitleScriptEditor({
               )}
 
               {!srtLoading && cues && cues.length > 0 && (
-                <div className="max-h-[28rem] space-y-2 overflow-y-auto">
+                <div className="max-h-112 space-y-2 overflow-y-auto">
                   {cues.map((c) => (
                     <SrtRow
                       key={`${srtRevision}-${c.id}`}

@@ -59,6 +59,7 @@ const buildDefaultUploadSettings = (): UploadSettings => ({
   selfDeclaredMadeForKids: false,
   containsSyntheticMedia: true,
   uploadReviewConfirmed: false,
+  captionGenerationMode: 'dubbing',
   metadataLanguage: readDefaultLanguage(),
 })
 
@@ -71,6 +72,7 @@ const REVIEW_RESET_FIELDS: Array<keyof UploadSettings> = [
   'privacyStatus',
   'metadataLanguage',
   'uploadCaptions',
+  'captionGenerationMode',
   'selfDeclaredMadeForKids',
   'containsSyntheticMedia',
 ]

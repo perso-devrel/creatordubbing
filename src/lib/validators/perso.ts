@@ -63,6 +63,20 @@ export const translateBodySchema = z.object({
   title: trimmedNonEmptyString.optional(),
 })
 
+export const sttBodySchema = z.object({
+  mediaSeq: z.number().int().positive(),
+  isVideoProject: z.boolean(),
+  title: trimmedNonEmptyString.optional(),
+})
+
+export const generateSttCaptionsBodySchema = z.object({
+  jobId: z.number().int().positive(),
+  projectSeq: z.number().int().positive(),
+  spaceSeq: z.number().int().positive(),
+  targetLanguageCodes: z.array(trimmedNonEmptyString).min(1),
+  sourceLanguageCode: trimmedNonEmptyString.optional(),
+})
+
 export const scriptPatchBodySchema = z.object({
   translatedText: z.string().min(1),
 })

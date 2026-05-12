@@ -99,7 +99,7 @@ export function OutputModeStep() {
 
       {isExternalUrl && (
         <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/10">
-          <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-500 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-amber-900 dark:text-amber-300">{t('features.dubbing.components.steps.outputModeStep.copyrightNotice')}</p>
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
@@ -112,7 +112,7 @@ export function OutputModeStep() {
       {youtubeUploadDisabled && (
         <div className="flex flex-col gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/10 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 flex-shrink-0 text-amber-500 mt-0.5" />
+            <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-900 dark:text-amber-300">{t('features.dubbing.components.steps.outputModeStep.youtubeConnectionRequired')}</p>
               <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">

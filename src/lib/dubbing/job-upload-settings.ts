@@ -1,5 +1,7 @@
 export type PersistedDeliverableMode = 'newDubbedVideos' | 'originalWithMultiAudio' | 'downloadOnly'
 
+export type PersistedCaptionGenerationMode = 'dubbing' | 'stt'
+
 export type PersistedPrivacyStatus = 'public' | 'unlisted' | 'private'
 
 export interface PersistedUploadSettings {
@@ -13,6 +15,7 @@ export interface PersistedUploadSettings {
   selfDeclaredMadeForKids: boolean
   containsSyntheticMedia: boolean
   uploadReviewConfirmed: boolean
+  captionGenerationMode: PersistedCaptionGenerationMode
   metadataLanguage: string
 }
 
@@ -34,6 +37,7 @@ const DEFAULT_UPLOAD_SETTINGS: PersistedUploadSettings = {
   selfDeclaredMadeForKids: false,
   containsSyntheticMedia: true,
   uploadReviewConfirmed: false,
+  captionGenerationMode: 'dubbing',
   metadataLanguage: 'ko',
 }
 
@@ -82,6 +86,10 @@ function asDeliverableMode(value: unknown): PersistedDeliverableMode {
     : DEFAULT_JOB_UPLOAD_SETTINGS.deliverableMode
 }
 
+function asCaptionGenerationMode(value: unknown): PersistedCaptionGenerationMode {
+  return value === 'stt' ? 'stt' : DEFAULT_UPLOAD_SETTINGS.captionGenerationMode
+}
+
 export function normalizeJobUploadSettings(value: unknown): PersistedJobUploadSettings {
   const root = asObject(value)
   const uploadSettings = asObject(root.uploadSettings)
@@ -109,6 +117,7 @@ export function normalizeJobUploadSettings(value: unknown): PersistedJobUploadSe
         uploadSettings.uploadReviewConfirmed,
         DEFAULT_UPLOAD_SETTINGS.uploadReviewConfirmed,
       ),
+      captionGenerationMode: asCaptionGenerationMode(uploadSettings.captionGenerationMode),
       metadataLanguage: asString(uploadSettings.metadataLanguage, DEFAULT_UPLOAD_SETTINGS.metadataLanguage),
     },
   }

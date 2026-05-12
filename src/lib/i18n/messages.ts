@@ -172,6 +172,62 @@ const baseMessages = {
   'dubbing.processing.reason.completed': { ko: '완료', en: 'Complete' },
   'dubbing.processing.reason.failed': { ko: '처리 실패', en: 'Processing failed' },
   'dubbing.processing.reason.canceled': { ko: '취소됨', en: 'Canceled' },
+  'dubbing.processing.reason.sttCaptionTranslating': {
+    ko: 'STT 기반 자막 번역 중...',
+    en: 'Translating STT captions...',
+  },
+  'features.dubbing.components.steps.processingStep.creatingCaptionsWithSttAndTranslation': {
+    ko: '원본 영상은 STT로 한 번 전사하고, 선택한 언어별 YouTube 자막을 생성합니다.',
+    en: 'Transcribing the source video once with STT, then generating YouTube captions for each selected language.',
+  },
+  'features.dubbing.components.steps.uploadSettingsStep.generateCaptionsWithStt': {
+    ko: 'STT로 자막 생성',
+    en: 'Generate captions with STT',
+  },
+  'features.dubbing.components.steps.uploadSettingsStep.generateCaptionsWithSttDescription': {
+    ko: '원본 영상은 STT 한 번만 실행하고, Gemini가 선택한 언어별 YouTube 자막으로 변환합니다.',
+    en: 'Run STT once on the source video, then let Gemini create YouTube captions for each selected language.',
+  },
+  'features.dubbing.components.steps.translationEditStep.captionProcessing': {
+    ko: '자막 처리',
+    en: 'Caption processing',
+  },
+  'features.dubbing.components.steps.translationEditStep.sttCaptionGeneration': {
+    ko: 'STT 기반 생성',
+    en: 'STT-based generation',
+  },
+  'features.dubbing.components.steps.translationEditStep.dubbingCaptionGeneration': {
+    ko: '기존 더빙 처리',
+    en: 'Existing dubbing flow',
+  },
+  'features.dubbing.components.steps.translationEditStep.startCaptionProcessing': {
+    ko: '자막 처리 시작',
+    en: 'Start caption processing',
+  },
+  'features.dubbing.components.steps.uploadStep.captionsOnlyDownload': {
+    ko: '자막',
+    en: 'Captions',
+  },
+  'features.dubbing.hooks.usePersoFlow.startingSttCaptionJob': {
+    ko: 'STT 자막 작업 시작',
+    en: 'Starting STT caption job',
+  },
+  'features.dubbing.hooks.usePersoFlow.sttCaptionJobStarted': {
+    ko: 'STT 자막 작업이 시작되었습니다',
+    en: 'STT caption job started',
+  },
+  'features.dubbing.hooks.usePersoFlow.captionGenerationFailed': {
+    ko: '자막 생성 실패',
+    en: 'Caption generation failed',
+  },
+  'features.dubbing.hooks.usePersoFlow.captionGenerationFinishedWithSomeErrors': {
+    ko: '자막 생성이 일부 실패했습니다',
+    en: 'Caption generation finished with some errors',
+  },
+  'features.dubbing.hooks.usePersoFlow.captionGenerationComplete': {
+    ko: '자막 생성 완료',
+    en: 'Caption generation complete',
+  },
   'features.landing.pricingSection.includedLanguageCount': {
     ko: '{SUPPORTED_LANGUAGE_COUNT}개 언어 지원',
     en: '{SUPPORTED_LANGUAGE_COUNT} supported languages',

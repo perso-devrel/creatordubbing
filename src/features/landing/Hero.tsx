@@ -145,7 +145,7 @@ export function Hero() {
                   return (
                     <div key={step.title} className="relative flex gap-3 py-2.5">
                       {index < pipelineSteps.length - 1 ? (
-                        <div className={`absolute left-[17px] top-10 h-[calc(100%-1.5rem)] w-px ${
+                        <div className={`absolute left-4.25 top-10 h-[calc(100%-1.5rem)] w-px ${
                           isDone ? 'bg-brand-200 dark:bg-brand-800' : 'bg-surface-200 dark:bg-surface-800'
                         }`} />
                       ) : null}
