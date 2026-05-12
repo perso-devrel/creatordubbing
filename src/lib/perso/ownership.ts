@@ -2,7 +2,7 @@ import 'server-only'
 
 import { getDb } from '@/lib/db/client'
 import { PersoError } from '@/lib/perso/errors'
-import type { UploadVideoResponse } from '@/lib/perso/types'
+import type { UploadMediaResponse } from '@/lib/perso/types'
 
 let ownershipTablesReady = false
 
@@ -41,10 +41,16 @@ function forbidden() {
   return new PersoError('PERSO_RESOURCE_FORBIDDEN', 'You do not own this Perso resource', 403)
 }
 
+function getMediaFilePath(media: UploadMediaResponse): string | null {
+  if ('videoFilePath' in media && media.videoFilePath) return media.videoFilePath
+  if ('audioFilePath' in media && media.audioFilePath) return media.audioFilePath
+  return null
+}
+
 export async function recordPersoMediaOwner(args: {
   userId: string
   spaceSeq: number
-  media: UploadVideoResponse
+  media: UploadMediaResponse
   sourceType: 'external' | 'upload'
   fileUrl?: string
 }) {
@@ -66,7 +72,7 @@ export async function recordPersoMediaOwner(args: {
       args.media.seq,
       args.sourceType,
       args.media.originalName || null,
-      args.fileUrl || args.media.videoFilePath || null,
+      args.fileUrl || getMediaFilePath(args.media),
     ],
   })
 }

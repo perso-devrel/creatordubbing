@@ -31,6 +31,18 @@ export interface UploadVideoResponse {
   originalName: string
 }
 
+export interface UploadAudioResponse {
+  /** mediaSeq */
+  seq: number
+  audioFilePath?: string
+  thumbnailFilePath?: string
+  size: number
+  durationMs: number
+  originalName: string
+}
+
+export type UploadMediaResponse = UploadVideoResponse | UploadAudioResponse
+
 export interface ExternalMetadataResponse {
   durationMs: number
   originalName: string

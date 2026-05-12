@@ -16,6 +16,7 @@ import {
   releaseJobCredits,
   finalizeJobCredits,
   deleteDubbingJob,
+  getSttCaptionSegments,
 } from '@/lib/db/queries'
 import { requireSession } from '@/lib/auth/session'
 import { mutationActionSchema, getUserIdFromAction, getJobIdFromAction } from '@/lib/validators/dashboard'
@@ -233,15 +234,29 @@ export async function POST(req: NextRequest) {
       case 'deleteDubbingJob': {
         const { jobId } = action.payload
         const db2 = getDb()
-        const langRows = await db2.execute({
-          sql: 'SELECT jl.project_seq, dj.space_seq FROM job_languages jl JOIN dubbing_jobs dj ON dj.id = jl.job_id WHERE jl.job_id = ?',
-          args: [jobId],
-        })
+        const [langRows, sttSegments] = await Promise.all([
+          db2.execute({
+            sql: 'SELECT jl.project_seq, dj.space_seq FROM job_languages jl JOIN dubbing_jobs dj ON dj.id = jl.job_id WHERE jl.job_id = ?',
+            args: [jobId],
+          }),
+          getSttCaptionSegments(jobId).catch(() => []),
+        ])
+        const sttSpaceSeq = Number(langRows.rows[0]?.space_seq ?? 0)
+        const cancelTargets = [
+          ...langRows.rows.map((row) => ({
+            projectSeq: Number(row.project_seq ?? 0),
+            spaceSeq: Number(row.space_seq ?? 0),
+          })),
+          ...sttSegments.map((segment) => ({
+            projectSeq: segment.projectSeq,
+            spaceSeq: sttSpaceSeq,
+          })),
+        ]
         // Perso cancel + DB delete를 병렬로 실행. cancel 실패가 DB 삭제를 막지 않도록 allSettled.
         const cancelAll = Promise.allSettled(
-          langRows.rows.map((row) => {
-            const projectSeq = row.project_seq as number
-            const spaceSeq = row.space_seq as number
+          cancelTargets.map((row) => {
+            const projectSeq = row.projectSeq
+            const spaceSeq = row.spaceSeq
             if (!projectSeq || !spaceSeq) return Promise.resolve()
             return persoFetch<unknown>(
               `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/cancel`,
