@@ -7,6 +7,7 @@ import {
   type PersistedDeliverableMode,
   type PersistedJobUploadSettings,
 } from '@/lib/dubbing/job-upload-settings'
+import { deleteGeneratedCaptionsForJob } from './generated-captions'
 
 export interface DubbingJobUploadSettingsInput {
   deliverableMode?: PersistedDeliverableMode
@@ -299,7 +300,13 @@ export async function getDubbingJobLanguageWorkItems(limit = 50): Promise<Dubbin
           LIMIT ?`,
     args: [limit],
   })
-  return result.rows.map((row) => rowToDubbingJobLanguageWorkItem(row))
+  return result.rows
+    .map((row) => rowToDubbingJobLanguageWorkItem(row))
+    .filter((item) => !(
+      item.deliverableMode === 'originalWithMultiAudio' &&
+      item.uploadSettings.uploadSettings.uploadCaptions &&
+      item.uploadSettings.uploadSettings.captionGenerationMode === 'stt'
+    ))
 }
 
 export async function getDubbingJobLanguageWorkItem(
@@ -365,6 +372,7 @@ export async function getJobLanguageTerminalSummary(jobId: number) {
 
 export async function deleteDubbingJob(jobId: number) {
   const db = getDb()
+  await deleteGeneratedCaptionsForJob(jobId)
   await db.batch([
     { sql: 'DELETE FROM job_languages WHERE job_id = ?', args: [jobId] },
     { sql: 'DELETE FROM dubbing_jobs WHERE id = ?', args: [jobId] },

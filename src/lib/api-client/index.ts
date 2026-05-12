@@ -10,6 +10,8 @@ export {
   validateMedia,
   initializeQueue,
   submitTranslation,
+  submitStt,
+  generateSttCaptions,
   cancelProject,
   getProjectProgress,
   listProjects,
@@ -19,6 +21,7 @@ export {
   regenerateSentenceAudio,
   getDownloadLinks,
   getTranslatedSrt,
+  getGeneratedSttCaptionSrt,
   requestLipSync,
   getPersoFileUrl,
 } from './perso'

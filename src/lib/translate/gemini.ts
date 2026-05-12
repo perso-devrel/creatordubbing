@@ -2,6 +2,7 @@ import 'server-only'
 
 import { GoogleAuth } from 'google-auth-library'
 import { getServerEnv } from '@/lib/env'
+import type { SrtCue } from '@/utils/srt'
 
 // 모델 ID는 AI Studio / Vertex 양쪽에서 동일하게 'gemini-2.5-flash' 사용.
 const MODEL_ID = 'gemini-2.5-flash'
@@ -242,5 +243,155 @@ function buildPrompt(args: {
     `INPUT_TITLE: ${args.title}`,
     'INPUT_DESCRIPTION:',
     args.description,
+  ].join('\n')
+}
+
+export interface TimedTranscriptSegment {
+  id: number
+  startMs: number
+  endMs: number
+  text: string
+  speakerLabel?: string
+}
+
+export interface TranslateTimedSubtitlesInput {
+  sourceLanguageCode: string
+  targetLanguageCode: string
+  segments: TimedTranscriptSegment[]
+}
+
+const SUBTITLE_CHUNK_SEGMENT_LIMIT = 180
+const SUBTITLE_CHUNK_DURATION_MS = 5 * 60 * 1000
+
+export async function translateTimedSubtitles(input: TranslateTimedSubtitlesInput): Promise<SrtCue[]> {
+  const chunks = chunkTimedSegments(input.segments)
+  const cues: SrtCue[] = []
+
+  for (const chunk of chunks) {
+    const translated = await translateTimedSubtitleChunk({
+      ...input,
+      segments: chunk,
+    })
+    cues.push(...translated)
+  }
+
+  return cues
+    .filter((cue) => cue.text.trim().length > 0 && cue.endMs > cue.startMs)
+    .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs)
+}
+
+function chunkTimedSegments(segments: TimedTranscriptSegment[]): TimedTranscriptSegment[][] {
+  const chunks: TimedTranscriptSegment[][] = []
+  let current: TimedTranscriptSegment[] = []
+  let chunkStart = 0
+
+  for (const segment of segments) {
+    if (current.length === 0) {
+      chunkStart = segment.startMs
+    }
+
+    const wouldExceedCount = current.length >= SUBTITLE_CHUNK_SEGMENT_LIMIT
+    const wouldExceedDuration = segment.endMs - chunkStart > SUBTITLE_CHUNK_DURATION_MS
+    if (current.length > 0 && (wouldExceedCount || wouldExceedDuration)) {
+      chunks.push(current)
+      current = []
+      chunkStart = segment.startMs
+    }
+
+    current.push(segment)
+  }
+
+  if (current.length > 0) chunks.push(current)
+  return chunks
+}
+
+async function translateTimedSubtitleChunk(input: TranslateTimedSubtitlesInput): Promise<SrtCue[]> {
+  const prompt = buildTimedSubtitlePrompt(input)
+  const text = await callGemini(prompt)
+  const parsed = parseGeminiJson(text)
+  const rawCues = Array.isArray(parsed)
+    ? parsed
+    : parsed && typeof parsed === 'object' && Array.isArray((parsed as { cues?: unknown }).cues)
+      ? (parsed as { cues: unknown[] }).cues
+      : null
+
+  if (!rawCues) {
+    throw new TranslateError('GEMINI_INVALID_SUBTITLE_SHAPE', 'Timed subtitle response must contain a cues array')
+  }
+
+  const chunkStart = Math.min(...input.segments.map((segment) => segment.startMs))
+  const chunkEnd = Math.max(...input.segments.map((segment) => segment.endMs))
+  const cues: SrtCue[] = []
+
+  for (const raw of rawCues) {
+    if (!raw || typeof raw !== 'object') continue
+    const item = raw as Record<string, unknown>
+    const startMs = asFiniteNumber(item.startMs)
+    const endMs = asFiniteNumber(item.endMs)
+    const text = typeof item.text === 'string' ? item.text.trim() : ''
+    if (startMs === null || endMs === null || !text) continue
+    const safeStart = clamp(Math.floor(startMs), chunkStart, chunkEnd)
+    const safeEnd = clamp(Math.floor(endMs), safeStart + 250, chunkEnd)
+    if (safeEnd <= safeStart) continue
+    cues.push({ startMs: safeStart, endMs: safeEnd, text: normalizeCaptionText(text) })
+  }
+
+  if (cues.length === 0 && input.segments.length > 0) {
+    throw new TranslateError('GEMINI_EMPTY_SUBTITLES', 'Gemini returned no usable subtitle cues')
+  }
+
+  return cues
+}
+
+function parseGeminiJson(text: string): unknown {
+  const trimmed = text.trim()
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i)
+  const jsonText = fenced ? fenced[1] : trimmed
+  try {
+    return JSON.parse(jsonText)
+  } catch {
+    throw new TranslateError('GEMINI_INVALID_JSON', `Could not parse: ${text.slice(0, 300)}`)
+  }
+}
+
+function asFiniteNumber(value: unknown): number | null {
+  const number = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN
+  return Number.isFinite(number) ? number : null
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+function normalizeCaptionText(text: string): string {
+  return text
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('\n')
+}
+
+function buildTimedSubtitlePrompt(input: TranslateTimedSubtitlesInput): string {
+  const sourceHint =
+    input.sourceLanguageCode === 'auto'
+      ? 'Detect the source language from the text.'
+      : `The source language is "${input.sourceLanguageCode}".`
+
+  return [
+    'You are a senior subtitle localizer for YouTube videos.',
+    sourceHint,
+    `Create publication-ready subtitles for target language "${input.targetLanguageCode}".`,
+    'Use natural, native phrasing. Preserve meaning, tone, names, numbers, product terms, and speaker intent.',
+    'Return subtitles, not a literal word-by-word transcript. Split or merge nearby lines only when it improves readability.',
+    'Keep every cue inside the timing range of the provided source segments. Do not invent timestamps outside the input.',
+    'Respect speech timing: each cue must appear while that speech is happening. Avoid text that is too long for the visible duration.',
+    'Use one or two short lines per cue. Prefer concise phrasing suitable for YouTube captions.',
+    'Output strict JSON only with this shape: {"cues":[{"startMs":0,"endMs":1200,"text":"..."}]}',
+    'Do not include markdown, comments, SRT numbering, or explanations.',
+    '',
+    'SOURCE_SEGMENTS:',
+    JSON.stringify(input.segments),
   ].join('\n')
 }
