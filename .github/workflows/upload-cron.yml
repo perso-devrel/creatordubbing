@@ -38,7 +38,11 @@ jobs:
         run: |
           set -euo pipefail
           node <<'NODE'
-          const endpoints = ['/api/cron/process-dubbing-jobs', '/api/cron/process-uploads']
+          const endpoints = [
+            '/api/cron/process-dubbing-jobs',
+            '/api/cron/process-long-stt-captions',
+            '/api/cron/process-uploads',
+          ]
           const baseUrl = process.env.BASE_URL.replace(/\/+$/, '')
           const cronSecret = process.env.CRON_SECRET
 

@@ -8,6 +8,7 @@ import {
   type PersistedJobUploadSettings,
 } from '@/lib/dubbing/job-upload-settings'
 import { deleteGeneratedCaptionsForJob } from './generated-captions'
+import { deleteSttCaptionSegmentsForJob } from './stt-segments'
 
 export interface DubbingJobUploadSettingsInput {
   deliverableMode?: PersistedDeliverableMode
@@ -373,6 +374,7 @@ export async function getJobLanguageTerminalSummary(jobId: number) {
 export async function deleteDubbingJob(jobId: number) {
   const db = getDb()
   await deleteGeneratedCaptionsForJob(jobId)
+  await deleteSttCaptionSegmentsForJob(jobId)
   await db.batch([
     { sql: 'DELETE FROM job_languages WHERE job_id = ?', args: [jobId] },
     { sql: 'DELETE FROM dubbing_jobs WHERE id = ?', args: [jobId] },

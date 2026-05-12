@@ -70,3 +70,17 @@ export {
   getGeneratedCaption,
   deleteGeneratedCaptionsForJob,
 } from './generated-captions'
+
+export {
+  upsertSttCaptionSegments,
+  getSttCaptionSegments,
+  claimSttCaptionSegmentPreparation,
+  completeSttCaptionSegmentPreparation,
+  markSttCaptionSegmentPreparationFailed,
+  updateSttCaptionSegmentProgress,
+  deleteSttCaptionSegmentsForJob,
+} from './stt-segments'
+
+export type {
+  SttCaptionSegment,
+} from './stt-segments'
