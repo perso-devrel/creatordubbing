@@ -106,6 +106,12 @@ export function SettingsClient() {
   )
   const youtubeSectionRef = useRef<HTMLDivElement>(null)
 
+  const { data: channel, error: channelError } = useChannelStats()
+  const isYouTubeConnected = !!channel && !(
+    channelError instanceof Error &&
+    (channelError.message.includes(t('internal.keyword.youtubeConnection')) || channelError.message.includes('Google access token'))
+  )
+
   const draftTags = useMemo(() => parseTagsInput(defaultTagsInput), [defaultTagsInput])
   const targetLanguageCodes = useMemo(
     () => getMetadataTargetLanguageCodes(draftMetadataTargetPreset, draftMetadataTargetLanguages),
@@ -220,6 +226,75 @@ export function SettingsClient() {
         <YouTubeConnectionCard />
       </div>
 
+      {isYouTubeConnected && (
+        <Card>
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300">
+              <Video className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>{t('settings.youtubeDefaults.title')}</CardTitle>
+              <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
+                {t('settings.youtubeDefaults.description')}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Select
+              label={t('app.app.youtube.page.defaultVisibility')}
+              value={draftDefaultPrivacy}
+              onChange={(event) => setDraftDefaultPrivacy(event.target.value as PrivacyStatus)}
+              options={[
+                { value: 'public', label: t('app.app.youtube.page.public') },
+                { value: 'unlisted', label: t('app.app.youtube.page.unlisted') },
+                { value: 'private', label: t('app.app.youtube.page.private') },
+              ]}
+            />
+            <Input
+              label={t('app.app.youtube.page.defaultTags')}
+              value={defaultTagsInput}
+              onChange={(event) => setDefaultTagsInput(event.target.value)}
+              placeholder={t('app.app.youtube.page.commaSeparatedEGDubtubeAIDubbingVlog')}
+            />
+            <div className="md:col-span-2">
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">
+                  {t('settings.launchLanguageSelection')}
+                </label>
+                <Button type="button" variant="outline" size="sm" onClick={openLaunchLanguageModal}>
+                  <Languages className="h-4 w-4" />
+                  {t('settings.launchLanguageSelection.edit')}
+                </Button>
+              </div>
+              <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-850">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                      {t(selectedPreset.labelKey)}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-300">
+                      {t('settings.launchLanguageSelection.selectedCount', { count: targetLanguageCodes.length })}
+                    </p>
+                  </div>
+                  <Badge variant="brand">{t(selectedPreset.labelKey)}</Badge>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {presetLanguages.map((language) => language && (
+                    <span
+                      key={language.code}
+                      className="max-w-full rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
+                    >
+                      {language.flag} {isEnglish ? language.name : language.nativeName}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card>
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300">
@@ -259,70 +334,20 @@ export function SettingsClient() {
             onChange={(event) => setDraftDefaultLanguage(event.target.value)}
             options={languageOptions}
           />
-          <Select
-            label={t('app.app.youtube.page.defaultVisibility')}
-            value={draftDefaultPrivacy}
-            onChange={(event) => setDraftDefaultPrivacy(event.target.value as PrivacyStatus)}
-            options={[
-              { value: 'public', label: t('app.app.youtube.page.public') },
-              { value: 'unlisted', label: t('app.app.youtube.page.unlisted') },
-              { value: 'private', label: t('app.app.youtube.page.private') },
-            ]}
-          />
-          <Input
-            label={t('app.app.youtube.page.defaultTags')}
-            value={defaultTagsInput}
-            onChange={(event) => setDefaultTagsInput(event.target.value)}
-            placeholder={t('app.app.youtube.page.commaSeparatedEGDubtubeAIDubbingVlog')}
-          />
-          <div className="md:col-span-2">
-            <div className="mb-1.5 flex items-center justify-between gap-3">
-              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">
-                {t('settings.launchLanguageSelection')}
-              </label>
-              <Button type="button" variant="outline" size="sm" onClick={openLaunchLanguageModal}>
-                <Languages className="h-4 w-4" />
-                {t('settings.launchLanguageSelection.edit')}
-              </Button>
-            </div>
-            <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-850">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
-                    {t(selectedPreset.labelKey)}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-300">
-                    {t('settings.launchLanguageSelection.selectedCount', { count: targetLanguageCodes.length })}
-                  </p>
-                </div>
-                <Badge variant="brand">{t(selectedPreset.labelKey)}</Badge>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {presetLanguages.map((language) => language && (
-                  <span
-                    key={language.code}
-                    className="max-w-full rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
-                  >
-                    {language.flag} {isEnglish ? language.name : language.nativeName}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
-
-        {hasPendingPreferenceChanges && (
-          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3 dark:border-brand-500/60 dark:bg-surface-850 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium text-brand-800 dark:text-surface-100">
-              {t('settings.preferences.unsavedChanges')}
-            </p>
-            <Button onClick={savePreferences} loading={saveMutation.isPending} className="w-full sm:w-auto">
-              <Save className="h-4 w-4" />
-              {t('settings.preferences.saveChanges')}
-            </Button>
-          </div>
-        )}
       </Card>
+
+      {hasPendingPreferenceChanges && (
+        <div className="flex flex-col gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3 dark:border-brand-500/60 dark:bg-surface-850 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-brand-800 dark:text-surface-100">
+            {t('settings.preferences.unsavedChanges')}
+          </p>
+          <Button onClick={savePreferences} loading={saveMutation.isPending} className="w-full sm:w-auto">
+            <Save className="h-4 w-4" />
+            {t('settings.preferences.saveChanges')}
+          </Button>
+        </div>
+      )}
 
       <Modal
         open={languageModalOpen}
