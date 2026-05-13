@@ -109,6 +109,7 @@ interface DubbingState {
   numberOfSpeakers: number
   setSourceLanguage: (code: string) => void
   toggleLanguage: (code: string) => void
+  setSelectedLanguages: (codes: string[]) => void
   setLipSync: (enabled: boolean) => void
   setNumberOfSpeakers: (n: number) => void
 
@@ -231,6 +232,10 @@ export const useDubbingStore = create<DubbingState>((set) => ({
       selectedLanguages: s.selectedLanguages.includes(code)
         ? s.selectedLanguages.filter((l) => l !== code)
         : [...s.selectedLanguages, code],
+    })),
+  setSelectedLanguages: (codes) =>
+    set((s) => ({
+      selectedLanguages: Array.from(new Set(codes)).filter((c) => c !== s.sourceLanguage),
     })),
   setLipSync: (enabled) => set({ lipSyncEnabled: enabled }),
   setNumberOfSpeakers: (n) =>

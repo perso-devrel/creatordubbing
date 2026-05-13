@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Search, X } from 'lucide-react'
 import { Button, Card } from '@/components/ui'
 import { cn } from '@/utils/cn'
@@ -14,6 +14,8 @@ import {
 } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { useDashboardSummary } from '@/hooks/useDashboardData'
+import { useI18nStore } from '@/stores/i18nStore'
+import { getMetadataTargetLanguageCodes } from '@/lib/i18n/config'
 
 type RegionFilter = 'all' | LanguageRegion
 type LocaleText = ReturnType<typeof useLocaleText>
@@ -31,14 +33,34 @@ function countLocaleMessage(
 export function LanguageSelectStep() {
   const {
     selectedLanguages,
+    sourceLanguage,
     videoMeta,
     toggleLanguage,
+    setSelectedLanguages,
     deliverableMode,
     prevStep,
     nextStep,
   } = useDubbingStore()
+  const metadataTargetPreset = useI18nStore((s) => s.metadataTargetPreset)
+  const metadataTargetLanguages = useI18nStore((s) => s.metadataTargetLanguages)
   const locale = useAppLocale()
   const t = useLocaleText()
+
+  // Settings에서 고른 희망 언어를 첫 진입 시 기본값으로 채운다.
+  // 사용자가 명시적으로 비웠을 때 다시 채우지 않도록 단 한 번만 적용.
+  const didInitializeRef = useRef(false)
+  useEffect(() => {
+    if (didInitializeRef.current) return
+    if (selectedLanguages.length > 0) {
+      didInitializeRef.current = true
+      return
+    }
+    const defaults = getMetadataTargetLanguageCodes(metadataTargetPreset, metadataTargetLanguages)
+      .filter((code) => code !== sourceLanguage)
+    if (defaults.length === 0) return
+    setSelectedLanguages(defaults)
+    didInitializeRef.current = true
+  }, [metadataTargetPreset, metadataTargetLanguages, selectedLanguages.length, sourceLanguage, setSelectedLanguages])
 
   const [region, setRegion] = useState<RegionFilter>('popular')
   const [query, setQuery] = useState('')
