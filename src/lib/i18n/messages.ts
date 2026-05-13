@@ -24,12 +24,20 @@ const baseMessages = {
   'status.complete': { ko: '완료', en: 'Complete' },
   'status.failed': { ko: '실패', en: 'Failed' },
   'settings.languageDefaults.title': {
-    ko: '언어, 테마 및 YouTube 기본값',
-    en: 'Language, theme, and YouTube defaults',
+    ko: '기본 설정',
+    en: 'Preferences',
   },
   'settings.languageDefaults.description': {
-    ko: '화면 언어, 표시 테마, 제목·설명 번역 기본값을 정합니다.',
-    en: 'Set display language, theme, and title/description translation defaults.',
+    ko: '화면 언어와 테마, 제목·설명 기본 언어를 정합니다.',
+    en: 'Set display language, theme, and default metadata language.',
+  },
+  'settings.youtubeDefaults.title': {
+    ko: 'YouTube 업로드 기본값',
+    en: 'YouTube upload defaults',
+  },
+  'settings.youtubeDefaults.description': {
+    ko: '새 작업에 적용할 공개 범위, 태그, 출시 언어를 정합니다. (실제 작업 시 수정 가능합니다.)',
+    en: 'Set the visibility, tags, and launch languages applied to new jobs. (You can change these per job.)',
   },
   'settings.appLocale': { ko: '앱 언어', en: 'App locale' },
   'settings.themeMode': { ko: '화면 테마', en: 'Theme' },
