@@ -1,6 +1,6 @@
 /**
  * Google OAuth direct sign-in (no Firebase SDK).
- * Client-only; uses popup + postMessage + window.localStorage.
+ * Redirect-based flow: navigates main window to Google, returns via /auth/callback.
  */
 'use client'
 
@@ -14,7 +14,10 @@ export interface GoogleUser {
 export type GoogleAuthScopeMode = 'login' | 'youtube-write' | 'youtube-readonly'
 
 const STORAGE_KEY_USER = 'google_user'
-const AUTH_TIMEOUT_MS = 2 * 60 * 1000
+const STORAGE_KEY_OAUTH_STATE = 'oauth_state'
+const STORAGE_KEY_OAUTH_SCOPE_MODE = 'oauth_scope_mode'
+const STORAGE_KEY_OAUTH_RETURN = 'oauth_return_to'
+
 const BASE_SCOPES = ['openid', 'email', 'profile'] as const
 const YOUTUBE_WRITE_SCOPES = [
   'https://www.googleapis.com/auth/youtube.upload',
@@ -48,113 +51,101 @@ function storeUser(user: GoogleUser) {
   localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user))
 }
 
-export async function signInWithGoogle(
-  options: { forceConsent?: boolean; scopeMode?: GoogleAuthScopeMode } = {}
-): Promise<{
-  user: GoogleUser
-}> {
+/**
+ * Navigates the current window to Google's OAuth consent screen.
+ * Returns a Promise that never resolves on the calling side (page is leaving).
+ * The flow completes in /auth/callback via completeGoogleSignIn().
+ */
+export function signInWithGoogle(
+  options: { forceConsent?: boolean; scopeMode?: GoogleAuthScopeMode; returnTo?: string } = {}
+): Promise<never> {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
   if (!clientId) {
-    throw new Error('Google 로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.')
+    return Promise.reject(new Error('Google 로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.'))
   }
 
-  return new Promise((resolve, reject) => {
-    const redirectUri = `${window.location.origin}/auth/callback`
-    const scope = getGoogleScopes(options.scopeMode ?? 'login').join(' ')
+  const scopeMode: GoogleAuthScopeMode = options.scopeMode ?? 'login'
+  const redirectUri = `${window.location.origin}/auth/callback`
+  const scope = getGoogleScopes(scopeMode).join(' ')
+  const stateNonce = crypto.randomUUID()
+  const returnTo = options.returnTo ?? (window.location.pathname + window.location.search)
 
-    const stateNonce = crypto.randomUUID()
-    sessionStorage.setItem('oauth_state', stateNonce)
+  sessionStorage.setItem(STORAGE_KEY_OAUTH_STATE, stateNonce)
+  sessionStorage.setItem(STORAGE_KEY_OAUTH_SCOPE_MODE, scopeMode)
+  sessionStorage.setItem(STORAGE_KEY_OAUTH_RETURN, returnTo)
 
-    const authUrl =
-      `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${encodeURIComponent(clientId)}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=code` +
-      `&scope=${encodeURIComponent(scope)}` +
-      `&access_type=offline` +
-      `&include_granted_scopes=true` +
-      `&prompt=${options.forceConsent ? 'consent' : 'select_account'}` +
-      `&state=${encodeURIComponent(stateNonce)}`
+  const authUrl =
+    `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${encodeURIComponent(clientId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&response_type=code` +
+    `&scope=${encodeURIComponent(scope)}` +
+    `&access_type=offline` +
+    `&include_granted_scopes=true` +
+    `&prompt=${options.forceConsent ? 'consent' : 'select_account'}` +
+    `&state=${encodeURIComponent(stateNonce)}`
 
-    const popup = window.open(authUrl, 'google_auth', 'width=500,height=600')
-    if (!popup) {
-      sessionStorage.removeItem('oauth_state')
-      reject(new Error('팝업이 차단되었습니다. 팝업 차단을 해제해 주세요.'))
-      return
-    }
+  window.location.href = authUrl
+  return new Promise<never>(() => {})
+}
 
-    let timeoutTimer: number | null = null
+/**
+ * Completes the OAuth flow inside /auth/callback after Google redirects back.
+ * Validates state, exchanges code via the server, stores user locally, and
+ * returns the user along with the original scopeMode and returnTo destination.
+ */
+export async function completeGoogleSignIn(): Promise<{
+  user: GoogleUser
+  scopeMode: GoogleAuthScopeMode
+  returnTo: string
+}> {
+  const params = new URLSearchParams(window.location.search)
+  const code = params.get('code')
+  const state = params.get('state')
+  const errorParam = params.get('error')
 
-    const cleanup = () => {
-      window.removeEventListener('message', onMessage)
-      if (timeoutTimer !== null) {
-        window.clearTimeout(timeoutTimer)
-        timeoutTimer = null
-      }
-    }
+  const expectedState = sessionStorage.getItem(STORAGE_KEY_OAUTH_STATE)
+  const scopeMode = (sessionStorage.getItem(STORAGE_KEY_OAUTH_SCOPE_MODE) as GoogleAuthScopeMode) || 'login'
+  const returnTo = sessionStorage.getItem(STORAGE_KEY_OAUTH_RETURN) || '/dashboard'
 
-    // Use postMessage only. Reading cross-origin popup state can trigger COOP warnings
-    // while the popup is on accounts.google.com.
-    async function onMessage(event: MessageEvent) {
-      if (event.origin !== window.location.origin) return
-      if (event.data?.type !== 'google_oauth_callback') return
+  sessionStorage.removeItem(STORAGE_KEY_OAUTH_STATE)
+  sessionStorage.removeItem(STORAGE_KEY_OAUTH_SCOPE_MODE)
+  sessionStorage.removeItem(STORAGE_KEY_OAUTH_RETURN)
 
-      cleanup()
+  if (errorParam) {
+    throw new Error('Google 인증을 완료하지 못했습니다. 다시 시도해 주세요.')
+  }
+  if (!code) {
+    throw new Error('인증 코드를 받지 못했습니다.')
+  }
+  if (!expectedState || state !== expectedState) {
+    throw new Error('로그인 요청을 확인할 수 없습니다. 다시 시도해 주세요.')
+  }
 
-      const { code, error, state: returnedState } = event.data
-
-      if (error) {
-        reject(new Error('Google 인증을 완료하지 못했습니다. 다시 시도해 주세요.'))
-        return
-      }
-      if (!code) {
-        reject(new Error('인증 코드를 받지 못했습니다.'))
-        return
-      }
-
-      const expectedState = sessionStorage.getItem('oauth_state')
-      sessionStorage.removeItem('oauth_state')
-      if (!expectedState || returnedState !== expectedState) {
-        reject(new Error('로그인 요청을 확인할 수 없습니다. 다시 시도해 주세요.'))
-        return
-      }
-
-      try {
-        const res = await fetch('/api/auth/callback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, redirectUri }),
-        })
-
-        if (!res.ok) {
-          const body = await res.json().catch(() => null)
-          throw new Error(body?.error?.message || '인증에 실패했습니다.')
-        }
-
-        const body = await res.json()
-        const data = body.data
-
-        const user: GoogleUser = {
-          uid: data.id,
-          email: data.email,
-          displayName: data.displayName || null,
-          photoURL: data.photoURL || null,
-        }
-
-        storeUser(user)
-        resolve({ user })
-      } catch (err) {
-        reject(err)
-      }
-    }
-
-    window.addEventListener('message', onMessage)
-    timeoutTimer = window.setTimeout(() => {
-      cleanup()
-      sessionStorage.removeItem('oauth_state')
-      reject(new Error('로그인이 제한 시간 안에 완료되지 않았습니다. 다시 시도해 주세요.'))
-    }, AUTH_TIMEOUT_MS)
+  const redirectUri = `${window.location.origin}/auth/callback`
+  const res = await fetch('/api/auth/callback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code, redirectUri }),
   })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.error?.message || '인증에 실패했습니다.')
+  }
+
+  const body = await res.json()
+  const data = body.data
+
+  const user: GoogleUser = {
+    uid: data.id,
+    email: data.email,
+    displayName: data.displayName || null,
+    photoURL: data.photoURL || null,
+  }
+
+  storeUser(user)
+  return { user, scopeMode, returnTo }
 }
 
 export function signOut(): void {

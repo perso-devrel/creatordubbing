@@ -424,16 +424,18 @@ function YouTubeConnectionCard() {
   const handleReconnect = async () => {
     setConnecting(true)
     try {
-      const { user } = await signInWithGoogle({ forceConsent: true, scopeMode: 'youtube-write' })
-      useAuthStore.getState().setUser(user)
-      window.location.reload()
+      await signInWithGoogle({
+        forceConsent: true,
+        scopeMode: 'youtube-write',
+        returnTo: '/settings?section=youtube',
+      })
+      // Page navigates to Google; control never returns here on success.
     } catch {
       addToast({
         type: 'error',
         title: t('app.app.youtube.page.couldNotConnectYouTube'),
-        message: t('app.app.youtube.page.pleaseAllowPopUpsAndTryAgain'),
+        message: t('app.app.youtube.page.pleaseTryAgainShortly'),
       })
-    } finally {
       setConnecting(false)
     }
   }
