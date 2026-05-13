@@ -25,7 +25,7 @@ export const youtubeMessages = {
   "app.app.youtube.page.pleaseTryAgainShortly": { ko: "잠시 후 다시 시도해 주세요.", en: "Please try again shortly." },
   "app.app.youtube.page.private": { ko: "비공개", en: "Private" },
   "app.app.youtube.page.public": { ko: "공개", en: "Public" },
-  "app.app.youtube.page.theseDefaultsAreAppliedToNewDubbingJobs": { ko: "아래 기본값은 새 더빙에 먼저 적용되며, 작업마다 바꿀 수 있습니다.", en: "These defaults are applied to new dubbing jobs first, and can be changed per job." },
+  "app.app.youtube.page.theseDefaultsAreAppliedToNewDubbingJobs": { ko: "아래 기본값은 새 작업에 먼저 적용되며, 작업마다 바꿀 수 있습니다.", en: "These defaults apply to new jobs first, and can be changed per job." },
   "app.app.youtube.page.unlisted": { ko: "일부 공개", en: "Unlisted" },
   "app.app.youtube.page.uploadDefaults": { ko: "업로드 기본값", en: "Upload defaults" },
   "app.app.youtube.page.valueSubscribersValueVideos": { ko: "구독자 {formatNumberChannelSubscriberCount} · 영상 {formatNumberChannelVideoCount}개", en: "{formatNumberChannelSubscriberCount} subscribers · {formatNumberChannelVideoCount} videos" },

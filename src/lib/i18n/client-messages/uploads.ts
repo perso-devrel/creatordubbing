@@ -31,6 +31,6 @@ export const uploadsMessages = {
   "app.app.uploads.page.videoTitle": { ko: "영상 제목", en: "Video title" },
   "app.app.uploads.page.visibility": { ko: "공개 범위", en: "Visibility" },
   "app.app.uploads.page.watchOnYouTube": { ko: "YouTube에서 보기", en: "Watch on YouTube" },
-  "app.app.uploads.page.youTubeUploads": { ko: "YouTube 업로드", en: "YouTube uploads" },
+  "app.app.uploads.page.youTubeUploads": { ko: "완료된 작업", en: "Completed" },
   "app.app.uploads.page.youTubeUploadSettings": { ko: "YouTube 업로드 설정", en: "YouTube upload settings" },
 } as const satisfies Record<string, LocalizedText>
