@@ -54,6 +54,9 @@ const queueItem = {
   srtContent: '1\n00:00:00,000 --> 00:00:01,000\nHello',
   selfDeclaredMadeForKids: false,
   containsSyntheticMedia: true,
+  uploadKind: 'new_video_dubbed_video',
+  metadataJson: JSON.stringify({ translated: { en: { title: 'Translated title' } } }),
+  localizationsJson: JSON.stringify({ en: { title: 'Translated title', description: 'Translated description' } }),
   status: 'processing' as const,
   retries: 0,
   error: null,
@@ -105,6 +108,7 @@ describe('processUploadQueue', () => {
         tags: ['dubtube', 'english'],
         selfDeclaredMadeForKids: false,
         containsSyntheticMedia: true,
+        localizations: { en: { title: 'Translated title', description: 'Translated description' } },
       }),
     )
     expect(uploadCaptionToYouTube).toHaveBeenCalledWith({
@@ -116,7 +120,12 @@ describe('processUploadQueue', () => {
     })
     expect(completeQueueItem).toHaveBeenCalledWith(10, 'yt-123')
     expect(createYouTubeUpload).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'user-1', youtubeVideoId: 'yt-123' }),
+      expect.objectContaining({
+        userId: 'user-1',
+        youtubeVideoId: 'yt-123',
+        uploadKind: 'new_video_dubbed_video',
+        metadataJson: queueItem.metadataJson,
+      }),
     )
     expect(updateJobLanguageYouTube).toHaveBeenCalledWith(20, 'en', 'yt-123')
   })
