@@ -38,7 +38,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-surface-200 bg-white/80 px-6 backdrop-blur-md dark:border-surface-800 dark:bg-surface-900/80">
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-surface-200 bg-white/85 px-4 backdrop-blur-md dark:border-surface-800 dark:bg-surface-900/85 sm:px-6">
       <div />
 
       <div className="flex items-center gap-2">
@@ -48,7 +48,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
         {user && (
           <div className="ml-2 flex items-center gap-3">
             <div className="hidden text-right sm:block">
-              <p className="max-w-48 truncate text-sm font-medium leading-snug text-surface-900 dark:text-white">
+              <p className="max-w-48 truncate text-sm font-semibold leading-snug text-surface-900 dark:text-white">
                 {accountName}
               </p>
               {subscriberLabel && (

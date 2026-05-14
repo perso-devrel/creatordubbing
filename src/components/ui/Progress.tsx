@@ -10,7 +10,7 @@ interface ProgressProps {
 
 export function Progress({ value, max = 100, className, showLabel, size = 'md' }: ProgressProps) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100))
-  const heights = { sm: 'h-1.5', md: 'h-2.5', lg: 'h-4' }
+  const heights = { sm: 'h-1.5', md: 'h-2', lg: 'h-3' }
 
   return (
     <div className={cn('w-full', className)}>
@@ -21,7 +21,7 @@ export function Progress({ value, max = 100, className, showLabel, size = 'md' }
         </div>
       )}
       <div className={cn('w-full overflow-hidden rounded-full bg-surface-200 dark:bg-surface-800', heights[size])}>
-        <div className={cn('h-full rounded-full bg-brand-600 transition-all duration-500')} style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full bg-brand-600 transition-all duration-500" style={{ width: `${pct}%` }} />
       </div>
     </div>
   )

@@ -33,7 +33,7 @@ export function Tabs({ defaultValue, children, className, onChange }: TabsProps)
 
 export function TabsList({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div role="tablist" className={cn('flex gap-1 rounded-lg bg-surface-100 p-1 dark:bg-surface-800', className)}>
+    <div role="tablist" className={cn('flex gap-1 rounded-md border border-surface-200 bg-surface-100 p-1 dark:border-surface-700 dark:bg-surface-850', className)}>
       {children}
     </div>
   )
@@ -49,9 +49,9 @@ export function TabsTrigger({ value, children, className }: { value: string; chi
       aria-selected={isActive}
       onClick={() => setActive(value)}
       className={cn(
-        'rounded-md px-3 py-1.5 text-sm font-medium transition-all cursor-pointer focus-ring',
+        'rounded px-3 py-1.5 text-sm font-semibold transition-colors cursor-pointer focus-ring',
         isActive
-          ? 'bg-white text-surface-900 shadow-sm dark:bg-surface-700 dark:text-surface-100'
+          ? 'bg-white text-surface-900 shadow-sm shadow-surface-950/[0.04] dark:bg-surface-800 dark:text-surface-100'
           : 'text-surface-600 hover:text-surface-800 dark:text-surface-300 dark:hover:text-surface-100',
         className,
       )}

@@ -3,31 +3,31 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Brand Colors - YouTube-inspired red, kept restrained for tool UI */
-  --color-brand-50: #fff1f0;
-  --color-brand-100: #ffe1df;
-  --color-brand-200: #ffc8c3;
-  --color-brand-300: #ff9f96;
-  --color-brand-400: #ff5f52;
-  --color-brand-500: #e62117;
-  --color-brand-600: #cc0000;
-  --color-brand-700: #a90000;
-  --color-brand-800: #870000;
-  --color-brand-900: #620000;
+  /* Brand Colors - YouTube red used as an action accent, not a page tint */
+  --color-brand-50: #fff5f4;
+  --color-brand-100: #ffe7e5;
+  --color-brand-200: #ffcfc9;
+  --color-brand-300: #ffaaa1;
+  --color-brand-400: #ff7064;
+  --color-brand-500: #ef2d22;
+  --color-brand-600: #d9140b;
+  --color-brand-700: #b60d06;
+  --color-brand-800: #8f0f0b;
+  --color-brand-900: #74120f;
 
   /* Surface Colors */
-  --color-surface-50: #f7f8fa;
-  --color-surface-100: #eef1f4;
-  --color-surface-200: #e1e6eb;
-  --color-surface-300: #c7d0d9;
-  --color-surface-400: #8b95a1;
-  --color-surface-500: #6b7280;
-  --color-surface-600: #4b5563;
-  --color-surface-700: #374151;
-  --color-surface-800: #242a33;
-  --color-surface-850: #1e232b;
-  --color-surface-900: #171a21;
-  --color-surface-950: #0f1115;
+  --color-surface-50: #f8fafc;
+  --color-surface-100: #f1f5f9;
+  --color-surface-200: #e2e8f0;
+  --color-surface-300: #cbd5e1;
+  --color-surface-400: #94a3b8;
+  --color-surface-500: #64748b;
+  --color-surface-600: #475569;
+  --color-surface-700: #334155;
+  --color-surface-800: #1e293b;
+  --color-surface-850: #172033;
+  --color-surface-900: #0f172a;
+  --color-surface-950: #060b16;
 
   /* Fonts */
   --font-ko: 'Pretendard', 'Noto Sans KR', system-ui, -apple-system, sans-serif;
@@ -76,10 +76,19 @@ body {
   font-family: var(--font-sans);
   letter-spacing: 0;
   font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
 }
 
 html.dark body {
   @apply bg-surface-950 text-surface-100;
+}
+
+::selection {
+  @apply bg-brand-100 text-brand-900;
+}
+
+html.dark ::selection {
+  @apply bg-brand-900 text-brand-100;
 }
 
 code,
@@ -109,9 +118,17 @@ html.dark ::-webkit-scrollbar-thumb {
 
 /* Focus ring utility */
 .focus-ring {
-  @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2;
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-500/80 focus-visible:ring-offset-2;
 }
 
 html.dark .focus-ring {
   @apply focus-visible:ring-offset-surface-900;
+}
+
+.page-shell {
+  @apply mx-auto w-full max-w-[1440px] space-y-6;
+}
+
+.document-shell {
+  @apply mx-auto w-full max-w-3xl px-6 py-14 text-surface-700 dark:text-surface-300 sm:py-16;
 }

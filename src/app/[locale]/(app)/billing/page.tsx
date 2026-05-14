@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CreditCard, Coins, ArrowRight, Loader2, Check } from 'lucide-react'
 import { Card, CardTitle, Button } from '@/components/ui'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { cn } from '@/utils/cn'
 import { CREDIT_PACKS } from '@/features/billing/constants/plans'
 import { formatKrw } from '@/utils/formatters'
@@ -46,16 +47,16 @@ export default function BillingPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('app.app.billing.page.addDubbingMinutes')}</h1>
-        <p className="text-surface-600 dark:text-surface-400">{t('app.app.billing.page.addDubbingMinutesAndReviewPaymentHistory')}</p>
-      </div>
+      <PageHeader
+        title={t('app.app.billing.page.addDubbingMinutes')}
+        description={t('app.app.billing.page.addDubbingMinutesAndReviewPaymentHistory')}
+      />
 
       {/* Remaining time */}
-      <Card className="border-brand-200 dark:border-brand-800">
+      <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-900/70 dark:bg-amber-950/10">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
+            <div className="rounded-md bg-white p-3 text-amber-600 shadow-sm shadow-amber-950/5 dark:bg-surface-900 dark:text-amber-300">
               <Coins className="h-6 w-6 text-amber-500" />
             </div>
             <div>
@@ -89,10 +90,10 @@ export default function BillingPage() {
               key={pack.minutes}
               onClick={() => setSelectedPack(pack.minutes)}
               className={cn(
-                'rounded-lg border-2 p-4 text-left transition-all cursor-pointer focus-ring',
+                'rounded-lg border p-4 text-left transition-all cursor-pointer focus-ring',
                 selectedPack === pack.minutes
-                  ? 'border-brand-600 bg-brand-50 shadow-sm dark:border-brand-500 dark:bg-brand-900/25'
-                  : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:hover:border-surface-600 dark:hover:bg-surface-800/70',
+                  ? 'border-brand-500 bg-brand-50 shadow-sm shadow-brand-950/5 dark:border-brand-500 dark:bg-brand-900/20'
+                  : 'border-surface-200 bg-white hover:border-surface-300 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-900 dark:hover:border-surface-600 dark:hover:bg-surface-850',
               )}
             >
               <div className="flex items-start justify-between gap-3">

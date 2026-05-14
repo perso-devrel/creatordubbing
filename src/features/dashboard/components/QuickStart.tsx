@@ -18,11 +18,15 @@ export function QuickStart() {
   }
 
   return (
-    <Card className="border-brand-200 dark:border-brand-900/60">
-      <CardTitle>{t('features.dashboard.components.quickStart.quickStart')}</CardTitle>
-      <p className="mb-4 text-sm text-surface-600 dark:text-surface-400">
-        {t('features.dashboard.components.quickStart.pasteAYouTubeLinkToStartANew')}
-      </p>
+    <Card className="border-surface-300 bg-white dark:border-surface-700">
+      <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <CardTitle>{t('features.dashboard.components.quickStart.quickStart')}</CardTitle>
+          <p className="mt-1 text-sm leading-6 text-surface-600 dark:text-surface-400">
+            {t('features.dashboard.components.quickStart.pasteAYouTubeLinkToStartANew')}
+          </p>
+        </div>
+      </div>
       <div className="flex flex-col gap-2 sm:flex-row">
         <Input
           placeholder="https://youtube.com/watch?v=..."

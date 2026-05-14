@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { Check } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { Progress } from '@/components/ui'
 import { useLocaleText } from '@/hooks/useLocaleText'
 import { useDubbingStore } from '../store/dubbingStore'
 
@@ -72,6 +73,8 @@ const steps = [
 export function DubbingWizard() {
   const currentStep = useDubbingStore((s) => s.currentStep)
   const t = useLocaleText()
+  const currentStepInfo = steps.find((step) => step.num === currentStep) ?? steps[0]
+  const progressValue = ((currentStep - 1) / (steps.length - 1)) * 100
 
   useEffect(() => {
     window.requestAnimationFrame(() => {
@@ -90,47 +93,53 @@ export function DubbingWizard() {
 
   return (
     <div className="space-y-8">
-      {/* Step indicator */}
-      <nav className="flex items-center justify-start gap-1 overflow-x-auto px-1 pb-1 sm:gap-2 sm:px-0 xl:justify-center">
-        {steps.map(({ num, label }, i) => {
-          const isActive = currentStep === num
-          const isCompleted = currentStep > num
-          return (
-            <div key={num} className="flex shrink-0 items-center gap-1 sm:gap-2">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <div
-                  className={cn(
-                    'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all sm:h-8 sm:w-8 sm:text-sm',
-                    isCompleted
-                      ? 'bg-brand-600 text-white'
-                      : isActive
-                        ? 'bg-brand-600 text-white shadow-sm'
-                        : 'bg-surface-200 text-surface-700 dark:bg-surface-800 dark:text-surface-300',
-                  )}
-                >
-                  {isCompleted ? <Check className="h-4 w-4" /> : num}
-                </div>
-                <span
-                  className={cn(
-                    'hidden text-sm font-medium xl:block',
-                    isActive ? 'text-surface-900 dark:text-white' : 'text-surface-500 dark:text-surface-300',
-                  )}
-                >
-                  {t(label)}
+      <div className="rounded-lg border border-surface-200 bg-white p-4 shadow-sm shadow-surface-950/[0.03] dark:border-surface-800 dark:bg-surface-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-surface-500 dark:text-surface-400">
+              {currentStep} / {steps.length}
+            </p>
+            <p className="mt-1 break-keep text-base font-semibold text-surface-950 dark:text-white">
+              {t(currentStepInfo.label)}
+            </p>
+          </div>
+          <div className="min-w-0 text-sm text-surface-500 dark:text-surface-400">
+            {t('app.app.dubbing.page.chooseAVideoAndLanguagesToStartA')}
+          </div>
+        </div>
+        <Progress value={progressValue} className="mt-4" />
+        <nav className="mt-4 grid gap-2 sm:grid-cols-4 xl:grid-cols-7" aria-label="Dubbing steps">
+          {steps.map(({ num, label }) => {
+            const isActive = currentStep === num
+            const isCompleted = currentStep > num
+            return (
+              <div
+                key={num}
+                className={cn(
+                  'flex min-w-0 items-center gap-2 rounded-md border px-2.5 py-2 text-xs transition-colors',
+                  isActive
+                    ? 'border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-900/70 dark:bg-brand-900/25 dark:text-brand-200'
+                    : isCompleted
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-900/20 dark:text-emerald-300'
+                      : 'border-surface-200 bg-surface-50 text-surface-500 dark:border-surface-800 dark:bg-surface-850 dark:text-surface-400',
+                )}
+              >
+                <span className={cn(
+                  'flex h-5 w-5 shrink-0 items-center justify-center rounded text-[11px] font-semibold',
+                  isActive
+                    ? 'bg-brand-600 text-white'
+                    : isCompleted
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-white text-surface-500 dark:bg-surface-900 dark:text-surface-400',
+                )}>
+                  {isCompleted ? <Check className="h-3 w-3" /> : num}
                 </span>
+                <span className="truncate font-semibold">{t(label)}</span>
               </div>
-              {i < steps.length - 1 && (
-                <div
-                  className={cn(
-                    'h-0.5 w-3 rounded-full min-[380px]:w-4 sm:w-8 xl:w-16',
-                    currentStep > num ? 'bg-brand-600' : 'bg-surface-200 dark:bg-surface-800',
-                  )}
-                />
-              )}
-            </div>
-          )
-        })}
-      </nav>
+            )
+          })}
+        </nav>
+      </div>
 
       {/* Step content */}
       <div className="animate-fade-in">

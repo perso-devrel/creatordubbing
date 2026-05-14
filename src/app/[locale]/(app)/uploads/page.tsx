@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { Upload, Loader2, CheckCircle2, ExternalLink, Video, Settings2, Lock } from 'lucide-react'
 import { Card, CardTitle, Button, Badge, Select } from '@/components/ui'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Modal } from '@/components/ui/Modal'
 import { LanguageBadge } from '@/components/shared/LanguageBadge'
 import { EmptyState } from '@/components/feedback/EmptyState'
@@ -608,8 +609,8 @@ function UploadRow({ item, userId }: UploadRowProps) {
 
   return (
     <>
-      <div className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 dark:border-surface-800 sm:flex-row sm:items-center">
-        <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-surface-100 text-xs text-surface-500 dark:bg-surface-800 dark:text-surface-300">
+      <div className="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-surface-50 dark:hover:bg-surface-850 sm:flex-row sm:items-center">
+        <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded-md border border-surface-200 bg-white text-xs font-medium text-surface-500 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300">
           {formatDuration(Math.round(item.video_duration_ms / 1000))}
         </div>
 
@@ -703,10 +704,10 @@ export default function UploadsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('app.app.uploads.page.youTubeUploads')}</h1>
-        <p className="text-surface-600 dark:text-surface-400">{t('app.app.uploads.page.uploadCompletedDubbingResultsToYouTube')}</p>
-      </div>
+      <PageHeader
+        title={t('app.app.uploads.page.youTubeUploads')}
+        description={t('app.app.uploads.page.uploadCompletedDubbingResultsToYouTube')}
+      />
 
       {isLoading ? (
         <div className="flex items-center gap-2 text-surface-500 dark:text-surface-400">
@@ -722,17 +723,17 @@ export default function UploadsPage() {
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (
-            <Card key={job.id}>
-              <div className="mb-3 flex items-center justify-between">
+            <Card key={job.id} className="overflow-hidden p-0">
+              <div className="flex items-center justify-between gap-3 border-b border-surface-200 bg-surface-50 px-5 py-4 dark:border-surface-800 dark:bg-surface-850">
                 <div>
                   <CardTitle className="text-base">{job.title}</CardTitle>
                   <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-400">
-                    {formatDuration(Math.round(job.durationMs / 1000))} · {new Date(job.createdAt).toLocaleDateString('ko-KR')}
+                    {formatDuration(Math.round(job.durationMs / 1000))} · {new Date(job.createdAt).toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US')}
                   </p>
                 </div>
                 <Badge variant="success">{t('app.app.uploads.page.valueLanguages', { jobLangsLength: job.langs.length })}</Badge>
               </div>
-              <div className="space-y-2">
+              <div className="divide-y divide-surface-200 dark:divide-surface-800">
                 {job.langs.map((item) => (
                   <UploadRow key={`${item.job_id}-${item.language_code}`} item={item} userId={user?.uid || ''} />
                 ))}

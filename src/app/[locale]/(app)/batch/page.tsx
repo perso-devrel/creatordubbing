@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { Plus, GripVertical, Layers, Loader2, Trash2 } from 'lucide-react'
 import { Card, CardTitle, Button, Badge, Progress } from '@/components/ui'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { LanguageBadge } from '@/components/shared/LanguageBadge'
 import { EmptyState } from '@/components/feedback/EmptyState'
 import { formatDuration } from '@/utils/formatters'
@@ -72,10 +73,10 @@ export default function BatchPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('app.app.batch.page.dubbingJobs')}</h1>
-          <p className="text-surface-600 dark:text-surface-400">{t('app.app.batch.page.reviewActiveDubbingJobs')}</p>
-        </div>
+        <PageHeader
+          title={t('app.app.batch.page.dubbingJobs')}
+          description={t('app.app.batch.page.reviewActiveDubbingJobs')}
+        />
         <div className="flex items-center gap-2 text-surface-500 dark:text-surface-400">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">{t('app.app.batch.page.loading')}</span>
@@ -87,10 +88,10 @@ export default function BatchPage() {
   if (activeJobs.length === 0) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('app.app.batch.page.dubbingJobs2')}</h1>
-          <p className="text-surface-600 dark:text-surface-400">{t('app.app.batch.page.reviewActiveDubbingJobs2')}</p>
-        </div>
+        <PageHeader
+          title={t('app.app.batch.page.dubbingJobs2')}
+          description={t('app.app.batch.page.reviewActiveDubbingJobs2')}
+        />
         <EmptyState
           icon={<Layers className="h-12 w-12" />}
           title={t('app.app.batch.page.noActiveJobs')}
@@ -107,19 +108,21 @@ export default function BatchPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('app.app.batch.page.dubbingJobs3')}</h1>
-          <p className="text-surface-600 dark:text-surface-400">
+      <PageHeader
+        title={t('app.app.batch.page.dubbingJobs3')}
+        description={(
+          <>
             {processing > 0 && t('app.app.batch.page.valueProcessing', { processing: processing })}
             {processing > 0 && queued > 0 && ' · '}
             {queued > 0 && t('app.app.batch.page.valueQueued', { queued: queued })}
-          </p>
-        </div>
-        <LocaleLink href="/dubbing">
-          <Button><Plus className="h-4 w-4" /> {t('app.app.batch.page.newDubbing2')}</Button>
-        </LocaleLink>
-      </div>
+          </>
+        )}
+        actions={(
+          <LocaleLink href="/dubbing">
+            <Button><Plus className="h-4 w-4" /> {t('app.app.batch.page.newDubbing2')}</Button>
+          </LocaleLink>
+        )}
+      />
 
       <Card>
         <CardTitle>{t('app.app.batch.page.jobsValue', { activeJobsLength: activeJobs.length })}</CardTitle>
@@ -135,11 +138,11 @@ export default function BatchPage() {
             return (
               <div
                 key={job.id}
-                className="flex flex-col gap-3 rounded-lg border border-surface-200 p-3 transition-colors hover:bg-surface-50 dark:border-surface-800 dark:hover:bg-surface-800/50 sm:flex-row sm:items-center"
+                className="flex flex-col gap-3 rounded-md border border-surface-200 bg-surface-50/70 p-3 transition-colors hover:bg-white dark:border-surface-800 dark:bg-surface-850/70 dark:hover:bg-surface-850 sm:flex-row sm:items-center"
               >
                 <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-surface-300" />
 
-                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-500 dark:bg-surface-800 dark:text-surface-300">
+                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md border border-surface-200 bg-white text-xs font-medium text-surface-500 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300">
                   {formatDuration(Math.round(job.video_duration_ms / 1000))}
                 </div>
 

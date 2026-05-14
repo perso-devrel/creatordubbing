@@ -6,19 +6,19 @@ import { Loader2 } from 'lucide-react'
 
 const variants = {
   primary:
-    'bg-brand-600 text-white shadow-sm hover:bg-brand-700',
+    'bg-brand-600 text-white shadow-sm shadow-brand-900/10 hover:bg-brand-700 active:bg-brand-800',
   secondary:
-    'bg-surface-200 text-surface-900 hover:bg-surface-300 dark:bg-surface-800 dark:text-surface-100 dark:hover:bg-surface-700',
+    'border border-surface-200 bg-white text-surface-800 shadow-sm shadow-surface-950/5 hover:bg-surface-50 dark:border-surface-700 dark:bg-surface-850 dark:text-surface-100 dark:hover:bg-surface-800',
   ghost: 'text-surface-700 hover:bg-surface-100 dark:text-surface-300 dark:hover:bg-surface-800',
-  destructive: 'bg-red-600 text-white shadow-sm hover:bg-red-700',
+  destructive: 'bg-red-600 text-white shadow-sm shadow-red-950/10 hover:bg-red-700 active:bg-red-800',
   outline:
-    'border border-surface-300 bg-white text-surface-700 hover:bg-surface-100 dark:border-surface-700 dark:bg-transparent dark:text-surface-300 dark:hover:bg-surface-800',
+    'border border-surface-300 bg-transparent text-surface-700 hover:border-surface-400 hover:bg-white dark:border-surface-700 dark:text-surface-300 dark:hover:border-surface-600 dark:hover:bg-surface-850',
 } as const
 
 const sizes = {
   sm: 'h-8 px-3 text-sm gap-1.5',
   md: 'h-10 px-4 text-sm gap-2',
-  lg: 'h-12 px-6 text-base gap-2.5',
+  lg: 'h-11 px-5 text-sm gap-2.5',
 } as const
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -33,7 +33,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus-ring disabled:opacity-50 disabled:pointer-events-none cursor-pointer',
+          'inline-flex items-center justify-center rounded-md font-semibold transition-colors duration-150 focus-ring disabled:pointer-events-none disabled:opacity-50 cursor-pointer',
           variants[variant],
           sizes[size],
           className,
