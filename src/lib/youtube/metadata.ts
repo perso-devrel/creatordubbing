@@ -85,7 +85,6 @@ export async function fetchVideoMetadata(
     part: 'snippet,localizations',
     id: videoId,
   })
-  if (preferredLanguage) params.set('hl', preferredLanguage)
 
   const res = await fetch(
     `${YOUTUBE_DATA_BASE}/videos?${params}`,

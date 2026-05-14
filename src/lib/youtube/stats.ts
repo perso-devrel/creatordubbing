@@ -211,6 +211,7 @@ export async function fetchMyVideos(
     items?: Array<{
       snippet?: {
         title?: string
+        description?: string
         publishedAt?: string
         thumbnails?: { medium?: { url?: string } }
         resourceId?: { videoId?: string }
@@ -225,6 +226,7 @@ export async function fetchMyVideos(
       return {
         videoId,
         title: item.snippet?.title || '',
+        description: item.snippet?.description || '',
         thumbnail: item.snippet?.thumbnails?.medium?.url || '',
         publishedAt: item.snippet?.publishedAt || '',
       }
@@ -233,12 +235,15 @@ export async function fetchMyVideos(
 
   if (base.length === 0) return fetchMyVideosBySearch(accessToken, maxResults)
 
-  // playlistItems.list does not include privacy status, so fetch it separately.
-  const privacyById = await fetchPrivacyStatuses(accessToken, base.map((v) => v.videoId))
+  // playlistItems/search snippets can be localized or omit full metadata, so
+  // videos.list is the source of truth for title, description, and privacy.
+  const detailsById = await fetchVideoListDetails(accessToken, base.map((v) => v.videoId))
 
   return base.map((v) => ({
     ...v,
-    privacyStatus: privacyById.get(v.videoId) ?? 'unknown',
+    title: detailsById.get(v.videoId)?.title ?? v.title,
+    description: detailsById.get(v.videoId)?.description ?? v.description,
+    privacyStatus: detailsById.get(v.videoId)?.privacyStatus ?? 'unknown',
   }))
 }
 
@@ -270,6 +275,7 @@ async function fetchMyVideosBySearch(
       id?: { videoId?: string }
       snippet?: {
         title?: string
+        description?: string
         publishedAt?: string
         thumbnails?: {
           medium?: { url?: string }
@@ -285,28 +291,31 @@ async function fetchMyVideosBySearch(
       return {
         videoId,
         title: item.snippet?.title || '',
+        description: item.snippet?.description || '',
         thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || '',
         publishedAt: item.snippet?.publishedAt || '',
       }
     })
     .filter((item): item is Omit<MyVideoItem, 'privacyStatus'> => item !== null)
 
-  const privacyById = await fetchPrivacyStatuses(accessToken, base.map((v) => v.videoId))
+  const detailsById = await fetchVideoListDetails(accessToken, base.map((v) => v.videoId))
   return base.map((v) => ({
     ...v,
-    privacyStatus: privacyById.get(v.videoId) ?? 'unknown',
+    title: detailsById.get(v.videoId)?.title ?? v.title,
+    description: detailsById.get(v.videoId)?.description ?? v.description,
+    privacyStatus: detailsById.get(v.videoId)?.privacyStatus ?? 'unknown',
   }))
 }
 
-async function fetchPrivacyStatuses(
+async function fetchVideoListDetails(
   accessToken: string,
   videoIds: string[],
-): Promise<Map<string, MyVideoItem['privacyStatus']>> {
-  const result = new Map<string, MyVideoItem['privacyStatus']>()
+): Promise<Map<string, Pick<MyVideoItem, 'title' | 'description' | 'privacyStatus'>>> {
+  const result = new Map<string, Pick<MyVideoItem, 'title' | 'description' | 'privacyStatus'>>()
   if (videoIds.length === 0) return result
 
   const res = await fetch(
-    `${YOUTUBE_API_BASE}/youtube/v3/videos?part=status&id=${videoIds.join(',')}`,
+    `${YOUTUBE_API_BASE}/youtube/v3/videos?part=snippet,status&id=${videoIds.join(',')}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   )
   if (!res.ok) {
@@ -318,13 +327,25 @@ async function fetchPrivacyStatuses(
   }
 
   const data = (await res.json()) as {
-    items?: Array<{ id: string; status?: { privacyStatus?: string } }>
+    items?: Array<{
+      id: string
+      snippet?: {
+        title?: string
+        description?: string
+      }
+      status?: { privacyStatus?: string }
+    }>
   }
   for (const item of data.items || []) {
     const p = item.status?.privacyStatus
-    if (p === 'public' || p === 'unlisted' || p === 'private') {
-      result.set(item.id, p)
-    }
+    const privacyStatus = p === 'public' || p === 'unlisted' || p === 'private'
+      ? p
+      : 'unknown'
+    result.set(item.id, {
+      title: item.snippet?.title || '',
+      description: item.snippet?.description || '',
+      privacyStatus,
+    })
   }
   return result
 }

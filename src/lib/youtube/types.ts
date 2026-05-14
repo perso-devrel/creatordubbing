@@ -44,6 +44,7 @@ export interface ChannelStats {
 export interface MyVideoItem {
   videoId: string
   title: string
+  description: string
   thumbnail: string
   publishedAt: string
   privacyStatus: 'public' | 'unlisted' | 'private' | 'unknown'

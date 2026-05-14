@@ -36,6 +36,7 @@ export interface VideoSource {
 export interface VideoMetadata {
   id: string
   title: string
+  description?: string
   thumbnail: string
   duration: number // seconds
   durationMs: number // milliseconds (from Perso)

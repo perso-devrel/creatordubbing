@@ -71,7 +71,7 @@ describe('youtube metadata', () => {
       resolvedLanguage: 'ko',
       resolvedFrom: 'localization',
     })
-    expect(String(fetchMock.mock.calls[0][0])).toContain('hl=ko')
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain('hl=ko')
   })
 
   it('merges localizations and preserves required snippet fields on update', async () => {
