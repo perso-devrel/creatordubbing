@@ -26,7 +26,7 @@ vi.mock('@/lib/auth/token-crypto', () => ({
   decryptToken: vi.fn(async (value: string | null | undefined) => value ? value.replace(/^encrypted:/, '') : null),
 }))
 
-import { requestUserAccountDeletion, upsertUser } from './users'
+import { purgeExpiredPendingDeletedAccounts, requestUserAccountDeletion, upsertUser } from './users'
 
 function resetTx() {
   mocks.tx.execute.mockReset()
@@ -106,11 +106,35 @@ describe('user account deletion recovery queries', () => {
     })
 
     const sql = mocks.tx.execute.mock.calls.map(([query]) => query.sql).join('\n')
-    expect(sql).toContain('UPDATE payment_orders SET user_id = ?')
+    expect(sql).toContain('UPDATE payment_orders')
+    expect(sql).toContain('checkout_url = NULL')
+    expect(sql).toContain('raw_json = ?')
+    expect(sql).toContain('account_retention_reason = ?')
+    expect(sql).toContain('UPDATE credit_transactions')
+    expect(sql).toContain('metadata_json = ?')
     expect(sql).toContain('DELETE FROM upload_queue')
     expect(sql).toContain('DELETE FROM job_languages')
     expect(sql).toContain('DELETE FROM users')
     expect(sql).toContain('INSERT INTO users')
+    expect(mocks.tx.commit).toHaveBeenCalled()
+  })
+
+  it('purges expired pending deletion accounts in batches for cron', async () => {
+    const now = new Date('2026-05-14T00:00:00.000Z')
+    mocks.tx.execute.mockResolvedValueOnce({
+      rows: [{ id: 'user-1' }, { id: 'user-2' }],
+    })
+
+    const result = await purgeExpiredPendingDeletedAccounts({ limit: 2, now })
+
+    const sql = mocks.tx.execute.mock.calls.map(([query]) => query.sql).join('\n')
+    expect(result).toEqual({ purged: 2 })
+    expect(mocks.tx.execute.mock.calls[0][0].sql).toContain('deletion_restore_expires_at')
+    expect(mocks.tx.execute.mock.calls[0][0].args).toEqual(['pending_deletion', now.toISOString(), 2])
+    expect(sql.match(/UPDATE payment_orders/g)).toHaveLength(2)
+    expect(sql.match(/DELETE FROM users/g)).toHaveLength(2)
+    expect(sql).toContain('personal_data_erased_at = ?')
+    expect(sql).toContain('account_retention_until = datetime')
     expect(mocks.tx.commit).toHaveBeenCalled()
   })
 })

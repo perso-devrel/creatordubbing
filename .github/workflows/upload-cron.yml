@@ -31,14 +31,18 @@ jobs:
             exit 1
           fi
 
-      - name: Process dubbing jobs and upload queue
+      - name: Process background jobs and account retention
         env:
           BASE_URL: ${{ vars.PROD_BASE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
           node <<'NODE'
-          const endpoints = ['/api/cron/process-dubbing-jobs', '/api/cron/process-uploads']
+          const endpoints = [
+            '/api/cron/process-dubbing-jobs',
+            '/api/cron/process-uploads',
+            '/api/cron/purge-deleted-accounts',
+          ]
           const baseUrl = process.env.BASE_URL.replace(/\/+$/, '')
           const cronSecret = process.env.CRON_SECRET
 
