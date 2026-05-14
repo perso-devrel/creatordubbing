@@ -5,6 +5,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   getPathLocale,
   stripLocalePrefix,
+  LOCALE_COOKIE,
+  LOCALE_COOKIE_MAX_AGE,
   withLocalePath,
   type AppLocale,
 } from '@/lib/i18n/config'
@@ -34,7 +36,12 @@ export function useLocaleRouter() {
       ? pathname
       : `${window.location.pathname}${window.location.search}${window.location.hash}`
     const path = stripLocalePrefix(current || '/')
-    router.replace(withLocalePath(path, locale))
+    if (typeof window === 'undefined') {
+      router.replace(withLocalePath(path, locale))
+      return
+    }
+    document.cookie = `${LOCALE_COOKIE}=${locale}; Path=/; Max-Age=${LOCALE_COOKIE_MAX_AGE}; SameSite=Lax`
+    window.location.replace(withLocalePath(path, locale))
   }, [pathname, router])
 
   return { push, replace, replaceLocale, localize, locale }
