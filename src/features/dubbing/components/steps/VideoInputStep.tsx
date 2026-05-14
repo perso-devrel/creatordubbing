@@ -23,9 +23,10 @@ import { useAuthStore } from '@/stores/authStore'
 import { isValidVideoUrl, isValidYouTubeUrl } from '@/utils/validators'
 import { formatDuration } from '@/utils/formatters'
 import { getPersoFileUrl } from '@/lib/api-client'
+import type { MyVideoItem } from '@/lib/youtube/types'
 
 export function VideoInputStep() {
-  const { videoMeta, setVideoSource, setIsShort, nextStep } = useDubbingStore()
+  const { videoMeta, setVideoSource, setVideoMeta, setUploadSettings, setIsShort, nextStep } = useDubbingStore()
   const { uploadLocalVideo, importVideoByUrl } = usePersoFlow()
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -99,7 +100,8 @@ export function VideoInputStep() {
     }
   }
 
-  const handleMyVideoSelect = async (videoId: string) => {
+  const handleMyVideoSelect = async (video: MyVideoItem) => {
+    const videoId = video.videoId
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
     setUrl(videoUrl)
     setLoading(true)
@@ -107,6 +109,18 @@ export function VideoInputStep() {
     try {
       setVideoSource({ type: 'channel', url: videoUrl, videoId })
       await importVideoByUrl(videoUrl)
+      const currentMeta = useDubbingStore.getState().videoMeta
+      if (currentMeta) {
+        setVideoMeta({
+          ...currentMeta,
+          title: video.title || currentMeta.title,
+          description: video.description || currentMeta.description,
+        })
+      }
+      setUploadSettings({
+        ...(video.title ? { title: video.title } : {}),
+        ...(video.description ? { description: video.description } : {}),
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : t('features.dubbing.components.steps.videoInputStep.failedToImportTheVideo'))
     } finally {
@@ -405,7 +419,7 @@ export function VideoInputStep() {
                         className="shrink-0 ml-3"
                         loading={loading}
                         disabled={loading}
-                        onClick={() => handleMyVideoSelect(video.videoId)}
+                        onClick={() => handleMyVideoSelect(video)}
                       >
                         {t('features.dubbing.components.steps.videoInputStep.select')}
                       </Button>

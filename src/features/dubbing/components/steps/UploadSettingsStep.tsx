@@ -77,10 +77,12 @@ export function UploadSettingsStep() {
     const patch: Partial<typeof uploadSettings> = {}
     if (!title) patch.title = videoMeta.title
     if (!description) {
-      patch.description = t('features.dubbing.components.steps.uploadSettingsStep.defaultDescription', { title: videoMeta.title })
+      patch.description = videoMeta.description
+        ? videoMeta.description
+        : t('features.dubbing.components.steps.uploadSettingsStep.defaultDescription', { title: videoMeta.title })
     }
     if (Object.keys(patch).length > 0) setUploadSettings(patch)
-  }, [locale, t, videoMeta?.id, videoMeta?.title, setUploadSettings])
+  }, [locale, t, videoMeta?.description, videoMeta?.id, videoMeta?.title, setUploadSettings])
 
   // 입력 도중엔 원시 문자열을 유지해 콤마/공백을 자유롭게 입력 가능.
   // blur 시점에만 배열로 정규화해 store에 반영한다.
