@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Upload, Loader2, CheckCircle2, ExternalLink, Video, Settings2 } from 'lucide-react'
-import { Card, CardTitle, Button, Badge, Input, Select } from '@/components/ui'
+import { Upload, Loader2, CheckCircle2, ExternalLink, Video, Settings2, Lock } from 'lucide-react'
+import { Card, CardTitle, Button, Badge, Select } from '@/components/ui'
 import { Modal } from '@/components/ui/Modal'
 import { LanguageBadge } from '@/components/shared/LanguageBadge'
 import { EmptyState } from '@/components/feedback/EmptyState'
@@ -39,6 +39,9 @@ type CompletedJobGroup = {
   createdAt: string
   langs: CompletedJobLanguage[]
 }
+type UploadPreviewSource =
+  | { kind: 'youtube'; videoId: string }
+  | { kind: 'direct'; url: string }
 
 interface UploadSettings {
   title: string
@@ -63,6 +66,11 @@ async function fetchCompletedLanguages(uid: string, t: LocaleText): Promise<Comp
   const json = await res.json()
   if (!json.ok) throw new Error(json.error?.message || t('app.app.uploads.page.couldNotLoadVideosToUpload'))
   return json.data
+}
+
+function toAssetUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.startsWith('http') ? url : getPersoFileUrl(url)
 }
 
 function buildFallbackSnapshot(item: CompletedJobLanguage, langName: string, t: LocaleText): YouTubeUploadSnapshot {
@@ -123,17 +131,33 @@ function resolveSnapshot(item: CompletedJobLanguage, langName: string, t: Locale
   const parsed = parseYouTubeUploadSnapshot(item.youtube_upload_snapshot_json)
   const fallback = buildFallbackSnapshot(item, langName, t)
   const snapshot = parsed ?? fallback
+  const originalYouTubeUrl = snapshot.assets.originalYouTubeUrl ?? item.original_youtube_url
   return {
     ...snapshot,
     assets: {
       originalVideoUrl: snapshot.assets.originalVideoUrl ?? item.original_video_url,
-      originalYouTubeVideoId: snapshot.assets.originalYouTubeVideoId ?? fallback.assets.originalYouTubeVideoId,
-      originalYouTubeUrl: snapshot.assets.originalYouTubeUrl ?? item.original_youtube_url,
+      originalYouTubeVideoId: snapshot.assets.originalYouTubeVideoId
+        ?? (originalYouTubeUrl ? extractVideoId(originalYouTubeUrl) : null)
+        ?? fallback.assets.originalYouTubeVideoId,
+      originalYouTubeUrl,
       dubbedVideoUrl: snapshot.assets.dubbedVideoUrl ?? item.dubbed_video_url,
       audioUrl: snapshot.assets.audioUrl ?? item.audio_url,
       srtUrl: snapshot.assets.srtUrl ?? item.srt_url,
     },
   }
+}
+
+function resolvePreviewSource(snapshot: YouTubeUploadSnapshot, item: CompletedJobLanguage): UploadPreviewSource | null {
+  if (snapshot.targetAssetKind === 'original_video') {
+    const youtubeVideoId = snapshot.assets.originalYouTubeVideoId
+      ?? (snapshot.assets.originalYouTubeUrl ? extractVideoId(snapshot.assets.originalYouTubeUrl) : null)
+    if (youtubeVideoId) return { kind: 'youtube', videoId: youtubeVideoId }
+    const directUrl = toAssetUrl(snapshot.assets.originalVideoUrl ?? item.original_video_url)
+    return directUrl ? { kind: 'direct', url: directUrl } : null
+  }
+
+  const dubbedVideoUrl = toAssetUrl(snapshot.assets.dubbedVideoUrl ?? item.dubbed_video_url)
+  return dubbedVideoUrl ? { kind: 'direct', url: dubbedVideoUrl } : null
 }
 
 function buildSettingsFromSnapshot(snapshot: YouTubeUploadSnapshot): UploadSettings {
@@ -155,6 +179,26 @@ function buildSettingsFromSnapshot(snapshot: YouTubeUploadSnapshot): UploadSetti
   }
 }
 
+function isExistingVideoCaptionUpload(snapshot: YouTubeUploadSnapshot): boolean {
+  return snapshot.targetAssetKind === 'original_video' && Boolean(snapshot.assets.originalYouTubeVideoId)
+}
+
+function ReadOnlyField({ label, value, multiline = false }: { label: string; value: string; multiline?: boolean }) {
+  return (
+    <div className="w-full">
+      <p className="mb-1.5 text-sm font-medium text-surface-600 dark:text-surface-400">{label}</p>
+      <div
+        className={[
+          'rounded-lg border border-surface-200 bg-surface-100 px-3 py-2 text-sm text-surface-700 dark:border-surface-800 dark:bg-surface-900/60 dark:text-surface-300',
+          multiline ? 'min-h-24 whitespace-pre-wrap' : 'min-h-10 truncate',
+        ].join(' ')}
+      >
+        {value || '-'}
+      </div>
+    </div>
+  )
+}
+
 interface UploadSettingsModalProps {
   open: boolean
   onClose: () => void
@@ -163,84 +207,102 @@ interface UploadSettingsModalProps {
   onConfirm: () => void
   isLoading: boolean
   langName: string
+  previewSource: UploadPreviewSource | null
+  previewLoading: boolean
+  captionOnly: boolean
 }
 
-function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isLoading, langName }: UploadSettingsModalProps) {
+function UploadSettingsModal({
+  open,
+  onClose,
+  settings,
+  onChange,
+  onConfirm,
+  isLoading,
+  langName,
+  previewSource,
+  previewLoading,
+  captionOnly,
+}: UploadSettingsModalProps) {
   const t = useLocaleText()
 
   return (
     <Modal open={open} onClose={onClose} title={t('app.app.uploads.page.youTubeUploadSettings')} size="lg">
       <div className="space-y-4">
-        <Input
-          label={t('app.app.uploads.page.title')}
-          value={settings.title}
-          readOnly
-          placeholder={t('app.app.uploads.page.videoTitle')}
-          className="bg-surface-50 dark:bg-surface-800"
-        />
+        {previewLoading ? (
+          <div className="aspect-video w-full animate-pulse rounded-lg bg-surface-100 dark:bg-surface-800" />
+        ) : previewSource ? (
+          <div className="aspect-video w-full overflow-hidden rounded-lg border border-surface-200 bg-black dark:border-surface-800">
+            {previewSource.kind === 'youtube' ? (
+              <iframe
+                className="h-full w-full"
+                src={`https://www.youtube.com/embed/${previewSource.videoId}`}
+                title={settings.title}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            ) : (
+              <video
+                className="h-full w-full bg-black object-contain"
+                src={previewSource.url}
+                controls
+                preload="metadata"
+              />
+            )}
+          </div>
+        ) : null}
 
-        <div className="w-full">
-          <label htmlFor="yt-description" className="mb-1.5 block text-sm font-medium text-surface-700 dark:text-surface-300">
-            {t('app.app.uploads.page.description')}
-          </label>
-          <textarea
-            id="yt-description"
-            rows={4}
-            value={settings.description}
-            readOnly
-            placeholder={t('app.app.uploads.page.videoDescription')}
-            className="w-full resize-none rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:placeholder:text-surface-400"
-          />
-        </div>
+        {captionOnly ? null : (
+          <>
+            <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900/40 dark:text-surface-300">
+              <div className="flex items-start gap-2">
+                <Lock className="mt-0.5 h-4 w-4 shrink-0 text-surface-400" />
+                <p>{t('app.app.uploads.page.lockedMetadataNotice')}</p>
+              </div>
+            </div>
 
-        <Input
-          label={t('app.app.uploads.page.tags')}
-          value={settings.tags}
-          readOnly
-          placeholder={t('app.app.uploads.page.separateTagsWithCommas')}
-          className="bg-surface-50 dark:bg-surface-800"
-        />
+            <ReadOnlyField label={t('app.app.uploads.page.title')} value={settings.title} />
+            <ReadOnlyField label={t('app.app.uploads.page.description')} value={settings.description} multiline />
+            <ReadOnlyField label={t('app.app.uploads.page.tags')} value={settings.tags} />
 
-        <Select
-          label={t('app.app.uploads.page.visibility')}
-          value={settings.privacyStatus}
-          onChange={(e) => onChange({ ...settings, privacyStatus: e.target.value as PrivacyStatus })}
-          options={PRIVACY_OPTIONS.map((option) => ({
-            value: option.value,
-            label: t(option.labelKey),
-          }))}
-        />
+            <Select
+              label={t('app.app.uploads.page.visibility')}
+              value={settings.privacyStatus}
+              onChange={(e) => onChange({ ...settings, privacyStatus: e.target.value as PrivacyStatus })}
+              options={PRIVACY_OPTIONS.map((option) => ({
+                value: option.value,
+                label: t(option.labelKey),
+              }))}
+            />
 
-        <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
-            checked={settings.uploadCaptions}
-            onChange={(e) => onChange({ ...settings, uploadCaptions: e.target.checked })}
-          />
-          <span>{t('app.app.uploads.page.uploadTranslatedSRTCaptionsWithTheVideo')}</span>
-        </label>
+            <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
+                checked={settings.uploadCaptions}
+                onChange={(e) => onChange({ ...settings, uploadCaptions: e.target.checked })}
+              />
+              <span>{t('app.app.uploads.page.uploadTranslatedSRTCaptionsWithTheVideo')}</span>
+            </label>
 
-        <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
-            checked={settings.selfDeclaredMadeForKids}
-            onChange={(e) => onChange({ ...settings, selfDeclaredMadeForKids: e.target.checked })}
-          />
-          <span>{t('app.app.uploads.page.madeForKids')}</span>
-        </label>
+            <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
+                checked={settings.selfDeclaredMadeForKids}
+                onChange={(e) => onChange({ ...settings, selfDeclaredMadeForKids: e.target.checked })}
+              />
+              <span>{t('app.app.uploads.page.madeForKids')}</span>
+            </label>
 
-        <label className="flex items-start gap-3 rounded-lg bg-surface-50 p-3 text-sm text-surface-700 dark:bg-surface-800/50 dark:text-surface-300">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
-            checked={settings.containsSyntheticMedia}
-            disabled
-            readOnly
-          />
-          <span>{t('app.app.uploads.page.discloseAIVoiceUse')}</span>
-        </label>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-surface-200 bg-surface-100 p-3 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900/60 dark:text-surface-300">
+              <span>{t('app.app.uploads.page.discloseAIVoiceUse')}</span>
+              <Badge variant={settings.containsSyntheticMedia ? 'warning' : 'default'}>
+                {settings.containsSyntheticMedia ? t('app.app.uploads.page.on') : t('app.app.uploads.page.off')}
+              </Badge>
+            </div>
+          </>
+        )}
 
         <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
           <span className="text-xs text-surface-500 dark:text-surface-300">{t('app.app.uploads.page.language')}: {langName}</span>
@@ -250,7 +312,7 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
           <Button size="sm" onClick={onClose} className="w-full bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700 sm:w-auto">
             {t('app.app.uploads.page.cancel')}
           </Button>
-          <Button size="sm" onClick={onConfirm} disabled={isLoading || !settings.title.trim()} className="w-full sm:w-auto">
+          <Button size="sm" onClick={onConfirm} disabled={isLoading || (!captionOnly && !settings.title.trim())} className="w-full sm:w-auto">
             {isLoading ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -259,7 +321,7 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
             ) : (
               <>
                 <Upload className="h-3.5 w-3.5" />
-                {t('app.app.uploads.page.upload')}
+                {captionOnly ? t('app.app.uploads.page.uploadCaptionsToYouTube') : t('app.app.uploads.page.upload')}
               </>
             )}
           </Button>
@@ -284,44 +346,63 @@ function UploadRow({ item, userId }: UploadRowProps) {
   const lang = getLanguageByCode(item.language_code)
   const langName = (locale === 'ko' ? lang?.nativeName : lang?.name) || lang?.name || item.language_code
   const snapshot = resolveSnapshot(item, langName, t)
+  const captionOnly = isExistingVideoCaptionUpload(snapshot)
+  const uploadKindLabel = snapshot.targetAssetKind === 'original_video'
+    ? t('app.app.uploads.page.originalCaptionUpload')
+    : t('app.app.uploads.page.dubbedVideoUpload')
   const captionLanguage = toBcp47(snapshot.targetLanguage || item.language_code)
   const captionTrackName = resolveCaptionTrackName(captionLanguage, lang?.name)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [settings, setSettings] = useState<UploadSettings>(() => buildSettingsFromSnapshot(snapshot))
+  const [previewSource, setPreviewSource] = useState<UploadPreviewSource | null>(() => resolvePreviewSource(snapshot, item))
+  const [previewLoading, setPreviewLoading] = useState(false)
+
+  const refetchAssetsFromPerso = useCallback(async (): Promise<{ video: string | null; srt: string | null }> => {
+    if (!item.project_seq || !item.space_seq) return { video: null, srt: null }
+    const [dubDl, allDl] = await Promise.all([
+      getDownloadLinks(item.project_seq, item.space_seq, 'dubbingVideo'),
+      getDownloadLinks(item.project_seq, item.space_seq, 'all'),
+    ])
+    const raw = dubDl.videoFile?.videoDownloadLink
+      ?? allDl.videoFile?.videoDownloadLink
+      ?? allDl.zippedFileDownloadLink
+      ?? null
+    const rawSrt = allDl.srtFile?.translatedSubtitleDownloadLink ?? null
+    return { video: toAssetUrl(raw), srt: toAssetUrl(rawSrt) }
+  }, [item.project_seq, item.space_seq])
 
   const handleOpenModal = useCallback(() => {
-    setSettings(buildSettingsFromSnapshot(resolveSnapshot(item, langName, t)))
+    const nextSnapshot = resolveSnapshot(item, langName, t)
+    const nextPreview = resolvePreviewSource(nextSnapshot, item)
+    setSettings(buildSettingsFromSnapshot(nextSnapshot))
+    setPreviewSource(nextPreview)
+    setPreviewLoading(false)
     setModalOpen(true)
-  }, [item, langName, t])
+
+    if (!nextPreview && nextSnapshot.targetAssetKind === 'dubbed_video') {
+      setPreviewLoading(true)
+      refetchAssetsFromPerso()
+        .then((fresh) => {
+          setPreviewSource(fresh.video ? { kind: 'direct', url: fresh.video } : null)
+        })
+        .catch(() => {
+          setPreviewSource(null)
+        })
+        .finally(() => {
+          setPreviewLoading(false)
+        })
+    }
+  }, [item, langName, refetchAssetsFromPerso, t])
 
   const handleUpload = useCallback(async () => {
     setModalOpen(false)
     setState('fetching')
     try {
-      const toAbs = (u: string | null | undefined): string | null => {
-        if (!u) return null
-        return u.startsWith('http') ? u : getPersoFileUrl(u)
-      }
-
-      const refetchFromPerso = async (): Promise<{ video: string | null; srt: string | null }> => {
-        if (!item.project_seq || !item.space_seq) return { video: null, srt: null }
-        const [dubDl, allDl] = await Promise.all([
-          getDownloadLinks(item.project_seq, item.space_seq, 'dubbingVideo'),
-          getDownloadLinks(item.project_seq, item.space_seq, 'all'),
-        ])
-        const raw = dubDl.videoFile?.videoDownloadLink
-          ?? allDl.videoFile?.videoDownloadLink
-          ?? allDl.zippedFileDownloadLink
-          ?? null
-        const rawSrt = allDl.srtFile?.translatedSubtitleDownloadLink ?? null
-        return { video: toAbs(raw), srt: toAbs(rawSrt) }
-      }
-
       const resolveSrtContent = async (): Promise<string | null> => {
-        let srtUrl = toAbs(snapshot.assets.srtUrl ?? item.srt_url)
+        let srtUrl = toAssetUrl(snapshot.assets.srtUrl ?? item.srt_url)
         if (!srtUrl) {
-          const fresh = await refetchFromPerso()
+          const fresh = await refetchAssetsFromPerso()
           srtUrl = fresh.srt
         }
         if (!srtUrl) return null
@@ -334,7 +415,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
         settings: {
           ...snapshot.settings,
           privacyStatus: settings.privacyStatus,
-          uploadCaptions: settings.uploadCaptions,
+          uploadCaptions: captionOnly ? true : settings.uploadCaptions,
           selfDeclaredMadeForKids: settings.selfDeclaredMadeForKids,
         },
       }
@@ -356,11 +437,11 @@ function UploadRow({ item, userId }: UploadRowProps) {
 
       if (!targetVideoId) {
         let videoUrl = snapshot.targetAssetKind === 'original_video'
-          ? toAbs(snapshot.assets.originalVideoUrl ?? item.original_video_url)
-          : toAbs(snapshot.assets.dubbedVideoUrl ?? item.dubbed_video_url)
+          ? toAssetUrl(snapshot.assets.originalVideoUrl ?? item.original_video_url)
+          : toAssetUrl(snapshot.assets.dubbedVideoUrl ?? item.dubbed_video_url)
 
         if (!videoUrl && snapshot.targetAssetKind === 'dubbed_video') {
-          const fresh = await refetchFromPerso()
+          const fresh = await refetchAssetsFromPerso()
           videoUrl = fresh.video
         }
         if (!videoUrl) throw new Error(t('app.app.uploads.page.couldNotFindTheDubbedVideoDownloadLink'))
@@ -395,7 +476,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
           const isFetchFailure = /VIDEO_FETCH_FAILED|fetch/i.test(msg)
           if (!isFetchFailure || !item.project_seq || !item.space_seq || isOriginalVideoUpload) throw err
           setState('fetching')
-          const fresh = await refetchFromPerso()
+          const fresh = await refetchAssetsFromPerso()
           if (!fresh.video) throw err
           setState('uploading')
           const result = await doUpload(fresh.video)
@@ -407,6 +488,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
       if (!targetVideoId) throw new Error(t('app.app.uploads.page.couldNotFindTheDubbedVideoDownloadLink'))
 
       if (
+        !captionOnly &&
         snapshot.targetAssetKind === 'original_video' &&
         snapshot.assets.originalYouTubeVideoId &&
         Object.keys(snapshot.metadata.localizations).length > 0
@@ -421,7 +503,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
         })
       }
 
-      if (settings.uploadCaptions) {
+      if (captionOnly || settings.uploadCaptions) {
         const srtText = await resolveSrtContent()
         if (srtText?.trim()) {
           await ytUploadCaption({
@@ -487,7 +569,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
         message: err instanceof Error ? err.message : t('app.app.uploads.page.anUnknownErrorOccurred'),
       })
     }
-  }, [item, langName, snapshot, captionLanguage, captionTrackName, settings, userId, addToast, queryClient, t])
+  }, [captionOnly, item, langName, snapshot, captionLanguage, captionTrackName, settings, userId, addToast, queryClient, refetchAssetsFromPerso, t])
 
   const isLoading = state === 'fetching' || state === 'uploading'
   const loadingLabel = state === 'fetching'
@@ -502,9 +584,12 @@ function UploadRow({ item, userId }: UploadRowProps) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{item.video_title}</p>
+          <p className="truncate text-sm font-medium text-surface-900 dark:text-white">{settings.title || item.video_title}</p>
           <div className="mt-1 flex items-center gap-1.5">
             {lang && <LanguageBadge code={item.language_code} />}
+            <Badge variant={snapshot.targetAssetKind === 'original_video' ? 'info' : 'brand'}>
+              {uploadKindLabel}
+            </Badge>
             {videoId && (
               <a
                 href={`https://youtube.com/watch?v=${videoId}`}
@@ -547,6 +632,9 @@ function UploadRow({ item, userId }: UploadRowProps) {
         onConfirm={handleUpload}
         isLoading={isLoading}
         langName={langName}
+        previewSource={previewSource}
+        previewLoading={previewLoading}
+        captionOnly={captionOnly}
       />
     </>
   )
@@ -564,11 +652,14 @@ export default function UploadsPage() {
   })
 
   const jobs = Array.from(items.reduce<Map<number, CompletedJobGroup>>((acc, item) => {
+    const lang = getLanguageByCode(item.language_code)
+    const langName = (locale === 'ko' ? lang?.nativeName : lang?.name) || lang?.name || item.language_code
+    const displayTitle = buildSettingsFromSnapshot(resolveSnapshot(item, langName, t)).title || item.video_title
     const existing = acc.get(item.job_id)
     if (!existing) {
       acc.set(item.job_id, {
         id: item.job_id,
-        title: item.video_title,
+        title: displayTitle,
         durationMs: item.video_duration_ms,
         createdAt: item.created_at,
         langs: [item],

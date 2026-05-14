@@ -188,6 +188,7 @@ describe('fetchMyVideos', () => {
           items: [{
             snippet: {
               title: 'T1',
+              description: 'Playlist description',
               publishedAt: '2026-01-01',
               thumbnails: { medium: { url: 'http://thumb' } },
               resourceId: { videoId: 'v1' },
@@ -196,12 +197,26 @@ describe('fetchMyVideos', () => {
         }),
       )
       .mockResolvedValueOnce(
-        jsonResponse({ items: [{ id: 'v1', status: { privacyStatus: 'public' } }] }),
+        jsonResponse({
+          items: [{
+            id: 'v1',
+            snippet: { title: 'Original T1', description: 'Original description' },
+            status: { privacyStatus: 'public' },
+          }],
+        }),
     )
     const vids = await fetchMyVideos('tok', 5)
-    expect(vids).toEqual([{ videoId: 'v1', title: 'T1', thumbnail: 'http://thumb', publishedAt: '2026-01-01', privacyStatus: 'public' }])
+    expect(vids).toEqual([{
+      videoId: 'v1',
+      title: 'Original T1',
+      description: 'Original description',
+      thumbnail: 'http://thumb',
+      publishedAt: '2026-01-01',
+      privacyStatus: 'public',
+    }])
     expect(String(mockFetch.mock.calls[0][0])).toContain('/youtube/v3/channels?part=contentDetails&mine=true')
     expect(String(mockFetch.mock.calls[1][0])).toContain('/youtube/v3/playlistItems?part=snippet&playlistId=UU1&maxResults=5')
+    expect(String(mockFetch.mock.calls[2][0])).toContain('/youtube/v3/videos?part=snippet,status&id=v1')
   })
 
   it('throws YouTubeError on non-ok channel response', async () => {
@@ -221,6 +236,7 @@ describe('fetchMyVideos', () => {
             id: { videoId: 'v-search' },
             snippet: {
               title: 'Search video',
+              description: 'Search description',
               publishedAt: '2026-02-01',
               thumbnails: { medium: { url: 'http://search-thumb' } },
             },
@@ -228,11 +244,18 @@ describe('fetchMyVideos', () => {
         }),
       )
       .mockResolvedValueOnce(
-        jsonResponse({ items: [{ id: 'v-search', status: { privacyStatus: 'unlisted' } }] }),
+        jsonResponse({
+          items: [{
+            id: 'v-search',
+            snippet: { title: 'Original search video', description: 'Original search description' },
+            status: { privacyStatus: 'unlisted' },
+          }],
+        }),
       )
     expect(await fetchMyVideos('tok')).toEqual([{
       videoId: 'v-search',
-      title: 'Search video',
+      title: 'Original search video',
+      description: 'Original search description',
       thumbnail: 'http://search-thumb',
       publishedAt: '2026-02-01',
       privacyStatus: 'unlisted',
@@ -259,7 +282,7 @@ describe('fetchMyVideos', () => {
       .mockResolvedValueOnce(jsonResponse({ items: [{ snippet: { resourceId: { videoId: 'v1' } } }] }))
       .mockResolvedValueOnce(jsonResponse({ items: [] }))
     const vids = await fetchMyVideos('tok')
-    expect(vids).toEqual([{ videoId: 'v1', title: '', thumbnail: '', publishedAt: '', privacyStatus: 'unknown' }])
+    expect(vids).toEqual([{ videoId: 'v1', title: '', description: '', thumbnail: '', publishedAt: '', privacyStatus: 'unknown' }])
   })
 
   it('throws quotaExceeded message for playlist response', async () => {
@@ -296,6 +319,7 @@ describe('fetchMyVideos', () => {
             id: { videoId: 'v2' },
             snippet: {
               title: 'Fallback',
+              description: 'Fallback description',
               publishedAt: '2026-03-01',
               thumbnails: { default: { url: 'http://fallback-thumb' } },
             },
@@ -303,14 +327,21 @@ describe('fetchMyVideos', () => {
         }),
       )
       .mockResolvedValueOnce(
-        jsonResponse({ items: [{ id: 'v2', status: { privacyStatus: 'private' } }] }),
+        jsonResponse({
+          items: [{
+            id: 'v2',
+            snippet: { title: 'Original fallback', description: 'Original fallback description' },
+            status: { privacyStatus: 'private' },
+          }],
+        }),
       )
 
     const vids = await fetchMyVideos('tok')
 
     expect(vids).toEqual([{
       videoId: 'v2',
-      title: 'Fallback',
+      title: 'Original fallback',
+      description: 'Original fallback description',
       thumbnail: 'http://fallback-thumb',
       publishedAt: '2026-03-01',
       privacyStatus: 'private',
