@@ -23,4 +23,18 @@ describe('dubbingStore YouTube uploads', () => {
 
     expect(useDubbingStore.getState().youtubeUploads).toEqual({})
   })
+
+  it('skips upload settings after the output step when download-only is selected', () => {
+    const store = useDubbingStore.getState()
+
+    store.setStep(3)
+    store.setDeliverableMode('downloadOnly')
+    store.nextStep()
+
+    expect(useDubbingStore.getState().currentStep).toBe(5)
+
+    useDubbingStore.getState().prevStep()
+
+    expect(useDubbingStore.getState().currentStep).toBe(3)
+  })
 })
