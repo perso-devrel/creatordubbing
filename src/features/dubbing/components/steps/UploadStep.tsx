@@ -48,7 +48,7 @@ export function UploadStep() {
   const {
     selectedLanguages, videoMeta, videoSource, languageProgress, dbJobId,
     spaceSeq, projectMap, youtubeUploads: ytUploads, setYouTubeUploadState,
-    uploadSettings, deliverableMode, originalVideoUrl, reset,
+    uploadSettings, deliverableMode, originalVideoUrl, isShort, reset,
   } = useDubbingStore()
   const { fetchDownloads } = usePersoFlow()
   const addToast = useNotificationStore((s) => s.addToast)
@@ -87,6 +87,9 @@ export function UploadStep() {
   const autoChainTriggered = useRef(false)
   const existingVideoMetadataSyncRef = useRef<Set<string>>(new Set())
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const user = useAuthStore((s) => s.user)
+  const userId = user?.uid
+  const videoSourceType = videoSource?.type
   const getDisplayLanguageName = useCallback((langCode: string) => {
     const language = getLanguageByCode(langCode)
     if (!language) return langCode
@@ -444,6 +447,50 @@ export function UploadStep() {
     }
   }, [completedLangs, ytUploads, queueYouTubeUpload])
 
+  const persistOriginalCaptionUpload = useCallback(async (targetVideoId: string, langCode: string) => {
+    if (deliverableMode !== 'originalWithMultiAudio' || !dbJobId) return
+
+    await dbMutationStrict({
+      type: 'updateJobLanguageYouTube',
+      payload: {
+        jobId: dbJobId,
+        langCode,
+        youtubeVideoId: targetVideoId,
+      },
+    })
+
+    if (!userId) return
+
+    try {
+      await dbMutationStrict({
+        type: 'createYouTubeUpload',
+        payload: {
+          userId,
+          youtubeVideoId: targetVideoId,
+          title: settingsTitle?.trim() || videoMetaTitle || t('features.dubbing.components.steps.uploadStep.untitled'),
+          languageCode: langCode,
+          privacyStatus,
+          isShort,
+          uploadKind: videoSourceType === 'channel'
+            ? 'my_video_original_captions'
+            : 'new_video_original_captions',
+        },
+      })
+    } catch (err) {
+      console.warn('[Dubtube] Could not record caption upload', err)
+    }
+  }, [
+    dbJobId,
+    deliverableMode,
+    isShort,
+    privacyStatus,
+    settingsTitle,
+    t,
+    userId,
+    videoMetaTitle,
+    videoSourceType,
+  ])
+
   // ─── Caption upload to YouTube ───────────────────────────────────────
   const uploadCaptions = useCallback(async (targetVideoId: string, langs: string[]) => {
     for (const langCode of langs) {
@@ -465,6 +512,7 @@ export function UploadStep() {
           name: resolveCaptionTrackName(toBcp47(langCode), lang.name),
           srtContent,
         })
+        await persistOriginalCaptionUpload(targetVideoId, langCode)
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'done' }))
       } catch (err) {
         console.warn('[Dubtube] Caption upload failed', err)
@@ -473,7 +521,7 @@ export function UploadStep() {
         addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.valueCaptionUploadFailed', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }), message: msg })
       }
     }
-  }, [projectMap, spaceSeq, addToast, getDisplayLanguageName, t])
+  }, [projectMap, spaceSeq, persistOriginalCaptionUpload, addToast, getDisplayLanguageName, t])
 
   const uploadCaptionsWithMetadata = useCallback(async (targetVideoId: string, langs: string[]) => {
     if (deliverableMode === 'originalWithMultiAudio' && videoSource?.type === 'channel') {
