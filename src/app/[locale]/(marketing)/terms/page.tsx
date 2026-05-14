@@ -20,9 +20,9 @@ export default async function TermsPage({ params }: LocaleMetadataProps) {
   const t = (key: LegalMessageKey, params?: Parameters<typeof legalMessage>[2]) => legalMessage(locale, key, params)
 
   return (
-    <article className="mx-auto max-w-3xl px-6 py-16 text-surface-700 dark:text-surface-300">
-      <header className="mb-10">
-        <h1 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
+    <article className="document-shell">
+      <header className="mb-10 border-b border-surface-200 pb-8 dark:border-surface-800">
+        <h1 className="text-3xl font-semibold text-surface-950 dark:text-white sm:text-4xl">
           {t('legal.terms.title')}
         </h1>
         <p className="mt-2 text-sm text-surface-600 dark:text-surface-400">
@@ -45,8 +45,8 @@ export default async function TermsPage({ params }: LocaleMetadataProps) {
       <Section title={t('legal.terms.section.2.title')}>
         <p>{t('legal.terms.section.2.body')}</p>
         <ul className="mt-2 list-disc space-y-1 pl-6">
-          <li><strong>YouTube Data API v3</strong> — {t('legal.terms.section.2.youtubeDataApi')}</li>
-          <li><strong>Perso.ai API</strong> — {t('legal.terms.section.2.persoApi')}</li>
+          <li><strong>YouTube Data API v3</strong> - {t('legal.terms.section.2.youtubeDataApi')}</li>
+          <li><strong>Perso.ai API</strong> - {t('legal.terms.section.2.persoApi')}</li>
         </ul>
       </Section>
 
@@ -171,8 +171,8 @@ export default async function TermsPage({ params }: LocaleMetadataProps) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      <h2 className="text-xl font-semibold text-surface-900 dark:text-white">{title}</h2>
-      <div className="mt-3 space-y-3 leading-relaxed">{children}</div>
+      <h2 className="text-xl font-semibold text-surface-950 dark:text-white">{title}</h2>
+      <div className="mt-3 space-y-3 leading-7">{children}</div>
     </section>
   )
 }

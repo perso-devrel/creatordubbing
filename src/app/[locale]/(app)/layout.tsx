@@ -24,11 +24,13 @@ export default async function AppLayout({
 
   return (
     <ClientMessagesProvider messages={appShellMessages}>
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-surface-50 dark:bg-surface-950">
         <Sidebar isOpsAdmin={isOpsAdmin} />
         <div className="lg:ml-64">
           <Topbar isOpsAdmin={isOpsAdmin} />
-          <main className="px-4 py-5 pb-24 sm:p-6 lg:pb-6">{children}</main>
+          <main className="px-4 py-5 pb-24 sm:px-6 sm:py-6 lg:pb-8">
+            <div className="page-shell">{children}</div>
+          </main>
         </div>
       </div>
     </ClientMessagesProvider>

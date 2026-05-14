@@ -43,13 +43,13 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
         key={to}
         href={to}
         className={cn(
-          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+          'relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors',
           isActive
-            ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-400'
-            : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
+            ? "bg-surface-100 text-surface-950 before:absolute before:left-0 before:top-2 before:h-5 before:w-0.5 before:rounded-full before:bg-brand-600 before:content-[''] dark:bg-surface-850 dark:text-surface-50"
+            : 'text-surface-600 hover:bg-surface-100 hover:text-surface-950 dark:text-surface-400 dark:hover:bg-surface-850 dark:hover:text-surface-100',
         )}
       >
-        <Icon className="h-5 w-5 shrink-0" />
+        <Icon className={cn('h-5 w-5 shrink-0', isActive ? 'text-brand-600 dark:text-brand-400' : 'text-surface-400')} />
         {t(label)}
       </LocaleLink>
     )
@@ -62,9 +62,9 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
         key={to}
         href={to}
         className={cn(
-          'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition-colors',
+          'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-2 text-[10px] font-semibold transition-colors',
           isActive
-            ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
+            ? 'bg-surface-100 text-brand-700 dark:bg-surface-850 dark:text-brand-300'
             : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
         )}
       >
@@ -79,12 +79,12 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
       <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900 lg:flex">
         <LocaleLink
           href="/dashboard"
-          className="flex h-16 items-center gap-2.5 border-b border-surface-200 px-6 transition-colors hover:bg-surface-50 focus-ring dark:border-surface-800 dark:hover:bg-surface-850"
+          className="flex h-16 items-center gap-2.5 border-b border-surface-200 px-5 transition-colors hover:bg-surface-50 focus-ring dark:border-surface-800 dark:hover:bg-surface-850"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-600 shadow-sm shadow-brand-900/20">
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
-          <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
+          <span className="text-lg font-semibold text-surface-900 dark:text-surface-100">
             Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
           </span>
         </LocaleLink>
@@ -96,9 +96,9 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
         <div className="border-t border-surface-200 p-3 dark:border-surface-800">
           <LocaleLink
             href="/settings"
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800"
+            className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold text-surface-600 hover:bg-surface-100 hover:text-surface-950 dark:text-surface-400 dark:hover:bg-surface-850 dark:hover:text-surface-100"
           >
-            <Settings className="h-5 w-5 shrink-0" />
+            <Settings className="h-5 w-5 shrink-0 text-surface-400" />
             {settingsLabel}
           </LocaleLink>
         </div>
@@ -115,7 +115,7 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
             className={cn(
               'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium transition-colors',
               activePathname === '/settings' || activePathname.startsWith('/settings/')
-                ? 'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300'
+                ? 'bg-surface-100 text-brand-700 dark:bg-surface-850 dark:text-brand-300'
               : 'text-surface-600 hover:bg-surface-100 dark:text-surface-400 dark:hover:bg-surface-800',
             )}
           >

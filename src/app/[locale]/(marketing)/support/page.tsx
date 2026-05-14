@@ -16,7 +16,7 @@ const copy = {
     intro:
       '서비스 이용 중 문제가 있거나 Google/YouTube 권한, 데이터 삭제, 결제, 업로드 상태 확인이 필요하면 아래 연락처로 문의해 주세요.',
     emailTitle: '문의 이메일',
-    emailBody: '영업일 기준 7일 이내에 처리하거나 진행 상황을 안내합니다.',
+    emailBody: '영업일 기준 7일 이내에 답변하거나 진행 상황을 안내합니다.',
     includeTitle: '문의할 때 포함하면 좋은 정보',
     includeItems: [
       '가입한 Google 이메일 주소',
@@ -26,10 +26,10 @@ const copy = {
     ],
     revokeTitle: 'Google/YouTube 권한 해제',
     revokeBody:
-      'YouTube 연결은 Dubtube 설정 화면에서 해제할 수 있고, Google 계정 권한 페이지에서도 직접 회수할 수 있습니다.',
+      'YouTube 연결은 Dubtube 설정 화면에서 해제할 수 있고, Google 계정 권한 페이지에서도 직접 취소할 수 있습니다.',
     deletionTitle: '데이터 삭제 요청',
     deletionBody:
-      '계정 정보, OAuth 토큰, 작업 기록, 업로드 큐 기록 삭제를 요청할 수 있습니다. 결제·정산 관련 기록은 관련 법령상 필요한 기간 동안만 보관됩니다.',
+      '계정 정보, OAuth 토큰, 작업 기록, 업로드 대기열 기록 삭제를 요청할 수 있습니다. 결제 및 정산 관련 기록은 관련 법령에서 요구하는 기간 동안만 보관됩니다.',
     linksTitle: '관련 문서',
     privacy: '개인정보처리방침',
     terms: '서비스 약관',
@@ -73,12 +73,12 @@ export default async function SupportPage({ params }: LocaleMetadataProps) {
   const content = copy[locale]
 
   return (
-    <article className="mx-auto max-w-3xl px-6 py-16 text-surface-700 dark:text-surface-300">
-      <header className="mb-10">
-        <h1 className="text-3xl font-bold text-surface-900 dark:text-white sm:text-4xl">
+    <article className="document-shell">
+      <header className="mb-10 border-b border-surface-200 pb-8 dark:border-surface-800">
+        <h1 className="text-3xl font-semibold text-surface-950 dark:text-white sm:text-4xl">
           {content.heading}
         </h1>
-        <p className="mt-3 leading-relaxed text-surface-600 dark:text-surface-300">
+        <p className="mt-3 break-keep leading-7 text-surface-600 dark:text-surface-300">
           {content.intro}
         </p>
       </header>
@@ -87,7 +87,7 @@ export default async function SupportPage({ params }: LocaleMetadataProps) {
         <p>
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
-            className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+            className="font-semibold text-brand-600 hover:underline dark:text-brand-400"
           >
             {SUPPORT_EMAIL}
           </a>
@@ -132,8 +132,8 @@ export default async function SupportPage({ params }: LocaleMetadataProps) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8">
-      <h2 className="text-xl font-semibold text-surface-900 dark:text-white">{title}</h2>
-      <div className="mt-3 space-y-3 leading-relaxed">{children}</div>
+      <h2 className="text-xl font-semibold text-surface-950 dark:text-white">{title}</h2>
+      <div className="mt-3 space-y-3 leading-7">{children}</div>
     </section>
   )
 }

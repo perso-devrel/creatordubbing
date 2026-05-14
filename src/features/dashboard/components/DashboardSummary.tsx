@@ -44,13 +44,13 @@ export function DashboardSummary({ initialData }: DashboardSummaryProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map(({ label, value, icon: Icon, color }) => (
-        <Card key={label} className="flex items-center gap-4">
-          <div className={`rounded-xl p-3 ${color}`}>
-            <Icon className="h-6 w-6" />
-          </div>
+        <Card key={label} className="flex items-start justify-between gap-4 p-4">
           <div>
-            <p className="text-sm text-surface-500 dark:text-surface-400">{label}</p>
-            <p className="whitespace-nowrap text-2xl font-bold text-surface-900 dark:text-white">{value}</p>
+            <p className="text-sm font-medium text-surface-500 dark:text-surface-400">{label}</p>
+            <p className="mt-2 whitespace-nowrap text-3xl font-semibold leading-none text-surface-950 dark:text-white">{value}</p>
+          </div>
+          <div className={`rounded-md p-2.5 ${color}`}>
+            <Icon className="h-5 w-5" />
           </div>
         </Card>
       ))}

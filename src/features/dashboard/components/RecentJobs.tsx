@@ -30,7 +30,7 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
     <Card>
       <div className="mb-4 flex items-center justify-between">
         <CardTitle>{t('features.dashboard.components.recentJobs.recentJobs')}</CardTitle>
-        <LocaleLink href="/batch" aria-label={t('features.dashboard.components.recentJobs.viewAllRecentJobs')} className="text-sm text-brand-500 hover:text-brand-600">{t('features.dashboard.components.recentJobs.viewAll')}</LocaleLink>
+        <LocaleLink href="/batch" aria-label={t('features.dashboard.components.recentJobs.viewAllRecentJobs')} className="text-sm font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300">{t('features.dashboard.components.recentJobs.viewAll')}</LocaleLink>
       </div>
 
       {!jobs || jobs.length === 0 ? (
@@ -49,9 +49,9 @@ export function RecentJobs({ initialData }: RecentJobsProps) {
             return (
               <div
                 key={job.id}
-                className="flex flex-col gap-3 rounded-lg border border-surface-100 p-3 dark:border-surface-800 sm:flex-row sm:items-center sm:gap-4"
+                className="flex flex-col gap-3 rounded-md border border-surface-200 bg-surface-50/70 p-3 transition-colors hover:bg-white dark:border-surface-800 dark:bg-surface-850/70 dark:hover:bg-surface-850 sm:flex-row sm:items-center sm:gap-4"
               >
-                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md bg-surface-200 text-xs text-surface-500 dark:bg-surface-800 dark:text-surface-300">
+                <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-md border border-surface-200 bg-white text-xs font-medium text-surface-500 dark:border-surface-700 dark:bg-surface-900 dark:text-surface-300">
                   {formatDuration(job.video_duration_ms / 1000)}
                 </div>
                 <div className="min-w-0 flex-1">

@@ -68,12 +68,12 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 bg-surface-950/45" onClick={onClose} aria-hidden="true" />
       <div
         ref={dialogRef}
         tabIndex={-1}
         className={cn(
-          'relative z-10 flex max-h-[min(720px,calc(100vh-48px))] w-full flex-col rounded-lg border border-surface-200 bg-white shadow-xl animate-fade-in outline-none dark:border-surface-800 dark:bg-surface-900',
+          'relative z-10 flex max-h-[min(720px,calc(100vh-48px))] w-full flex-col rounded-lg border border-surface-200 bg-white shadow-xl shadow-surface-950/20 animate-fade-in outline-none dark:border-surface-800 dark:bg-surface-900',
           sizes[size],
           className,
         )}
@@ -81,7 +81,7 @@ export function Modal({ open, onClose, title, children, className, size = 'md' }
         {title && (
           <div className="flex shrink-0 items-center justify-between border-b border-surface-200 px-6 py-4 dark:border-surface-800">
             <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100">{title}</h2>
-            <button onClick={onClose} aria-label={t('components.ui.modal.close')} className="rounded-lg p-1 text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200">
+            <button onClick={onClose} aria-label={t('components.ui.modal.close')} className="rounded-md p-1 text-surface-500 hover:bg-surface-100 hover:text-surface-700 dark:text-surface-400 dark:hover:bg-surface-800 dark:hover:text-surface-200">
               <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>

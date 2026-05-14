@@ -2,12 +2,12 @@ import type { HTMLAttributes } from 'react'
 import { cn } from '@/utils/cn'
 
 const variants = {
-  default: 'bg-surface-100 text-surface-700 dark:bg-surface-800 dark:text-surface-300',
-  brand: 'bg-brand-100 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400',
-  success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  warning: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  error: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-  info: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  default: 'border border-surface-200 bg-surface-50 text-surface-700 dark:border-surface-700 dark:bg-surface-850 dark:text-surface-300',
+  brand: 'border border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-900/70 dark:bg-brand-900/25 dark:text-brand-300',
+  success: 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/70 dark:bg-emerald-900/25 dark:text-emerald-300',
+  warning: 'border border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/70 dark:bg-amber-900/25 dark:text-amber-300',
+  error: 'border border-red-200 bg-red-50 text-red-700 dark:border-red-900/70 dark:bg-red-900/25 dark:text-red-300',
+  info: 'border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/70 dark:bg-blue-900/25 dark:text-blue-300',
 } as const
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -19,7 +19,7 @@ export function Badge({ className, variant = 'default', truncate, ...props }: Ba
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap',
+        'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold whitespace-nowrap',
         truncate && 'max-w-full overflow-hidden text-ellipsis',
         variants[variant],
         className,

@@ -18,7 +18,7 @@ export function useLandingAuthRedirect() {
   const t = useLocaleText()
 
   const navigateWithAuth = useCallback(async (returnTo: string) => {
-    if (authLoading || signingIn) return
+    if (signingIn) return
 
     if (isAuthenticated) {
       router.push(returnTo)
@@ -42,10 +42,11 @@ export function useLandingAuthRedirect() {
       addToast({ type: 'error', title: t('components.layout.landingNavBar.couldNotSignIn'), message })
       setSigningIn(false)
     }
-  }, [addToast, authLoading, isAuthenticated, router, signingIn, t])
+  }, [addToast, isAuthenticated, router, signingIn, t])
 
   return {
     authLoading,
+    isAuthenticated,
     navigateWithAuth,
     signingIn,
   }

@@ -14,6 +14,7 @@ import {
   Webhook,
 } from 'lucide-react'
 import { Badge, Button, Card, CardTitle, Select } from '@/components/ui'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { cn } from '@/utils/cn'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import type { AppLocale } from '@/lib/i18n/config'
@@ -168,28 +169,27 @@ export function OpsDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.ops.components.opsDashboard.operations')}</h1>
-          <p className="text-surface-500 dark:text-surface-300">
-            {t('features.ops.components.opsDashboard.monitorUploadQueueDubbingJobsMinuteReleasesAnd')}
-          </p>
-          {generatedLabel && <p className="mt-1 text-xs text-surface-500 dark:text-surface-300">{t('features.ops.components.opsDashboard.lastUpdated')}: {generatedLabel}</p>}
-        </div>
-        <div className="flex items-end gap-2">
-          <Select
-            label={t('features.ops.components.opsDashboard.window')}
-            value={String(hours)}
-            onChange={(event) => setHours(Number(event.target.value))}
-            options={windowOptions}
-            className="min-w-36"
-          />
-          <Button variant="outline" onClick={() => query.refetch()} loading={query.isFetching}>
-            <RefreshCw className="h-4 w-4" />
-            {t('features.ops.components.opsDashboard.refresh')}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title={t('features.ops.components.opsDashboard.operations')}
+        description={generatedLabel
+          ? `${t('features.ops.components.opsDashboard.monitorUploadQueueDubbingJobsMinuteReleasesAnd')} ${t('features.ops.components.opsDashboard.lastUpdated')}: ${generatedLabel}`
+          : t('features.ops.components.opsDashboard.monitorUploadQueueDubbingJobsMinuteReleasesAnd')}
+        actions={(
+          <div className="flex items-end gap-2">
+            <Select
+              label={t('features.ops.components.opsDashboard.window')}
+              value={String(hours)}
+              onChange={(event) => setHours(Number(event.target.value))}
+              options={windowOptions}
+              className="min-w-36"
+            />
+            <Button variant="outline" onClick={() => query.refetch()} loading={query.isFetching}>
+              <RefreshCw className="h-4 w-4" />
+              {t('features.ops.components.opsDashboard.refresh')}
+            </Button>
+          </div>
+        )}
+      />
 
       {summary ? (
         <>

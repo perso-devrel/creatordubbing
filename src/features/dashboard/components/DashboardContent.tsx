@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { DashboardSummary } from './DashboardSummary'
 import { QuickStart } from './QuickStart'
 import { RecentJobs } from './RecentJobs'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Card } from '@/components/ui'
 import { useLocaleText } from '@/hooks/useLocaleText'
 import type { DashboardInitialData } from './types'
@@ -69,10 +70,10 @@ export function DashboardContent({ initial }: { initial: DashboardInitialData })
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-surface-900 dark:text-white">{t('features.dashboard.components.dashboardContent.dashboard')}</h1>
-        <p className="text-surface-600 dark:text-surface-400">{t('features.dashboard.components.dashboardContent.reviewRecentDubbingUploadsAndMinuteUsage')}</p>
-      </div>
+      <PageHeader
+        title={t('features.dashboard.components.dashboardContent.dashboard')}
+        description={t('features.dashboard.components.dashboardContent.reviewRecentDubbingUploadsAndMinuteUsage')}
+      />
 
       <DashboardSummary initialData={initial.summary} />
       <QuickStart />
