@@ -42,6 +42,7 @@ export const videosQuerySchema = z.object({
 
 export const metadataQuerySchema = z.object({
   videoId: z.string().min(1),
+  sourceLang: z.string().min(1).optional(),
 })
 
 export const metadataUpdateBodySchema = z.object({

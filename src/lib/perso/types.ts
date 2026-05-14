@@ -66,6 +66,8 @@ export interface MediaValidateRequest {
   thumbnailFilePath?: string | null
 }
 
+export type PersoTtsModel = 'ELEVEN_V2' | 'ELEVEN_V3'
+
 export interface TranslateRequest {
   mediaSeq: number
   isVideoProject: boolean
@@ -76,7 +78,7 @@ export interface TranslateRequest {
   preferredSpeedType: 'GREEN' | 'RED'
   customDictionaryBlobPath?: string
   srtBlobPath?: string
-  ttsModel?: 'ELEVEN_V2' | 'ELEVEN_V3'
+  ttsModel?: PersoTtsModel
   title?: string
 }
 
@@ -225,4 +227,5 @@ export interface PersoLanguage {
   code: string
   name: string
   experiment: boolean
+  supportedTtsModels?: PersoTtsModel[]
 }

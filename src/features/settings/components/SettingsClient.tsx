@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Check, Globe, Globe2, Languages, Loader2, Save, Settings, Unlink, Video } from 'lucide-react'
+import { AlertTriangle, Check, Globe, Globe2, Languages, Loader2, Save, Settings, Trash2, Unlink, Video } from 'lucide-react'
 import { Card, CardTitle, Select, Button, Badge, Input, Modal } from '@/components/ui'
 import {
   APP_LOCALE_LABELS,
@@ -13,6 +13,7 @@ import {
   getMetadataTargetLanguageCodes,
   MARKET_LANGUAGE_PRESETS,
   normalizeMetadataTargetLanguages,
+  withLocalePath,
   type AppLocale,
 } from '@/lib/i18n/config'
 import { useI18nStore } from '@/stores/i18nStore'
@@ -21,9 +22,9 @@ import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/utils/languages'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useLocaleRouter } from '@/hooks/useLocalePath'
-import { useChannelStats } from '@/hooks/useYouTubeData'
+import { isYouTubeConnectionError, useChannelStats } from '@/hooks/useYouTubeData'
 import { formatNumber } from '@/utils/formatters'
-import { signInWithGoogle } from '@/lib/google-auth'
+import { signInWithGoogle, signOut as clearStoredGoogleUser } from '@/lib/google-auth'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
@@ -105,6 +106,9 @@ export function SettingsClient() {
     () => getMetadataTargetLanguageCodes(metadataTargetPreset, metadataTargetLanguages),
   )
   const youtubeSectionRef = useRef<HTMLDivElement>(null)
+
+  const { data: channel, error: channelError } = useChannelStats()
+  const isYouTubeConnected = !!channel && !isYouTubeConnectionError(channelError)
 
   const draftTags = useMemo(() => parseTagsInput(defaultTagsInput), [defaultTagsInput])
   const targetLanguageCodes = useMemo(
@@ -220,6 +224,75 @@ export function SettingsClient() {
         <YouTubeConnectionCard />
       </div>
 
+      {isYouTubeConnected && (
+        <Card>
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300">
+              <Video className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>{t('settings.youtubeDefaults.title')}</CardTitle>
+              <p className="mt-1 text-sm text-surface-500 dark:text-surface-400">
+                {t('settings.youtubeDefaults.description')}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Select
+              label={t('app.app.youtube.page.defaultVisibility')}
+              value={draftDefaultPrivacy}
+              onChange={(event) => setDraftDefaultPrivacy(event.target.value as PrivacyStatus)}
+              options={[
+                { value: 'public', label: t('app.app.youtube.page.public') },
+                { value: 'unlisted', label: t('app.app.youtube.page.unlisted') },
+                { value: 'private', label: t('app.app.youtube.page.private') },
+              ]}
+            />
+            <Input
+              label={t('app.app.youtube.page.defaultTags')}
+              value={defaultTagsInput}
+              onChange={(event) => setDefaultTagsInput(event.target.value)}
+              placeholder={t('app.app.youtube.page.commaSeparatedEGDubtubeAIDubbingVlog')}
+            />
+            <div className="md:col-span-2">
+              <div className="mb-1.5 flex items-center justify-between gap-3">
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">
+                  {t('settings.launchLanguageSelection')}
+                </label>
+                <Button type="button" variant="outline" size="sm" onClick={openLaunchLanguageModal}>
+                  <Languages className="h-4 w-4" />
+                  {t('settings.launchLanguageSelection.edit')}
+                </Button>
+              </div>
+              <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-850">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
+                      {t(selectedPreset.labelKey)}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-300">
+                      {t('settings.launchLanguageSelection.selectedCount', { count: targetLanguageCodes.length })}
+                    </p>
+                  </div>
+                  <Badge variant="brand">{t(selectedPreset.labelKey)}</Badge>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {presetLanguages.map((language) => language && (
+                    <span
+                      key={language.code}
+                      className="max-w-full rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
+                    >
+                      {language.flag} {isEnglish ? language.name : language.nativeName}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card>
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/20 dark:text-brand-300">
@@ -259,70 +332,22 @@ export function SettingsClient() {
             onChange={(event) => setDraftDefaultLanguage(event.target.value)}
             options={languageOptions}
           />
-          <Select
-            label={t('app.app.youtube.page.defaultVisibility')}
-            value={draftDefaultPrivacy}
-            onChange={(event) => setDraftDefaultPrivacy(event.target.value as PrivacyStatus)}
-            options={[
-              { value: 'public', label: t('app.app.youtube.page.public') },
-              { value: 'unlisted', label: t('app.app.youtube.page.unlisted') },
-              { value: 'private', label: t('app.app.youtube.page.private') },
-            ]}
-          />
-          <Input
-            label={t('app.app.youtube.page.defaultTags')}
-            value={defaultTagsInput}
-            onChange={(event) => setDefaultTagsInput(event.target.value)}
-            placeholder={t('app.app.youtube.page.commaSeparatedEGDubtubeAIDubbingVlog')}
-          />
-          <div className="md:col-span-2">
-            <div className="mb-1.5 flex items-center justify-between gap-3">
-              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">
-                {t('settings.launchLanguageSelection')}
-              </label>
-              <Button type="button" variant="outline" size="sm" onClick={openLaunchLanguageModal}>
-                <Languages className="h-4 w-4" />
-                {t('settings.launchLanguageSelection.edit')}
-              </Button>
-            </div>
-            <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-700 dark:bg-surface-850">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-medium text-surface-900 dark:text-surface-100">
-                    {t(selectedPreset.labelKey)}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-surface-600 dark:text-surface-300">
-                    {t('settings.launchLanguageSelection.selectedCount', { count: targetLanguageCodes.length })}
-                  </p>
-                </div>
-                <Badge variant="brand">{t(selectedPreset.labelKey)}</Badge>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {presetLanguages.map((language) => language && (
-                  <span
-                    key={language.code}
-                    className="max-w-full rounded-full bg-white px-2.5 py-1 text-xs font-medium text-surface-700 ring-1 ring-surface-200 dark:bg-surface-900 dark:text-surface-200 dark:ring-surface-700"
-                  >
-                    {language.flag} {isEnglish ? language.name : language.nativeName}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
-
-        {hasPendingPreferenceChanges && (
-          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3 dark:border-brand-500/60 dark:bg-surface-850 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium text-brand-800 dark:text-surface-100">
-              {t('settings.preferences.unsavedChanges')}
-            </p>
-            <Button onClick={savePreferences} loading={saveMutation.isPending} className="w-full sm:w-auto">
-              <Save className="h-4 w-4" />
-              {t('settings.preferences.saveChanges')}
-            </Button>
-          </div>
-        )}
       </Card>
+
+      {hasPendingPreferenceChanges && (
+        <div className="flex flex-col gap-3 rounded-lg border border-brand-200 bg-brand-50 p-3 dark:border-brand-500/60 dark:bg-surface-850 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-medium text-brand-800 dark:text-surface-100">
+            {t('settings.preferences.unsavedChanges')}
+          </p>
+          <Button onClick={savePreferences} loading={saveMutation.isPending} className="w-full sm:w-auto">
+            <Save className="h-4 w-4" />
+            {t('settings.preferences.saveChanges')}
+          </Button>
+        </div>
+      )}
+
+      <AccountDangerZone />
 
       <Modal
         open={languageModalOpen}
@@ -410,30 +435,131 @@ export function SettingsClient() {
   )
 }
 
+const ACCOUNT_DELETE_CONFIRMATION = 'DELETE'
+
+function AccountDangerZone() {
+  const t = useLocaleText()
+  const appLocale = useAppLocale()
+  const queryClient = useQueryClient()
+  const clearAuth = useAuthStore((s) => s.clear)
+  const addToast = useNotificationStore((state) => state.addToast)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [confirmation, setConfirmation] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const confirmationMatches = confirmation.trim() === ACCOUNT_DELETE_CONFIRMATION
+
+  const closeDeleteModal = () => {
+    if (deleting) return
+    setDeleteModalOpen(false)
+    setConfirmation('')
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!confirmationMatches) return
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/user/account', { method: 'DELETE' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null) as { error?: { message?: string } } | null
+        throw new Error(body?.error?.message || t('settings.accountDeletion.failedMessage'))
+      }
+      clearStoredGoogleUser()
+      clearAuth()
+      queryClient.clear()
+      window.location.replace(withLocalePath('/', appLocale))
+    } catch (error) {
+      addToast({
+        type: 'error',
+        title: t('settings.accountDeletion.failed'),
+        message: error instanceof Error ? error.message : t('settings.accountDeletion.failedMessage'),
+      })
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      <Card className="border-red-200 dark:border-red-900/70">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <CardTitle>{t('settings.dangerZone.title')}</CardTitle>
+            </div>
+          </div>
+          <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)} className="w-full sm:w-auto">
+            <Trash2 className="h-4 w-4" />
+            {t('settings.accountDeletion.button')}
+          </Button>
+        </div>
+      </Card>
+
+      <Modal
+        open={deleteModalOpen}
+        onClose={closeDeleteModal}
+        title={t('settings.accountDeletion.modalTitle')}
+      >
+        <div className="space-y-5">
+          <p className="text-sm leading-6 text-surface-700 dark:text-surface-300">
+            {t('settings.accountDeletion.modalDescription')}
+          </p>
+          <Input
+            label={t('settings.accountDeletion.confirmLabel', { confirmation: ACCOUNT_DELETE_CONFIRMATION })}
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.target.value)}
+            placeholder={ACCOUNT_DELETE_CONFIRMATION}
+            autoComplete="off"
+          />
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={closeDeleteModal} disabled={deleting}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              loading={deleting}
+              disabled={!confirmationMatches}
+            >
+              <Trash2 className="h-4 w-4" />
+              {t('settings.accountDeletion.confirmButton')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
+  )
+}
+
 function YouTubeConnectionCard() {
   const t = useLocaleText()
   const [disconnecting, setDisconnecting] = useState(false)
   const [connecting, setConnecting] = useState(false)
   const addToast = useNotificationStore((state) => state.addToast)
   const { data: channel, isLoading: channelLoading, error: channelError } = useChannelStats()
-  const missingYouTubeConnection =
-    channelError instanceof Error &&
-    (channelError.message.includes(t('internal.keyword.youtubeConnection')) || channelError.message.includes('Google access token'))
+  const missingYouTubeConnection = isYouTubeConnectionError(channelError)
   const isConnected = !!channel && !missingYouTubeConnection
+  const connectionMessage = missingYouTubeConnection && channelError instanceof Error
+    ? channelError.message
+    : t('app.app.youtube.page.noYouTubeChannelConnected')
 
   const handleReconnect = async () => {
     setConnecting(true)
     try {
-      const { user } = await signInWithGoogle({ forceConsent: true, scopeMode: 'youtube-write' })
-      useAuthStore.getState().setUser(user)
-      window.location.reload()
+      await signInWithGoogle({
+        forceConsent: true,
+        scopeMode: 'youtube-write',
+        returnTo: '/settings?section=youtube',
+      })
+      // Page navigates to Google; control never returns here on success.
     } catch {
       addToast({
         type: 'error',
         title: t('app.app.youtube.page.couldNotConnectYouTube'),
-        message: t('app.app.youtube.page.pleaseAllowPopUpsAndTryAgain'),
+        message: t('app.app.youtube.page.pleaseTryAgainShortly'),
       })
-    } finally {
       setConnecting(false)
     }
   }
@@ -509,7 +635,7 @@ function YouTubeConnectionCard() {
       ) : (
         <div className="mt-4 flex flex-col items-center gap-4 py-8">
           <Video className="h-12 w-12 text-surface-300" />
-          <p className="text-surface-500 dark:text-surface-300">{t('app.app.youtube.page.noYouTubeChannelConnected')}</p>
+          <p className="max-w-md text-center text-sm leading-6 text-surface-600 dark:text-surface-300">{connectionMessage}</p>
           <p className="max-w-md text-center text-xs leading-5 text-surface-600 dark:text-surface-300">
             {t('app.app.youtube.page.dubtubeRequestsYouTubePermissionsForChannelReadsUploads')}
           </p>

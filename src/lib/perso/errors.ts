@@ -36,6 +36,9 @@ export const ERROR_MAP: Record<string, { status: number; message: string }> = {
   VT4043: { status: 404, message: '지원하지 않는 원본 언어입니다.' },
   VT4044: { status: 404, message: '지원하지 않는 대상 언어입니다.' },
 
+  VT4009: { status: 400, message: '선택한 언어와 음성 모델 조합이 지원되지 않습니다. 언어 선택을 줄이거나 다시 시도해 주세요.' },
+  UNSUPPORTED_TTS_MODEL_PAIR: { status: 400, message: '선택한 언어와 음성 모델 조합이 지원되지 않습니다. 언어 선택을 줄이거나 다시 시도해 주세요.' },
+
   // Queue / temporary
   VT5034: { status: 503, message: '잠시 후 다시 시도해 주세요. 현재 작업량이 많습니다.' },
   TIMEOUT: { status: 504, message: '외부 처리 서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.' },

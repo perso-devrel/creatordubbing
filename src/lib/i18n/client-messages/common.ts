@@ -27,7 +27,23 @@ export const commonMessages = {
     ko: '업로드할 영상을 불러오지 못했습니다.',
     en: 'Could not load videos to upload.',
   },
+  'app.auth.callback.page.connectYouTubeChannel': {
+    ko: 'YouTube 채널을 연결해 주세요',
+    en: 'Connect your YouTube channel',
+  },
+  'app.auth.callback.page.connectYouTubeChannelInSettings': {
+    ko: '더빙과 업로드를 시작하려면 설정에서 YouTube 채널을 먼저 연결해야 합니다.',
+    en: 'Connect your YouTube channel in Settings before starting dubbing and uploads.',
+  },
+  'app.auth.callback.page.couldNotSignIn': {
+    ko: '로그인할 수 없습니다',
+    en: 'Could not sign in',
+  },
   'app.auth.callback.page.processingLogin': { ko: '로그인 처리 중입니다...', en: 'Signing you in...' },
+  'app.auth.callback.page.tryAgainShortly': {
+    ko: '잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.',
+    en: 'Please try again shortly. Contact us if the problem continues.',
+  },
   "app.globalError.anUnexpectedErrorOccurred": { ko: "예상치 못한 오류가 발생했습니다", en: "An unexpected error occurred" },
   "app.globalError.errorCodeForSupportValue": { ko: "문의 시 전달할 오류 코드: {errorDigest}", en: "Error code for support: {errorDigest}" },
   "app.globalError.pleaseTryAgainInAMomentContactSupport": { ko: "잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.", en: "Please try again in a moment. Contact support if the problem continues." },
@@ -256,6 +272,14 @@ export const commonMessages = {
     ko: 'STT 자막 작업이 시작되었습니다',
     en: 'STT caption job started',
   },
+  'features.landing.heroUrlInput.signInRequired': {
+    ko: '로그인이 필요합니다',
+    en: 'Sign-in required',
+  },
+  'features.landing.heroUrlInput.signInWithGoogleToContinue': {
+    ko: 'Google로 로그인하면 입력한 영상으로 더빙을 이어서 시작합니다.',
+    en: 'Sign in with Google to continue dubbing with the video you entered.',
+  },
   'features.landing.pricingSection.included1080pOutput': { ko: '1080p 출력', en: '1080p output' },
   'features.landing.pricingSection.includedLanguageCount': {
     ko: '{SUPPORTED_LANGUAGE_COUNT}개 언어 지원',
@@ -274,8 +298,8 @@ export const commonMessages = {
   "lib.i18n.metadata.descriptionSupportAndContact": { ko: "Dubtube 이용, 계정, YouTube 연결, 데이터 삭제와 관련된 문의 안내입니다.", en: "How to contact Dubtube about support, accounts, YouTube access, and data deletion." },
   "lib.i18n.metadata.titleBilling": { ko: "결제", en: "Billing" },
   "lib.i18n.metadata.titleDashboard": { ko: "대시보드", en: "Dashboard" },
-  "lib.i18n.metadata.titleDubbingJobs": { ko: "더빙 작업", en: "Dubbing jobs" },
-  "lib.i18n.metadata.titleNewDubbing": { ko: "새 더빙", en: "New dubbing" },
+  "lib.i18n.metadata.titleDubbingJobs": { ko: "진행 중인 작업", en: "In progress" },
+  "lib.i18n.metadata.titleNewDubbing": { ko: "새 작업", en: "New job" },
   "lib.i18n.metadata.titleOperations": { ko: "운영 상태", en: "Operations" },
   "lib.i18n.metadata.titlePrivacyPolicy": { ko: "개인정보처리방침", en: "Privacy Policy" },
   "lib.i18n.metadata.titleSettings": { ko: "설정", en: "Settings" },
@@ -283,7 +307,7 @@ export const commonMessages = {
   "lib.i18n.metadata.titleTermsOfService": { ko: "서비스 약관", en: "Terms of Service" },
   "lib.i18n.metadata.titleTitleDescription": { ko: "제목/설명 번역", en: "Title & description" },
   "lib.i18n.metadata.titleYouTubeSettings": { ko: "YouTube 설정", en: "YouTube settings" },
-  "lib.i18n.metadata.titleYouTubeUploads": { ko: "YouTube 업로드", en: "YouTube uploads" },
+  "lib.i18n.metadata.titleYouTubeUploads": { ko: "완료된 작업", en: "Completed" },
   'marketPreset.core.description': {
     ko: '국내 사용자를 우선으로 하되 영어권 시청자까지 바로 대응합니다.',
     en: 'Start with Korea-first operations while covering English-speaking viewers.',
@@ -341,14 +365,46 @@ export const commonMessages = {
   'privacyStatus.private': { ko: '비공개', en: 'Private' },
   'privacyStatus.public': { ko: '공개', en: 'Public' },
   'privacyStatus.unlisted': { ko: '일부 공개', en: 'Unlisted' },
+  'settings.accountDeletion.button': {
+    ko: '회원탈퇴',
+    en: 'Delete account',
+  },
+  'settings.accountDeletion.confirmButton': {
+    ko: '회원탈퇴',
+    en: 'Withdraw account',
+  },
+  'settings.accountDeletion.confirmLabel': {
+    ko: '계속하려면 {confirmation}를 입력하세요',
+    en: 'Type {confirmation} to continue',
+  },
+  'settings.accountDeletion.failed': {
+    ko: '계정을 삭제하지 못했습니다',
+    en: 'Could not delete account',
+  },
+  'settings.accountDeletion.failedMessage': {
+    ko: '잠시 후 다시 시도해 주세요.',
+    en: 'Please try again shortly.',
+  },
+  'settings.accountDeletion.modalDescription': {
+    ko: '즉시 로그아웃되고 계정, YouTube 연결, 업로드 큐, 더빙 작업 기록이 모두 삭제됩니다. 1주일 내 다시 로그인하면 복구할 수 있습니다.',
+    en: 'You will be signed out immediately, and your account, YouTube connection, upload queue, and dubbing job history will be deleted. Sign in again within 7 days to restore them.',
+  },
+  'settings.accountDeletion.modalTitle': {
+    ko: '회원 탈퇴 안내',
+    en: 'Account withdrawal notice',
+  },
   'settings.appLocale': { ko: '앱 언어', en: 'App locale' },
+  'settings.dangerZone.title': {
+    ko: '회원탈퇴',
+    en: 'Account withdrawal',
+  },
   'settings.languageDefaults.description': {
-    ko: '화면 언어, 표시 테마, 제목·설명 번역 기본값을 정합니다.',
-    en: 'Set display language, theme, and title/description translation defaults.',
+    ko: '화면 언어와 테마, 제목·설명 기본 언어를 정합니다.',
+    en: 'Set display language, theme, and default metadata language.',
   },
   'settings.languageDefaults.title': {
-    ko: '언어, 테마 및 YouTube 기본값',
-    en: 'Language, theme, and YouTube defaults',
+    ko: '기본 설정',
+    en: 'Preferences',
   },
   'settings.launchLanguages.allLanguages': {
     ko: '언어 직접 선택',
@@ -406,6 +462,14 @@ export const commonMessages = {
   'settings.themeMode.dark': { ko: '다크 모드', en: 'Dark mode' },
   'settings.themeMode.light': { ko: '라이트 모드', en: 'Light mode' },
   'settings.themeMode.system': { ko: '시스템 설정 사용', en: 'Use system setting' },
+  'settings.youtubeDefaults.description': {
+    ko: '새 작업에 적용할 공개 범위, 태그, 출시 언어를 정합니다. (실제 작업 시 수정 가능합니다.)',
+    en: 'Set the visibility, tags, and launch languages applied to new jobs. (You can change these per job.)',
+  },
+  'settings.youtubeDefaults.title': {
+    ko: 'YouTube 업로드 기본값',
+    en: 'YouTube upload defaults',
+  },
   'status.complete': { ko: '완료', en: 'Complete' },
   'status.failed': { ko: '실패', en: 'Failed' },
   'status.processing': { ko: '처리 중', en: 'Processing' },

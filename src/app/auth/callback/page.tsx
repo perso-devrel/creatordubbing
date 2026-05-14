@@ -2,32 +2,89 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect } from 'react'
-import { useLocaleText } from '@/hooks/useLocaleText'
+import { useEffect, useRef, useState } from 'react'
+import { completeGoogleSignIn } from '@/lib/google-auth'
+import { useAuthStore } from '@/stores/authStore'
+import { useNotificationStore } from '@/stores/notificationStore'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import {
+  DEFAULT_APP_LOCALE,
+  getLocaleFromCookieString,
+  getPathLocale,
+  isSafeLocalPath,
+  stripLocalePrefix,
+  withLocalePath,
+  withSafeLocalePath,
+  type AppLocale,
+} from '@/lib/i18n/config'
 
-// Google OAuth popup callback.
-// Google redirects here with ?code=... — pass to opener via postMessage then close.
+function getRedirectLocale(returnTo: string, fallback: AppLocale): AppLocale {
+  return getPathLocale(returnTo) ??
+    getPathLocale(window.location.pathname) ??
+    getLocaleFromCookieString(document.cookie) ??
+    fallback ??
+    DEFAULT_APP_LOCALE
+}
+
+function isLandingPath(path: string): boolean {
+  if (!isSafeLocalPath(path)) return false
+  const [pathWithoutHash] = path.split('#')
+  const [pathname] = pathWithoutHash.split('?')
+  return stripLocalePrefix(pathname || '/') === '/'
+}
+
 export default function AuthCallbackPage() {
   const t = useLocaleText()
+  const appLocale = useAppLocale()
+  const addToast = useNotificationStore((s) => s.addToast)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const finishedRef = useRef(false)
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-    const error = params.get('error')
-    const state = params.get('state')
+    if (finishedRef.current) return
+    finishedRef.current = true
 
-    if (window.opener) {
-      window.opener.postMessage(
-        { type: 'google_oauth_callback', code, error, state },
-        window.location.origin,
-      )
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const { user, scopeMode, returnTo } = await completeGoogleSignIn()
+        if (cancelled) return
+
+        useAuthStore.getState().setUser(user)
+        const redirectLocale = getRedirectLocale(returnTo, appLocale)
+
+        // YouTube reconnect flow: just go back wherever the user came from.
+        if (scopeMode === 'youtube-write' || scopeMode === 'youtube-readonly') {
+          window.location.replace(withSafeLocalePath(returnTo, redirectLocale, '/settings?section=youtube'))
+          return
+        }
+
+        const normalizedReturnTo = withSafeLocalePath(returnTo, redirectLocale, '/dashboard')
+        window.location.replace(isLandingPath(normalizedReturnTo) ? withLocalePath('/dashboard', redirectLocale) : normalizedReturnTo)
+      } catch (err) {
+        if (cancelled) return
+        const message = err instanceof Error ? err.message : t('app.auth.callback.page.tryAgainShortly')
+        setErrorMessage(message)
+        addToast({
+          type: 'error',
+          title: t('app.auth.callback.page.couldNotSignIn'),
+          message,
+        })
+        window.setTimeout(() => {
+          if (!cancelled) window.location.replace(withLocalePath('/', appLocale))
+        }, 2000)
+      }
+    })()
+
+    return () => {
+      cancelled = true
     }
-    window.close()
-  }, [])
+  }, [addToast, appLocale, t])
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface-50 px-6 text-center text-sm text-surface-600 dark:bg-surface-950 dark:text-surface-300">
-      {t('app.auth.callback.page.processingLogin')}
+      {errorMessage ?? t('app.auth.callback.page.processingLogin')}
     </main>
   )
 }

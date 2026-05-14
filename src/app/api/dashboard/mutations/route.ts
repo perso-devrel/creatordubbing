@@ -6,6 +6,7 @@ import {
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
+  updateDubbingJobOriginalYouTubeUrl,
   updateJobLanguageProjects,
   createYouTubeUpload,
   updateJobLanguageYouTube,
@@ -159,6 +160,11 @@ export async function POST(req: NextRequest) {
           })
         }
         return apiOk({ jobId })
+      }
+      case 'updateDubbingJobOriginalYouTubeUrl': {
+        const { jobId, originalYouTubeUrl } = action.payload
+        await updateDubbingJobOriginalYouTubeUrl(jobId, originalYouTubeUrl)
+        return apiOk({ jobId, originalYouTubeUrl })
       }
       case 'createYouTubeUpload': {
         const id = await createYouTubeUpload(action.payload)

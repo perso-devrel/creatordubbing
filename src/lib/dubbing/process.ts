@@ -20,6 +20,10 @@ import { recordOperationalEventSafe } from '@/lib/ops/observability'
 import { getLanguageByCode, toBcp47 } from '@/utils/languages'
 import { resolveCaptionTrackName } from '@/lib/youtube/captions'
 import { appendAiDisclosureFooter, appendTextFooter, stripAiDisclosureFooter } from '@/features/dubbing/utils/aiDisclosure'
+import {
+  snapshotLocalizationsJson,
+  snapshotMetadataJson,
+} from '@/lib/youtube/upload-snapshot'
 
 export interface ProcessDubbingJobsOptions {
   limit?: number
@@ -200,25 +204,31 @@ async function enqueueCompletedLanguage(
   if (!videoUrl) return { status: 'missing_video_url' }
 
   const metadata = await buildMetadata(item)
-  const srtContent = settings.uploadCaptions ? await fetchTranslatedSrt(item).catch(() => null) : null
+  const snapshot = item.youtubeUploadSnapshot
+  const snapshotMetadata = snapshot?.metadata.translated[item.languageCode]
+  const uploadCaptions = snapshot?.settings.uploadCaptions ?? settings.uploadCaptions
+  const srtContent = uploadCaptions ? await fetchTranslatedSrt(item).catch(() => null) : null
 
   return enqueueYouTubeUpload({
     userId: item.userId,
     jobId: item.jobId,
     langCode: item.languageCode,
     videoUrl,
-    title: metadata.title,
-    description: metadata.description,
-    tags: metadata.tags,
-    privacyStatus: settings.privacyStatus,
+    title: snapshotMetadata?.title || metadata.title,
+    description: snapshotMetadata?.finalDescription || metadata.description,
+    tags: snapshot?.settings.tags?.length ? snapshot.settings.tags : metadata.tags,
+    privacyStatus: snapshot?.settings.privacyStatus || settings.privacyStatus,
     language: item.languageCode,
     isShort: item.isShort,
-    uploadCaptions: settings.uploadCaptions,
+    uploadCaptions,
     captionLanguage: toBcp47(item.languageCode),
     captionName: metadata.captionName,
     srtContent,
-    selfDeclaredMadeForKids: settings.selfDeclaredMadeForKids,
-    containsSyntheticMedia: item.deliverableMode === 'newDubbedVideos' && settings.containsSyntheticMedia,
+    selfDeclaredMadeForKids: snapshot?.settings.selfDeclaredMadeForKids ?? settings.selfDeclaredMadeForKids,
+    containsSyntheticMedia: snapshot?.settings.containsSyntheticMedia ?? (item.deliverableMode === 'newDubbedVideos' && settings.containsSyntheticMedia),
+    uploadKind: snapshot?.uploadKind,
+    metadataJson: snapshot ? snapshotMetadataJson(snapshot) : null,
+    localizationsJson: snapshot ? snapshotLocalizationsJson(snapshot) : null,
     resetFailed: Boolean(options.force),
   })
 }

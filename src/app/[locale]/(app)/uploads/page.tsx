@@ -10,16 +10,35 @@ import { formatDuration } from '@/utils/formatters'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
-import { ytUploadVideo, ytUploadCaption, getDownloadLinks, getPersoFileUrl } from '@/lib/api-client'
+import {
+  ytUploadVideo,
+  ytUploadCaption,
+  ytUpdateVideoLocalizations,
+  getDownloadLinks,
+  getPersoFileUrl,
+} from '@/lib/api-client'
 import { dbMutation } from '@/lib/api/dbMutation'
-import { getLanguageByCode } from '@/utils/languages'
+import { getLanguageByCode, toBcp47 } from '@/utils/languages'
+import { extractVideoId } from '@/utils/validators'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import type { CompletedJobLanguage } from '@/lib/db/queries/dashboard'
 import type { MessageKey } from '@/lib/i18n/clientMessages'
 import { resolveCaptionTrackName } from '@/lib/youtube/captions'
+import {
+  parseYouTubeUploadSnapshot,
+  snapshotMetadataJson,
+  type YouTubeUploadSnapshot,
+} from '@/lib/youtube/upload-snapshot'
 
 type UploadState = 'idle' | 'fetching' | 'uploading' | 'done' | 'error'
 type PrivacyStatus = 'public' | 'unlisted' | 'private'
+type CompletedJobGroup = {
+  id: number
+  title: string
+  durationMs: number
+  createdAt: string
+  langs: CompletedJobLanguage[]
+}
 
 interface UploadSettings {
   title: string
@@ -46,15 +65,93 @@ async function fetchCompletedLanguages(uid: string, t: LocaleText): Promise<Comp
   return json.data
 }
 
-function buildDefaultSettings(item: CompletedJobLanguage, langName: string, t: LocaleText): UploadSettings {
+function buildFallbackSnapshot(item: CompletedJobLanguage, langName: string, t: LocaleText): YouTubeUploadSnapshot {
+  const targetAssetKind = item.deliverable_mode === 'originalWithMultiAudio' ? 'original_video' : 'dubbed_video'
+  const sourceKind = item.original_youtube_url ? 'my_youtube_video' : 'new_video'
+  const title = `[${langName}] ${item.video_title}`
+  const description = t('app.app.uploads.page.valueDubtubeAIDubbingInValue', { itemVideo_title: item.video_title, langName: langName })
+  const tags = [t('app.app.uploads.page.dubtubeAIDubbingValue', { langName: langName })]
+  const originalYouTubeVideoId = item.original_youtube_url ? extractVideoId(item.original_youtube_url) : null
   return {
-    title: `[${langName}] ${item.video_title}`,
-    description: t('app.app.uploads.page.valueDubtubeAIDubbingInValue', { itemVideo_title: item.video_title, langName: langName }),
-    tags: t('app.app.uploads.page.dubtubeAIDubbingValue', { langName: langName }),
-    privacyStatus: 'private',
-    uploadCaptions: true,
-    selfDeclaredMadeForKids: false,
-    containsSyntheticMedia: true,
+    version: 1,
+    uploadKind: sourceKind === 'my_youtube_video'
+      ? targetAssetKind === 'original_video' ? 'my_video_original_captions' : 'my_video_dubbed_video'
+      : targetAssetKind === 'original_video' ? 'new_video_original_captions' : 'new_video_dubbed_video',
+    sourceKind,
+    targetAssetKind,
+    sourceLanguage: item.language_code,
+    targetLanguage: item.language_code,
+    selectedLanguages: [item.language_code],
+    settings: {
+      title,
+      description,
+      tags,
+      privacyStatus: 'private',
+      uploadCaptions: true,
+      selfDeclaredMadeForKids: false,
+      containsSyntheticMedia: targetAssetKind === 'dubbed_video',
+      attachOriginalLink: true,
+    },
+    metadata: {
+      source: {
+        title: item.video_title,
+        description,
+        finalDescription: description,
+      },
+      translated: {
+        [item.language_code]: {
+          title,
+          description,
+          finalDescription: description,
+          containsSyntheticMedia: targetAssetKind === 'dubbed_video',
+        },
+      },
+      localizations: {},
+    },
+    assets: {
+      originalVideoUrl: item.original_video_url,
+      originalYouTubeVideoId,
+      originalYouTubeUrl: item.original_youtube_url,
+      dubbedVideoUrl: item.dubbed_video_url,
+      audioUrl: item.audio_url,
+      srtUrl: item.srt_url,
+    },
+  }
+}
+
+function resolveSnapshot(item: CompletedJobLanguage, langName: string, t: LocaleText): YouTubeUploadSnapshot {
+  const parsed = parseYouTubeUploadSnapshot(item.youtube_upload_snapshot_json)
+  const fallback = buildFallbackSnapshot(item, langName, t)
+  const snapshot = parsed ?? fallback
+  return {
+    ...snapshot,
+    assets: {
+      originalVideoUrl: snapshot.assets.originalVideoUrl ?? item.original_video_url,
+      originalYouTubeVideoId: snapshot.assets.originalYouTubeVideoId ?? fallback.assets.originalYouTubeVideoId,
+      originalYouTubeUrl: snapshot.assets.originalYouTubeUrl ?? item.original_youtube_url,
+      dubbedVideoUrl: snapshot.assets.dubbedVideoUrl ?? item.dubbed_video_url,
+      audioUrl: snapshot.assets.audioUrl ?? item.audio_url,
+      srtUrl: snapshot.assets.srtUrl ?? item.srt_url,
+    },
+  }
+}
+
+function buildSettingsFromSnapshot(snapshot: YouTubeUploadSnapshot): UploadSettings {
+  const metadata = snapshot.metadata.translated[snapshot.targetLanguage]
+  const title = snapshot.targetAssetKind === 'dubbed_video'
+    ? metadata?.title || snapshot.settings.title
+    : snapshot.metadata.source.title || snapshot.settings.title
+  const description = snapshot.targetAssetKind === 'dubbed_video'
+    ? metadata?.finalDescription || metadata?.description || snapshot.settings.description
+    : snapshot.metadata.source.finalDescription || snapshot.metadata.source.description || snapshot.settings.description
+  return {
+    title,
+    description,
+    tags: snapshot.settings.tags.join(', '),
+    privacyStatus: snapshot.settings.privacyStatus,
+    uploadCaptions: snapshot.settings.uploadCaptions,
+    selfDeclaredMadeForKids: snapshot.settings.selfDeclaredMadeForKids,
+    containsSyntheticMedia: snapshot.settings.containsSyntheticMedia,
   }
 }
 
@@ -77,8 +174,9 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
         <Input
           label={t('app.app.uploads.page.title')}
           value={settings.title}
-          onChange={(e) => onChange({ ...settings, title: e.target.value })}
+          readOnly
           placeholder={t('app.app.uploads.page.videoTitle')}
+          className="bg-surface-50 dark:bg-surface-800"
         />
 
         <div className="w-full">
@@ -89,17 +187,18 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
             id="yt-description"
             rows={4}
             value={settings.description}
-            onChange={(e) => onChange({ ...settings, description: e.target.value })}
+            readOnly
             placeholder={t('app.app.uploads.page.videoDescription')}
-            className="w-full resize-none rounded-lg border border-surface-300 bg-white px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:placeholder:text-surface-400"
+            className="w-full resize-none rounded-lg border border-surface-300 bg-surface-50 px-3 py-2 text-sm text-surface-900 placeholder:text-surface-500 transition-colors focus-ring dark:border-surface-700 dark:bg-surface-800 dark:text-surface-100 dark:placeholder:text-surface-400"
           />
         </div>
 
         <Input
           label={t('app.app.uploads.page.tags')}
           value={settings.tags}
-          onChange={(e) => onChange({ ...settings, tags: e.target.value })}
+          readOnly
           placeholder={t('app.app.uploads.page.separateTagsWithCommas')}
+          className="bg-surface-50 dark:bg-surface-800"
         />
 
         <Select
@@ -137,7 +236,8 @@ function UploadSettingsModal({ open, onClose, settings, onChange, onConfirm, isL
             type="checkbox"
             className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
             checked={settings.containsSyntheticMedia}
-            onChange={(e) => onChange({ ...settings, containsSyntheticMedia: e.target.checked })}
+            disabled
+            readOnly
           />
           <span>{t('app.app.uploads.page.discloseAIVoiceUse')}</span>
         </label>
@@ -183,13 +283,15 @@ function UploadRow({ item, userId }: UploadRowProps) {
   const [videoId, setVideoId] = useState<string | null>(item.youtube_video_id)
   const lang = getLanguageByCode(item.language_code)
   const langName = (locale === 'ko' ? lang?.nativeName : lang?.name) || lang?.name || item.language_code
-  const captionTrackName = resolveCaptionTrackName(item.language_code, lang?.name)
+  const snapshot = resolveSnapshot(item, langName, t)
+  const captionLanguage = toBcp47(snapshot.targetLanguage || item.language_code)
+  const captionTrackName = resolveCaptionTrackName(captionLanguage, lang?.name)
 
   const [modalOpen, setModalOpen] = useState(false)
-  const [settings, setSettings] = useState<UploadSettings>(() => buildDefaultSettings(item, langName, t))
+  const [settings, setSettings] = useState<UploadSettings>(() => buildSettingsFromSnapshot(snapshot))
 
   const handleOpenModal = useCallback(() => {
-    setSettings(buildDefaultSettings(item, langName, t))
+    setSettings(buildSettingsFromSnapshot(resolveSnapshot(item, langName, t)))
     setModalOpen(true)
   }, [item, langName, t])
 
@@ -216,67 +318,122 @@ function UploadRow({ item, userId }: UploadRowProps) {
         return { video: toAbs(raw), srt: toAbs(rawSrt) }
       }
 
-      // Start from DB URL (normalized). Refetch if missing or later if fetch fails (expired CDN link).
-      let videoUrl = toAbs(item.dubbed_video_url)
-      let srtUrl = toAbs(item.srt_url)
-
-      if (!videoUrl) {
-        const fresh = await refetchFromPerso()
-        videoUrl = fresh.video
-        srtUrl = srtUrl ?? fresh.srt
+      const resolveSrtContent = async (): Promise<string | null> => {
+        let srtUrl = toAbs(snapshot.assets.srtUrl ?? item.srt_url)
+        if (!srtUrl) {
+          const fresh = await refetchFromPerso()
+          srtUrl = fresh.srt
+        }
+        if (!srtUrl) return null
+        const srtRes = await fetch(srtUrl)
+        return srtRes.ok ? await srtRes.text() : null
       }
-      if (!videoUrl) throw new Error(t('app.app.uploads.page.couldNotFindTheDubbedVideoDownloadLink'))
+
+      const effectiveSnapshot: YouTubeUploadSnapshot = {
+        ...snapshot,
+        settings: {
+          ...snapshot.settings,
+          privacyStatus: settings.privacyStatus,
+          uploadCaptions: settings.uploadCaptions,
+          selfDeclaredMadeForKids: settings.selfDeclaredMadeForKids,
+        },
+      }
+      const targetMetadata = snapshot.metadata.translated[snapshot.targetLanguage] ?? {
+        title: settings.title,
+        description: settings.description,
+        finalDescription: settings.description,
+        containsSyntheticMedia: settings.containsSyntheticMedia,
+      }
+      const metadataJson = snapshotMetadataJson(effectiveSnapshot)
 
       setState('uploading')
-      const baseTags = settings.tags.split(',').map((t) => t.trim()).filter(Boolean)
+      const baseTags = snapshot.settings.tags
+      let targetVideoId = snapshot.targetAssetKind === 'original_video'
+        ? snapshot.assets.originalYouTubeVideoId
+        : null
+      let uploadTitle = settings.title
+      let shouldPersistOriginalYouTubeUrl = false
 
-      const doUpload = (url: string) =>
-        ytUploadVideo({
-          videoUrl: url,
-          title: settings.title,
-          description: settings.description,
-          tags: baseTags,
-          privacyStatus: settings.privacyStatus,
-          selfDeclaredMadeForKids: settings.selfDeclaredMadeForKids,
-          containsSyntheticMedia: settings.containsSyntheticMedia,
-          language: item.language_code,
-        })
+      if (!targetVideoId) {
+        let videoUrl = snapshot.targetAssetKind === 'original_video'
+          ? toAbs(snapshot.assets.originalVideoUrl ?? item.original_video_url)
+          : toAbs(snapshot.assets.dubbedVideoUrl ?? item.dubbed_video_url)
 
-      const uploadOnce = async () => {
+        if (!videoUrl && snapshot.targetAssetKind === 'dubbed_video') {
+          const fresh = await refetchFromPerso()
+          videoUrl = fresh.video
+        }
+        if (!videoUrl) throw new Error(t('app.app.uploads.page.couldNotFindTheDubbedVideoDownloadLink'))
+
+        const isOriginalVideoUpload = snapshot.targetAssetKind === 'original_video'
+        uploadTitle = isOriginalVideoUpload
+          ? snapshot.metadata.source.title || settings.title
+          : targetMetadata.title || settings.title
+        const uploadDescription = isOriginalVideoUpload
+          ? snapshot.metadata.source.finalDescription || snapshot.metadata.source.description || settings.description
+          : targetMetadata.finalDescription || targetMetadata.description || settings.description
+
+        const doUpload = (url: string) =>
+          ytUploadVideo({
+            videoUrl: url,
+            title: uploadTitle,
+            description: uploadDescription,
+            tags: baseTags,
+            privacyStatus: settings.privacyStatus,
+            selfDeclaredMadeForKids: settings.selfDeclaredMadeForKids,
+            containsSyntheticMedia: isOriginalVideoUpload ? false : settings.containsSyntheticMedia,
+            language: isOriginalVideoUpload ? toBcp47(snapshot.sourceLanguage) : toBcp47(snapshot.targetLanguage),
+            localizations: isOriginalVideoUpload ? snapshot.metadata.localizations : undefined,
+          })
+
         try {
-          return await doUpload(videoUrl!)
+          const result = await doUpload(videoUrl)
+          targetVideoId = result.videoId
+          shouldPersistOriginalYouTubeUrl = isOriginalVideoUpload
         } catch (err) {
           const msg = err instanceof Error ? err.message : ''
           const isFetchFailure = /VIDEO_FETCH_FAILED|fetch/i.test(msg)
-          if (!isFetchFailure || !item.project_seq || !item.space_seq) throw err
+          if (!isFetchFailure || !item.project_seq || !item.space_seq || isOriginalVideoUpload) throw err
           setState('fetching')
           const fresh = await refetchFromPerso()
           if (!fresh.video) throw err
-          videoUrl = fresh.video
-          srtUrl = srtUrl ?? fresh.srt
           setState('uploading')
-          return await doUpload(videoUrl)
+          const result = await doUpload(fresh.video)
+          targetVideoId = result.videoId
+          shouldPersistOriginalYouTubeUrl = isOriginalVideoUpload
         }
       }
 
-      const result = await uploadOnce()
+      if (!targetVideoId) throw new Error(t('app.app.uploads.page.couldNotFindTheDubbedVideoDownloadLink'))
 
-      if (settings.uploadCaptions && srtUrl) {
-        try {
-          const srtRes = await fetch(srtUrl)
-          const srtText = await srtRes.text()
+      if (
+        snapshot.targetAssetKind === 'original_video' &&
+        snapshot.assets.originalYouTubeVideoId &&
+        Object.keys(snapshot.metadata.localizations).length > 0
+      ) {
+        await ytUpdateVideoLocalizations({
+          videoId: targetVideoId,
+          sourceLang: toBcp47(snapshot.sourceLanguage),
+          title: snapshot.metadata.source.title || item.video_title,
+          description: snapshot.metadata.source.finalDescription || snapshot.metadata.source.description,
+          tags: baseTags,
+          localizations: snapshot.metadata.localizations,
+        })
+      }
+
+      if (settings.uploadCaptions) {
+        const srtText = await resolveSrtContent()
+        if (srtText?.trim()) {
           await ytUploadCaption({
-            videoId: result.videoId,
-            language: item.language_code,
+            videoId: targetVideoId,
+            language: captionLanguage,
             name: captionTrackName,
             srtContent: srtText,
           })
-        } catch {
-          // SRT optional
         }
       }
 
-      setVideoId(result.videoId)
+      setVideoId(targetVideoId)
       setState('done')
 
       const privacyLabelKey = PRIVACY_OPTIONS.find((o) => o.value === settings.privacyStatus)?.labelKey
@@ -286,16 +443,18 @@ function UploadRow({ item, userId }: UploadRowProps) {
         message: privacyLabelKey ? t(privacyLabelKey) : settings.privacyStatus,
       })
 
-      await Promise.all([
+      const dbWrites = [
         dbMutation({
           type: 'createYouTubeUpload',
           payload: {
             userId,
-            youtubeVideoId: result.videoId,
-            title: settings.title,
+            youtubeVideoId: targetVideoId,
+            title: uploadTitle,
             languageCode: item.language_code,
             privacyStatus: settings.privacyStatus,
             isShort: false,
+            uploadKind: snapshot.uploadKind,
+            metadataJson,
           },
         }),
         dbMutation({
@@ -303,10 +462,22 @@ function UploadRow({ item, userId }: UploadRowProps) {
           payload: {
             jobId: item.job_id,
             langCode: item.language_code,
-            youtubeVideoId: result.videoId,
+            youtubeVideoId: targetVideoId,
           },
         }),
-      ])
+      ]
+      if (shouldPersistOriginalYouTubeUrl) {
+        dbWrites.push(
+          dbMutation({
+            type: 'updateDubbingJobOriginalYouTubeUrl',
+            payload: {
+              jobId: item.job_id,
+              originalYouTubeUrl: `https://www.youtube.com/watch?v=${targetVideoId}`,
+            },
+          }),
+        )
+      }
+      await Promise.all(dbWrites)
       queryClient.invalidateQueries({ queryKey: ['completed-languages'] })
     } catch (err) {
       setState('error')
@@ -316,7 +487,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
         message: err instanceof Error ? err.message : t('app.app.uploads.page.anUnknownErrorOccurred'),
       })
     }
-  }, [item, langName, captionTrackName, settings, userId, addToast, queryClient, t])
+  }, [item, langName, snapshot, captionLanguage, captionTrackName, settings, userId, addToast, queryClient, t])
 
   const isLoading = state === 'fetching' || state === 'uploading'
   const loadingLabel = state === 'fetching'
@@ -392,18 +563,21 @@ export default function UploadsPage() {
     staleTime: 60_000,
   })
 
-  const jobs = items.reduce<Record<number, { title: string; durationMs: number; createdAt: string; langs: CompletedJobLanguage[] }>>((acc, item) => {
-    if (!acc[item.job_id]) {
-      acc[item.job_id] = {
+  const jobs = Array.from(items.reduce<Map<number, CompletedJobGroup>>((acc, item) => {
+    const existing = acc.get(item.job_id)
+    if (!existing) {
+      acc.set(item.job_id, {
+        id: item.job_id,
         title: item.video_title,
         durationMs: item.video_duration_ms,
         createdAt: item.created_at,
-        langs: [],
-      }
+        langs: [item],
+      })
+      return acc
     }
-    acc[item.job_id].langs.push(item)
+    existing.langs.push(item)
     return acc
-  }, {})
+  }, new Map()).values())
 
   return (
     <div className="space-y-6">
@@ -425,8 +599,8 @@ export default function UploadsPage() {
         />
       ) : (
         <div className="space-y-4">
-          {Object.entries(jobs).map(([jobId, job]) => (
-            <Card key={jobId}>
+          {jobs.map((job) => (
+            <Card key={job.id}>
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base">{job.title}</CardTitle>

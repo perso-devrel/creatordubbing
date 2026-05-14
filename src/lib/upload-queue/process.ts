@@ -9,12 +9,23 @@ import { createYouTubeUpload, updateJobLanguageYouTube } from '@/lib/db/queries'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
 import { uploadCaptionToYouTube, uploadVideoToYouTube } from '@/lib/youtube/upload'
 import { resolveCaptionTrackName } from '@/lib/youtube/captions'
+import type { YouTubeLocalization } from '@/lib/youtube/types'
 import { logger } from '@/lib/logger'
 
 export interface ProcessUploadQueueOptions {
   limit?: number
   userId?: string
   queueId?: number
+}
+
+function parseLocalizationsJson(json: string | null): Record<string, YouTubeLocalization> | undefined {
+  if (!json) return undefined
+  try {
+    const parsed = JSON.parse(json) as Record<string, YouTubeLocalization>
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : undefined
+  } catch {
+    return undefined
+  }
 }
 
 export async function processUploadQueue(options: ProcessUploadQueueOptions = {}) {
@@ -62,6 +73,7 @@ export async function processUploadQueue(options: ProcessUploadQueueOptions = {}
         selfDeclaredMadeForKids: item.selfDeclaredMadeForKids,
         containsSyntheticMedia: item.containsSyntheticMedia,
         language: item.language || undefined,
+        localizations: parseLocalizationsJson(item.localizationsJson),
       })
 
       if (item.uploadCaptions && item.srtContent?.trim()) {
@@ -91,6 +103,8 @@ export async function processUploadQueue(options: ProcessUploadQueueOptions = {}
           languageCode: item.langCode,
           privacyStatus: item.privacyStatus,
           isShort: item.isShort,
+          uploadKind: item.uploadKind,
+          metadataJson: item.metadataJson,
         })
         await updateJobLanguageYouTube(item.jobId, item.langCode, result.videoId)
       } catch {

@@ -5,6 +5,8 @@ export {
   updateUserTokens,
   clearUserGoogleTokens,
   deductUserMinutes,
+  requestUserAccountDeletion,
+  purgeExpiredPendingDeletedAccounts,
   getUserPreferencesRaw,
   setUserPreferencesRaw,
 } from './users'
@@ -34,6 +36,7 @@ export {
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
+  updateDubbingJobOriginalYouTubeUrl,
   getDubbingJobLanguageWorkItem,
   getDubbingJobLanguageWorkItems,
   getJobLanguageTerminalSummary,

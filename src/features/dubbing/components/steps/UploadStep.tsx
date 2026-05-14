@@ -200,7 +200,8 @@ export function UploadStep() {
     existingVideoMetadataSyncRef.current.add(syncKey)
 
     try {
-      const metadata = await ytFetchVideoMetadata(targetVideoId)
+      const requestedSourceLang = toBcp47(metadataLanguage)
+      const metadata = await ytFetchVideoMetadata(targetVideoId, requestedSourceLang)
       const mergedTags = requestedTags.length === 0
         ? metadata.tags
         : Array.from(new Set([...metadata.tags, ...requestedTags]))
@@ -218,7 +219,7 @@ export function UploadStep() {
       // 원본 제목/설명은 그대로 유지 — localizations와 tags만 갱신.
       await ytUpdateVideoLocalizations({
         videoId: targetVideoId,
-        sourceLang: metadata.defaultLanguage || toBcp47(metadataLanguage),
+        sourceLang: metadata.resolvedLanguage || metadata.defaultLanguage || requestedSourceLang,
         title: metadata.title || settingsTitle?.trim() || videoMetaTitle || t('features.dubbing.components.steps.uploadStep.untitled'),
         description: metadata.description,
         tags: mergedTags,
@@ -279,11 +280,6 @@ export function UploadStep() {
         localizations: Object.keys(localizations).length > 0 ? localizations : undefined,
       })
       setOriginalUploadState({ status: 'done', videoId: result.videoId })
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.steps.uploadStep.originalVideoUploaded'),
-        message: t('features.dubbing.components.steps.uploadStep.youCanReviewTheVideoOnYouTube'),
-      })
       return result.videoId
     } catch (err) {
       console.warn('[Dubtube] Original video upload failed', err)
@@ -393,11 +389,6 @@ export function UploadStep() {
         throw new Error(result.status || t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry'))
       }
 
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.steps.uploadStep.valueUploadScheduled', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
-        message: t('features.dubbing.components.steps.uploadStep.theServerWillUploadItInTheBackground'),
-      })
     } catch (err) {
       console.warn('[Dubtube] YouTube upload scheduling failed', err)
       const msg = t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry')
@@ -461,7 +452,6 @@ export function UploadStep() {
           srtContent,
         })
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'done' }))
-        addToast({ type: 'success', title: t('features.dubbing.components.steps.uploadStep.valueCaptionsUploaded', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }) })
       } catch (err) {
         console.warn('[Dubtube] Caption upload failed', err)
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'error' }))
@@ -1027,7 +1017,7 @@ export function UploadStep() {
                   spaceSeq={spaceSeq}
                   allowDialogueEditing={allowDialogueEditingInOutput}
                   youtubeVideoId={ytUploads[code]?.videoId ?? null}
-                  youtubePreviewVisibility={privacyStatus}
+                  previewVideoTarget={deliverableMode === 'originalWithMultiAudio' ? 'originalVideo' : 'dubbingVideo'}
                   previewVideoUrl={previewVideoUrl}
                   sttCaptionJobId={isSttCaptionMode ? dbJobId : null}
                 />

@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/authStore'
 import { useI18nStore } from '@/stores/i18nStore'
 import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import { fetchUserPreferences } from '@/lib/api-client/user-preferences'
+import { getPathLocale } from '@/lib/i18n/config'
 
 /**
  * youtubeSettingsStore와 i18nStore에 서버(/api/user/preferences) 설정을 주입한다.
@@ -20,6 +22,8 @@ export function useUserPreferencesSync() {
   const user = useAuthStore((s) => s.user)
   const uid = user?.uid ?? null
   const queryClient = useQueryClient()
+  const pathname = usePathname()
+  const routeLocale = getPathLocale(pathname)
 
   const previousUidRef = useRef<string | null>(uid)
 
@@ -50,8 +54,8 @@ export function useUserPreferencesSync() {
     store.setDefaultLanguage(serverPrefs.defaultLanguage)
     store.setDefaultTags(serverPrefs.defaultTags)
     const i18nStore = useI18nStore.getState()
-    i18nStore.setAppLocale(serverPrefs.appLocale)
+    i18nStore.setAppLocale(routeLocale ?? serverPrefs.appLocale)
     i18nStore.setMetadataTargetPreset(serverPrefs.metadataTargetPreset)
     i18nStore.setMetadataTargetLanguages(serverPrefs.metadataTargetLanguages)
-  }, [serverPrefs])
+  }, [routeLocale, serverPrefs])
 }

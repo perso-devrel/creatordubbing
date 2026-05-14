@@ -77,6 +77,7 @@ const workItem = {
   srtUrl: null,
   youtubeVideoId: null,
   youtubeUploadStatus: null,
+  youtubeUploadSnapshot: null,
 }
 
 beforeEach(() => {

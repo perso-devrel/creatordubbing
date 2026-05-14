@@ -9,47 +9,23 @@ import { useNotificationStore } from '@/stores/notificationStore'
 import { Button } from '@/components/ui'
 import { AppLocaleSelect } from '@/components/layout/AppLocaleSelect'
 import { useLocaleText } from '@/hooks/useLocaleText'
-import { useLocaleRouter } from '@/hooks/useLocalePath'
-
-async function hasConnectedYouTubeChannel(): Promise<boolean> {
-  try {
-    const res = await fetch('/api/youtube/stats?channel=true', { cache: 'no-store' })
-    const body = (await res.json().catch(() => null)) as { ok?: boolean; data?: unknown } | null
-    return res.ok && body?.ok === true && !!body.data
-  } catch {
-    return false
-  }
-}
 
 export function LandingNavBar() {
   const { isAuthenticated } = useAuthStore()
   const addToast = useNotificationStore((s) => s.addToast)
-  const router = useLocaleRouter()
   const [loading, setLoading] = useState(false)
   const t = useLocaleText()
 
   const handleGoogleLogin = async () => {
     setLoading(true)
     try {
-      const { user } = await signInWithGoogle()
-      useAuthStore.getState().setUser(user)
-      const connected = await hasConnectedYouTubeChannel()
-      if (!connected) {
-        addToast({
-          type: 'info',
-          title: t('components.layout.landingNavBar.connectYouTubeChannel'),
-          message: t('components.layout.landingNavBar.connectYouTubeChannelInSettings'),
-        })
-        router.push('/settings?section=youtube')
-        return
-      }
-      router.push('/dashboard')
+      await signInWithGoogle({ returnTo: '/dashboard' })
+      // Page navigates to Google; control never returns here on success.
     } catch (err) {
-      const message = err instanceof Error && err.message.includes(t('internal.keyword.popup'))
-        ? t('components.layout.landingNavBar.allowPopUpsThenSignInAgain')
+      const message = err instanceof Error
+        ? err.message
         : t('components.layout.landingNavBar.pleaseTryAgainShortlyContactUsIfThe')
       addToast({ type: 'error', title: t('components.layout.landingNavBar.couldNotSignIn'), message })
-    } finally {
       setLoading(false)
     }
   }

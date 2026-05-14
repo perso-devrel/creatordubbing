@@ -9,6 +9,7 @@ import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import type { AppLocale } from '@/lib/i18n/config'
 import {
   getSpaces,
+  getLanguages,
   uploadVideoFile as persoUploadVideoFile,
   getExternalMetadata,
   uploadExternalVideo,
@@ -23,17 +24,35 @@ import {
   getPersoFileUrl,
   cancelProject,
   cancelLongStt,
+  translateMetadata,
+  type MetadataTranslation,
 } from '@/lib/api-client'
-import type { DownloadTarget } from '@/lib/perso/types'
+import type { DownloadTarget, PersoTtsModel } from '@/lib/perso/types'
+import {
+  BROADEST_TTS_MODEL,
+  DEFAULT_TTS_MODEL,
+  resolveTtsModelForTargetLanguages,
+} from '@/lib/perso/tts-model'
 import type { LanguageProgress } from '../types/dubbing.types'
 import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
 import { extractVideoId } from '@/utils/validators'
+import { toBcp47 } from '@/utils/languages'
 import {
   canUseSelectedOutputForVideo,
   isOverSinglePersoJobLimit,
   isLongVideoSttCaptionMode,
   isLongVideoUploadCaptionOutput,
 } from '../utils/videoDurationLimits'
+import {
+  appendAiDisclosureFooter,
+  appendTextFooter,
+  stripAiDisclosureFooter,
+} from '@/features/dubbing/utils/aiDisclosure'
+import {
+  resolveYouTubeUploadKind,
+  serializeYouTubeUploadSnapshot,
+  type YouTubeUploadSnapshot,
+} from '@/lib/youtube/upload-snapshot'
 
 const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
@@ -95,6 +114,31 @@ function isLongSttCaptionMode() {
   return isSttCaptionMode() && isOverSinglePersoJobLimit(state.videoMeta)
 }
 
+async function resolveSubmitTtsModel(
+  targetLanguages: string[],
+  t: LocaleText,
+): Promise<PersoTtsModel> {
+  const unsupportedMessage = t('features.dubbing.hooks.usePersoFlow.unsupportedTtsModelPair')
+  try {
+    const languages = await getLanguages()
+    const model = resolveTtsModelForTargetLanguages(
+      languages,
+      targetLanguages,
+      DEFAULT_TTS_MODEL,
+    )
+    if (!model) {
+      throw new Error(unsupportedMessage)
+    }
+    return model
+  } catch (err) {
+    if (err instanceof Error && err.message === unsupportedMessage) {
+      throw err
+    }
+    console.warn('[Dubtube] TTS model compatibility lookup failed; using broadest model', err)
+    return BROADEST_TTS_MODEL
+  }
+}
+
 async function saveJobToDb(
   mediaSeq: number,
   spaceSeq: number,
@@ -103,15 +147,18 @@ async function saveJobToDb(
   lipSyncEnabled: boolean,
   sourceLanguage: string,
   t: LocaleText,
+  youtubeUploadSnapshotByLanguage: Record<string, string | null> = {},
 ): Promise<number> {
   const userId = useAuthStore.getState().user?.uid
   const videoMeta = store.getState().videoMeta
   const isShort = store.getState().isShort
   const state = store.getState()
   const originalYouTubeId =
-    state.videoSource?.type === 'url' && state.videoSource.url
-      ? extractVideoId(state.videoSource.url)
-      : null
+    state.videoSource?.type === 'channel'
+      ? state.videoSource.videoId ?? null
+      : state.videoSource?.type === 'url' && state.videoSource.url
+        ? extractVideoId(state.videoSource.url)
+        : null
   if (!userId) {
     throw new Error(t('features.dubbing.hooks.usePersoFlow.pleaseSignInFirst'))
   }
@@ -134,11 +181,133 @@ async function saveJobToDb(
         originalVideoUrl: state.originalVideoUrl,
         originalYouTubeUrl: originalYouTubeId ? `https://www.youtube.com/watch?v=${originalYouTubeId}` : null,
       },
-      languages: selectedLanguages.map((code) => ({ code, projectSeq: projectMap[code] || 0 })),
+      languages: selectedLanguages.map((code) => ({
+        code,
+        projectSeq: projectMap[code] || 0,
+        youtubeUploadSnapshotJson: youtubeUploadSnapshotByLanguage[code] ?? null,
+      })),
     },
   })
   store.getState().setDbJobId(result.jobId)
   return result.jobId
+}
+
+async function buildYouTubeUploadSnapshotByLanguage(
+  targetLanguages: string[],
+): Promise<Record<string, string | null>> {
+  const state = store.getState()
+  const settings = state.uploadSettings
+  const baseTitle = settings.title.trim() || state.videoMeta?.title?.trim() || 'Dubtube video'
+  const baseDescription = stripAiDisclosureFooter(settings.description || '')
+  const sourceLanguage = settings.metadataLanguage || 'ko'
+  const sourceType = state.videoSource?.type
+  const targetAssetKind = state.deliverableMode === 'originalWithMultiAudio'
+    ? 'original_video'
+    : 'dubbed_video'
+  const sourceKind = sourceType === 'channel' ? 'my_youtube_video' : 'new_video'
+  const originalYouTubeVideoId = sourceType === 'channel'
+    ? state.videoSource?.videoId ?? null
+    : sourceType === 'url' && state.videoSource?.url
+      ? extractVideoId(state.videoSource.url)
+      : null
+  const originalYouTubeUrl = originalYouTubeVideoId
+    ? `https://www.youtube.com/watch?v=${originalYouTubeVideoId}`
+    : null
+  const shouldApplyAiDisclosure =
+    targetAssetKind === 'dubbed_video' && settings.containsSyntheticMedia
+
+  let translations: Record<string, MetadataTranslation> = {}
+  if (targetLanguages.length > 0) {
+    try {
+      translations = await translateMetadata({
+        title: baseTitle,
+        description: baseDescription,
+        sourceLang: sourceLanguage,
+        targetLangs: targetLanguages,
+      })
+    } catch (err) {
+      console.warn('[Dubtube] metadata snapshot translation failed; using source metadata fallback', err)
+      translations = Object.fromEntries(
+        targetLanguages.map((code) => [code, { title: baseTitle, description: baseDescription }]),
+      )
+    }
+  }
+
+  const finalDescriptionFor = (description: string, languageCode: string) => {
+    let next = stripAiDisclosureFooter(description)
+    if (targetAssetKind === 'dubbed_video' && settings.attachOriginalLink && originalYouTubeUrl) {
+      next = appendTextFooter(next, `Original video: ${originalYouTubeUrl}`)
+    }
+    return appendAiDisclosureFooter(next, languageCode, shouldApplyAiDisclosure)
+  }
+
+  const translated = Object.fromEntries(
+    targetLanguages.map((code) => {
+      const value = translations[code] ?? { title: baseTitle, description: baseDescription }
+      return [code, {
+        title: value.title,
+        description: value.description,
+        finalDescription: targetAssetKind === 'dubbed_video'
+          ? finalDescriptionFor(value.description, code)
+          : stripAiDisclosureFooter(value.description),
+        containsSyntheticMedia: shouldApplyAiDisclosure,
+      }]
+    }),
+  )
+
+  const localizations = targetAssetKind === 'original_video'
+    ? Object.fromEntries(
+      targetLanguages.map((code) => {
+        const value = translations[code] ?? { title: baseTitle, description: baseDescription }
+        return [toBcp47(code), {
+          title: value.title,
+          description: stripAiDisclosureFooter(value.description),
+        }]
+      }),
+    )
+    : {}
+
+  return Object.fromEntries(
+    targetLanguages.map((code) => {
+      const snapshot: YouTubeUploadSnapshot = {
+        version: 1,
+        uploadKind: resolveYouTubeUploadKind(sourceType, state.deliverableMode),
+        sourceKind,
+        targetAssetKind,
+        sourceLanguage,
+        targetLanguage: code,
+        selectedLanguages: targetLanguages,
+        settings: {
+          title: baseTitle,
+          description: baseDescription,
+          tags: settings.tags,
+          privacyStatus: settings.privacyStatus,
+          uploadCaptions: settings.uploadCaptions,
+          selfDeclaredMadeForKids: settings.selfDeclaredMadeForKids,
+          containsSyntheticMedia: shouldApplyAiDisclosure,
+          attachOriginalLink: settings.attachOriginalLink,
+        },
+        metadata: {
+          source: {
+            title: baseTitle,
+            description: baseDescription,
+            finalDescription: stripAiDisclosureFooter(baseDescription),
+          },
+          translated,
+          localizations,
+        },
+        assets: {
+          originalVideoUrl: state.originalVideoUrl,
+          originalYouTubeVideoId,
+          originalYouTubeUrl,
+          dubbedVideoUrl: null,
+          audioUrl: null,
+          srtUrl: null,
+        },
+      }
+      return [code, serializeYouTubeUploadSnapshot(snapshot)]
+    }),
+  )
 }
 
 async function pollLanguage(
@@ -466,8 +635,6 @@ export function usePersoFlow() {
     let spaceSeq = store.getState().spaceSeq
     if (!spaceSeq) spaceSeq = await initSpace()
 
-    addToast({ type: 'info', title: t('features.dubbing.hooks.usePersoFlow.uploadingVideo'), message: file.name })
-
     try {
       const result = await persoUploadVideoFile(spaceSeq!, file)
       store.getState().setMediaSeq(result.seq)
@@ -482,11 +649,6 @@ export function usePersoFlow() {
         durationMs: result.durationMs,
         channelTitle: t('features.dubbing.hooks.usePersoFlow.uploadedFile'),
       })
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.hooks.usePersoFlow.videoUploaded'),
-        message: t('features.dubbing.hooks.usePersoFlow.valueIsReadyForDubbing', { fileName: file.name }),
-      })
       return result
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('features.dubbing.hooks.usePersoFlow.uploadFailed')
@@ -500,13 +662,6 @@ export function usePersoFlow() {
     if (!spaceSeq) spaceSeq = await initSpace()
 
     const isYouTube = /(?:youtube\.com|youtu\.be)/.test(url)
-    addToast({
-      type: 'info',
-      title: isYouTube
-        ? t('features.dubbing.hooks.usePersoFlow.importingFromYouTube')
-        : t('features.dubbing.hooks.usePersoFlow.importingVideoURL'),
-      duration: 8000,
-    })
 
     try {
       const meta = await getExternalMetadata(spaceSeq!, url, DEFAULT_SOURCE_LANGUAGE)
@@ -523,8 +678,10 @@ export function usePersoFlow() {
 
       const result = await uploadExternalVideo(spaceSeq!, url, DEFAULT_SOURCE_LANGUAGE)
       store.getState().setMediaSeq(result.seq)
+      if (result.videoFilePath) {
+        store.getState().setOriginalVideoUrl(getPersoFileUrl(result.videoFilePath))
+      }
 
-      addToast({ type: 'success', title: t('features.dubbing.hooks.usePersoFlow.videoImported') })
       return result
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('features.dubbing.hooks.usePersoFlow.failedToImportVideo')
@@ -576,6 +733,7 @@ export function usePersoFlow() {
       }
 
       const pendingProjectMap = Object.fromEntries(targetLanguages.map((lang) => [lang, 0]))
+      const youtubeUploadSnapshotByLanguage = await buildYouTubeUploadSnapshotByLanguage(targetLanguages)
       const dbJobId = await saveJobToDb(
         mediaSeq,
         spaceSeq,
@@ -584,6 +742,7 @@ export function usePersoFlow() {
         lipSyncEnabled,
         DEFAULT_SOURCE_LANGUAGE,
         t,
+        youtubeUploadSnapshotByLanguage,
       )
       await dbMutationStrict({ type: 'reserveJobCredits', payload: { jobId: dbJobId } })
 
@@ -630,6 +789,7 @@ export function usePersoFlow() {
         return projectMap
       }
 
+      const ttsModel = await resolveSubmitTtsModel(targetLanguages, t)
       const result = await submitTranslation(spaceSeq, {
         mediaSeq,
         isVideoProject: true,
@@ -638,7 +798,7 @@ export function usePersoFlow() {
         numberOfSpeakers: DEFAULT_SPEAKER_COUNT,
         withLipSync: lipSyncEnabled,
         preferredSpeedType: 'GREEN',
-        ttsModel: 'ELEVEN_V2',
+        ttsModel,
         title: videoMeta?.title?.trim() || `Dubtube project ${mediaSeq}`,
       })
 

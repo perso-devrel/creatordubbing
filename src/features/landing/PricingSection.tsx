@@ -1,12 +1,12 @@
 'use client'
 
 import { Check } from 'lucide-react'
-import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { Button } from '@/components/ui'
 import { CREDIT_PACKS } from '@/features/billing/constants/plans'
 import { formatKrw } from '@/utils/formatters'
 import { SUPPORTED_LANGUAGE_COUNT } from '@/utils/languages'
 import { useLocaleText } from '@/hooks/useLocaleText'
+import { useLandingAuthRedirect } from './useLandingAuthRedirect'
 
 const INCLUDED_FEATURES = [
   'features.landing.pricingSection.includedLanguageCount',
@@ -18,6 +18,7 @@ const INCLUDED_FEATURES = [
 
 export function PricingSection() {
   const t = useLocaleText()
+  const { authLoading, navigateWithAuth, signingIn } = useLandingAuthRedirect()
 
   return (
     <section id="pricing" className="py-24">
@@ -61,11 +62,16 @@ export function PricingSection() {
           </div>
 
           <div className="mt-8 text-center">
-            <LocaleLink href="/billing">
-              <Button variant="primary" size="lg">
-                {t('features.landing.pricingSection.chooseAMinutesPack')}
-              </Button>
-            </LocaleLink>
+            <Button
+              type="button"
+              variant="primary"
+              size="lg"
+              disabled={authLoading}
+              loading={signingIn}
+              onClick={() => void navigateWithAuth('/billing')}
+            >
+              {t('features.landing.pricingSection.chooseAMinutesPack')}
+            </Button>
           </div>
         </div>
       </div>

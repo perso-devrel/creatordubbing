@@ -197,7 +197,7 @@ export function OutputModeStep() {
               <div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <p className={cn(
-                    'text-base font-semibold leading-snug',
+                    'text-base font-semibold leading-snug break-keep',
                     selected ? 'text-brand-700 dark:text-brand-300' : 'text-surface-900 dark:text-white',
                   )}>
                     {t(title)}
@@ -208,7 +208,7 @@ export function OutputModeStep() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm leading-6 text-surface-600 dark:text-surface-300">{t(description)}</p>
+                <p className="mt-2 text-sm leading-6 text-surface-600 dark:text-surface-300 break-keep">{t(description)}</p>
               </div>
             </button>
           )
