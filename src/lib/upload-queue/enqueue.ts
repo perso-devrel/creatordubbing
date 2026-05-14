@@ -20,6 +20,9 @@ export interface EnqueueYouTubeUploadInput {
   srtContent?: string | null
   selfDeclaredMadeForKids?: boolean
   containsSyntheticMedia?: boolean
+  uploadKind?: string
+  metadataJson?: string | null
+  localizationsJson?: string | null
   resetFailed?: boolean
 }
 

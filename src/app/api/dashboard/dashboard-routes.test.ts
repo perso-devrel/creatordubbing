@@ -24,6 +24,7 @@ vi.mock('@/lib/db/queries', () => ({
   updateJobLanguageProgress: vi.fn(),
   updateJobLanguageCompleted: vi.fn(),
   updateJobStatus: vi.fn(),
+  updateDubbingJobOriginalYouTubeUrl: vi.fn(),
   createYouTubeUpload: vi.fn(async () => 10),
   updateJobLanguageYouTube: vi.fn(),
   startJobLanguageYouTubeUpload: vi.fn(async () => ({ status: 'reserved' })),
@@ -588,6 +589,27 @@ describe('/api/dashboard/mutations', () => {
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.data.jobId).toBe(1)
+  })
+
+  it('returns 200 for updateDubbingJobOriginalYouTubeUrl', async () => {
+    mockAuth('user1')
+    const req = new NextRequest('http://localhost/api/dashboard/mutations', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'updateDubbingJobOriginalYouTubeUrl',
+        payload: {
+          jobId: 1,
+          originalYouTubeUrl: 'https://www.youtube.com/watch?v=abc123',
+        },
+      }),
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.data).toEqual({
+      jobId: 1,
+      originalYouTubeUrl: 'https://www.youtube.com/watch?v=abc123',
+    })
   })
 
   it('returns 200 for createYouTubeUpload with matching uid', async () => {
