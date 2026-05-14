@@ -7,6 +7,22 @@ export interface JobLanguageYouTubeUploadReservation {
   youtubeVideoId?: string | null
 }
 
+let youtubeUploadColumnsEnsured = false
+
+async function ensureYouTubeUploadColumns() {
+  if (youtubeUploadColumnsEnsured) return
+  const db = getDb()
+  const result = await db.execute({ sql: 'PRAGMA table_info(youtube_uploads)', args: [] })
+  const existing = new Set((result.rows ?? []).map((row) => String(row.name)))
+  const addColumn = async (name: string, definition: string) => {
+    if (existing.has(name)) return
+    await db.execute({ sql: `ALTER TABLE youtube_uploads ADD COLUMN ${name} ${definition}`, args: [] })
+  }
+  await addColumn('upload_kind', "TEXT NOT NULL DEFAULT 'new_video_dubbed_video'")
+  await addColumn('metadata_json', 'TEXT')
+  youtubeUploadColumnsEnsured = true
+}
+
 export async function createYouTubeUpload(upload: {
   userId: string
   jobLanguageId?: number
@@ -15,11 +31,17 @@ export async function createYouTubeUpload(upload: {
   languageCode: string
   privacyStatus: string
   isShort: boolean
+  uploadKind?: string
+  metadataJson?: string | null
 }): Promise<number> {
+  await ensureYouTubeUploadColumns()
   const db = getDb()
   const result = await db.execute({
-    sql: `INSERT INTO youtube_uploads (user_id, job_language_id, youtube_video_id, title, language_code, privacy_status, is_short)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    sql: `INSERT INTO youtube_uploads (
+            user_id, job_language_id, youtube_video_id, title, language_code,
+            privacy_status, is_short, upload_kind, metadata_json
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       upload.userId,
       upload.jobLanguageId || null,
@@ -28,6 +50,8 @@ export async function createYouTubeUpload(upload: {
       upload.languageCode,
       upload.privacyStatus,
       upload.isShort ? 1 : 0,
+      upload.uploadKind ?? 'new_video_dubbed_video',
+      upload.metadataJson ?? null,
     ],
   })
   return Number(result.lastInsertRowid)

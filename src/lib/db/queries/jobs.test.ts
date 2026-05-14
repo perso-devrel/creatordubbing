@@ -40,6 +40,12 @@ describe('job queries', () => {
           { name: 'deliverable_mode' },
           { name: 'original_video_url' },
           { name: 'original_youtube_url' },
+          { name: 'youtube_upload_snapshot_json' },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          { name: 'youtube_upload_snapshot_json' },
         ],
       })
       .mockResolvedValueOnce({ lastInsertRowid: 35 })
@@ -52,8 +58,8 @@ describe('job queries', () => {
 
     expect(jobId).toBe(35)
     expect(mockBatch).toHaveBeenCalledWith([
-      expect.objectContaining({ args: [35, 'en', 0] }),
-      expect.objectContaining({ args: [35, 'ja', 0] }),
+      expect.objectContaining({ args: [35, 'en', 0, null] }),
+      expect.objectContaining({ args: [35, 'ja', 0, null] }),
     ])
     const languageSql = mockBatch.mock.calls[0][0].map((q: { sql: string }) => q.sql).join('\n')
     expect(languageSql).not.toContain('last_insert_rowid')
@@ -72,12 +78,12 @@ describe('job queries', () => {
     ])
 
     expect(mockExecute).toHaveBeenNthCalledWith(2, {
-      sql: 'UPDATE job_languages SET project_seq = ? WHERE id = ?',
-      args: [347162, 10],
+      sql: expect.stringContaining('youtube_upload_snapshot_json = COALESCE'),
+      args: [347162, null, 10],
     })
     expect(mockExecute).toHaveBeenNthCalledWith(4, {
       sql: expect.stringContaining('INSERT INTO job_languages'),
-      args: [35, 'ja', 347163],
+      args: [35, 'ja', 347163, null],
     })
   })
 })

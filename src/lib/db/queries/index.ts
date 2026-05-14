@@ -36,6 +36,7 @@ export {
   updateJobLanguageProgress,
   updateJobLanguageCompleted,
   updateJobStatus,
+  updateDubbingJobOriginalYouTubeUrl,
   getDubbingJobLanguageWorkItem,
   getDubbingJobLanguageWorkItems,
   getJobLanguageTerminalSummary,

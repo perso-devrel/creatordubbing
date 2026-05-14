@@ -20,6 +20,8 @@ export interface YouTubeVideoMetadata {
   categoryId: string
   tags: string[]
   defaultLanguage: string
+  resolvedLanguage: string
+  resolvedFrom: 'default' | 'localization'
   localizations: Record<string, YouTubeLocalization>
 }
 

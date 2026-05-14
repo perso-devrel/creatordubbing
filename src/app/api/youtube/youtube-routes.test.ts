@@ -263,6 +263,18 @@ describe('/api/youtube/metadata', () => {
     expect(fetchVideoMetadata).toHaveBeenCalledWith('mock-token', 'yt-123')
   })
 
+  it('passes requested source language when fetching metadata', async () => {
+    const { GET } = await import('./metadata/route')
+    const { fetchVideoMetadata } = await import('@/lib/youtube/server')
+    const req = new NextRequest('http://localhost/api/youtube/metadata?videoId=yt-123&sourceLang=ko')
+
+    const res = await GET(req)
+    const body = await res.json()
+
+    expect(body.ok).toBe(true)
+    expect(fetchVideoMetadata).toHaveBeenCalledWith('mock-token', 'yt-123', 'ko')
+  })
+
   it('updates localizations without uploading media', async () => {
     const { POST } = await import('./metadata/route')
     const { updateVideoLocalizations } = await import('@/lib/youtube/server')
