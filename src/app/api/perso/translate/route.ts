@@ -7,6 +7,7 @@ import { translateBodySchema } from '@/lib/validators/perso'
 import type { TranslateResponse } from '@/lib/perso/types'
 import { assertPersoMediaOwner } from '@/lib/perso/ownership'
 import { logger } from '@/lib/logger'
+import { DEFAULT_TTS_MODEL } from '@/lib/perso/tts-model'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
       numberOfSpeakers: body.numberOfSpeakers,
       withLipSync: body.withLipSync ?? false,
       preferredSpeedType: body.preferredSpeedType,
-      ttsModel: body.ttsModel ?? 'ELEVEN_V2',
+      ttsModel: body.ttsModel ?? DEFAULT_TTS_MODEL,
       title,
       ...(customDictionaryBlobPath ? { customDictionaryBlobPath } : {}),
       ...(srtBlobPath ? { srtBlobPath } : {}),

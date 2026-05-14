@@ -8,6 +8,7 @@ import { useLocaleText } from '@/hooks/useLocaleText'
 
 import {
   getSpaces,
+  getLanguages,
   uploadVideoFile as persoUploadVideoFile,
   getExternalMetadata,
   uploadExternalVideo,
@@ -18,7 +19,12 @@ import {
   getPersoFileUrl,
   cancelProject,
 } from '@/lib/api-client'
-import type { DownloadTarget } from '@/lib/perso/types'
+import type { DownloadTarget, PersoTtsModel } from '@/lib/perso/types'
+import {
+  BROADEST_TTS_MODEL,
+  DEFAULT_TTS_MODEL,
+  resolveTtsModelForTargetLanguages,
+} from '@/lib/perso/tts-model'
 import type { LanguageProgress } from '../types/dubbing.types'
 import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
 import { extractVideoId } from '@/utils/validators'
@@ -64,6 +70,31 @@ function mapProgressReasonToStatus(reason: string) {
 }
 
 const store = useDubbingStore
+
+async function resolveSubmitTtsModel(
+  targetLanguages: string[],
+  t: LocaleText,
+): Promise<PersoTtsModel> {
+  const unsupportedMessage = t('features.dubbing.hooks.usePersoFlow.unsupportedTtsModelPair')
+  try {
+    const languages = await getLanguages()
+    const model = resolveTtsModelForTargetLanguages(
+      languages,
+      targetLanguages,
+      DEFAULT_TTS_MODEL,
+    )
+    if (!model) {
+      throw new Error(unsupportedMessage)
+    }
+    return model
+  } catch (err) {
+    if (err instanceof Error && err.message === unsupportedMessage) {
+      throw err
+    }
+    console.warn('[Dubtube] TTS model compatibility lookup failed; using broadest model', err)
+    return BROADEST_TTS_MODEL
+  }
+}
 
 async function saveJobToDb(
   mediaSeq: number,
@@ -338,6 +369,8 @@ export function usePersoFlow() {
     const targetLanguages = Array.from(new Set(selectedLanguages))
 
     try {
+      const ttsModel = await resolveSubmitTtsModel(targetLanguages, t)
+
       try {
         await initializeQueue(spaceSeq)
       } catch {
@@ -364,7 +397,7 @@ export function usePersoFlow() {
         numberOfSpeakers: DEFAULT_SPEAKER_COUNT,
         withLipSync: lipSyncEnabled,
         preferredSpeedType: 'GREEN',
-        ttsModel: 'ELEVEN_V2',
+        ttsModel,
         title: videoMeta?.title?.trim() || `Dubtube project ${mediaSeq}`,
       })
 
