@@ -41,6 +41,11 @@ describe('YouTubeError', () => {
     const err = new YouTubeError(500, 'fail')
     expect(err.code).toBe('YOUTUBE_ERROR')
   })
+
+  it('stores YouTube error reason when provided', () => {
+    const err = new YouTubeError(403, 'Forbidden', 'YOUTUBE_RECONNECT_REQUIRED', 'insufficientPermissions')
+    expect(err.reason).toBe('insufficientPermissions')
+  })
 })
 
 describe('fetchVideoStatistics', () => {
@@ -112,6 +117,40 @@ describe('fetchChannelStatistics', () => {
     await expect(fetchChannelStatistics('tok')).rejects.toMatchObject({
       status: 401,
       code: 'CHANNEL_FETCH_FAILED',
+    })
+  })
+
+  it('maps insufficient YouTube scopes to reconnect-required errors', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({
+        error: {
+          message: 'Request had insufficient authentication scopes.',
+          errors: [{ reason: 'insufficientPermissions' }],
+        },
+      }, 403),
+    )
+
+    await expect(fetchChannelStatistics('tok')).rejects.toMatchObject({
+      status: 403,
+      code: 'YOUTUBE_RECONNECT_REQUIRED',
+      reason: 'insufficientPermissions',
+    })
+  })
+
+  it('maps Google accounts without a YouTube channel to channel-required errors', async () => {
+    mockFetch.mockResolvedValueOnce(
+      jsonResponse({
+        error: {
+          message: 'The authenticated user must have a channel.',
+          errors: [{ reason: 'authenticatedUserNotChannel' }],
+        },
+      }, 403),
+    )
+
+    await expect(fetchChannelStatistics('tok')).rejects.toMatchObject({
+      status: 403,
+      code: 'YOUTUBE_CHANNEL_REQUIRED',
+      reason: 'authenticatedUserNotChannel',
     })
   })
 
@@ -239,9 +278,10 @@ describe('fetchMyVideos', () => {
     const promise = fetchMyVideos('tok')
     await expect(promise).rejects.toMatchObject({
       status: 403,
-      code: 'MY_VIDEOS_FAILED',
+      code: 'QUOTA_EXCEEDED',
+      reason: 'quotaExceeded',
     })
-    await expect(promise).rejects.toThrow(/quota/)
+    await expect(promise).rejects.toThrow(/사용량 한도/)
   })
 
   it('falls back to search when uploads playlist request fails for non-quota errors', async () => {

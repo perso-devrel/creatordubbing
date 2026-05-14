@@ -24,14 +24,18 @@ interface ApiResponse<T> {
   }
 }
 
+const YOUTUBE_RECONNECT_ERROR_CODES = new Set([
+  'MISSING_ACCESS_TOKEN',
+  'UNAUTHORIZED',
+  'YOUTUBE_RECONNECT_REQUIRED',
+  'YOUTUBE_CHANNEL_REQUIRED',
+  'YOUTUBE_CHANNEL_FORBIDDEN',
+  'YOUTUBE_CHANNEL_UNAVAILABLE',
+])
+
 export function isYouTubeConnectionError(error: unknown): boolean {
   if (error instanceof YouTubeDataError) {
-    return (
-      error.code === 'MISSING_ACCESS_TOKEN' ||
-      error.code === 'UNAUTHORIZED' ||
-      error.status === 401 ||
-      error.status === 403
-    )
+    return YOUTUBE_RECONNECT_ERROR_CODES.has(error.code ?? '') || error.status === 401
   }
   return error instanceof Error && (
     error.message.includes('Google access token') ||

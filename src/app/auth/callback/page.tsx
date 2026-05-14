@@ -18,16 +18,6 @@ import {
   type AppLocale,
 } from '@/lib/i18n/config'
 
-async function hasConnectedYouTubeChannel(): Promise<boolean> {
-  try {
-    const res = await fetch('/api/youtube/stats?channel=true', { cache: 'no-store' })
-    const body = (await res.json().catch(() => null)) as { ok?: boolean; data?: unknown } | null
-    return res.ok && body?.ok === true && !!body.data
-  } catch {
-    return false
-  }
-}
-
 function getRedirectLocale(returnTo: string, fallback: AppLocale): AppLocale {
   return getPathLocale(returnTo) ??
     getPathLocale(window.location.pathname) ??
@@ -70,29 +60,15 @@ export default function AuthCallbackPage() {
           return
         }
 
-        // Initial login: nudge user to connect YouTube if they haven't yet.
-        const connected = await hasConnectedYouTubeChannel()
-        if (cancelled) return
-
-        if (!connected) {
-          addToast({
-            type: 'info',
-            title: t('components.layout.landingNavBar.connectYouTubeChannel'),
-            message: t('components.layout.landingNavBar.connectYouTubeChannelInSettings'),
-          })
-          window.location.replace(withLocalePath('/settings?section=youtube', redirectLocale))
-          return
-        }
-
         const normalizedReturnTo = withSafeLocalePath(returnTo, redirectLocale, '/dashboard')
         window.location.replace(isLandingPath(normalizedReturnTo) ? withLocalePath('/dashboard', redirectLocale) : normalizedReturnTo)
       } catch (err) {
         if (cancelled) return
-        const message = err instanceof Error ? err.message : t('components.layout.landingNavBar.pleaseTryAgainShortlyContactUsIfThe')
+        const message = err instanceof Error ? err.message : t('app.auth.callback.page.tryAgainShortly')
         setErrorMessage(message)
         addToast({
           type: 'error',
-          title: t('components.layout.landingNavBar.couldNotSignIn'),
+          title: t('app.auth.callback.page.couldNotSignIn'),
           message,
         })
         window.setTimeout(() => {

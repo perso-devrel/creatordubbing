@@ -10,4 +10,5 @@ export const syncBodySchema = z.object({
 export const callbackBodySchema = z.object({
   code: z.string().min(1),
   redirectUri: z.string().url(),
+  scopeMode: z.enum(['login', 'youtube-write', 'youtube-readonly']).default('login'),
 })
