@@ -4,6 +4,13 @@
  */
 'use client'
 
+import {
+  DEFAULT_APP_LOCALE,
+  getLocaleFromCookieString,
+  getPathLocale,
+  withSafeLocalePath,
+} from '@/lib/i18n/config'
+
 export interface GoogleUser {
   uid: string
   email: string
@@ -51,6 +58,16 @@ function storeUser(user: GoogleUser) {
   localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user))
 }
 
+function getCurrentLocale() {
+  return getPathLocale(window.location.pathname) ??
+    getLocaleFromCookieString(document.cookie) ??
+    DEFAULT_APP_LOCALE
+}
+
+function getCurrentReturnPath() {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`
+}
+
 /**
  * Navigates the current window to Google's OAuth consent screen.
  * Returns a Promise that never resolves on the calling side (page is leaving).
@@ -68,7 +85,7 @@ export function signInWithGoogle(
   const redirectUri = `${window.location.origin}/auth/callback`
   const scope = getGoogleScopes(scopeMode).join(' ')
   const stateNonce = crypto.randomUUID()
-  const returnTo = options.returnTo ?? (window.location.pathname + window.location.search)
+  const returnTo = withSafeLocalePath(options.returnTo ?? getCurrentReturnPath(), getCurrentLocale(), '/dashboard')
 
   sessionStorage.setItem(STORAGE_KEY_OAUTH_STATE, stateNonce)
   sessionStorage.setItem(STORAGE_KEY_OAUTH_SCOPE_MODE, scopeMode)

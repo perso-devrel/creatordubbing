@@ -96,6 +96,50 @@ const baseMessages = {
     ko: '설정 저장 실패',
     en: 'Could not save settings',
   },
+  'settings.dangerZone.title': {
+    ko: '회원탈퇴',
+    en: 'Account withdrawal',
+  },
+  'settings.dangerZone.description': {
+    ko: '더빙 작업 기록이 모두 삭제 요청 상태로 전환됩니다. 1주일 내 다시 로그인하면 계정을 복구할 수 있습니다.',
+    en: 'Your dubbing job history is moved into deletion-request status. Sign in again within 7 days to restore your account.',
+  },
+  'settings.accountDeletion.button': {
+    ko: '회원탈퇴',
+    en: 'Delete account',
+  },
+  'settings.accountDeletion.modalTitle': {
+    ko: '계정 삭제',
+    en: 'Delete account',
+  },
+  'settings.accountDeletion.modalDescription': {
+    ko: '회원탈퇴를 요청하면 즉시 로그아웃되고 계정, YouTube 연결, 업로드 큐, 더빙 작업 기록이 복구 대기 상태가 됩니다. 1주일 내 같은 Google 계정으로 다시 로그인하면 정상 계정으로 복구됩니다.',
+    en: 'After requesting withdrawal, you will be signed out and your account, YouTube connection, upload queue, and dubbing job history will be held for recovery. Sign in with the same Google account within 7 days to restore everything.',
+  },
+  'settings.accountDeletion.confirmLabel': {
+    ko: '계속하려면 {confirmation}를 입력하세요',
+    en: 'Type {confirmation} to continue',
+  },
+  'settings.accountDeletion.confirmButton': {
+    ko: '계정 삭제',
+    en: 'Delete account',
+  },
+  'settings.accountDeletion.failed': {
+    ko: '계정을 삭제하지 못했습니다',
+    en: 'Could not delete account',
+  },
+  'settings.accountDeletion.failedMessage': {
+    ko: '잠시 후 다시 시도해 주세요.',
+    en: 'Please try again shortly.',
+  },
+  'features.landing.heroUrlInput.signInRequired': {
+    ko: '로그인이 필요합니다',
+    en: 'Sign-in required',
+  },
+  'features.landing.heroUrlInput.signInWithGoogleToContinue': {
+    ko: 'Google로 로그인하면 입력한 영상으로 더빙을 이어서 시작합니다.',
+    en: 'Sign in with Google to continue dubbing with the video you entered.',
+  },
   'components.layout.sidebar.labelSettings': { ko: '설정', en: 'Settings' },
   'components.layout.sidebar.appNavigation': { ko: '앱 메뉴', en: 'App navigation' },
   'components.layout.topbar.subscriberCount': { ko: '구독자 {count}', en: '{count} subscribers' },

@@ -73,6 +73,10 @@ export function stripLocalePrefix(pathname: string): string {
   return stripped === '/' ? '/' : stripped.replace(/\/$/, '') || '/'
 }
 
+export function isSafeLocalPath(path: string | null | undefined): path is string {
+  return !!path && path.startsWith('/') && !path.startsWith('//') && !/^[a-z][a-z0-9+.-]*:/i.test(path)
+}
+
 export function withLocalePath(path: string, locale: AppLocale): string {
   if (!path || path === '/') return `/${locale}`
   if (/^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('#')) return path
@@ -82,6 +86,39 @@ export function withLocalePath(path: string, locale: AppLocale): string {
   const normalizedPath = stripLocalePrefix(pathname.startsWith('/') ? pathname : `/${pathname}`)
   const localized = normalizedPath === '/' ? `/${locale}` : `/${locale}${normalizedPath}`
   return `${localized}${query ? `?${query}` : ''}${hash ? `#${hash}` : ''}`
+}
+
+export function withSafeLocalePath(
+  path: string | null | undefined,
+  locale: AppLocale,
+  fallbackPath = '/',
+): string {
+  const safePath = isSafeLocalPath(path)
+    ? path
+    : isSafeLocalPath(fallbackPath)
+      ? fallbackPath
+      : '/'
+  return withLocalePath(safePath, locale)
+}
+
+export function getLocaleFromCookieString(cookieString: string | null | undefined): AppLocale | null {
+  if (!cookieString) return null
+
+  const prefix = `${LOCALE_COOKIE}=`
+  const match = cookieString
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix))
+
+  if (!match) return null
+
+  const raw = match.slice(prefix.length)
+  try {
+    const decoded = decodeURIComponent(raw)
+    return isAppLocale(decoded) ? decoded : null
+  } catch {
+    return isAppLocale(raw) ? raw : null
+  }
 }
 
 export interface MarketLanguagePreset {

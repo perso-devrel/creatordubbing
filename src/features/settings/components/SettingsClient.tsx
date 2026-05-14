@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Check, Globe, Globe2, Languages, Loader2, Save, Settings, Unlink, Video } from 'lucide-react'
+import { AlertTriangle, Check, Globe, Globe2, Languages, Loader2, Save, Settings, Trash2, Unlink, Video } from 'lucide-react'
 import { Card, CardTitle, Select, Button, Badge, Input, Modal } from '@/components/ui'
 import {
   APP_LOCALE_LABELS,
@@ -13,6 +13,7 @@ import {
   getMetadataTargetLanguageCodes,
   MARKET_LANGUAGE_PRESETS,
   normalizeMetadataTargetLanguages,
+  withLocalePath,
   type AppLocale,
 } from '@/lib/i18n/config'
 import { useI18nStore } from '@/stores/i18nStore'
@@ -23,7 +24,7 @@ import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useLocaleRouter } from '@/hooks/useLocalePath'
 import { useChannelStats } from '@/hooks/useYouTubeData'
 import { formatNumber } from '@/utils/formatters'
-import { signInWithGoogle } from '@/lib/google-auth'
+import { signInWithGoogle, signOut as clearStoredGoogleUser } from '@/lib/google-auth'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
 import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
@@ -349,6 +350,8 @@ export function SettingsClient() {
         </div>
       )}
 
+      <AccountDangerZone />
+
       <Modal
         open={languageModalOpen}
         onClose={() => setLanguageModalOpen(false)}
@@ -432,6 +435,107 @@ export function SettingsClient() {
         </div>
       </Modal>
     </div>
+  )
+}
+
+const ACCOUNT_DELETE_CONFIRMATION = 'DELETE'
+
+function AccountDangerZone() {
+  const t = useLocaleText()
+  const appLocale = useAppLocale()
+  const queryClient = useQueryClient()
+  const clearAuth = useAuthStore((s) => s.clear)
+  const addToast = useNotificationStore((state) => state.addToast)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [confirmation, setConfirmation] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const confirmationMatches = confirmation.trim() === ACCOUNT_DELETE_CONFIRMATION
+
+  const closeDeleteModal = () => {
+    if (deleting) return
+    setDeleteModalOpen(false)
+    setConfirmation('')
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!confirmationMatches) return
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/user/account', { method: 'DELETE' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null) as { error?: { message?: string } } | null
+        throw new Error(body?.error?.message || t('settings.accountDeletion.failedMessage'))
+      }
+      clearStoredGoogleUser()
+      clearAuth()
+      queryClient.clear()
+      window.location.replace(withLocalePath('/', appLocale))
+    } catch (error) {
+      addToast({
+        type: 'error',
+        title: t('settings.accountDeletion.failed'),
+        message: error instanceof Error ? error.message : t('settings.accountDeletion.failedMessage'),
+      })
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      <Card className="border-red-200 dark:border-red-900/70">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <CardTitle>{t('settings.dangerZone.title')}</CardTitle>
+              <p className="mt-1 text-sm leading-6 text-surface-600 dark:text-surface-300 xl:whitespace-nowrap">
+                {t('settings.dangerZone.description')}
+              </p>
+            </div>
+          </div>
+          <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)} className="w-full sm:w-auto">
+            <Trash2 className="h-4 w-4" />
+            {t('settings.accountDeletion.button')}
+          </Button>
+        </div>
+      </Card>
+
+      <Modal
+        open={deleteModalOpen}
+        onClose={closeDeleteModal}
+        title={t('settings.accountDeletion.modalTitle')}
+      >
+        <div className="space-y-5">
+          <p className="text-sm leading-6 text-surface-700 dark:text-surface-300">
+            {t('settings.accountDeletion.modalDescription')}
+          </p>
+          <Input
+            label={t('settings.accountDeletion.confirmLabel', { confirmation: ACCOUNT_DELETE_CONFIRMATION })}
+            value={confirmation}
+            onChange={(event) => setConfirmation(event.target.value)}
+            placeholder={ACCOUNT_DELETE_CONFIRMATION}
+            autoComplete="off"
+          />
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="outline" onClick={closeDeleteModal} disabled={deleting}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              loading={deleting}
+              disabled={!confirmationMatches}
+            >
+              <Trash2 className="h-4 w-4" />
+              {t('settings.accountDeletion.confirmButton')}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
   )
 }
 

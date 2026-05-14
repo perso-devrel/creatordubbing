@@ -6,7 +6,17 @@ import { useEffect, useRef, useState } from 'react'
 import { completeGoogleSignIn } from '@/lib/google-auth'
 import { useAuthStore } from '@/stores/authStore'
 import { useNotificationStore } from '@/stores/notificationStore'
-import { useLocaleText } from '@/hooks/useLocaleText'
+import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
+import {
+  DEFAULT_APP_LOCALE,
+  getLocaleFromCookieString,
+  getPathLocale,
+  isSafeLocalPath,
+  stripLocalePrefix,
+  withLocalePath,
+  withSafeLocalePath,
+  type AppLocale,
+} from '@/lib/i18n/config'
 
 async function hasConnectedYouTubeChannel(): Promise<boolean> {
   try {
@@ -18,8 +28,24 @@ async function hasConnectedYouTubeChannel(): Promise<boolean> {
   }
 }
 
+function getRedirectLocale(returnTo: string, fallback: AppLocale): AppLocale {
+  return getPathLocale(returnTo) ??
+    getPathLocale(window.location.pathname) ??
+    getLocaleFromCookieString(document.cookie) ??
+    fallback ??
+    DEFAULT_APP_LOCALE
+}
+
+function isLandingPath(path: string): boolean {
+  if (!isSafeLocalPath(path)) return false
+  const [pathWithoutHash] = path.split('#')
+  const [pathname] = pathWithoutHash.split('?')
+  return stripLocalePrefix(pathname || '/') === '/'
+}
+
 export default function AuthCallbackPage() {
   const t = useLocaleText()
+  const appLocale = useAppLocale()
   const addToast = useNotificationStore((s) => s.addToast)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const finishedRef = useRef(false)
@@ -36,10 +62,11 @@ export default function AuthCallbackPage() {
         if (cancelled) return
 
         useAuthStore.getState().setUser(user)
+        const redirectLocale = getRedirectLocale(returnTo, appLocale)
 
         // YouTube reconnect flow: just go back wherever the user came from.
         if (scopeMode === 'youtube-write' || scopeMode === 'youtube-readonly') {
-          window.location.replace(returnTo)
+          window.location.replace(withSafeLocalePath(returnTo, redirectLocale, '/settings?section=youtube'))
           return
         }
 
@@ -53,12 +80,12 @@ export default function AuthCallbackPage() {
             title: t('components.layout.landingNavBar.connectYouTubeChannel'),
             message: t('components.layout.landingNavBar.connectYouTubeChannelInSettings'),
           })
-          window.location.replace('/settings?section=youtube')
+          window.location.replace(withLocalePath('/settings?section=youtube', redirectLocale))
           return
         }
 
-        const isLandingReturn = returnTo === '/' || returnTo === '' || returnTo.startsWith('/?')
-        window.location.replace(isLandingReturn ? '/dashboard' : returnTo)
+        const normalizedReturnTo = withSafeLocalePath(returnTo, redirectLocale, '/dashboard')
+        window.location.replace(isLandingPath(normalizedReturnTo) ? withLocalePath('/dashboard', redirectLocale) : normalizedReturnTo)
       } catch (err) {
         if (cancelled) return
         const message = err instanceof Error ? err.message : t('components.layout.landingNavBar.pleaseTryAgainShortlyContactUsIfThe')
@@ -69,7 +96,7 @@ export default function AuthCallbackPage() {
           message,
         })
         window.setTimeout(() => {
-          if (!cancelled) window.location.replace('/')
+          if (!cancelled) window.location.replace(withLocalePath('/', appLocale))
         }, 2000)
       }
     })()
@@ -77,7 +104,7 @@ export default function AuthCallbackPage() {
     return () => {
       cancelled = true
     }
-  }, [addToast, t])
+  }, [addToast, appLocale, t])
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-surface-50 px-6 text-center text-sm text-surface-600 dark:bg-surface-950 dark:text-surface-300">

@@ -4,12 +4,15 @@ import {
   CUSTOM_METADATA_TARGET_PRESET,
   DEFAULT_APP_LOCALE,
   DEFAULT_METADATA_TARGET_PRESET,
+  getLocaleFromCookieString,
   getMetadataTargetLanguageCodes,
   getMarketLanguagePreset,
   isAppLocale,
+  isSafeLocalPath,
   MARKET_LANGUAGE_PRESETS,
   normalizeMetadataTargetLanguages,
   resolveAppLocale,
+  withSafeLocalePath,
 } from './config'
 
 describe('i18n config', () => {
@@ -25,6 +28,26 @@ describe('i18n config', () => {
     expect(resolveAppLocale('en')).toBe('en')
     expect(resolveAppLocale('fr')).toBe('ko')
     expect(resolveAppLocale(null)).toBe('ko')
+  })
+
+  it('normalizes local paths with a locale prefix', () => {
+    expect(withSafeLocalePath('/dashboard', 'en')).toBe('/en/dashboard')
+    expect(withSafeLocalePath('/ko/settings?section=youtube#top', 'en')).toBe('/en/settings?section=youtube#top')
+    expect(withSafeLocalePath('https://example.com', 'ko', '/dashboard')).toBe('/ko/dashboard')
+    expect(withSafeLocalePath('https://example.com', 'ko', 'https://fallback.example.com')).toBe('/ko')
+  })
+
+  it('only treats root-relative URLs as safe local paths', () => {
+    expect(isSafeLocalPath('/dashboard')).toBe(true)
+    expect(isSafeLocalPath('//example.com')).toBe(false)
+    expect(isSafeLocalPath('https://example.com')).toBe(false)
+    expect(isSafeLocalPath('dashboard')).toBe(false)
+  })
+
+  it('reads the app locale cookie from a cookie header string', () => {
+    expect(getLocaleFromCookieString('x=1; dubtube_locale=en; y=2')).toBe('en')
+    expect(getLocaleFromCookieString('dubtube_locale=ja')).toBeNull()
+    expect(getLocaleFromCookieString(null)).toBeNull()
   })
 
   it('defines metadata target presets for launch and international growth', () => {
