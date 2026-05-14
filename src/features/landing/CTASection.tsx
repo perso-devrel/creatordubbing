@@ -1,12 +1,13 @@
 'use client'
 
 import { ArrowRight } from 'lucide-react'
-import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { Button } from '@/components/ui'
 import { useLocaleText } from '@/hooks/useLocaleText'
+import { useLandingAuthRedirect } from './useLandingAuthRedirect'
 
 export function CTASection() {
   const t = useLocaleText()
+  const { authLoading, navigateWithAuth, signingIn } = useLandingAuthRedirect()
 
   return (
     <section className="py-24">
@@ -16,16 +17,21 @@ export function CTASection() {
             <h2 className="break-keep text-3xl font-extrabold text-white sm:text-4xl">
               {t('features.landing.cTASection.prepareYourNextVideoInMoreLanguages')}
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-surface-200">
+            <p className="mx-auto mt-4 max-w-4xl break-keep text-lg leading-8 text-surface-200 lg:whitespace-nowrap">
               {t('features.landing.cTASection.reviewTheDubbedResultsPrepareCaptionsTitlesAnd')}
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-              <LocaleLink href="/dashboard">
-                <Button size="lg" className="bg-white text-surface-950 shadow-sm hover:bg-surface-100">
-                  {t('features.landing.cTASection.startANewDub')}
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
-              </LocaleLink>
+              <Button
+                type="button"
+                size="lg"
+                className="bg-white text-surface-950 shadow-sm hover:bg-surface-100"
+                disabled={authLoading}
+                loading={signingIn}
+                onClick={() => void navigateWithAuth('/dashboard')}
+              >
+                {t('features.landing.cTASection.startANewDub')}
+                <ArrowRight className="h-5 w-5" />
+              </Button>
               <a href="#pricing">
                 <Button
                   variant="ghost"
