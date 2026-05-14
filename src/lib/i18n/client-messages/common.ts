@@ -200,6 +200,14 @@ export const commonMessages = {
     ko: '{languageName} 자막',
     en: '{languageName} captions',
   },
+  'features.landing.heroUrlInput.signInRequired': {
+    ko: '로그인이 필요합니다',
+    en: 'Sign-in required',
+  },
+  'features.landing.heroUrlInput.signInWithGoogleToContinue': {
+    ko: 'Google로 로그인하면 입력한 영상으로 더빙을 이어서 시작합니다.',
+    en: 'Sign in with Google to continue dubbing with the video you entered.',
+  },
   'features.landing.pricingSection.included1080pOutput': { ko: '1080p 출력', en: '1080p output' },
   'features.landing.pricingSection.includedLanguageCount': {
     ko: '{SUPPORTED_LANGUAGE_COUNT}개 언어 지원',
@@ -285,7 +293,39 @@ export const commonMessages = {
   'privacyStatus.private': { ko: '비공개', en: 'Private' },
   'privacyStatus.public': { ko: '공개', en: 'Public' },
   'privacyStatus.unlisted': { ko: '일부 공개', en: 'Unlisted' },
+  'settings.accountDeletion.button': {
+    ko: '회원탈퇴',
+    en: 'Delete account',
+  },
+  'settings.accountDeletion.confirmButton': {
+    ko: '회원탈퇴',
+    en: 'Withdraw account',
+  },
+  'settings.accountDeletion.confirmLabel': {
+    ko: '계속하려면 {confirmation}를 입력하세요',
+    en: 'Type {confirmation} to continue',
+  },
+  'settings.accountDeletion.failed': {
+    ko: '계정을 삭제하지 못했습니다',
+    en: 'Could not delete account',
+  },
+  'settings.accountDeletion.failedMessage': {
+    ko: '잠시 후 다시 시도해 주세요.',
+    en: 'Please try again shortly.',
+  },
+  'settings.accountDeletion.modalDescription': {
+    ko: '즉시 로그아웃되고 계정, YouTube 연결, 업로드 큐, 더빙 작업 기록이 모두 삭제됩니다. 1주일 내 다시 로그인하면 복구할 수 있습니다.',
+    en: 'You will be signed out immediately, and your account, YouTube connection, upload queue, and dubbing job history will be deleted. Sign in again within 7 days to restore them.',
+  },
+  'settings.accountDeletion.modalTitle': {
+    ko: '회원 탈퇴 안내',
+    en: 'Account withdrawal notice',
+  },
   'settings.appLocale': { ko: '앱 언어', en: 'App locale' },
+  'settings.dangerZone.title': {
+    ko: '회원탈퇴',
+    en: 'Account withdrawal',
+  },
   'settings.languageDefaults.description': {
     ko: '화면 언어와 테마, 제목·설명 기본 언어를 정합니다.',
     en: 'Set display language, theme, and default metadata language.',
@@ -293,14 +333,6 @@ export const commonMessages = {
   'settings.languageDefaults.title': {
     ko: '기본 설정',
     en: 'Preferences',
-  },
-  'settings.youtubeDefaults.description': {
-    ko: '새 작업에 적용할 공개 범위, 태그, 출시 언어를 정합니다. (실제 작업 시 수정 가능합니다.)',
-    en: 'Set the visibility, tags, and launch languages applied to new jobs. (You can change these per job.)',
-  },
-  'settings.youtubeDefaults.title': {
-    ko: 'YouTube 업로드 기본값',
-    en: 'YouTube upload defaults',
   },
   'settings.launchLanguages.allLanguages': {
     ko: '언어 직접 선택',
@@ -358,6 +390,14 @@ export const commonMessages = {
   'settings.themeMode.dark': { ko: '다크 모드', en: 'Dark mode' },
   'settings.themeMode.light': { ko: '라이트 모드', en: 'Light mode' },
   'settings.themeMode.system': { ko: '시스템 설정 사용', en: 'Use system setting' },
+  'settings.youtubeDefaults.description': {
+    ko: '새 작업에 적용할 공개 범위, 태그, 출시 언어를 정합니다. (실제 작업 시 수정 가능합니다.)',
+    en: 'Set the visibility, tags, and launch languages applied to new jobs. (You can change these per job.)',
+  },
+  'settings.youtubeDefaults.title': {
+    ko: 'YouTube 업로드 기본값',
+    en: 'YouTube upload defaults',
+  },
   'status.complete': { ko: '완료', en: 'Complete' },
   'status.failed': { ko: '실패', en: 'Failed' },
   'status.processing': { ko: '처리 중', en: 'Processing' },

@@ -96,6 +96,46 @@ const baseMessages = {
     ko: '설정 저장 실패',
     en: 'Could not save settings',
   },
+  'settings.dangerZone.title': {
+    ko: '회원탈퇴',
+    en: 'Account withdrawal',
+  },
+  'settings.accountDeletion.button': {
+    ko: '회원탈퇴',
+    en: 'Delete account',
+  },
+  'settings.accountDeletion.modalTitle': {
+    ko: '회원 탈퇴 안내',
+    en: 'Account withdrawal notice',
+  },
+  'settings.accountDeletion.modalDescription': {
+    ko: '즉시 로그아웃되고 계정, YouTube 연결, 업로드 큐, 더빙 작업 기록이 모두 삭제됩니다. 1주일 내 다시 로그인하면 복구할 수 있습니다.',
+    en: 'You will be signed out immediately, and your account, YouTube connection, upload queue, and dubbing job history will be deleted. Sign in again within 7 days to restore them.',
+  },
+  'settings.accountDeletion.confirmLabel': {
+    ko: '계속하려면 {confirmation}를 입력하세요',
+    en: 'Type {confirmation} to continue',
+  },
+  'settings.accountDeletion.confirmButton': {
+    ko: '회원탈퇴',
+    en: 'Withdraw account',
+  },
+  'settings.accountDeletion.failed': {
+    ko: '계정을 삭제하지 못했습니다',
+    en: 'Could not delete account',
+  },
+  'settings.accountDeletion.failedMessage': {
+    ko: '잠시 후 다시 시도해 주세요.',
+    en: 'Please try again shortly.',
+  },
+  'features.landing.heroUrlInput.signInRequired': {
+    ko: '로그인이 필요합니다',
+    en: 'Sign-in required',
+  },
+  'features.landing.heroUrlInput.signInWithGoogleToContinue': {
+    ko: 'Google로 로그인하면 입력한 영상으로 더빙을 이어서 시작합니다.',
+    en: 'Sign in with Google to continue dubbing with the video you entered.',
+  },
   'components.layout.sidebar.labelSettings': { ko: '설정', en: 'Settings' },
   'components.layout.sidebar.appNavigation': { ko: '앱 메뉴', en: 'App navigation' },
   'components.layout.topbar.subscriberCount': { ko: '구독자 {count}', en: '{count} subscribers' },

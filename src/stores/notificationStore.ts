@@ -22,12 +22,16 @@ interface NotificationState {
 let toastId = 0
 const timers = new Map<string, ReturnType<typeof setTimeout>>()
 
+function getDefaultDuration(type: ToastType) {
+  return type === 'success' ? 5000 : 7000
+}
+
 export const useNotificationStore = create<NotificationState>((set) => ({
   toasts: [],
   addToast: (toast) => {
     const id = `toast-${++toastId}`
     set((state) => ({ toasts: [...state.toasts, { ...toast, id }] }))
-    const duration = toast.duration ?? 4000
+    const duration = toast.duration ?? getDefaultDuration(toast.type)
     if (duration > 0) {
       timers.set(
         id,

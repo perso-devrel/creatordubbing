@@ -5,6 +5,8 @@ export {
   updateUserTokens,
   clearUserGoogleTokens,
   deductUserMinutes,
+  requestUserAccountDeletion,
+  purgeExpiredPendingDeletedAccounts,
   getUserPreferencesRaw,
   setUserPreferencesRaw,
 } from './users'

@@ -77,14 +77,17 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
   return (
     <>
       <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-surface-200 bg-white dark:border-surface-800 dark:bg-surface-900 lg:flex">
-        <div className="flex h-16 items-center gap-2.5 border-b border-surface-200 px-6 dark:border-surface-800">
+        <LocaleLink
+          href="/dashboard"
+          className="flex h-16 items-center gap-2.5 border-b border-surface-200 px-6 transition-colors hover:bg-surface-50 focus-ring dark:border-surface-800 dark:hover:bg-surface-850"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
           <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
             Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
           </span>
-        </div>
+        </LocaleLink>
 
         <nav className="flex-1 space-y-1 p-3">
           {visibleItems.map(renderNavItem)}
