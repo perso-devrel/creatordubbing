@@ -15,25 +15,16 @@ import {
   initializeQueue,
   submitTranslation,
   submitStt,
-  submitLongStt,
-  getLongSttCaptionStatus,
   generateSttCaptions,
   getProjectProgress,
   getDownloadLinks,
   getPersoFileUrl,
   cancelProject,
-  cancelLongStt,
 } from '@/lib/api-client'
 import type { DownloadTarget } from '@/lib/perso/types'
 import type { LanguageProgress } from '../types/dubbing.types'
 import { dbMutation, dbMutationStrict } from '@/lib/api/dbMutation'
 import { extractVideoId } from '@/utils/validators'
-import {
-  canUseSelectedOutputForVideo,
-  isOverSinglePersoJobLimit,
-  isLongVideoSttCaptionMode,
-  isLongVideoUploadCaptionOutput,
-} from '../utils/videoDurationLimits'
 
 const POLL_INTERVAL_MIN = 8_000   // 첫 폴링: 8초
 const POLL_INTERVAL_MAX = 30_000  // 최대 간격: 30초
@@ -88,11 +79,6 @@ function isSttCaptionMode() {
   return state.deliverableMode === 'originalWithMultiAudio' &&
     state.uploadSettings.uploadCaptions &&
     state.uploadSettings.captionGenerationMode === 'stt'
-}
-
-function isLongSttCaptionMode() {
-  const state = store.getState()
-  return isSttCaptionMode() && isOverSinglePersoJobLimit(state.videoMeta)
 }
 
 async function saveJobToDb(
@@ -387,16 +373,6 @@ async function cancelAllProjects(
   addToast: ReturnType<typeof useNotificationStore.getState>['addToast'],
   reason: string,
 ) {
-  if (isLongSttCaptionMode()) {
-    const dbJobId = store.getState().dbJobId
-    if (dbJobId) {
-      await cancelLongStt(dbJobId).catch(() => null)
-      store.getState().setJobStatus('failed')
-      addToast({ type: 'warning', title: reason })
-      return
-    }
-  }
-
   const { spaceSeq, projectMap, languageProgress } = store.getState()
   if (!spaceSeq) return
 
@@ -534,31 +510,12 @@ export function usePersoFlow() {
   }, [initSpace, addToast, t])
 
   const submitDubbing = useCallback(async () => {
-    const state = store.getState()
-    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, videoMeta } = state
+    const { spaceSeq, mediaSeq, selectedLanguages, lipSyncEnabled, videoMeta } = store.getState()
     if (!spaceSeq || !mediaSeq) {
       throw new Error(t('features.dubbing.hooks.usePersoFlow.missingVideoInformationPleaseStartAgain'))
     }
     const targetLanguages = Array.from(new Set(selectedLanguages))
     const sttCaptionMode = isSttCaptionMode()
-    const outputAllowedForDuration = canUseSelectedOutputForVideo({
-      videoMeta,
-      videoSource: state.videoSource,
-      deliverableMode: state.deliverableMode,
-    })
-    const longVideoModeReady = !isLongVideoUploadCaptionOutput({
-      videoMeta,
-      videoSource: state.videoSource,
-      deliverableMode: state.deliverableMode,
-    }) || isLongVideoSttCaptionMode({
-      videoMeta,
-      videoSource: state.videoSource,
-      deliverableMode: state.deliverableMode,
-      uploadSettings: state.uploadSettings,
-    })
-    if (!outputAllowedForDuration || !longVideoModeReady) {
-      throw new Error(t('features.dubbing.hooks.usePersoFlow.longVideoUnsupported'))
-    }
 
     addToast({
       type: 'info',
@@ -588,39 +545,35 @@ export function usePersoFlow() {
       await dbMutationStrict({ type: 'reserveJobCredits', payload: { jobId: dbJobId } })
 
       if (sttCaptionMode) {
-        const isLongStt = isOverSinglePersoJobLimit(videoMeta)
-        const projectSeq = isLongStt
-          ? (await submitLongStt(dbJobId)).segments?.[0]?.projectSeq
-          : (await submitStt(spaceSeq, {
-              mediaSeq,
-              isVideoProject: true,
-              title: videoMeta?.title?.trim() || `Dubtube STT project ${mediaSeq}`,
-            })).startGenerateProjectIdList?.[0]
-        if (!isLongStt && !projectSeq) {
+        const result = await submitStt(spaceSeq, {
+          mediaSeq,
+          isVideoProject: true,
+          title: videoMeta?.title?.trim() || `Dubtube STT project ${mediaSeq}`,
+        })
+        const projectSeq = result.startGenerateProjectIdList?.[0]
+        if (!projectSeq) {
           throw new Error(t('features.dubbing.hooks.usePersoFlow.failedToStartDubbing'))
         }
 
-        const projectMap = Object.fromEntries(targetLanguages.map((lang) => [lang, projectSeq ?? 0]))
+        const projectMap = Object.fromEntries(targetLanguages.map((lang) => [lang, projectSeq]))
         store.getState().setProjectMap(projectMap)
         const initialProgress: LanguageProgress[] = targetLanguages.map((code) => ({
           langCode: code,
-          projectSeq: projectSeq ?? 0,
+          projectSeq,
           status: 'transcribing',
           progress: 0,
-          progressReason: isLongStt ? 'STT_SEGMENT_PREPARING' : 'PENDING',
+          progressReason: 'PENDING',
         }))
         store.getState().setLanguageProgress(initialProgress)
         store.getState().setJobStatus('transcribing')
 
-        if (!isLongStt) {
-          await dbMutationStrict({
-            type: 'updateJobLanguageProjects',
-            payload: {
-              jobId: dbJobId,
-              languages: targetLanguages.map((code) => ({ code, projectSeq })),
-            },
-          })
-        }
+        await dbMutationStrict({
+          type: 'updateJobLanguageProjects',
+          payload: {
+            jobId: dbJobId,
+            languages: targetLanguages.map((code) => ({ code, projectSeq })),
+          },
+        })
 
         addToast({
           type: 'success',
@@ -725,52 +678,6 @@ export function usePersoFlow() {
           scheduleStt(projectSeq, interval)
         }
       }, interval)
-    }
-
-    function scheduleLongStt(jobId: number, interval: number) {
-      pollTimers.current.longStt = setTimeout(async () => {
-        try {
-          const result = await getLongSttCaptionStatus(jobId)
-          for (const item of result.languages) {
-            store.getState().updateLanguageProgress(item.langCode, {
-              status: item.status === 'completed'
-                ? 'completed'
-                : item.status === 'failed'
-                  ? 'failed'
-                  : result.status === 'translating'
-                    ? 'translating'
-                    : 'transcribing',
-              progress: item.progress,
-              progressReason: item.progressReason,
-              srtUrl: item.srtUrl,
-            })
-          }
-
-          if (result.status === 'completed' || result.status === 'failed') {
-            clearTimeout(pollTimers.current.longStt)
-            delete pollTimers.current.longStt
-            store.getState().setJobStatus(result.status)
-            addToast({
-              type: result.status === 'failed' ? 'warning' : 'success',
-              title: result.status === 'failed'
-                ? t('features.dubbing.hooks.usePersoFlow.captionGenerationFinishedWithSomeErrors')
-                : t('features.dubbing.hooks.usePersoFlow.captionGenerationComplete'),
-            })
-            return
-          }
-
-          const next = Math.min(interval * POLL_BACKOFF, POLL_INTERVAL_MAX)
-          scheduleLongStt(jobId, next)
-        } catch {
-          scheduleLongStt(jobId, interval)
-        }
-      }, interval)
-    }
-
-    if (isLongSttCaptionMode()) {
-      const jobId = store.getState().dbJobId
-      if (jobId) scheduleLongStt(jobId, POLL_INTERVAL_MIN)
-      return
     }
 
     if (isSttCaptionMode()) {

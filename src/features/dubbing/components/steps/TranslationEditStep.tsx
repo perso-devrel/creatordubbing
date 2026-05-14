@@ -10,11 +10,6 @@ import { getLanguageByCode } from '@/utils/languages'
 import { useAuthStore } from '@/stores/authStore'
 import { useChannelStats } from '@/hooks/useYouTubeData'
 import { useDubbingStore } from '../../store/dubbingStore'
-import {
-  canUseSelectedOutputForVideo,
-  isLongVideoSttCaptionMode,
-  isLongVideoUploadCaptionOutput,
-} from '../../utils/videoDurationLimits'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
 const PRIVACY_LABELS: Record<PrivacyStatus, string> = {
@@ -26,7 +21,6 @@ const PRIVACY_LABELS: Record<PrivacyStatus, string> = {
 export function TranslationEditStep() {
   const {
     selectedLanguages,
-    videoMeta,
     videoSource,
     deliverableMode,
     uploadSettings,
@@ -45,27 +39,9 @@ export function TranslationEditStep() {
   const needsYouTubeConnection = deliverableMode !== 'downloadOnly'
   const checkingYouTubeConnection = needsYouTubeConnection && (authLoading || channelLoading)
   const youtubeConnectionMissing = !checkingYouTubeConnection && needsYouTubeConnection && !channel
-  const outputAllowedForDuration = canUseSelectedOutputForVideo({
-    videoMeta,
-    videoSource,
-    deliverableMode,
-  })
-  const requiresLongVideoCaptionMode = isLongVideoUploadCaptionOutput({
-    videoMeta,
-    videoSource,
-    deliverableMode,
-  })
-  const longVideoModeReady = !requiresLongVideoCaptionMode || isLongVideoSttCaptionMode({
-    videoMeta,
-    videoSource,
-    deliverableMode,
-    uploadSettings,
-  })
-  const longVideoBlocked = !outputAllowedForDuration || !longVideoModeReady
   const canStart =
     !checkingYouTubeConnection &&
     !youtubeConnectionMissing &&
-    !longVideoBlocked &&
     (!needsAutoUploadReview || uploadSettings.uploadReviewConfirmed)
   const privacyLabel = t(PRIVACY_LABELS[uploadSettings.privacyStatus] ?? uploadSettings.privacyStatus)
   const targetChannelLabel = channel
@@ -126,22 +102,6 @@ export function TranslationEditStep() {
             <Button variant="outline" size="sm" onClick={() => router.push('/settings?section=youtube')}>
               {t('features.dubbing.components.steps.outputModeStep.connectInSettings')}
             </Button>
-          </div>
-        )}
-
-        {longVideoBlocked && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/70 dark:bg-amber-950/20">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-            <div>
-              <p className="text-sm font-medium text-amber-900 dark:text-amber-300">
-                {t('features.dubbing.components.steps.outputModeStep.longVideoNoticeTitle')}
-              </p>
-              <p className="mt-1 text-xs leading-5 text-amber-700 dark:text-amber-400">
-                {outputAllowedForDuration
-                  ? t('features.dubbing.components.steps.uploadSettingsStep.longVideoCaptionModeDescription')
-                  : t('features.dubbing.components.steps.outputModeStep.longVideoUploadRequiredNotice')}
-              </p>
-            </div>
           </div>
         )}
 

@@ -77,10 +77,6 @@ export const generateSttCaptionsBodySchema = z.object({
   sourceLanguageCode: trimmedNonEmptyString.optional(),
 })
 
-export const startLongSttBodySchema = z.object({
-  jobId: z.number().int().positive(),
-})
-
 export const scriptPatchBodySchema = z.object({
   translatedText: z.string().min(1),
 })

@@ -6,8 +6,6 @@ import type { SrtCue } from '@/utils/srt'
 
 // 모델 ID는 AI Studio / Vertex 양쪽에서 동일하게 'gemini-2.5-flash' 사용.
 const MODEL_ID = 'gemini-2.5-flash'
-const GEMINI_TIMEOUT_MS = 120_000
-const GEMINI_RETRY_DELAYS_MS = [750, 2_000]
 
 // =============================================================================
 // [A] AI Studio (generativelanguage API) 경로 — 4주 Vertex 무료 크레딧 소진 후 재활성화 예정
@@ -98,84 +96,41 @@ function getVertexEndpoint(): string {
 }
 
 async function callGemini(prompt: string): Promise<string> {
-  let lastError: unknown
-  for (let attempt = 0; attempt <= GEMINI_RETRY_DELAYS_MS.length; attempt += 1) {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS)
-    try {
-      const auth = getVertexAuth()
-      const client = await auth.getClient()
-      const tokenInfo = await client.getAccessToken()
-      if (!tokenInfo.token) {
-        throw new TranslateError('VERTEX_NO_TOKEN', 'Failed to obtain Vertex access token')
-      }
-
-      const res = await fetch(getVertexEndpoint(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${tokenInfo.token}`,
-        },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
-        }),
-        signal: controller.signal,
-      })
-
-      if (!res.ok) {
-        const body = await res.text().catch(() => '')
-        const error = new TranslateError(
-          'VERTEX_REQUEST_FAILED',
-          `Vertex ${res.status}: ${body.slice(0, 500)}`,
-        )
-        if (attempt < GEMINI_RETRY_DELAYS_MS.length && isRetryableGeminiStatus(res.status)) {
-          lastError = error
-          await sleep(GEMINI_RETRY_DELAYS_MS[attempt])
-          continue
-        }
-        throw error
-      }
-
-      const data = (await res.json()) as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
-      }
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-      if (!text) {
-        throw new TranslateError('VERTEX_EMPTY_RESPONSE', 'Vertex returned no text')
-      }
-      return text
-    } catch (err) {
-      lastError = err
-      if (attempt >= GEMINI_RETRY_DELAYS_MS.length || !isRetryableGeminiError(err)) {
-        break
-      }
-      await sleep(GEMINI_RETRY_DELAYS_MS[attempt])
-    } finally {
-      clearTimeout(timeout)
-    }
+  const auth = getVertexAuth()
+  const client = await auth.getClient()
+  const tokenInfo = await client.getAccessToken()
+  if (!tokenInfo.token) {
+    throw new TranslateError('VERTEX_NO_TOKEN', 'Failed to obtain Vertex access token')
   }
 
-  if (lastError instanceof Error && lastError.name === 'AbortError') {
-    throw new TranslateError('VERTEX_TIMEOUT', `Vertex timed out after ${GEMINI_TIMEOUT_MS}ms`)
+  const res = await fetch(getVertexEndpoint(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${tokenInfo.token}`,
+    },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+    }),
+  })
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new TranslateError(
+      'VERTEX_REQUEST_FAILED',
+      `Vertex ${res.status}: ${body.slice(0, 500)}`,
+    )
   }
-  if (lastError instanceof Error) throw lastError
-  throw new TranslateError('VERTEX_REQUEST_FAILED', 'Vertex request failed')
-}
 
-function isRetryableGeminiStatus(status: number) {
-  return status === 408 || status === 409 || status === 429 || status >= 500
-}
-
-function isRetryableGeminiError(err: unknown) {
-  if (err instanceof TranslateError) {
-    return err.code === 'VERTEX_REQUEST_FAILED' || err.code === 'VERTEX_EMPTY_RESPONSE'
+  const data = (await res.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>
   }
-  return err instanceof Error && err.name === 'AbortError'
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!text) {
+    throw new TranslateError('VERTEX_EMPTY_RESPONSE', 'Vertex returned no text')
+  }
+  return text
 }
 
 // =============================================================================
@@ -307,15 +262,6 @@ export interface TranslateTimedSubtitlesInput {
 
 const SUBTITLE_CHUNK_SEGMENT_LIMIT = 180
 const SUBTITLE_CHUNK_DURATION_MS = 5 * 60 * 1000
-const SUBTITLE_CONTEXT_SEGMENT_COUNT = 12
-
-interface TimedSubtitleChunk {
-  index: number
-  total: number
-  segments: TimedTranscriptSegment[]
-  contextBefore: string
-  contextAfter: string
-}
 
 export async function translateTimedSubtitles(input: TranslateTimedSubtitlesInput): Promise<SrtCue[]> {
   const chunks = chunkTimedSegments(input.segments)
@@ -324,19 +270,18 @@ export async function translateTimedSubtitles(input: TranslateTimedSubtitlesInpu
   for (const chunk of chunks) {
     const translated = await translateTimedSubtitleChunk({
       ...input,
-      segments: chunk.segments,
-      chunk,
+      segments: chunk,
     })
     cues.push(...translated)
   }
 
-  return normalizeSubtitleTimeline(cues
+  return cues
     .filter((cue) => cue.text.trim().length > 0 && cue.endMs > cue.startMs)
-    .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs))
+    .sort((a, b) => a.startMs - b.startMs || a.endMs - b.endMs)
 }
 
-function chunkTimedSegments(segments: TimedTranscriptSegment[]): TimedSubtitleChunk[] {
-  const rawChunks: TimedTranscriptSegment[][] = []
+function chunkTimedSegments(segments: TimedTranscriptSegment[]): TimedTranscriptSegment[][] {
+  const chunks: TimedTranscriptSegment[][] = []
   let current: TimedTranscriptSegment[] = []
   let chunkStart = 0
 
@@ -348,7 +293,7 @@ function chunkTimedSegments(segments: TimedTranscriptSegment[]): TimedSubtitleCh
     const wouldExceedCount = current.length >= SUBTITLE_CHUNK_SEGMENT_LIMIT
     const wouldExceedDuration = segment.endMs - chunkStart > SUBTITLE_CHUNK_DURATION_MS
     if (current.length > 0 && (wouldExceedCount || wouldExceedDuration)) {
-      rawChunks.push(current)
+      chunks.push(current)
       current = []
       chunkStart = segment.startMs
     }
@@ -356,50 +301,22 @@ function chunkTimedSegments(segments: TimedTranscriptSegment[]): TimedSubtitleCh
     current.push(segment)
   }
 
-  if (current.length > 0) rawChunks.push(current)
-  return rawChunks.map((chunk, index) => ({
-    index,
-    total: rawChunks.length,
-    segments: chunk,
-    contextBefore: summarizeContext(rawChunks[index - 1]?.slice(-SUBTITLE_CONTEXT_SEGMENT_COUNT) ?? []),
-    contextAfter: summarizeContext(rawChunks[index + 1]?.slice(0, SUBTITLE_CONTEXT_SEGMENT_COUNT) ?? []),
-  }))
+  if (current.length > 0) chunks.push(current)
+  return chunks
 }
 
-function summarizeContext(segments: TimedTranscriptSegment[]) {
-  return segments
-    .map((segment) => segment.text.trim())
-    .filter(Boolean)
-    .join(' ')
-    .slice(0, 1200)
-}
+async function translateTimedSubtitleChunk(input: TranslateTimedSubtitlesInput): Promise<SrtCue[]> {
+  const prompt = buildTimedSubtitlePrompt(input)
+  const text = await callGemini(prompt)
+  const parsed = parseGeminiJson(text)
+  const rawCues = Array.isArray(parsed)
+    ? parsed
+    : parsed && typeof parsed === 'object' && Array.isArray((parsed as { cues?: unknown }).cues)
+      ? (parsed as { cues: unknown[] }).cues
+      : null
 
-async function translateTimedSubtitleChunk(input: TranslateTimedSubtitlesInput & { chunk: TimedSubtitleChunk }): Promise<SrtCue[]> {
-  let parsed: unknown = null
-  let rawCues: unknown[] | null = null
-  let lastError: unknown
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      const text = await callGemini(buildTimedSubtitlePrompt(input, attempt))
-      parsed = parseGeminiJson(text)
-      rawCues = extractRawCues(parsed)
-      if (!rawCues) {
-        throw new TranslateError('GEMINI_INVALID_SUBTITLE_SHAPE', 'Timed subtitle response must contain a cues array')
-      }
-      break
-    } catch (err) {
-      lastError = err
-      if (attempt === 2) throw err
-    }
-  }
-  if (parsed === null) {
-    throw lastError instanceof Error ? lastError : new TranslateError('GEMINI_INVALID_JSON', 'Could not parse subtitle JSON')
-  }
   if (!rawCues) {
-    throw lastError instanceof Error ? lastError : new TranslateError(
-      'GEMINI_INVALID_SUBTITLE_SHAPE',
-      'Timed subtitle response must contain a cues array',
-    )
+    throw new TranslateError('GEMINI_INVALID_SUBTITLE_SHAPE', 'Timed subtitle response must contain a cues array')
   }
 
   const chunkStart = Math.min(...input.segments.map((segment) => segment.startMs))
@@ -424,14 +341,6 @@ async function translateTimedSubtitleChunk(input: TranslateTimedSubtitlesInput &
   }
 
   return cues
-}
-
-function extractRawCues(parsed: unknown): unknown[] | null {
-  if (Array.isArray(parsed)) return parsed
-  if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { cues?: unknown }).cues)) {
-    return (parsed as { cues: unknown[] }).cues
-  }
-  return null
 }
 
 function parseGeminiJson(text: string): unknown {
@@ -464,42 +373,11 @@ function normalizeCaptionText(text: string): string {
     .join('\n')
 }
 
-function normalizeSubtitleTimeline(cues: SrtCue[]): SrtCue[] {
-  const normalized: SrtCue[] = []
-  const minDurationMs = 250
-  const minGapMs = 80
-
-  for (const cue of cues) {
-    const previous = normalized[normalized.length - 1]
-    let startMs = cue.startMs
-    const endMs = cue.endMs
-
-    if (previous && startMs < previous.endMs + minGapMs) {
-      const shiftedStart = previous.endMs + minGapMs
-      if (endMs - shiftedStart >= minDurationMs) {
-        startMs = shiftedStart
-      } else if (startMs - previous.startMs >= minDurationMs + minGapMs) {
-        previous.endMs = Math.max(previous.startMs + minDurationMs, startMs - minGapMs)
-      } else {
-        startMs = previous.endMs
-      }
-    }
-
-    if (endMs - startMs < minDurationMs) continue
-    normalized.push({ ...cue, startMs, endMs })
-  }
-
-  return normalized
-}
-
-function buildTimedSubtitlePrompt(input: TranslateTimedSubtitlesInput & { chunk: TimedSubtitleChunk }, attempt = 0): string {
+function buildTimedSubtitlePrompt(input: TranslateTimedSubtitlesInput): string {
   const sourceHint =
     input.sourceLanguageCode === 'auto'
       ? 'Detect the source language from the text.'
       : `The source language is "${input.sourceLanguageCode}".`
-  const retryInstruction = attempt > 0
-    ? 'Previous output was invalid. Return valid JSON only, with no markdown and no missing "cues" key.'
-    : ''
 
   return [
     'You are a senior subtitle localizer for YouTube videos.',
@@ -510,19 +388,10 @@ function buildTimedSubtitlePrompt(input: TranslateTimedSubtitlesInput & { chunk:
     'Keep every cue inside the timing range of the provided source segments. Do not invent timestamps outside the input.',
     'Respect speech timing: each cue must appear while that speech is happening. Avoid text that is too long for the visible duration.',
     'Use one or two short lines per cue. Prefer concise phrasing suitable for YouTube captions.',
-    `This is chunk ${input.chunk.index + 1} of ${input.chunk.total} from one merged transcript. Keep terminology consistent with the surrounding context.`,
-    'Use CONTEXT_BEFORE and CONTEXT_AFTER only for continuity. Do not output captions for context text.',
     'Output strict JSON only with this shape: {"cues":[{"startMs":0,"endMs":1200,"text":"..."}]}',
     'Do not include markdown, comments, SRT numbering, or explanations.',
-    retryInstruction,
-    '',
-    'CONTEXT_BEFORE:',
-    input.chunk.contextBefore || '(none)',
-    '',
-    'CONTEXT_AFTER:',
-    input.chunk.contextAfter || '(none)',
     '',
     'SOURCE_SEGMENTS:',
     JSON.stringify(input.segments),
-  ].filter((line) => line !== '').join('\n')
+  ].join('\n')
 }

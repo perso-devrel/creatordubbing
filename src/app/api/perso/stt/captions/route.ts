@@ -3,11 +3,12 @@ import { requireSession } from '@/lib/auth/session'
 import { getDb } from '@/lib/db/client'
 import { getGeneratedCaption, upsertGeneratedCaption } from '@/lib/db/queries/generated-captions'
 import { updateJobLanguageCompleted, updateJobLanguageProgress } from '@/lib/db/queries/jobs'
+import { persoFetch } from '@/lib/perso/client'
 import { PersoError } from '@/lib/perso/errors'
 import { fail, handle, parseBody, requireIntParam, requireStringParam } from '@/lib/perso/route-helpers'
-import { fetchAllSttScript, mapSttSegments } from '@/lib/perso/stt-script'
 import { generateSttCaptionsBodySchema } from '@/lib/validators/perso'
-import { translateTimedSubtitles } from '@/lib/translate/gemini'
+import type { SttScriptResponse, SttScriptSentence } from '@/lib/perso/types'
+import { translateTimedSubtitles, type TimedTranscriptSegment } from '@/lib/translate/gemini'
 import { buildSRT } from '@/utils/srt'
 
 export const runtime = 'nodejs'
@@ -46,6 +47,50 @@ async function assertLanguagesBelongToJob(jobId: number, languageCodes: string[]
       invalid,
     })
   }
+}
+
+async function fetchAllSttScript(projectSeq: number, spaceSeq: number): Promise<SttScriptSentence[]> {
+  const sentences: SttScriptSentence[] = []
+  let cursorId: number | null | undefined
+
+  for (let page = 0; page < 100; page += 1) {
+    const data = await persoFetch<SttScriptResponse>(
+      `/video-translator/api/v1/projects/${projectSeq}/spaces/${spaceSeq}/stt/script`,
+      {
+        baseURL: 'api',
+        query: {
+          size: 10000,
+          cursorId,
+        },
+      },
+    )
+
+    if (Array.isArray(data.sentences)) {
+      sentences.push(...data.sentences)
+    }
+
+    if (!data.hasNext || data.nextCursorId == null) break
+    cursorId = data.nextCursorId
+  }
+
+  return sentences
+}
+
+function mapSttSegments(sentences: SttScriptSentence[]): TimedTranscriptSegment[] {
+  return sentences
+    .map((sentence, index) => {
+      const startMs = Number(sentence.offsetMs ?? 0)
+      const durationMs = Number(sentence.durationMs ?? 0)
+      const endMs = startMs + durationMs
+      return {
+        id: Number(sentence.seq ?? index + 1),
+        startMs,
+        endMs,
+        text: String(sentence.originalText || sentence.originalDraftText || '').trim(),
+        speakerLabel: sentence.speakerOrderIndex ? `Speaker ${sentence.speakerOrderIndex}` : undefined,
+      }
+    })
+    .filter((segment) => segment.text.length > 0 && segment.endMs > segment.startMs)
 }
 
 function captionUrl(jobId: number, langCode: string) {

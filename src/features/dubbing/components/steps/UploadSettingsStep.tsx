@@ -1,17 +1,13 @@
 'use client'
 
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { AlertTriangle, ArrowLeft, ArrowRight, Captions, Languages, Link2, ShieldCheck, Sparkles, Upload } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Captions, Languages, Link2, ShieldCheck, Sparkles, Upload } from 'lucide-react'
 import { Button, Card, CardTitle, Input, Select } from '@/components/ui'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { extractVideoId } from '@/utils/validators'
 import { SUPPORTED_LANGUAGES } from '@/utils/languages'
 import { useDubbingStore } from '../../store/dubbingStore'
 import { getAiDisclosureText, stripAiDisclosureFooter } from '../../utils/aiDisclosure'
-import {
-  canUseSelectedOutputForVideo,
-  isLongVideoUploadCaptionOutput,
-} from '../../utils/videoDurationLimits'
 import type { PrivacyStatus } from '../../types/dubbing.types'
 
 export function UploadSettingsStep() {
@@ -55,16 +51,6 @@ export function UploadSettingsStep() {
     : null
   const aiDisclosureText = getAiDisclosureText(uploadSettings.metadataLanguage)
   const isMultiAudio = deliverableMode === 'originalWithMultiAudio'
-  const requiresLongVideoCaptionMode = isLongVideoUploadCaptionOutput({
-    videoMeta,
-    videoSource,
-    deliverableMode,
-  })
-  const outputAllowedForDuration = canUseSelectedOutputForVideo({
-    videoMeta,
-    videoSource,
-    deliverableMode,
-  })
 
   useEffect(() => {
     const strippedDescription = stripAiDisclosureFooter(uploadSettings.description)
@@ -80,24 +66,10 @@ export function UploadSettingsStep() {
   }, [deliverableMode, uploadSettings.autoUpload, uploadSettings.uploadCaptions, setUploadSettings])
 
   useEffect(() => {
-    if (requiresLongVideoCaptionMode) return
     if ((!isMultiAudio || !uploadSettings.uploadCaptions) && uploadSettings.captionGenerationMode !== 'dubbing') {
       setUploadSettings({ captionGenerationMode: 'dubbing' })
     }
-  }, [isMultiAudio, requiresLongVideoCaptionMode, uploadSettings.captionGenerationMode, uploadSettings.uploadCaptions, setUploadSettings])
-
-  useEffect(() => {
-    if (!requiresLongVideoCaptionMode) return
-    const patch: Partial<typeof uploadSettings> = {}
-    if (!uploadSettings.uploadCaptions) patch.uploadCaptions = true
-    if (uploadSettings.captionGenerationMode !== 'stt') patch.captionGenerationMode = 'stt'
-    if (Object.keys(patch).length > 0) setUploadSettings(patch)
-  }, [
-    requiresLongVideoCaptionMode,
-    uploadSettings.captionGenerationMode,
-    uploadSettings.uploadCaptions,
-    setUploadSettings,
-  ])
+  }, [isMultiAudio, uploadSettings.captionGenerationMode, uploadSettings.uploadCaptions, setUploadSettings])
 
   // 영상 정보로 제목/설명을 초기 1회 채워준다. 사용자가 빈 값으로 지웠을 때
   // 다시 채워 넣지 않도록 videoMeta.id 단위로 한 번만 실행. (deps에 입력값을
@@ -139,14 +111,10 @@ export function UploadSettingsStep() {
     deliverableMode === 'newDubbedVideos' ||
     (isMultiAudio && videoSource?.type === 'upload')
   const shouldShowAiDisclosure = deliverableMode === 'newDubbedVideos'
-  const longVideoSettingsReady = !requiresLongVideoCaptionMode ||
-    (uploadSettings.uploadCaptions && uploadSettings.captionGenerationMode === 'stt')
   const canContinue =
-    outputAllowedForDuration &&
-    longVideoSettingsReady &&
-    (deliverableMode === 'originalWithMultiAudio'
+    deliverableMode === 'originalWithMultiAudio'
       ? true
-      : uploadSettings.title.trim().length > 0)
+      : uploadSettings.title.trim().length > 0
   const handleSyntheticMediaToggle = () => {
     setUploadSettings({
       containsSyntheticMedia: !uploadSettings.containsSyntheticMedia,
@@ -159,15 +127,8 @@ export function UploadSettingsStep() {
       ? { autoUpload: true, uploadCaptions: true }
       : { autoUpload: false, uploadCaptions: false })
   }
-  const captionUploadRequiresAuto =
+  const captionUploadDisabled =
     deliverableMode === 'newDubbedVideos' && !uploadSettings.autoUpload
-  const captionUploadLocked = requiresLongVideoCaptionMode
-  const captionUploadDisabled = captionUploadRequiresAuto || captionUploadLocked
-  const captionUploadActive = captionUploadLocked
-    ? true
-    : captionUploadRequiresAuto
-      ? false
-      : uploadSettings.uploadCaptions
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -179,20 +140,6 @@ export function UploadSettingsStep() {
             : t('features.dubbing.components.steps.uploadSettingsStep.chooseHowTheFinishedDubbingShouldBeUploaded')}
         </p>
       </div>
-
-      {requiresLongVideoCaptionMode && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/10">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-amber-900 dark:text-amber-300">
-              {t('features.dubbing.components.steps.uploadSettingsStep.longVideoCaptionModeTitle')}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-amber-700 dark:text-amber-400">
-              {t('features.dubbing.components.steps.uploadSettingsStep.longVideoCaptionModeDescription')}
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Title/Desc/Tags — for new dubbed video uploads */}
       {deliverableMode === 'newDubbedVideos' && (
@@ -339,24 +286,21 @@ export function UploadSettingsStep() {
               description={isMultiAudio
                 ? t('features.dubbing.components.steps.uploadSettingsStep.uploadTranslatedCaptionsForEachCompletedLanguageTo')
                 : t('features.dubbing.components.steps.uploadSettingsStep.uploadMatchingCaptionsWithEachSelectedLanguageVideo')}
-              active={captionUploadActive}
+              active={captionUploadDisabled ? false : uploadSettings.uploadCaptions}
               activeLabel={t('features.dubbing.components.steps.uploadSettingsStep.on2')}
               inactiveLabel={t('features.dubbing.components.steps.uploadSettingsStep.off2')}
               onToggle={() => setUploadSettings({ uploadCaptions: !uploadSettings.uploadCaptions })}
               disabled={captionUploadDisabled}
-              disabledBadgeLabel={captionUploadLocked
-                ? t('features.dubbing.components.steps.uploadSettingsStep.requiredForLongVideo')
-                : t('features.dubbing.components.steps.uploadSettingsStep.autoUploadOff')}
+              disabledBadgeLabel={t('features.dubbing.components.steps.uploadSettingsStep.autoUploadOff')}
             />
           )}
 
-          {isMultiAudio && uploadSettings.uploadCaptions && !captionUploadRequiresAuto && (
-            <label className={`flex items-start gap-3 rounded-lg border border-brand-100 bg-brand-50/60 p-3 text-sm text-surface-700 dark:border-brand-900/60 dark:bg-brand-950/20 dark:text-surface-200 ${captionUploadLocked ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}>
+          {isMultiAudio && uploadSettings.uploadCaptions && !captionUploadDisabled && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-brand-100 bg-brand-50/60 p-3 text-sm text-surface-700 dark:border-brand-900/60 dark:bg-brand-950/20 dark:text-surface-200">
               <input
                 type="checkbox"
                 className="mt-0.5 h-4 w-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500"
                 checked={uploadSettings.captionGenerationMode === 'stt'}
-                disabled={captionUploadLocked}
                 onChange={(e) => setUploadSettings({
                   captionGenerationMode: e.target.checked ? 'stt' : 'dubbing',
                 })}
@@ -366,9 +310,7 @@ export function UploadSettingsStep() {
                   {t('features.dubbing.components.steps.uploadSettingsStep.generateCaptionsWithStt')}
                 </span>
                 <span className="mt-1 block text-xs leading-5 text-surface-500 dark:text-surface-300">
-                  {captionUploadLocked
-                    ? t('features.dubbing.components.steps.uploadSettingsStep.longVideoSttRequiredDescription')
-                    : t('features.dubbing.components.steps.uploadSettingsStep.generateCaptionsWithSttDescription')}
+                  {t('features.dubbing.components.steps.uploadSettingsStep.generateCaptionsWithSttDescription')}
                 </span>
               </span>
             </label>
