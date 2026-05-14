@@ -21,8 +21,12 @@ export async function GET(req: NextRequest) {
 
   return ytHandle(async () => {
     const url = new URL(req.url)
-    const { videoId } = parseQuery(url, metadataQuerySchema)
-    return withTokenRetry(req, (accessToken) => fetchVideoMetadata(accessToken, videoId))
+    const { videoId, sourceLang } = parseQuery(url, metadataQuerySchema)
+    return withTokenRetry(req, (accessToken) =>
+      sourceLang
+        ? fetchVideoMetadata(accessToken, videoId, sourceLang)
+        : fetchVideoMetadata(accessToken, videoId),
+    )
   })
 }
 

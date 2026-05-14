@@ -13,8 +13,50 @@ interface YouTubeVideoResource {
     categoryId?: string
     tags?: string[]
     defaultLanguage?: string
+    localized?: YouTubeLocalization
   }
   localizations?: Record<string, YouTubeLocalization>
+}
+
+function normalizeLanguageTag(language?: string | null) {
+  return language?.trim().toLowerCase() || ''
+}
+
+function baseLanguage(language: string) {
+  return normalizeLanguageTag(language).split('-')[0] || ''
+}
+
+function isSameLanguage(left?: string | null, right?: string | null) {
+  const a = normalizeLanguageTag(left)
+  const b = normalizeLanguageTag(right)
+  if (!a || !b) return false
+  return a === b || baseLanguage(a) === baseLanguage(b)
+}
+
+function findLocalization(
+  localizations: Record<string, YouTubeLocalization>,
+  language?: string,
+) {
+  const target = normalizeLanguageTag(language)
+  if (!target) return null
+
+  const exact = Object.entries(localizations).find(([code]) => normalizeLanguageTag(code) === target)
+  if (exact) return { code: exact[0], value: exact[1] }
+
+  const targetBase = baseLanguage(target)
+  if (!targetBase) return null
+
+  const baseMatch = Object.entries(localizations).find(([code]) => baseLanguage(code) === targetBase)
+  return baseMatch ? { code: baseMatch[0], value: baseMatch[1] } : null
+}
+
+function omitLanguage(
+  localizations: Record<string, YouTubeLocalization>,
+  language: string,
+) {
+  return Object.fromEntries(
+    Object.entries(localizations).filter(([code]) => !isSameLanguage(code, language)),
+  )
 }
 
 function normalizeLocalizationMap(
@@ -37,9 +79,16 @@ function normalizeLocalizationMap(
 export async function fetchVideoMetadata(
   accessToken: string,
   videoId: string,
+  preferredLanguage?: string,
 ): Promise<YouTubeVideoMetadata> {
+  const params = new URLSearchParams({
+    part: 'snippet,localizations',
+    id: videoId,
+  })
+  if (preferredLanguage) params.set('hl', preferredLanguage)
+
   const res = await fetch(
-    `${YOUTUBE_DATA_BASE}/videos?part=snippet,localizations&id=${encodeURIComponent(videoId)}`,
+    `${YOUTUBE_DATA_BASE}/videos?${params}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   )
   if (!res.ok) {
@@ -57,16 +106,25 @@ export async function fetchVideoMetadata(
     throw new YouTubeError(404, 'YouTube video not found', 'VIDEO_NOT_FOUND')
   }
 
+  const localizations = normalizeLocalizationMap(item.localizations)
+  const defaultLanguage = item.snippet.defaultLanguage || ''
+  const preferredLocalization = !isSameLanguage(defaultLanguage, preferredLanguage)
+    ? findLocalization(localizations, preferredLanguage)
+    : null
+  const resolvedLanguage = preferredLocalization?.code || defaultLanguage
+
   return {
     videoId: item.id,
-    title: item.snippet.title || '',
-    description: item.snippet.description || '',
+    title: preferredLocalization?.value.title || item.snippet.title || '',
+    description: preferredLocalization?.value.description ?? item.snippet.description ?? '',
     categoryId: item.snippet.categoryId || '22',
     tags: item.snippet.tags || [],
     // YouTube가 defaultLanguage를 비워두면 빈 문자열로 전달 — 클라이언트에서 사용자 기본값으로 fallback.
     // 'ko' 같은 임의 값을 박으면 영문 영상의 원문 언어가 한국어로 잘못 잡혀 picker 비활성화 로직이 망가진다.
-    defaultLanguage: item.snippet.defaultLanguage || '',
-    localizations: normalizeLocalizationMap(item.localizations),
+    defaultLanguage,
+    resolvedLanguage,
+    resolvedFrom: preferredLocalization ? 'localization' : 'default',
+    localizations,
   }
 }
 
@@ -79,13 +137,13 @@ export async function updateVideoLocalizations(input: {
   tags?: string[]
   localizations: Record<string, YouTubeLocalization>
 }): Promise<YouTubeVideoMetadata> {
-  const current = await fetchVideoMetadata(input.accessToken, input.videoId)
-  const mergedLocalizations = {
+  const defaultLanguage = input.sourceLang || 'ko'
+  const current = await fetchVideoMetadata(input.accessToken, input.videoId, defaultLanguage)
+  const mergedLocalizations = omitLanguage({
     ...current.localizations,
     ...normalizeLocalizationMap(input.localizations),
-  }
+  }, defaultLanguage)
 
-  const defaultLanguage = input.sourceLang || current.defaultLanguage || 'ko'
   const body = {
     id: input.videoId,
     snippet: {
@@ -125,6 +183,8 @@ export async function updateVideoLocalizations(input: {
     categoryId: snippet.categoryId || body.snippet.categoryId,
     tags: snippet.tags || body.snippet.tags,
     defaultLanguage: snippet.defaultLanguage || defaultLanguage,
+    resolvedLanguage: snippet.defaultLanguage || defaultLanguage,
+    resolvedFrom: 'default',
     localizations: normalizeLocalizationMap(data.localizations ?? mergedLocalizations),
   }
 }

@@ -30,6 +30,7 @@ import {
   ytFetchVideoStats,
   ytFetchChannelStats,
   ytFetchMyVideos,
+  ytFetchVideoMetadata,
   ytUpdateVideoLocalizations,
 } from './api-client'
 
@@ -442,6 +443,15 @@ describe('ytUpdateVideoLocalizations', () => {
 })
 
 // ── uploadFileToBlob (XHR) ─────────────────────────────────
+
+describe('ytFetchVideoMetadata', () => {
+  it('passes the requested source language to the metadata API', async () => {
+    mockFetch.mockResolvedValueOnce(okResponse({ videoId: 'v1' }))
+    await ytFetchVideoMetadata('v1', 'ko')
+
+    expect(mockFetch.mock.calls[0][0]).toBe('/api/youtube/metadata?videoId=v1&sourceLang=ko')
+  })
+})
 
 describe('uploadFileToBlob', () => {
   let xhrInstances: Array<Record<string, unknown>>
