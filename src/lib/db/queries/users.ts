@@ -10,6 +10,8 @@ const ACCOUNT_STATUS_PENDING_DELETION = 'pending_deletion'
 const ACCOUNT_DELETION_DISPLAY_NAME = '회원탈퇴 요청'
 const ACCOUNT_DELETION_EMAIL_DOMAIN = 'withdrawal.dubtube.local'
 const ACCOUNT_DELETION_RECOVERY_DAYS = 7
+const ACCOUNT_RETENTION_REASON = 'settlement_and_legal_retention'
+const ACCOUNT_RETENTION_YEARS = 5
 
 function getDeletionRequestDigest(userId: string) {
   return createHash('sha256').update(userId).digest('hex').slice(0, 32)
@@ -21,6 +23,14 @@ function getDeletedUserId(userId: string) {
 
 function getDeletionRequestEmail(userId: string) {
   return `withdrawal-requested+${getDeletionRequestDigest(userId)}@${ACCOUNT_DELETION_EMAIL_DOMAIN}`
+}
+
+function getRetainedRecordMetadata(personalDataErasedAt: string) {
+  return JSON.stringify({
+    retainedFor: ACCOUNT_RETENTION_REASON,
+    personalDataErasedAt,
+    personalDataErased: true,
+  })
 }
 
 function getDeletionRestoreExpiresAt(now = new Date()) {
@@ -83,15 +93,44 @@ async function clearAccountDeletionMarkers(tx: Transaction, userId: string) {
   })
 }
 
-async function purgeExpiredDeletedAccount(tx: Transaction, userId: string) {
+async function purgeExpiredDeletedAccount(tx: Transaction, userId: string, personalDataErasedAt = new Date().toISOString()) {
   const deletedUserId = getDeletedUserId(userId)
+  const retainedRecordMetadata = getRetainedRecordMetadata(personalDataErasedAt)
   await tx.execute({
-    sql: 'UPDATE payment_orders SET user_id = ?, account_deletion_requested_at = NULL WHERE user_id = ?',
-    args: [deletedUserId, userId],
+    sql: `UPDATE payment_orders
+          SET user_id = ?,
+              checkout_url = NULL,
+              raw_json = ?,
+              account_deletion_requested_at = NULL,
+              account_retention_reason = ?,
+              account_retention_until = datetime(COALESCE(created_at, 'now'), '+${ACCOUNT_RETENTION_YEARS} years'),
+              personal_data_erased_at = ?,
+              updated_at = datetime('now')
+          WHERE user_id = ?`,
+    args: [
+      deletedUserId,
+      retainedRecordMetadata,
+      ACCOUNT_RETENTION_REASON,
+      personalDataErasedAt,
+      userId,
+    ],
   })
   await tx.execute({
-    sql: 'UPDATE credit_transactions SET user_id = ?, account_deletion_requested_at = NULL WHERE user_id = ?',
-    args: [deletedUserId, userId],
+    sql: `UPDATE credit_transactions
+          SET user_id = ?,
+              metadata_json = ?,
+              account_deletion_requested_at = NULL,
+              account_retention_reason = ?,
+              account_retention_until = datetime(COALESCE(created_at, 'now'), '+${ACCOUNT_RETENTION_YEARS} years'),
+              personal_data_erased_at = ?
+          WHERE user_id = ?`,
+    args: [
+      deletedUserId,
+      retainedRecordMetadata,
+      ACCOUNT_RETENTION_REASON,
+      personalDataErasedAt,
+      userId,
+    ],
   })
   await tx.execute({
     sql: 'UPDATE operational_events SET user_id = NULL, account_deletion_requested_at = NULL WHERE user_id = ?',
@@ -211,6 +250,41 @@ export async function upsertUser(user: {
 
     await writeUser(tx, user, accessToken, refreshToken)
     await tx.commit()
+  } catch (err) {
+    await tx.rollback().catch(() => {})
+    throw err
+  } finally {
+    tx.close()
+  }
+}
+
+export async function purgeExpiredPendingDeletedAccounts(options: {
+  limit?: number
+  now?: Date
+} = {}) {
+  const limit = Math.min(200, Math.max(1, options.limit ?? 50))
+  const now = options.now ?? new Date()
+  const nowIso = now.toISOString()
+  const tx = await getDb().transaction('write')
+  try {
+    const expired = await tx.execute({
+      sql: `SELECT id
+            FROM users
+            WHERE account_status = ?
+              AND deletion_restore_expires_at IS NOT NULL
+              AND datetime(deletion_restore_expires_at) < datetime(?)
+            ORDER BY datetime(deletion_restore_expires_at) ASC
+            LIMIT ?`,
+      args: [ACCOUNT_STATUS_PENDING_DELETION, nowIso, limit],
+    })
+    const userIds = expired.rows.map((row) => String(row.id)).filter(Boolean)
+
+    for (const userId of userIds) {
+      await purgeExpiredDeletedAccount(tx, userId, nowIso)
+    }
+
+    await tx.commit()
+    return { purged: userIds.length }
   } catch (err) {
     await tx.rollback().catch(() => {})
     throw err
