@@ -19,6 +19,8 @@ import { getLanguageByCode, toBcp47 } from '@/utils/languages'
 import { useNotificationStore } from '@/stores/notificationStore'
 import {
   getProjectScript,
+  getDownloadLinks,
+  getPersoFileUrl,
   getTranslatedSrt,
   regenerateSentenceAudio,
   updateSentenceTranslation,
@@ -34,7 +36,6 @@ import {
 import type { ScriptSentence } from '@/lib/perso/types'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { cn } from '@/utils/cn'
-import type { PrivacyStatus } from '@/features/dubbing/types/dubbing.types'
 
 const ENABLE_SENTENCE_LEVEL_AUDIO_REGENERATION = false
 
@@ -82,11 +83,6 @@ function ScriptRow({
         sentence.editedTranslatedText,
       )
       onPatch(sentence.sentenceSeq, { savedTranslatedText: sentence.editedTranslatedText })
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.subtitleScriptEditor.saved'),
-        message: t('features.dubbing.components.subtitleScriptEditor.yourTranslationEditHasBeenSaved'),
-      })
       return true
     } catch {
       addToast({ type: 'error', title: t('features.dubbing.components.subtitleScriptEditor.saveFailed') })
@@ -105,11 +101,6 @@ function ScriptRow({
     setRegenerating(true)
     try {
       await regenerateSentenceAudio(projectSeq, sentence.audioSentenceSeq, sentence.editedTranslatedText)
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.subtitleScriptEditor.audioRegenerationStarted'),
-        message: t('features.dubbing.components.subtitleScriptEditor.theDubbedVideoWillUpdateWhenItFinishes'),
-      })
     } catch {
       addToast({ type: 'error', title: t('features.dubbing.components.subtitleScriptEditor.audioRegenerationFailed') })
     } finally {
@@ -171,6 +162,8 @@ function ScriptRow({
 interface EditableCue extends SrtCue {
   id: number
 }
+
+type PreviewVideoTarget = 'dubbingVideo' | 'originalVideo'
 
 function SrtRow({
   cue,
@@ -254,7 +247,7 @@ interface SubtitleScriptEditorProps {
   spaceSeq: number
   allowDialogueEditing?: boolean
   youtubeVideoId?: string | null
-  youtubePreviewVisibility?: PrivacyStatus
+  previewVideoTarget?: PreviewVideoTarget
   /** 자막 편집 시 화면에 노출할 영상의 직접 재생 URL.
    * - 원본+자막 모드: 원본 영상 URL (모든 언어 공유)
    * - 새 더빙 영상 모드: 해당 언어의 더빙 영상 URL */
@@ -267,7 +260,7 @@ export function SubtitleScriptEditor({
   spaceSeq,
   allowDialogueEditing = true,
   youtubeVideoId,
-  youtubePreviewVisibility,
+  previewVideoTarget = 'dubbingVideo',
   previewVideoUrl,
 }: SubtitleScriptEditorProps) {
   const locale = useAppLocale()
@@ -288,12 +281,43 @@ export function SubtitleScriptEditor({
   const [invalidCueIds, setInvalidCueIds] = useState<Set<number>>(() => new Set())
   const [srtLoading, setSrtLoading] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-  const [showYouTubePreview, setShowYouTubePreview] = useState(false)
+  const [resolvedPreviewVideoUrl, setResolvedPreviewVideoUrl] = useState<string | null>(null)
+  const [previewVideoLoading, setPreviewVideoLoading] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [pushingToYT, setPushingToYT] = useState(false)
   const [resetting, setResetting] = useState(false)
   const youtubeWatchUrl = youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : null
-  const youtubeEmbedUrl = youtubeVideoId ? `https://www.youtube.com/embed/${youtubeVideoId}` : null
+  const effectivePreviewVideoUrl =
+    previewVideoUrl ?? (previewVideoTarget === 'dubbingVideo' ? resolvedPreviewVideoUrl : null)
+  const showPreviewVideoLoading =
+    previewVideoTarget === 'dubbingVideo' && !previewVideoUrl && previewVideoLoading
+
+  const loadPreviewVideo = useCallback(async () => {
+    if (previewVideoUrl || previewVideoTarget !== 'dubbingVideo') return
+
+    setResolvedPreviewVideoUrl(null)
+    setPreviewVideoLoading(true)
+    try {
+      let rawUrl: string | null | undefined
+      try {
+        const primary = await getDownloadLinks(projectSeq, spaceSeq, 'dubbingVideo')
+        rawUrl = primary.videoFile?.videoDownloadLink
+      } catch (err) {
+        console.warn('[Dubtube] Dubbed preview target fetch failed', err)
+      }
+      if (!rawUrl) {
+        const fallback = await getDownloadLinks(projectSeq, spaceSeq, 'all')
+        rawUrl = fallback.videoFile?.videoDownloadLink
+      }
+      if (rawUrl) {
+        setResolvedPreviewVideoUrl(rawUrl.startsWith('http') ? rawUrl : getPersoFileUrl(rawUrl))
+      }
+    } catch (err) {
+      console.warn('[Dubtube] Dubbed preview video fetch failed', err)
+    } finally {
+      setPreviewVideoLoading(false)
+    }
+  }, [previewVideoTarget, previewVideoUrl, projectSeq, spaceSeq])
 
   const loadScript = useCallback(async () => {
     if (!projectSeq) return
@@ -346,9 +370,23 @@ export function SubtitleScriptEditor({
     }
 
     setOpen(true)
+    if (!previewVideoUrl && previewVideoTarget === 'dubbingVideo' && !resolvedPreviewVideoUrl) {
+      loadPreviewVideo()
+    }
     if (allowDialogueEditing && !sentences) loadScript()
     if (!cues) loadSrt()
-  }, [open, allowDialogueEditing, sentences, cues, loadScript, loadSrt])
+  }, [
+    open,
+    previewVideoUrl,
+    previewVideoTarget,
+    resolvedPreviewVideoUrl,
+    loadPreviewVideo,
+    allowDialogueEditing,
+    sentences,
+    cues,
+    loadScript,
+    loadSrt,
+  ])
 
   const handleTabChange = useCallback((tab: EditorTab) => {
     if (tab === 'dialogue' && !allowDialogueEditing) return
@@ -427,11 +465,6 @@ export function SubtitleScriptEditor({
             : sentence,
         ) ?? null,
       )
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.subtitleScriptEditor.dialogueChangesApplied'),
-        message: t('features.dubbing.components.subtitleScriptEditor.dialogueChangesAppliedMessage', { languageName }),
-      })
     } catch (err) {
       addToast({
         type: 'error',
@@ -441,7 +474,7 @@ export function SubtitleScriptEditor({
     } finally {
       setApplyingDialogue(false)
     }
-  }, [sentences, projectSeq, addToast, t, languageName])
+  }, [sentences, projectSeq, addToast, t])
 
   const handleDiscardDialogueChanges = useCallback(() => {
     setSentences((prev) =>
@@ -456,14 +489,10 @@ export function SubtitleScriptEditor({
     setResetting(true)
     try {
       await loadSrt()
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.subtitleScriptEditor.captionsRestoredToTheGeneratedVersion'),
-      })
     } finally {
       setResetting(false)
     }
-  }, [loadSrt, addToast, t])
+  }, [loadSrt])
 
   const handleDownload = useCallback(() => {
     if (hasInvalidCaptionTiming) {
@@ -492,26 +521,6 @@ export function SubtitleScriptEditor({
       setDownloading(false)
     }
   }, [hasInvalidCaptionTiming, buildCurrentSrt, lang, langCode, addToast, t])
-
-  const handleToggleYouTubePreview = useCallback(() => {
-    const nextVisible = !showYouTubePreview
-    if (nextVisible && youtubePreviewVisibility === 'private') {
-      addToast({
-        type: 'warning',
-        title: t('features.dubbing.components.subtitleScriptEditor.youtubePreviewUnavailableForPrivateVideo'),
-        message: t('features.dubbing.components.subtitleScriptEditor.youtubePreviewPublicOrUnlistedOnly'),
-      })
-    }
-    setShowYouTubePreview(nextVisible)
-  }, [showYouTubePreview, youtubePreviewVisibility, addToast, t])
-
-  const handleYouTubePreviewError = useCallback(() => {
-    addToast({
-      type: 'warning',
-      title: t('features.dubbing.components.subtitleScriptEditor.youtubePreviewLoadFailed'),
-      message: t('features.dubbing.components.subtitleScriptEditor.youtubePreviewMayBeUnavailableForPrivateVideos'),
-    })
-  }, [addToast, t])
 
   const handlePushToYouTube = useCallback(async () => {
     if (!youtubeVideoId) return
@@ -616,7 +625,14 @@ export function SubtitleScriptEditor({
             </div>
           )}
 
-          {previewVideoUrl ? (
+          {showPreviewVideoLoading ? (
+            <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50">
+              <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-300">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t('features.dubbing.components.subtitleScriptEditor.videoPreview')}
+              </div>
+            </div>
+          ) : effectivePreviewVideoUrl ? (
             <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50">
               <div className="mb-3 flex min-w-0 items-start gap-2">
                 <Video className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
@@ -625,7 +641,7 @@ export function SubtitleScriptEditor({
                 </p>
               </div>
               <div className="aspect-video w-full max-w-xl overflow-hidden rounded-lg border border-surface-200 bg-black dark:border-surface-700">
-                <video controls preload="metadata" className="h-full w-full" src={previewVideoUrl}>
+                <video controls preload="metadata" className="h-full w-full" src={effectivePreviewVideoUrl}>
                   <track kind="captions" />
                 </video>
               </div>
@@ -641,52 +657,7 @@ export function SubtitleScriptEditor({
                 </a>
               )}
             </div>
-          ) : youtubeVideoId && youtubeWatchUrl && youtubeEmbedUrl && (
-            <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 dark:border-surface-800 dark:bg-surface-900/50">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex min-w-0 items-start gap-2">
-                  <Video className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-surface-900 dark:text-white">
-                      {t('features.dubbing.components.subtitleScriptEditor.youtubePreview')}
-                    </p>
-                    <p className="mt-0.5 text-xs text-surface-500 dark:text-surface-300">
-                      {t('features.dubbing.components.subtitleScriptEditor.youtubePreviewPublicOrUnlistedOnly')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <a
-                    href={youtubeWatchUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-surface-300 bg-white px-3 text-sm font-medium text-surface-700 transition-all duration-200 hover:bg-surface-100 focus-ring dark:border-surface-700 dark:bg-transparent dark:text-surface-300 dark:hover:bg-surface-800"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {t('features.dubbing.components.subtitleScriptEditor.openInYouTube')}
-                  </a>
-                  <Button size="sm" variant="outline" onClick={handleToggleYouTubePreview}>
-                    {showYouTubePreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                    {showYouTubePreview
-                      ? t('features.dubbing.components.subtitleScriptEditor.hideYouTubePreview')
-                      : t('features.dubbing.components.subtitleScriptEditor.youtubePreview')}
-                  </Button>
-                </div>
-              </div>
-              {showYouTubePreview && (
-                <div className="mt-3 aspect-video w-full max-w-xl overflow-hidden rounded-lg border border-surface-200 bg-black dark:border-surface-700">
-                  <iframe
-                    title={t('features.dubbing.components.subtitleScriptEditor.youtubePreview')}
-                    src={youtubeEmbedUrl}
-                    className="h-full w-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    onError={handleYouTubePreviewError}
-                  />
-                </div>
-              )}
-            </div>
-          )}
+          ) : null}
 
           {allowDialogueEditing && visibleTab === 'dialogue' && (
             <section className="space-y-3">
