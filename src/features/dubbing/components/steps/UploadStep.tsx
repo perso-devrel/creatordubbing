@@ -274,11 +274,6 @@ export function UploadStep() {
         localizations: Object.keys(localizations).length > 0 ? localizations : undefined,
       })
       setOriginalUploadState({ status: 'done', videoId: result.videoId })
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.steps.uploadStep.originalVideoUploaded'),
-        message: t('features.dubbing.components.steps.uploadStep.youCanReviewTheVideoOnYouTube'),
-      })
       return result.videoId
     } catch (err) {
       console.warn('[Dubtube] Original video upload failed', err)
@@ -378,11 +373,6 @@ export function UploadStep() {
         throw new Error(result.status || t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry'))
       }
 
-      addToast({
-        type: 'success',
-        title: t('features.dubbing.components.steps.uploadStep.valueUploadScheduled', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
-        message: t('features.dubbing.components.steps.uploadStep.theServerWillUploadItInTheBackground'),
-      })
     } catch (err) {
       console.warn('[Dubtube] YouTube upload scheduling failed', err)
       const msg = t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry')
@@ -448,7 +438,6 @@ export function UploadStep() {
           srtContent,
         })
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'done' }))
-        addToast({ type: 'success', title: t('features.dubbing.components.steps.uploadStep.valueCaptionsUploaded', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }) })
       } catch (err) {
         console.warn('[Dubtube] Caption upload failed', err)
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'error' }))
@@ -1010,7 +999,7 @@ export function UploadStep() {
                   spaceSeq={spaceSeq}
                   allowDialogueEditing={allowDialogueEditingInOutput}
                   youtubeVideoId={ytUploads[code]?.videoId ?? null}
-                  youtubePreviewVisibility={privacyStatus}
+                  previewVideoTarget={deliverableMode === 'originalWithMultiAudio' ? 'originalVideo' : 'dubbingVideo'}
                   previewVideoUrl={previewVideoUrl}
                 />
               )

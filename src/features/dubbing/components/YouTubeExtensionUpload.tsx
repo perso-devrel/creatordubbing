@@ -164,11 +164,6 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
           ...prev,
           [langCode]: { jobId: response.jobId!, status: 'running' },
         }))
-        addToast({
-          type: 'success',
-          title: t('features.dubbing.components.youTubeExtensionUpload.valueAudioTrackStarted', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }),
-          message: t('features.dubbing.components.youTubeExtensionUpload.checkTheProgressInYouTubeStudio'),
-        })
       } else {
         if (response.error) {
           console.warn('[Dubtube] Extension upload request failed', response.error)
@@ -189,7 +184,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
     } finally {
       setUploadingLang(null)
     }
-  }, [videoId, getAudioUrl, addToast, getDisplayLanguageName, t])
+  }, [videoId, getAudioUrl, addToast, t])
 
   // Auto-trigger: sequentially upload all languages without user clicking
   useEffect(() => {
