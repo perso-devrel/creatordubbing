@@ -9,8 +9,8 @@ import { OpsAlertButton } from '@/features/ops/components/OpsAlertButton'
 import { useChannelStats } from '@/hooks/useYouTubeData'
 import { AppLocaleSelect } from '@/components/layout/AppLocaleSelect'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
-import { useLocaleRouter } from '@/hooks/useLocalePath'
 import { useOperationsAccess } from '@/features/ops/hooks/useOperationsAccess'
+import { withLocalePath } from '@/lib/i18n/config'
 
 interface TopbarProps {
   isOpsAdmin?: boolean
@@ -18,7 +18,6 @@ interface TopbarProps {
 
 export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
   const { user, clear } = useAuthStore()
-  const router = useLocaleRouter()
   const { data: channel } = useChannelStats()
   const opsAccess = useOperationsAccess({ enabled: isOpsAdmin })
   const locale = useAppLocale()
@@ -35,7 +34,7 @@ export function Topbar({ isOpsAdmin = false }: TopbarProps = {}) {
     signOut()
     clear()
     await fetch('/api/auth/signout', { method: 'POST' }).catch(() => {})
-    router.push('/')
+    window.location.replace(withLocalePath('/', locale))
   }
 
   return (

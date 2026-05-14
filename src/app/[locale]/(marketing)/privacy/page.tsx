@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: LocaleMetadataProps): Promise
   return getMarketingMetadata(locale, 'privacy')
 }
 
-const LAST_UPDATED = '2026-05-11'
+const LAST_UPDATED = '2026-05-14'
 
 export default async function PrivacyPolicyPage({ params }: LocaleMetadataProps) {
   const locale = await resolveMetadataLocale(params)

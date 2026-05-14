@@ -23,6 +23,9 @@ export interface UploadQueueItem {
   srtContent: string | null
   selfDeclaredMadeForKids: boolean
   containsSyntheticMedia: boolean
+  uploadKind: string
+  metadataJson: string | null
+  localizationsJson: string | null
   status: QueueStatus
   retries: number
   error: string | null
@@ -72,7 +75,7 @@ async function ensureTable() {
     sql: 'PRAGMA table_info(upload_queue)',
     args: [],
   })
-  const existing = new Set(columns.rows.map((row) => String(row.name)))
+  const existing = new Set((columns.rows ?? []).map((row) => String(row.name)))
   const addColumn = async (name: string, definition: string) => {
     if (existing.has(name)) return
     await db.execute({
@@ -86,6 +89,9 @@ async function ensureTable() {
   await addColumn('srt_content', 'TEXT')
   await addColumn('self_declared_made_for_kids', 'INTEGER NOT NULL DEFAULT 0')
   await addColumn('contains_synthetic_media', 'INTEGER NOT NULL DEFAULT 0')
+  await addColumn('upload_kind', "TEXT NOT NULL DEFAULT 'new_video_dubbed_video'")
+  await addColumn('metadata_json', 'TEXT')
+  await addColumn('localizations_json', 'TEXT')
   tableEnsured = true
 }
 
@@ -106,6 +112,9 @@ export async function createUploadQueueItem(item: {
   srtContent?: string | null
   selfDeclaredMadeForKids?: boolean
   containsSyntheticMedia?: boolean
+  uploadKind?: string
+  metadataJson?: string | null
+  localizationsJson?: string | null
   resetFailed?: boolean
 }): Promise<number> {
   await ensureTable()
@@ -141,6 +150,9 @@ export async function createUploadQueueItem(item: {
                 srt_content = ?,
                 self_declared_made_for_kids = ?,
                 contains_synthetic_media = ?,
+                upload_kind = ?,
+                metadata_json = ?,
+                localizations_json = ?,
                 status = 'pending',
                 retries = 0,
                 error = NULL,
@@ -162,6 +174,9 @@ export async function createUploadQueueItem(item: {
         item.srtContent ?? null,
         item.selfDeclaredMadeForKids ? 1 : 0,
         item.containsSyntheticMedia ? 1 : 0,
+        item.uploadKind ?? 'new_video_dubbed_video',
+        item.metadataJson ?? null,
+        item.localizationsJson ?? null,
         id,
       ],
     })
@@ -171,9 +186,10 @@ export async function createUploadQueueItem(item: {
     sql: `INSERT INTO upload_queue (
             user_id, job_id, lang_code, video_url, title, description, tags,
             privacy_status, language, is_short, upload_captions, caption_language,
-            caption_name, srt_content, self_declared_made_for_kids, contains_synthetic_media
+            caption_name, srt_content, self_declared_made_for_kids, contains_synthetic_media,
+            upload_kind, metadata_json, localizations_json
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       item.userId,
       item.jobId,
@@ -191,6 +207,9 @@ export async function createUploadQueueItem(item: {
       item.srtContent ?? null,
       item.selfDeclaredMadeForKids ? 1 : 0,
       item.containsSyntheticMedia ? 1 : 0,
+      item.uploadKind ?? 'new_video_dubbed_video',
+      item.metadataJson ?? null,
+      item.localizationsJson ?? null,
     ],
   })
   return Number(result.lastInsertRowid)
@@ -292,6 +311,10 @@ export async function failQueueItem(id: number, error: string): Promise<boolean>
   return Boolean(row)
 }
 
+function dbBoolean(value: unknown) {
+  return value === true || value === 1 || value === '1'
+}
+
 function rowToItem(row: Record<string, unknown>): UploadQueueItem {
   return {
     id: Number(row.id),
@@ -304,13 +327,16 @@ function rowToItem(row: Record<string, unknown>): UploadQueueItem {
     tags: String(row.tags),
     privacyStatus: String(row.privacy_status),
     language: String(row.language),
-    isShort: Boolean(row.is_short),
-    uploadCaptions: Boolean(row.upload_captions),
+    isShort: dbBoolean(row.is_short),
+    uploadCaptions: dbBoolean(row.upload_captions),
     captionLanguage: row.caption_language ? String(row.caption_language) : null,
     captionName: row.caption_name ? String(row.caption_name) : null,
     srtContent: row.srt_content ? String(row.srt_content) : null,
-    selfDeclaredMadeForKids: Boolean(row.self_declared_made_for_kids),
-    containsSyntheticMedia: Boolean(row.contains_synthetic_media),
+    selfDeclaredMadeForKids: dbBoolean(row.self_declared_made_for_kids),
+    containsSyntheticMedia: dbBoolean(row.contains_synthetic_media),
+    uploadKind: row.upload_kind ? String(row.upload_kind) : 'new_video_dubbed_video',
+    metadataJson: row.metadata_json ? String(row.metadata_json) : null,
+    localizationsJson: row.localizations_json ? String(row.localizations_json) : null,
     status: String(row.status) as QueueStatus,
     retries: Number(row.retries),
     error: row.error ? String(row.error) : null,

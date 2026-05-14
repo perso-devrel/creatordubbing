@@ -8,6 +8,11 @@ import {
   type PersistedJobUploadSettings,
 } from '@/lib/dubbing/job-upload-settings'
 import { deleteGeneratedCaptionsForJob } from './generated-captions'
+import {
+  parseYouTubeUploadSnapshot,
+  serializeYouTubeUploadSnapshot,
+  type YouTubeUploadSnapshot,
+} from '@/lib/youtube/upload-snapshot'
 
 export interface DubbingJobUploadSettingsInput {
   deliverableMode?: PersistedDeliverableMode
@@ -35,6 +40,7 @@ export interface DubbingJobLanguageWorkItem {
   srtUrl: string | null
   youtubeVideoId: string | null
   youtubeUploadStatus: string | null
+  youtubeUploadSnapshot: YouTubeUploadSnapshot | null
 }
 
 let durableWorkerColumnsEnsured = false
@@ -42,16 +48,24 @@ let durableWorkerColumnsEnsured = false
 async function ensureDurableWorkerColumns() {
   if (durableWorkerColumnsEnsured) return
   const db = getDb()
-  const result = await db.execute({ sql: 'PRAGMA table_info(dubbing_jobs)', args: [] })
-  const existing = new Set(result.rows.map((row) => String(row.name)))
-  const addColumn = async (name: string, definition: string) => {
-    if (existing.has(name)) return
-    await db.execute({ sql: `ALTER TABLE dubbing_jobs ADD COLUMN ${name} ${definition}`, args: [] })
+  const ensureColumns = async (table: string, columns: Array<[name: string, definition: string]>) => {
+    const result = await db.execute({ sql: `PRAGMA table_info(${table})`, args: [] })
+    const existing = new Set((result.rows ?? []).map((row) => String(row.name)))
+    for (const [name, definition] of columns) {
+      if (existing.has(name)) continue
+      await db.execute({ sql: `ALTER TABLE ${table} ADD COLUMN ${name} ${definition}`, args: [] })
+    }
   }
-  await addColumn('upload_settings_json', 'TEXT')
-  await addColumn('deliverable_mode', "TEXT NOT NULL DEFAULT 'newDubbedVideos'")
-  await addColumn('original_video_url', 'TEXT')
-  await addColumn('original_youtube_url', 'TEXT')
+  await ensureColumns('dubbing_jobs', [
+    ['upload_settings_json', 'TEXT'],
+    ['deliverable_mode', "TEXT NOT NULL DEFAULT 'newDubbedVideos'"],
+    ['original_video_url', 'TEXT'],
+    ['original_youtube_url', 'TEXT'],
+    ['youtube_upload_snapshot_json', 'TEXT'],
+  ])
+  await ensureColumns('job_languages', [
+    ['youtube_upload_snapshot_json', 'TEXT'],
+  ])
   durableWorkerColumnsEnsured = true
 }
 
@@ -105,20 +119,22 @@ export async function createDubbingJob(job: {
 
 export async function createJobLanguages(
   jobId: number,
-  languages: { code: string; projectSeq: number }[],
+  languages: { code: string; projectSeq: number; youtubeUploadSnapshotJson?: string | null }[],
 ) {
+  await ensureDurableWorkerColumns()
   const db = getDb()
   await db.batch(
     languages.map((lang) => ({
-      sql: 'INSERT INTO job_languages (job_id, language_code, project_seq) VALUES (?, ?, ?)',
-      args: [jobId, lang.code, lang.projectSeq],
+      sql: `INSERT INTO job_languages (job_id, language_code, project_seq, youtube_upload_snapshot_json)
+            VALUES (?, ?, ?, ?)`,
+      args: [jobId, lang.code, lang.projectSeq, lang.youtubeUploadSnapshotJson ?? null],
     })),
   )
 }
 
 export async function createDubbingJobWithLanguages(
   job: Parameters<typeof createDubbingJob>[0],
-  languages: { code: string; projectSeq: number }[],
+  languages: { code: string; projectSeq: number; youtubeUploadSnapshotJson?: string | null }[],
 ): Promise<number> {
   await ensureDurableWorkerColumns()
   const db = getDb()
@@ -152,7 +168,7 @@ export async function createDubbingJobWithLanguages(
 
 export async function updateJobLanguageProjects(
   jobId: number,
-  languages: { code: string; projectSeq: number }[],
+  languages: { code: string; projectSeq: number; youtubeUploadSnapshotJson?: string | null }[],
 ) {
   if (languages.length === 0) return
   const db = getDb()
@@ -164,14 +180,17 @@ export async function updateJobLanguageProjects(
     const id = existing.rows[0]?.id
     if (id !== undefined && id !== null) {
       await db.execute({
-        sql: 'UPDATE job_languages SET project_seq = ? WHERE id = ?',
-        args: [lang.projectSeq, id],
+        sql: `UPDATE job_languages
+              SET project_seq = ?,
+                  youtube_upload_snapshot_json = COALESCE(?, youtube_upload_snapshot_json)
+              WHERE id = ?`,
+        args: [lang.projectSeq, lang.youtubeUploadSnapshotJson ?? null, id],
       })
     } else {
       await db.execute({
-        sql: `INSERT INTO job_languages (job_id, language_code, project_seq, status, progress_reason)
-              VALUES (?, ?, ?, 'pending', 'PENDING')`,
-        args: [jobId, lang.code, lang.projectSeq],
+        sql: `INSERT INTO job_languages (job_id, language_code, project_seq, status, progress_reason, youtube_upload_snapshot_json)
+              VALUES (?, ?, ?, 'pending', 'PENDING', ?)`,
+        args: [jobId, lang.code, lang.projectSeq, lang.youtubeUploadSnapshotJson ?? null],
       })
     }
   }
@@ -199,15 +218,41 @@ export async function updateJobLanguageCompleted(
   urls: { dubbedVideoUrl?: string; audioUrl?: string; srtUrl?: string },
 ) {
   const db = getDb()
+  const existing = await db.execute({
+    sql: `SELECT youtube_upload_snapshot_json
+          FROM job_languages
+          WHERE job_id = ? AND language_code = ?
+          LIMIT 1`,
+    args: [jobId, langCode],
+  })
+  const snapshot = parseYouTubeUploadSnapshot(
+    existing.rows[0]?.youtube_upload_snapshot_json
+      ? String(existing.rows[0].youtube_upload_snapshot_json)
+      : null,
+  )
+  const nextSnapshotJson = snapshot
+    ? serializeYouTubeUploadSnapshot({
+      ...snapshot,
+      assets: {
+        ...snapshot.assets,
+        dubbedVideoUrl: urls.dubbedVideoUrl || snapshot.assets.dubbedVideoUrl,
+        audioUrl: urls.audioUrl || snapshot.assets.audioUrl,
+        srtUrl: urls.srtUrl || snapshot.assets.srtUrl,
+      },
+    })
+    : null
   await db.execute({
     sql: `UPDATE job_languages SET status = 'completed', progress = 100,
           progress_reason = 'COMPLETED',
-          dubbed_video_url = ?, audio_url = ?, srt_url = ?, updated_at = datetime('now')
+          dubbed_video_url = ?, audio_url = ?, srt_url = ?,
+          youtube_upload_snapshot_json = COALESCE(?, youtube_upload_snapshot_json),
+          updated_at = datetime('now')
           WHERE job_id = ? AND language_code = ?`,
     args: [
       urls.dubbedVideoUrl || null,
       urls.audioUrl || null,
       urls.srtUrl || null,
+      nextSnapshotJson,
       jobId,
       langCode,
     ],
@@ -219,6 +264,17 @@ export async function updateJobStatus(jobId: number, status: string) {
   await db.execute({
     sql: `UPDATE dubbing_jobs SET status = ?, updated_at = datetime('now') WHERE id = ?`,
     args: [status, jobId],
+  })
+}
+
+export async function updateDubbingJobOriginalYouTubeUrl(jobId: number, originalYouTubeUrl: string) {
+  await ensureDurableWorkerColumns()
+  const db = getDb()
+  await db.execute({
+    sql: `UPDATE dubbing_jobs
+          SET original_youtube_url = ?, updated_at = datetime('now')
+          WHERE id = ?`,
+    args: [originalYouTubeUrl, jobId],
   })
 }
 
@@ -255,6 +311,9 @@ function rowToDubbingJobLanguageWorkItem(row: DubbingJobLanguageWorkItemRow): Du
     srtUrl: row.srt_url ? String(row.srt_url) : null,
     youtubeVideoId: row.youtube_video_id ? String(row.youtube_video_id) : null,
     youtubeUploadStatus: row.youtube_upload_status ? String(row.youtube_upload_status) : null,
+    youtubeUploadSnapshot: parseYouTubeUploadSnapshot(
+      row.youtube_upload_snapshot_json ? String(row.youtube_upload_snapshot_json) : null,
+    ),
   }
 }
 
@@ -282,7 +341,8 @@ export async function getDubbingJobLanguageWorkItems(limit = 50): Promise<Dubbin
             jl.audio_url,
             jl.srt_url,
             jl.youtube_video_id,
-            jl.youtube_upload_status
+            jl.youtube_upload_status,
+            jl.youtube_upload_snapshot_json
           FROM job_languages jl
           JOIN dubbing_jobs dj ON dj.id = jl.job_id
           WHERE COALESCE(jl.project_seq, 0) > 0
@@ -336,7 +396,8 @@ export async function getDubbingJobLanguageWorkItem(
             jl.audio_url,
             jl.srt_url,
             jl.youtube_video_id,
-            jl.youtube_upload_status
+            jl.youtube_upload_status,
+            jl.youtube_upload_snapshot_json
           FROM job_languages jl
           JOIN dubbing_jobs dj ON dj.id = jl.job_id
           WHERE jl.job_id = ? AND jl.language_code = ?

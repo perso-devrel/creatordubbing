@@ -6,6 +6,31 @@ import { YouTubeError } from '@/lib/youtube/error'
 
 const YOUTUBE_UPLOAD_BASE = 'https://www.googleapis.com/upload/youtube/v3'
 
+function normalizeLanguageTag(language?: string | null) {
+  return language?.trim().toLowerCase() || ''
+}
+
+function baseLanguage(language: string) {
+  return normalizeLanguageTag(language).split('-')[0] || ''
+}
+
+function isSameLanguage(left?: string | null, right?: string | null) {
+  const a = normalizeLanguageTag(left)
+  const b = normalizeLanguageTag(right)
+  if (!a || !b) return false
+  return a === b || baseLanguage(a) === baseLanguage(b)
+}
+
+function omitLanguage(
+  localizations: Record<string, YouTubeLocalization> | undefined,
+  language: string,
+) {
+  if (!localizations) return undefined
+  return Object.fromEntries(
+    Object.entries(localizations).filter(([code]) => !isSameLanguage(code, language)),
+  )
+}
+
 export interface YouTubeUploadInput {
   accessToken: string
   videoBlob: Blob
@@ -68,7 +93,8 @@ export async function initYouTubeResumableUpload(
     origin,
   } = input
 
-  const hasLocalizations = !!localizations && Object.keys(localizations).length > 0
+  const filteredLocalizations = omitLanguage(localizations, language)
+  const hasLocalizations = !!filteredLocalizations && Object.keys(filteredLocalizations).length > 0
   const metadata: Record<string, unknown> = {
     snippet: {
       title,
@@ -85,7 +111,7 @@ export async function initYouTubeResumableUpload(
     },
   }
   if (hasLocalizations) {
-    metadata.localizations = localizations
+    metadata.localizations = filteredLocalizations
   }
   const parts = ['snippet', 'status', ...(hasLocalizations ? ['localizations'] : [])].join(',')
 

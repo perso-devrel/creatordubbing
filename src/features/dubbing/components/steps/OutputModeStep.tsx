@@ -161,7 +161,7 @@ export function OutputModeStep() {
               <div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <p className={cn(
-                    'text-base font-semibold leading-snug',
+                    'text-base font-semibold leading-snug break-keep',
                     selected ? 'text-brand-700 dark:text-brand-300' : 'text-surface-900 dark:text-white',
                   )}>
                     {t(title)}
@@ -172,7 +172,7 @@ export function OutputModeStep() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm leading-6 text-surface-600 dark:text-surface-300">{t(description)}</p>
+                <p className="mt-2 text-sm leading-6 text-surface-600 dark:text-surface-300 break-keep">{t(description)}</p>
               </div>
             </button>
           )
@@ -185,7 +185,9 @@ export function OutputModeStep() {
           {t('features.dubbing.components.steps.outputModeStep.back')}
         </Button>
         <Button onClick={nextStep} disabled={!canContinue}>
-          {t('features.dubbing.components.steps.outputModeStep.nextChooseLanguages')}
+          {deliverableMode === 'downloadOnly'
+            ? t('features.dubbing.components.steps.outputModeStep.nextReviewSettings')
+            : t('features.dubbing.components.steps.outputModeStep.nextUploadSettings')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

@@ -53,7 +53,11 @@ const createJobLanguagesSchema = z.object({
   type: z.literal('createJobLanguages'),
   payload: z.object({
     jobId: z.number().int(),
-    languages: z.array(z.object({ code: z.string().min(1), projectSeq: z.number().int() })).min(1),
+    languages: z.array(z.object({
+      code: z.string().min(1),
+      projectSeq: z.number().int(),
+      youtubeUploadSnapshotJson: z.string().nullable().optional(),
+    })).min(1),
   }),
 })
 
@@ -89,6 +93,14 @@ const updateJobStatusSchema = z.object({
   }),
 })
 
+const updateDubbingJobOriginalYouTubeUrlSchema = z.object({
+  type: z.literal('updateDubbingJobOriginalYouTubeUrl'),
+  payload: z.object({
+    jobId: z.number().int(),
+    originalYouTubeUrl: z.string().url(),
+  }),
+})
+
 const createYouTubeUploadSchema = z.object({
   type: z.literal('createYouTubeUpload'),
   payload: z.object({
@@ -99,6 +111,8 @@ const createYouTubeUploadSchema = z.object({
     languageCode: z.string().min(1),
     privacyStatus: z.string().min(1),
     isShort: z.boolean(),
+    uploadKind: z.string().optional(),
+    metadataJson: z.string().nullable().optional(),
   }),
 })
 
@@ -162,7 +176,11 @@ const updateJobLanguageProjectsSchema = z.object({
   type: z.literal('updateJobLanguageProjects'),
   payload: z.object({
     jobId: z.number().int(),
-    languages: z.array(z.object({ code: z.string().min(1), projectSeq: z.number().int() })).min(1),
+    languages: z.array(z.object({
+      code: z.string().min(1),
+      projectSeq: z.number().int(),
+      youtubeUploadSnapshotJson: z.string().nullable().optional(),
+    })).min(1),
   }),
 })
 
@@ -170,7 +188,11 @@ const createDubbingJobWithLanguagesSchema = z.object({
   type: z.literal('createDubbingJobWithLanguages'),
   payload: z.object({
     job: createDubbingJobSchema.shape.payload,
-    languages: z.array(z.object({ code: z.string().min(1), projectSeq: z.number().int() })).min(1),
+    languages: z.array(z.object({
+      code: z.string().min(1),
+      projectSeq: z.number().int(),
+      youtubeUploadSnapshotJson: z.string().nullable().optional(),
+    })).min(1),
   }),
 })
 
@@ -200,6 +222,9 @@ const queueYouTubeUploadSchema = z.object({
     srtContent: z.string().nullable().optional(),
     selfDeclaredMadeForKids: z.boolean().optional(),
     containsSyntheticMedia: z.boolean().optional(),
+    uploadKind: z.string().optional(),
+    metadataJson: z.string().nullable().optional(),
+    localizationsJson: z.string().nullable().optional(),
     resetFailed: z.boolean().optional(),
     processNow: z.boolean().optional(),
   }),
@@ -221,6 +246,7 @@ export const mutationActionSchema = z.discriminatedUnion('type', [
   updateJobLanguageProgressSchema,
   updateJobLanguageCompletedSchema,
   updateJobStatusSchema,
+  updateDubbingJobOriginalYouTubeUrlSchema,
   createYouTubeUploadSchema,
   updateJobLanguageYouTubeSchema,
   startJobLanguageYouTubeUploadSchema,
@@ -269,6 +295,8 @@ export function getJobIdFromAction(action: MutationAction): number | null {
     case 'updateJobLanguageCompleted':
       return action.payload.jobId
     case 'updateJobStatus':
+      return action.payload.jobId
+    case 'updateDubbingJobOriginalYouTubeUrl':
       return action.payload.jobId
     case 'updateJobLanguageYouTube':
       return action.payload.jobId

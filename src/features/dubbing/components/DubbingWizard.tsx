@@ -51,8 +51,8 @@ const UploadStep = dynamic(
 
 const stepPreloaders: Record<number, () => Promise<unknown>> = {
   1: () => import('./steps/VideoInputStep'),
-  2: () => import('./steps/OutputModeStep'),
-  3: () => import('./steps/LanguageSelectStep'),
+  2: () => import('./steps/LanguageSelectStep'),
+  3: () => import('./steps/OutputModeStep'),
   4: () => import('./steps/UploadSettingsStep'),
   5: () => import('./steps/TranslationEditStep'),
   6: () => import('./steps/ProcessingStep'),
@@ -61,8 +61,8 @@ const stepPreloaders: Record<number, () => Promise<unknown>> = {
 
 const steps = [
   { num: 1, label: 'features.dubbing.components.dubbingWizard.labelVideo' },
-  { num: 2, label: 'features.dubbing.components.dubbingWizard.labelOutput' },
-  { num: 3, label: 'features.dubbing.components.dubbingWizard.labelLanguages' },
+  { num: 2, label: 'features.dubbing.components.dubbingWizard.labelLanguages' },
+  { num: 3, label: 'features.dubbing.components.dubbingWizard.labelOutput' },
   { num: 4, label: 'features.dubbing.components.dubbingWizard.labelPublishSettings' },
   { num: 5, label: 'features.dubbing.components.dubbingWizard.labelReview' },
   { num: 6, label: 'features.dubbing.components.dubbingWizard.labelProcessing' },
@@ -135,8 +135,8 @@ export function DubbingWizard() {
       {/* Step content */}
       <div className="animate-fade-in">
         {currentStep === 1 && <VideoInputStep />}
-        {currentStep === 2 && <OutputModeStep />}
-        {currentStep === 3 && <LanguageSelectStep />}
+        {currentStep === 2 && <LanguageSelectStep />}
+        {currentStep === 3 && <OutputModeStep />}
         {currentStep === 4 && <UploadSettingsStep />}
         {currentStep === 5 && <TranslationEditStep />}
         {currentStep === 6 && <ProcessingStep />}

@@ -469,7 +469,7 @@ export function VideoInputStep() {
 
       <div className="flex justify-end">
         <Button onClick={nextStep} disabled={!videoMeta || loading}>
-          {t('features.dubbing.components.steps.videoInputStep.nextChooseOutput')}
+          {t('features.dubbing.components.steps.videoInputStep.nextChooseLanguages')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

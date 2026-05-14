@@ -7,7 +7,7 @@ describe('youtube metadata', () => {
   })
 
   it('fetches snippet and existing localizations', async () => {
-    const fetchMock = vi.fn(async () =>
+    const fetchMock = vi.fn<typeof fetch>(async () =>
       Response.json({
         items: [
           {
@@ -35,10 +35,43 @@ describe('youtube metadata', () => {
       categoryId: '22',
       tags: ['a'],
       defaultLanguage: 'ko',
+      resolvedLanguage: 'ko',
+      resolvedFrom: 'default',
       localizations: {
         en: { title: 'Title', description: 'Description' },
       },
     })
+  })
+
+  it('prefers the requested source localization when the default snippet is another language', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () =>
+      Response.json({
+        items: [
+          {
+            id: 'v1',
+            snippet: {
+              title: 'English title',
+              description: 'English description',
+              categoryId: '22',
+              defaultLanguage: 'en',
+            },
+            localizations: {
+              ko: { title: 'Korean title', description: 'Korean description' },
+            },
+          },
+        ],
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(fetchVideoMetadata('token', 'v1', 'ko')).resolves.toMatchObject({
+      title: 'Korean title',
+      description: 'Korean description',
+      defaultLanguage: 'en',
+      resolvedLanguage: 'ko',
+      resolvedFrom: 'localization',
+    })
+    expect(String(fetchMock.mock.calls[0][0])).toContain('hl=ko')
   })
 
   it('merges localizations and preserves required snippet fields on update', async () => {
@@ -109,6 +142,64 @@ describe('youtube metadata', () => {
       },
     })
     expect(result.localizations.en.title).toBe('Updated')
+  })
+
+  it('keeps the selected source language in the default snippet and omits it from localizations', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          items: [
+            {
+              id: 'v1',
+              snippet: {
+                title: 'English title',
+                description: 'English description',
+                categoryId: '22',
+                defaultLanguage: 'en',
+              },
+              localizations: {
+                ko: { title: 'Korean title', description: 'Korean description' },
+                ja: { title: 'Japanese title', description: 'Japanese description' },
+              },
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          id: 'v1',
+          snippet: {
+            title: 'Korean title',
+            description: 'Korean description',
+            categoryId: '22',
+            defaultLanguage: 'ko',
+          },
+          localizations: {
+            en: { title: 'English title', description: 'English description' },
+            ja: { title: 'Japanese title', description: 'Japanese description' },
+          },
+        }),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await updateVideoLocalizations({
+      accessToken: 'token',
+      videoId: 'v1',
+      sourceLang: 'ko',
+      title: 'Korean title',
+      description: 'Korean description',
+      localizations: {
+        ko: { title: 'Korean title', description: 'Korean description' },
+        en: { title: 'English title', description: 'English description' },
+      },
+    })
+
+    const updateBody = JSON.parse(fetchMock.mock.calls[1][1].body as string)
+    expect(updateBody.snippet.defaultLanguage).toBe('ko')
+    expect(updateBody.snippet.title).toBe('Korean title')
+    expect(updateBody.localizations.ko).toBeUndefined()
+    expect(updateBody.localizations.en.title).toBe('English title')
   })
 
   it('updates tags when provided', async () => {

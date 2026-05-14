@@ -43,16 +43,54 @@ function youtubeErrorFromBody(
   code: string,
 ): YouTubeError {
   const parsed = parseYouTubeErrorBody(body)
-  let message = fallbackMessage
+  const reason = parsed.reason
 
-  if (parsed.reason === 'quotaExceeded') {
-    message =
-      'YouTube API quota가 초과되어 내 영상을 불러올 수 없습니다. quota가 리셋된 뒤 다시 시도해주세요.'
-  } else if (parsed.message) {
-    message = fallbackMessage
+  if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded') {
+    return new YouTubeError(
+      status,
+      'YouTube API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.',
+      'QUOTA_EXCEEDED',
+      reason,
+    )
   }
 
-  return new YouTubeError(status, message, code)
+  if (reason === 'insufficientPermissions') {
+    return new YouTubeError(
+      status,
+      'YouTube 권한이 빠진 Google 토큰입니다. 설정에서 Google 계정으로 YouTube 연결을 다시 진행하고, 권한 동의 화면에서 YouTube 권한을 허용해 주세요.',
+      'YOUTUBE_RECONNECT_REQUIRED',
+      reason,
+    )
+  }
+
+  if (reason === 'authenticatedUserNotChannel') {
+    return new YouTubeError(
+      status,
+      '현재 Google 계정에 YouTube 채널이 없습니다. YouTube에서 채널을 만든 뒤 다시 연결해 주세요.',
+      'YOUTUBE_CHANNEL_REQUIRED',
+      reason,
+    )
+  }
+
+  if (reason === 'channelForbidden' || reason === 'forbidden') {
+    return new YouTubeError(
+      status,
+      '이 Google 계정으로는 해당 YouTube 채널을 사용할 수 없습니다. 채널 소유자 또는 관리자 계정으로 다시 연결해 주세요.',
+      'YOUTUBE_CHANNEL_FORBIDDEN',
+      reason,
+    )
+  }
+
+  if (reason === 'channelClosed' || reason === 'channelSuspended') {
+    return new YouTubeError(
+      status,
+      'YouTube 채널이 닫혔거나 정지되어 정보를 불러올 수 없습니다. YouTube Studio에서 채널 상태를 확인해 주세요.',
+      'YOUTUBE_CHANNEL_UNAVAILABLE',
+      reason,
+    )
+  }
+
+  return new YouTubeError(status, fallbackMessage, code, reason)
 }
 
 export async function fetchVideoStatistics(

@@ -113,13 +113,19 @@ interface DubbingState {
   setLipSync: (enabled: boolean) => void
   setNumberOfSpeakers: (n: number) => void
 
-  // Step 3: Translation editing
+  // Step 3: Deliverable mode
+  deliverableMode: DeliverableMode
+  copyrightAcknowledged: boolean
+  setDeliverableMode: (mode: DeliverableMode) => void
+  setCopyrightAcknowledged: (v: boolean) => void
+
+  // Step 5: Translation review
   segments: Record<string, TranslationSegment[]>
   setSegments: (langCode: string, segments: TranslationSegment[]) => void
   updateSegment: (langCode: string, segmentId: string, text: string) => void
   toggleExcludeSegment: (langCode: string, segmentId: string) => void
 
-  // Step 4: Processing — maps langCode to projectSeq
+  // Step 6: Processing — maps langCode to projectSeq
   projectMap: Record<string, number>
   jobStatus: JobStatus
   languageProgress: LanguageProgress[]
@@ -139,12 +145,6 @@ interface DubbingState {
   // Shorts
   isShort: boolean
   setIsShort: (v: boolean) => void
-
-  // Deliverable mode
-  deliverableMode: DeliverableMode
-  copyrightAcknowledged: boolean
-  setDeliverableMode: (mode: DeliverableMode) => void
-  setCopyrightAcknowledged: (v: boolean) => void
 
   // Upload settings (chosen before dubbing starts)
   uploadSettings: UploadSettings

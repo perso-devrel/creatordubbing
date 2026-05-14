@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useEffect, useRef, useState } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@/services/queryClient'
 import { ToastContainer } from '@/components/feedback/Toast'
@@ -14,8 +14,6 @@ import {
   getPathLocale,
   LOCALE_COOKIE,
   LOCALE_COOKIE_MAX_AGE,
-  stripLocalePrefix,
-  withLocalePath,
   type AppLocale,
 } from '@/lib/i18n/config'
 
@@ -73,7 +71,6 @@ function AuthHydrator() {
 
 function I18nHydrator() {
   const pathname = usePathname()
-  const router = useRouter()
   const initializedRef = useRef(false)
 
   useEffect(() => {
@@ -81,13 +78,9 @@ function I18nHydrator() {
     let canceled = false
 
     const applyDocumentLang = (state = useI18nStore.getState()) => {
-      document.documentElement.lang = state.appLocale
-      writeLocaleCookie(state.appLocale)
-    }
-
-    const currentLocalizedPath = () => {
-      const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
-      return stripLocalePrefix(current || '/')
+      const effectiveLocale = getPathLocale(window.location.pathname) ?? state.appLocale
+      document.documentElement.lang = effectiveLocale
+      writeLocaleCookie(effectiveLocale)
     }
 
     Promise.resolve(useI18nStore.persist.rehydrate()).finally(() => {
@@ -103,11 +96,6 @@ function I18nHydrator() {
 
       unsubscribe = useI18nStore.subscribe((state) => {
         applyDocumentLang(state)
-
-        const routeLocale = getPathLocale(window.location.pathname)
-        if (routeLocale && routeLocale !== state.appLocale) {
-          router.replace(withLocalePath(currentLocalizedPath(), state.appLocale))
-        }
       })
     })
 
@@ -116,7 +104,7 @@ function I18nHydrator() {
       initializedRef.current = false
       unsubscribe?.()
     }
-  }, [router])
+  }, [])
 
   useEffect(() => {
     if (!initializedRef.current) return
