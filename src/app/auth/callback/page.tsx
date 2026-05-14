@@ -77,8 +77,8 @@ export default function AuthCallbackPage() {
         if (!connected) {
           addToast({
             type: 'info',
-            title: t('components.layout.landingNavBar.connectYouTubeChannel'),
-            message: t('components.layout.landingNavBar.connectYouTubeChannelInSettings'),
+            title: t('app.auth.callback.page.connectYouTubeChannel'),
+            message: t('app.auth.callback.page.connectYouTubeChannelInSettings'),
           })
           window.location.replace(withLocalePath('/settings?section=youtube', redirectLocale))
           return
@@ -88,11 +88,11 @@ export default function AuthCallbackPage() {
         window.location.replace(isLandingPath(normalizedReturnTo) ? withLocalePath('/dashboard', redirectLocale) : normalizedReturnTo)
       } catch (err) {
         if (cancelled) return
-        const message = err instanceof Error ? err.message : t('components.layout.landingNavBar.pleaseTryAgainShortlyContactUsIfThe')
+        const message = err instanceof Error ? err.message : t('app.auth.callback.page.tryAgainShortly')
         setErrorMessage(message)
         addToast({
           type: 'error',
-          title: t('components.layout.landingNavBar.couldNotSignIn'),
+          title: t('app.auth.callback.page.couldNotSignIn'),
           message,
         })
         window.setTimeout(() => {

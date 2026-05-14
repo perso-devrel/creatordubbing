@@ -255,7 +255,23 @@ const baseMessages = {
     en: 'Payment confirmation failed.',
   },
   'app.app.loading.label': { ko: '로딩 중...', en: 'Loading...' },
+  'app.auth.callback.page.connectYouTubeChannel': {
+    ko: 'YouTube 채널을 연결해 주세요',
+    en: 'Connect your YouTube channel',
+  },
+  'app.auth.callback.page.connectYouTubeChannelInSettings': {
+    ko: '더빙과 업로드를 시작하려면 설정에서 YouTube 채널을 먼저 연결해야 합니다.',
+    en: 'Connect your YouTube channel in Settings before starting dubbing and uploads.',
+  },
+  'app.auth.callback.page.couldNotSignIn': {
+    ko: '로그인할 수 없습니다',
+    en: 'Could not sign in',
+  },
   'app.auth.callback.page.processingLogin': { ko: '로그인 처리 중입니다...', en: 'Signing you in...' },
+  'app.auth.callback.page.tryAgainShortly': {
+    ko: '잠시 후 다시 시도해 주세요. 문제가 계속되면 문의해 주세요.',
+    en: 'Please try again shortly. Contact us if the problem continues.',
+  },
   'app.app.uploads.page.couldNotLoadVideosToUpload': {
     ko: '업로드할 영상을 불러오지 못했습니다.',
     en: 'Could not load videos to upload.',
