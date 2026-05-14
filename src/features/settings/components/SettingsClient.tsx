@@ -22,7 +22,7 @@ import { useYouTubeSettingsStore } from '@/stores/youtubeSettingsStore'
 import { SUPPORTED_LANGUAGES, getLanguageByCode } from '@/utils/languages'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
 import { useLocaleRouter } from '@/hooks/useLocalePath'
-import { useChannelStats } from '@/hooks/useYouTubeData'
+import { isYouTubeConnectionError, useChannelStats } from '@/hooks/useYouTubeData'
 import { formatNumber } from '@/utils/formatters'
 import { signInWithGoogle, signOut as clearStoredGoogleUser } from '@/lib/google-auth'
 import { useAuthStore } from '@/stores/authStore'
@@ -108,10 +108,7 @@ export function SettingsClient() {
   const youtubeSectionRef = useRef<HTMLDivElement>(null)
 
   const { data: channel, error: channelError } = useChannelStats()
-  const isYouTubeConnected = !!channel && !(
-    channelError instanceof Error &&
-    (channelError.message.includes(t('internal.keyword.youtubeConnection')) || channelError.message.includes('Google access token'))
-  )
+  const isYouTubeConnected = !!channel && !isYouTubeConnectionError(channelError)
 
   const draftTags = useMemo(() => parseTagsInput(defaultTagsInput), [defaultTagsInput])
   const targetLanguageCodes = useMemo(
@@ -542,10 +539,11 @@ function YouTubeConnectionCard() {
   const [connecting, setConnecting] = useState(false)
   const addToast = useNotificationStore((state) => state.addToast)
   const { data: channel, isLoading: channelLoading, error: channelError } = useChannelStats()
-  const missingYouTubeConnection =
-    channelError instanceof Error &&
-    (channelError.message.includes(t('internal.keyword.youtubeConnection')) || channelError.message.includes('Google access token'))
+  const missingYouTubeConnection = isYouTubeConnectionError(channelError)
   const isConnected = !!channel && !missingYouTubeConnection
+  const connectionMessage = missingYouTubeConnection && channelError instanceof Error
+    ? channelError.message
+    : t('app.app.youtube.page.noYouTubeChannelConnected')
 
   const handleReconnect = async () => {
     setConnecting(true)
@@ -637,7 +635,7 @@ function YouTubeConnectionCard() {
       ) : (
         <div className="mt-4 flex flex-col items-center gap-4 py-8">
           <Video className="h-12 w-12 text-surface-300" />
-          <p className="text-surface-500 dark:text-surface-300">{t('app.app.youtube.page.noYouTubeChannelConnected')}</p>
+          <p className="max-w-md text-center text-sm leading-6 text-surface-600 dark:text-surface-300">{connectionMessage}</p>
           <p className="max-w-md text-center text-xs leading-5 text-surface-600 dark:text-surface-300">
             {t('app.app.youtube.page.dubtubeRequestsYouTubePermissionsForChannelReadsUploads')}
           </p>

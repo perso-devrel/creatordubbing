@@ -18,16 +18,6 @@ import {
   type AppLocale,
 } from '@/lib/i18n/config'
 
-async function hasConnectedYouTubeChannel(): Promise<boolean> {
-  try {
-    const res = await fetch('/api/youtube/stats?channel=true', { cache: 'no-store' })
-    const body = (await res.json().catch(() => null)) as { ok?: boolean; data?: unknown } | null
-    return res.ok && body?.ok === true && !!body.data
-  } catch {
-    return false
-  }
-}
-
 function getRedirectLocale(returnTo: string, fallback: AppLocale): AppLocale {
   return getPathLocale(returnTo) ??
     getPathLocale(window.location.pathname) ??
@@ -67,20 +57,6 @@ export default function AuthCallbackPage() {
         // YouTube reconnect flow: just go back wherever the user came from.
         if (scopeMode === 'youtube-write' || scopeMode === 'youtube-readonly') {
           window.location.replace(withSafeLocalePath(returnTo, redirectLocale, '/settings?section=youtube'))
-          return
-        }
-
-        // Initial login: nudge user to connect YouTube if they haven't yet.
-        const connected = await hasConnectedYouTubeChannel()
-        if (cancelled) return
-
-        if (!connected) {
-          addToast({
-            type: 'info',
-            title: t('app.auth.callback.page.connectYouTubeChannel'),
-            message: t('app.auth.callback.page.connectYouTubeChannelInSettings'),
-          })
-          window.location.replace(withLocalePath('/settings?section=youtube', redirectLocale))
           return
         }
 

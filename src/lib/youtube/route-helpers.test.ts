@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { z } from 'zod'
 import { cookies } from 'next/headers'
-import { ytOk, ytFail, ytHandle, requireAccessToken, parseQuery, parseYtBody } from './route-helpers'
+import { ytOk, ytFail, ytHandle, requireAccessToken, parseQuery, parseYtBody, withTokenRetry } from './route-helpers'
 import { YouTubeError } from './server'
 import { verifySessionCookie } from '@/lib/auth/session-cookie'
 import { getOrRefreshAccessToken } from '@/lib/auth/token-refresh'
@@ -17,6 +17,10 @@ vi.mock('@/lib/auth/session-cookie', () => ({
 vi.mock('@/lib/auth/token-refresh', () => ({
   getOrRefreshAccessToken: vi.fn(),
 }))
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe('ytOk', () => {
   it('returns JSON with ok: true envelope', async () => {
@@ -54,6 +58,17 @@ describe('ytFail', () => {
     const err = new YouTubeError(0, 'No status', 'NO_STATUS')
     const res = ytFail(err)
     expect(res.status).toBe(500)
+  })
+
+  it('maps missing YouTube scope to a reconnect action', async () => {
+    const err = new YouTubeError(403, 'missing scope', 'YOUTUBE_RECONNECT_REQUIRED', 'insufficientPermissions')
+    const res = ytFail(err)
+    const body = await res.json()
+    expect(res.status).toBe(403)
+    expect(body.error).toMatchObject({
+      code: 'YOUTUBE_RECONNECT_REQUIRED',
+      message: expect.stringContaining('YouTube 연결을 다시 진행'),
+    })
   })
 
   it('handles generic Error', async () => {
@@ -238,5 +253,58 @@ describe('requireAccessToken', () => {
       expect((e as YouTubeError).status).toBe(401)
       expect((e as YouTubeError).code).toBe('MISSING_ACCESS_TOKEN')
     }
+  })
+})
+
+describe('withTokenRetry', () => {
+  it('refreshes once and retries when YouTube scopes are missing from the access token', async () => {
+    vi.mocked(cookies)
+      .mockResolvedValueOnce({
+        get: vi.fn((name: string) =>
+          name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+        ),
+      } as never)
+      .mockResolvedValueOnce({
+        get: vi.fn((name: string) =>
+          name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+        ),
+      } as never)
+    vi.mocked(verifySessionCookie).mockResolvedValue('user-1')
+    vi.mocked(getOrRefreshAccessToken)
+      .mockResolvedValueOnce('login-only-token')
+      .mockResolvedValueOnce('youtube-token')
+
+    const fn = vi.fn()
+      .mockRejectedValueOnce(new YouTubeError(
+        403,
+        'missing scope',
+        'YOUTUBE_RECONNECT_REQUIRED',
+        'insufficientPermissions',
+      ))
+      .mockResolvedValueOnce({ ok: true })
+
+    await expect(withTokenRetry(new Request('http://localhost'), fn)).resolves.toEqual({ ok: true })
+    expect(fn).toHaveBeenCalledTimes(2)
+    expect(fn).toHaveBeenNthCalledWith(1, 'login-only-token')
+    expect(fn).toHaveBeenNthCalledWith(2, 'youtube-token')
+    expect(getOrRefreshAccessToken).toHaveBeenNthCalledWith(1, 'user-1', { force: undefined })
+    expect(getOrRefreshAccessToken).toHaveBeenNthCalledWith(2, 'user-1', { force: true })
+  })
+
+  it('does not retry quota errors as auth problems', async () => {
+    vi.mocked(cookies).mockResolvedValueOnce({
+      get: vi.fn((name: string) =>
+        name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+      ),
+    } as never)
+    vi.mocked(verifySessionCookie).mockResolvedValueOnce('user-1')
+    vi.mocked(getOrRefreshAccessToken).mockResolvedValueOnce('youtube-token')
+
+    const err = new YouTubeError(403, 'quota', 'QUOTA_EXCEEDED', 'quotaExceeded')
+    const fn = vi.fn().mockRejectedValueOnce(err)
+
+    await expect(withTokenRetry(new Request('http://localhost'), fn)).rejects.toBe(err)
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(getOrRefreshAccessToken).toHaveBeenCalledTimes(1)
   })
 })
