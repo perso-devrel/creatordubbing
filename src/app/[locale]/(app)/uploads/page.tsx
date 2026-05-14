@@ -32,6 +32,13 @@ import {
 
 type UploadState = 'idle' | 'fetching' | 'uploading' | 'done' | 'error'
 type PrivacyStatus = 'public' | 'unlisted' | 'private'
+type CompletedJobGroup = {
+  id: number
+  title: string
+  durationMs: number
+  createdAt: string
+  langs: CompletedJobLanguage[]
+}
 
 interface UploadSettings {
   title: string
@@ -556,18 +563,21 @@ export default function UploadsPage() {
     staleTime: 60_000,
   })
 
-  const jobs = items.reduce<Record<number, { title: string; durationMs: number; createdAt: string; langs: CompletedJobLanguage[] }>>((acc, item) => {
-    if (!acc[item.job_id]) {
-      acc[item.job_id] = {
+  const jobs = Array.from(items.reduce<Map<number, CompletedJobGroup>>((acc, item) => {
+    const existing = acc.get(item.job_id)
+    if (!existing) {
+      acc.set(item.job_id, {
+        id: item.job_id,
         title: item.video_title,
         durationMs: item.video_duration_ms,
         createdAt: item.created_at,
-        langs: [],
-      }
+        langs: [item],
+      })
+      return acc
     }
-    acc[item.job_id].langs.push(item)
+    existing.langs.push(item)
     return acc
-  }, {})
+  }, new Map()).values())
 
   return (
     <div className="space-y-6">
@@ -589,8 +599,8 @@ export default function UploadsPage() {
         />
       ) : (
         <div className="space-y-4">
-          {Object.entries(jobs).map(([jobId, job]) => (
-            <Card key={jobId}>
+          {jobs.map((job) => (
+            <Card key={job.id}>
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base">{job.title}</CardTitle>
