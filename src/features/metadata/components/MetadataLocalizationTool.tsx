@@ -190,14 +190,18 @@ export function MetadataLocalizationTool() {
     if (!videoId) return
     setLoadingMetadata(true)
     try {
-      const metadata = await ytFetchVideoMetadata(videoId)
+      const requestedSourceLang = toBcp47(sourceLang || defaultLanguage)
+      const metadata = await ytFetchVideoMetadata(videoId, requestedSourceLang)
       setTitle(metadata.title)
       setDescription(metadata.description)
       // YouTube에 defaultLanguage가 명시되어 있지 않으면 빈 문자열이 옴 — 사용자 설정 기본값으로 fallback.
       const ytDefaultLang = metadata.defaultLanguage?.trim() ?? ''
-      const nextSourceLang = ytDefaultLang ? fromBcp47(ytDefaultLang) : defaultLanguage
+      const ytResolvedLang = metadata.resolvedLanguage?.trim() ?? ''
+      const nextSourceLang = ytResolvedLang
+        ? fromBcp47(ytResolvedLang)
+        : ytDefaultLang ? fromBcp47(ytDefaultLang) : defaultLanguage
       setSourceLang(nextSourceLang)
-      if (!ytDefaultLang) {
+      if (!ytDefaultLang && !ytResolvedLang) {
         addToast({
           type: 'warning',
         title: t('features.metadata.components.metadataLocalizationTool.theSourceLanguageIsNotSetOnYouTube'),

@@ -440,6 +440,38 @@ describe('uploadVideoToYouTube', () => {
     })
   })
 
+  it('keeps source metadata in snippet and excludes the source language from localizations', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse({}, 200, { Location: 'https://upload.example.com/resume' }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ id: 'yt-abc', snippet: { title: 'Korean title' }, status: { uploadStatus: 'uploaded' } }),
+      )
+
+    await uploadVideoToYouTube({
+      accessToken: 'tok',
+      videoBlob: new Blob(['video'], { type: 'video/mp4' }),
+      title: 'Korean title',
+      description: 'Korean description',
+      tags: [],
+      language: 'ko',
+      localizations: {
+        ko: { title: 'Korean title', description: 'Korean description' },
+        en: { title: 'English title', description: 'English description' },
+      },
+    })
+
+    const initBody = JSON.parse(mockFetch.mock.calls[0][1]?.body as string)
+    expect(initBody.snippet).toMatchObject({
+      title: 'Korean title',
+      description: 'Korean description',
+      defaultLanguage: 'ko',
+    })
+    expect(initBody.localizations.ko).toBeUndefined()
+    expect(initBody.localizations.en.title).toBe('English title')
+  })
+
   it('throws on init failure', async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse('Bad request', 400))
     await expect(

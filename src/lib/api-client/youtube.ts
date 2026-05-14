@@ -139,8 +139,9 @@ export async function ytFetchMyVideos(
   return json(res)
 }
 
-export async function ytFetchVideoMetadata(videoId: string): Promise<YouTubeVideoMetadata> {
+export async function ytFetchVideoMetadata(videoId: string, sourceLang?: string): Promise<YouTubeVideoMetadata> {
   const params = new URLSearchParams({ videoId })
+  if (sourceLang) params.set('sourceLang', sourceLang)
   const res = await fetch(`${YT}/metadata?${params}`, { cache: 'no-store' })
   return json(res)
 }

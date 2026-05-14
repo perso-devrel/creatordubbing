@@ -195,7 +195,8 @@ export function UploadStep() {
     existingVideoMetadataSyncRef.current.add(syncKey)
 
     try {
-      const metadata = await ytFetchVideoMetadata(targetVideoId)
+      const requestedSourceLang = toBcp47(metadataLanguage)
+      const metadata = await ytFetchVideoMetadata(targetVideoId, requestedSourceLang)
       const mergedTags = requestedTags.length === 0
         ? metadata.tags
         : Array.from(new Set([...metadata.tags, ...requestedTags]))
@@ -213,7 +214,7 @@ export function UploadStep() {
       // 원본 제목/설명은 그대로 유지 — localizations와 tags만 갱신.
       await ytUpdateVideoLocalizations({
         videoId: targetVideoId,
-        sourceLang: metadata.defaultLanguage || toBcp47(metadataLanguage),
+        sourceLang: metadata.resolvedLanguage || metadata.defaultLanguage || requestedSourceLang,
         title: metadata.title || settingsTitle?.trim() || videoMetaTitle || t('features.dubbing.components.steps.uploadStep.untitled'),
         description: metadata.description,
         tags: mergedTags,
