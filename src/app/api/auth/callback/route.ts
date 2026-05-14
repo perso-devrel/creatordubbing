@@ -11,6 +11,30 @@ export const dynamic = 'force-dynamic'
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
+const YOUTUBE_WRITE_REQUIRED_SCOPES = [
+  'https://www.googleapis.com/auth/youtube.upload',
+  'https://www.googleapis.com/auth/youtube.force-ssl',
+  'https://www.googleapis.com/auth/youtube.readonly',
+] as const
+const YOUTUBE_READONLY_REQUIRED_SCOPES = [
+  'https://www.googleapis.com/auth/youtube.readonly',
+] as const
+
+function hasGrantedScopes(scopeValue: string | undefined, requiredScopes: readonly string[]) {
+  if (!scopeValue) return true
+  const grantedScopes = new Set(scopeValue.split(/\s+/).filter(Boolean))
+  return requiredScopes.every((scope) => grantedScopes.has(scope))
+}
+
+function hasRequiredYouTubeScopes(scopeMode: string, scopeValue: string | undefined) {
+  if (scopeMode === 'youtube-write') {
+    return hasGrantedScopes(scopeValue, YOUTUBE_WRITE_REQUIRED_SCOPES)
+  }
+  if (scopeMode === 'youtube-readonly') {
+    return hasGrantedScopes(scopeValue, YOUTUBE_READONLY_REQUIRED_SCOPES)
+  }
+  return true
+}
 
 function getAllowedRedirectOrigins(req: NextRequest) {
   const origins = new Set<string>([req.nextUrl.origin])
@@ -47,7 +71,7 @@ export async function POST(req: NextRequest) {
       return apiFail('BAD_REQUEST', 'code and redirectUri required', 400)
     }
 
-    const { code, redirectUri } = parsed.data
+    const { code, redirectUri, scopeMode } = parsed.data
     const serverEnv = getServerEnv()
     const clientEnv = getClientEnv()
     const verifiedRedirectUri = getVerifiedRedirectUri(req, redirectUri)
@@ -79,7 +103,16 @@ export async function POST(req: NextRequest) {
       access_token: string
       refresh_token?: string
       expires_in: number
+      scope?: string
       token_type: string
+    }
+
+    if (!hasRequiredYouTubeScopes(scopeMode, tokens.scope)) {
+      return apiFail(
+        'YOUTUBE_SCOPE_DENIED',
+        'YouTube 권한이 허용되지 않았습니다. Google 동의 화면에서 YouTube 권한을 모두 허용해 주세요.',
+        403,
+      )
     }
 
     const userRes = await fetch(GOOGLE_USERINFO_URL, {
@@ -103,9 +136,9 @@ export async function POST(req: NextRequest) {
       email: info.email,
       displayName: info.name ?? null,
       photoURL: info.picture ?? null,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token ?? null,
-      tokenExpiresAt: expiresAt,
+      accessToken: scopeMode === 'login' ? null : tokens.access_token,
+      refreshToken: scopeMode === 'login' ? null : tokens.refresh_token ?? null,
+      tokenExpiresAt: scopeMode === 'login' ? null : expiresAt,
     })
 
     const session = await createSessionCookie(info.sub)

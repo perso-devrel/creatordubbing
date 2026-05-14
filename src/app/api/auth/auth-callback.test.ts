@@ -113,19 +113,69 @@ describe('POST /api/auth/callback', () => {
           access_token: 'at-123',
           refresh_token: 'rt-456',
           expires_in: 3600,
+          scope: [
+            'openid',
+            'email',
+            'profile',
+            'https://www.googleapis.com/auth/youtube.upload',
+            'https://www.googleapis.com/auth/youtube.force-ssl',
+            'https://www.googleapis.com/auth/youtube.readonly',
+          ].join(' '),
           token_type: 'Bearer',
         }),
       })
       .mockResolvedValueOnce({
         ok: false,
       })
-    const res = await POST(makeReq({ code: 'good-code', redirectUri: CALLBACK_REDIRECT_URI }))
+    const res = await POST(makeReq({
+      code: 'good-code',
+      redirectUri: CALLBACK_REDIRECT_URI,
+      scopeMode: 'youtube-write',
+    }))
     expect(res.status).toBe(401)
     const body = await res.json()
     expect(body.error.code).toBe('USERINFO_FAILED')
   })
 
+  it('rejects YouTube reconnect when Google did not grant YouTube scopes', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        access_token: 'login-only-token',
+        refresh_token: 'rt-456',
+        expires_in: 3600,
+        scope: 'openid email profile',
+        token_type: 'Bearer',
+      }),
+    })
+
+    const res = await POST(makeReq({
+      code: 'missing-youtube-scope',
+      redirectUri: CALLBACK_REDIRECT_URI,
+      scopeMode: 'youtube-write',
+    }))
+    const body = await res.json()
+
+    expect(res.status).toBe(403)
+    expect(body.error).toMatchObject({
+      code: 'YOUTUBE_SCOPE_DENIED',
+      message: expect.stringContaining('YouTube 권한이 허용되지 않았습니다'),
+    })
+    expect(upsertUser).not.toHaveBeenCalled()
+    expect(createUserSession).not.toHaveBeenCalled()
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
   it('exchanges code and returns user + sets cookies on success', async () => {
+    const grantedYouTubeScopes = [
+      'openid',
+      'email',
+      'profile',
+      'https://www.googleapis.com/auth/youtube.upload',
+      'https://www.googleapis.com/auth/youtube.force-ssl',
+      'https://www.googleapis.com/auth/youtube.readonly',
+    ].join(' ')
+
     mockFetch
       .mockResolvedValueOnce({
         ok: true,
@@ -133,6 +183,7 @@ describe('POST /api/auth/callback', () => {
           access_token: 'at-123',
           refresh_token: 'rt-456',
           expires_in: 3600,
+          scope: grantedYouTubeScopes,
           token_type: 'Bearer',
         }),
       })
@@ -146,7 +197,11 @@ describe('POST /api/auth/callback', () => {
         }),
       })
 
-    const res = await POST(makeReq({ code: 'good-code', redirectUri: CALLBACK_REDIRECT_URI }))
+    const res = await POST(makeReq({
+      code: 'good-code',
+      redirectUri: CALLBACK_REDIRECT_URI,
+      scopeMode: 'youtube-write',
+    }))
     expect(res.status).toBe(200)
 
     const body = await res.json()
@@ -176,6 +231,37 @@ describe('POST /api/auth/callback', () => {
     expect(setCookies.find((c: string) => c.startsWith('google_access_token='))).toBeUndefined()
   })
 
+  it('does not overwrite stored YouTube tokens on login-only callback', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          access_token: 'login-at-123',
+          expires_in: 3600,
+          token_type: 'Bearer',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          sub: 'user-login',
+          email: 'login@example.com',
+        }),
+      })
+
+    const res = await POST(makeReq({ code: 'login-code', redirectUri: CALLBACK_REDIRECT_URI }))
+    expect(res.status).toBe(200)
+
+    expect(upsertUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'user-login',
+        accessToken: null,
+        refreshToken: null,
+        tokenExpiresAt: null,
+      }),
+    )
+  })
+
   it('handles missing refresh_token gracefully', async () => {
     mockFetch
       .mockResolvedValueOnce({
@@ -194,7 +280,11 @@ describe('POST /api/auth/callback', () => {
         }),
       })
 
-    const res = await POST(makeReq({ code: 'code-no-refresh', redirectUri: CALLBACK_REDIRECT_URI }))
+    const res = await POST(makeReq({
+      code: 'code-no-refresh',
+      redirectUri: CALLBACK_REDIRECT_URI,
+      scopeMode: 'youtube-write',
+    }))
     expect(res.status).toBe(200)
 
     expect(upsertUser).toHaveBeenCalledWith(
