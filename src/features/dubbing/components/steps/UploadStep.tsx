@@ -245,10 +245,33 @@ export function UploadStep() {
 
   // ─── Original video upload (for upload + originalWithMultiAudio) ──────
   const uploadOriginalToYouTube = useCallback(async () => {
-    if (!isAuthenticated || !originalVideoUrl) return null
+    if (!isAuthenticated) return null
 
-    setOriginalUploadState({ status: 'uploading' })
+    const cachedVideoId = originalUploadState.videoId
+    if (!cachedVideoId && !originalVideoUrl) return null
+
+    setOriginalUploadState({ status: 'uploading', videoId: cachedVideoId })
     try {
+      const persistOriginalVideoId = async (youtubeVideoId: string) => {
+        if (!dbJobId) {
+          throw new Error(t('features.dubbing.components.steps.uploadStep.couldNotSaveTheUploadedOriginalVideoPleaseTry'))
+        }
+        await dbMutationStrict({
+          type: 'updateDubbingJobOriginalYouTubeUrl',
+          payload: {
+            jobId: dbJobId,
+            originalYouTubeUrl: `https://www.youtube.com/watch?v=${youtubeVideoId}`,
+          },
+        })
+      }
+
+      if (cachedVideoId) {
+        await persistOriginalVideoId(cachedVideoId)
+        setOriginalUploadState({ status: 'done', videoId: cachedVideoId })
+        return cachedVideoId
+      }
+
+      if (!originalVideoUrl) return null
       // 다국어 자막 모드는 영상 1개에 localizations 맵을 함께 보내 YouTube가 시청자
       // 로케일에 맞춰 제목·설명을 보여주도록 한다.
       const allTranslations = await ensureTranslations()
@@ -274,16 +297,20 @@ export function UploadStep() {
         language: toBcp47(metadataLanguage),
         localizations: Object.keys(localizations).length > 0 ? localizations : undefined,
       })
+      setOriginalUploadState({ status: 'uploading', videoId: result.videoId })
+      await persistOriginalVideoId(result.videoId)
       setOriginalUploadState({ status: 'done', videoId: result.videoId })
       return result.videoId
     } catch (err) {
       console.warn('[Dubtube] Original video upload failed', err)
-      const msg = t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheOriginalVideoUploadPlease')
-      setOriginalUploadState({ status: 'idle', error: msg })
+      const msg = err instanceof Error
+        ? err.message
+        : t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheOriginalVideoUploadPlease')
+      setOriginalUploadState((current) => ({ status: 'idle', videoId: current.videoId ?? cachedVideoId, error: msg }))
       addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.originalUploadFailed'), message: msg })
       return null
     }
-  }, [isAuthenticated, originalVideoUrl, settingsTitle, editableDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, shouldApplyAiDisclosure, videoMeta, addToast, ensureTranslations, selectedLanguages, metadataLanguage, applyDescriptionFooter, t])
+  }, [isAuthenticated, originalUploadState.videoId, originalVideoUrl, settingsTitle, editableDescription, settingsTags, privacyStatus, selfDeclaredMadeForKids, shouldApplyAiDisclosure, videoMeta, dbJobId, addToast, ensureTranslations, selectedLanguages, metadataLanguage, applyDescriptionFooter, t])
 
   // ─── File download ──────────────────────────────────────────────────
   const handleDownload = useCallback(async (langCode: string, type: 'video' | 'voiceAudio' | 'translatedSubtitle') => {
