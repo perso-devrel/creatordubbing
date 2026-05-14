@@ -298,8 +298,8 @@ export const commonMessages = {
     en: 'Delete account',
   },
   'settings.accountDeletion.confirmButton': {
-    ko: '계정 삭제',
-    en: 'Delete account',
+    ko: '회원탈퇴',
+    en: 'Withdraw account',
   },
   'settings.accountDeletion.confirmLabel': {
     ko: '계속하려면 {confirmation}를 입력하세요',
@@ -314,18 +314,14 @@ export const commonMessages = {
     en: 'Please try again shortly.',
   },
   'settings.accountDeletion.modalDescription': {
-    ko: '회원탈퇴를 요청하면 즉시 로그아웃되고 계정, YouTube 연결, 업로드 큐, 더빙 작업 기록이 복구 대기 상태가 됩니다. 1주일 내 같은 Google 계정으로 다시 로그인하면 정상 계정으로 복구됩니다.',
-    en: 'After requesting withdrawal, you will be signed out and your account, YouTube connection, upload queue, and dubbing job history will be held for recovery. Sign in with the same Google account within 7 days to restore everything.',
+    ko: '즉시 로그아웃되고 계정, YouTube 연결, 업로드 큐, 더빙 작업 기록이 모두 삭제됩니다. 1주일 내 다시 로그인하면 복구할 수 있습니다.',
+    en: 'You will be signed out immediately, and your account, YouTube connection, upload queue, and dubbing job history will be deleted. Sign in again within 7 days to restore them.',
   },
   'settings.accountDeletion.modalTitle': {
-    ko: '계정 삭제',
-    en: 'Delete account',
+    ko: '회원 탈퇴 안내',
+    en: 'Account withdrawal notice',
   },
   'settings.appLocale': { ko: '앱 언어', en: 'App locale' },
-  'settings.dangerZone.description': {
-    ko: '더빙 작업 기록이 모두 삭제 요청 상태로 전환됩니다. 1주일 내 다시 로그인하면 계정을 복구할 수 있습니다.',
-    en: 'Your dubbing job history is moved into deletion-request status. Sign in again within 7 days to restore your account.',
-  },
   'settings.dangerZone.title': {
     ko: '회원탈퇴',
     en: 'Account withdrawal',

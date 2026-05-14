@@ -490,9 +490,6 @@ function AccountDangerZone() {
             </div>
             <div className="min-w-0">
               <CardTitle>{t('settings.dangerZone.title')}</CardTitle>
-              <p className="mt-1 text-sm leading-6 text-surface-600 dark:text-surface-300 xl:whitespace-nowrap">
-                {t('settings.dangerZone.description')}
-              </p>
             </div>
           </div>
           <Button type="button" variant="destructive" onClick={() => setDeleteModalOpen(true)} className="w-full sm:w-auto">

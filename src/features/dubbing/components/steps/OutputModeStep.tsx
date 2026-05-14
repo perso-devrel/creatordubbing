@@ -185,7 +185,9 @@ export function OutputModeStep() {
           {t('features.dubbing.components.steps.outputModeStep.back')}
         </Button>
         <Button onClick={nextStep} disabled={!canContinue}>
-          {t('features.dubbing.components.steps.outputModeStep.nextChooseLanguages')}
+          {deliverableMode === 'downloadOnly'
+            ? t('features.dubbing.components.steps.outputModeStep.nextReviewSettings')
+            : t('features.dubbing.components.steps.outputModeStep.nextUploadSettings')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>

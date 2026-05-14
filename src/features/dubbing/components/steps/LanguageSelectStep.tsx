@@ -37,7 +37,6 @@ export function LanguageSelectStep() {
     videoMeta,
     toggleLanguage,
     setSelectedLanguages,
-    deliverableMode,
     prevStep,
     nextStep,
   } = useDubbingStore()
@@ -94,9 +93,7 @@ export function LanguageSelectStep() {
   const remainingMinutes = summary ? Number(summary.credits_remaining) : null
   const remainingAfter = remainingMinutes === null ? null : remainingMinutes - estimatedMinutes
   const hasInsufficientMinutes = remainingAfter !== null && selectedLanguages.length > 0 && remainingAfter < 0
-  const selectionDescription = deliverableMode === 'originalWithMultiAudio'
-    ? t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesForTranslatedCaptions')
-    : t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesToDubInto')
+  const selectionDescription = t('features.dubbing.components.steps.languageSelectStep.chooseTheLanguagesForYourOutput')
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -254,9 +251,7 @@ export function LanguageSelectStep() {
           {t('features.dubbing.components.steps.languageSelectStep.back')}
         </Button>
         <Button onClick={nextStep} disabled={selectedLanguages.length === 0 || hasInsufficientMinutes}>
-          {deliverableMode === 'downloadOnly'
-            ? t('features.dubbing.components.steps.languageSelectStep.nextReviewSettings')
-            : t('features.dubbing.components.steps.languageSelectStep.nextUploadSettings')}
+          {t('features.dubbing.components.steps.languageSelectStep.nextChooseOutput')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
