@@ -558,6 +558,7 @@ export const generatedMessages = {
   "features.dubbing.hooks.usePersoFlow.failedToImportVideo": { ko: "영상을 가져오지 못했습니다.", en: "Failed to import video." },
   "features.dubbing.hooks.usePersoFlow.failedToLoadWorkspace": { ko: "작업 공간을 불러오지 못했습니다.", en: "Failed to load workspace." },
   "features.dubbing.hooks.usePersoFlow.failedToStartDubbing": { ko: "더빙 작업을 시작하지 못했습니다.", en: "Failed to start dubbing." },
+  "features.dubbing.hooks.usePersoFlow.unsupportedTtsModelPair": { ko: "선택한 언어 조합에서 사용할 수 있는 음성 모델이 없습니다. 언어 선택을 줄이거나 다시 시도해 주세요.", en: "No voice model is available for the selected language combination. Choose fewer languages or try again." },
   "features.dubbing.hooks.usePersoFlow.importFailed": { ko: "영상 가져오기 실패", en: "Import failed" },
   "features.dubbing.hooks.usePersoFlow.importingFromYouTube": { ko: "YouTube에서 영상을 가져오는 중...", en: "Importing from YouTube..." },
   "features.dubbing.hooks.usePersoFlow.importingVideoURL": { ko: "영상 URL을 가져오는 중...", en: "Importing video URL..." },

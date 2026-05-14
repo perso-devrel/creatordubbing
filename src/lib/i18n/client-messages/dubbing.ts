@@ -372,6 +372,7 @@ export const dubbingMessages = {
   "features.dubbing.hooks.usePersoFlow.startingDubbingJob": { ko: "더빙 작업을 시작하는 중...", en: "Starting dubbing job..." },
   "features.dubbing.hooks.usePersoFlow.unitLanguages": { ko: "개 언어", en: "languages" },
   "features.dubbing.hooks.usePersoFlow.unitLanguagesProcessing": { ko: "개 언어 처리 중", en: "languages processing" },
+  "features.dubbing.hooks.usePersoFlow.unsupportedTtsModelPair": { ko: "선택한 언어 조합에서 사용할 수 있는 음성 모델이 없습니다. 언어 선택을 줄이거나 다시 시도해 주세요.", en: "No voice model is available for the selected language combination. Choose fewer languages or try again." },
   "features.dubbing.hooks.usePersoFlow.uploadedFile": { ko: "직접 업로드한 파일", en: "Uploaded file" },
   "features.dubbing.hooks.usePersoFlow.uploadFailed": { ko: "업로드하지 못했습니다.", en: "Upload failed." },
   "features.dubbing.hooks.usePersoFlow.uploadFailed2": { ko: "업로드 실패", en: "Upload failed" },
