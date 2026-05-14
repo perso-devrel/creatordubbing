@@ -30,6 +30,7 @@ export const uploadsMessages = {
   "app.app.uploads.page.uploading2": { ko: "업로드 중...", en: "Uploading..." },
   "app.app.uploads.page.uploadToYouTube": { ko: "YouTube에 업로드", en: "Upload to YouTube" },
   "app.app.uploads.page.uploadTranslatedSRTCaptionsWithTheVideo": { ko: "번역된 SRT 자막도 함께 업로드", en: "Upload translated SRT captions with the video" },
+  "app.app.uploads.page.uploadVideoAndCaptionsToYouTube": { ko: "영상 및 자막 업로드", en: "Upload video and captions" },
   "app.app.uploads.page.valueDubtubeAIDubbingInValue": { ko: "{itemVideo_title} - Dubtube AI {langName} 더빙", en: "{itemVideo_title} - Dubtube AI dubbing in {langName}" },
   "app.app.uploads.page.valueLanguages": { ko: "{jobLangsLength}개 언어", en: "{jobLangsLength} languages" },
   "app.app.uploads.page.valueUploadComplete": { ko: "{langName} 업로드 완료", en: "{langName} upload complete" },

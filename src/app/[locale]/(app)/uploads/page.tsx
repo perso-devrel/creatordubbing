@@ -17,7 +17,7 @@ import {
   getDownloadLinks,
   getPersoFileUrl,
 } from '@/lib/api-client'
-import { dbMutation } from '@/lib/api/dbMutation'
+import { dbMutationStrict } from '@/lib/api/dbMutation'
 import { getLanguageByCode, toBcp47 } from '@/utils/languages'
 import { extractVideoId } from '@/utils/validators'
 import { useAppLocale, useLocaleText } from '@/hooks/useLocaleText'
@@ -183,6 +183,10 @@ function isExistingVideoCaptionUpload(snapshot: YouTubeUploadSnapshot): boolean 
   return snapshot.targetAssetKind === 'original_video' && Boolean(snapshot.assets.originalYouTubeVideoId)
 }
 
+function isCaptionUploadFlow(snapshot: YouTubeUploadSnapshot): boolean {
+  return snapshot.targetAssetKind === 'original_video'
+}
+
 function ReadOnlyField({ label, value, multiline = false }: { label: string; value: string; multiline?: boolean }) {
   return (
     <div className="w-full">
@@ -209,7 +213,8 @@ interface UploadSettingsModalProps {
   langName: string
   previewSource: UploadPreviewSource | null
   previewLoading: boolean
-  captionOnly: boolean
+  captionUploadFlow: boolean
+  uploadsOriginalVideo: boolean
 }
 
 function UploadSettingsModal({
@@ -222,12 +227,22 @@ function UploadSettingsModal({
   langName,
   previewSource,
   previewLoading,
-  captionOnly,
+  captionUploadFlow,
+  uploadsOriginalVideo,
 }: UploadSettingsModalProps) {
   const t = useLocaleText()
 
   return (
-    <Modal open={open} onClose={onClose} title={t('app.app.uploads.page.youTubeUploadSettings')} size="lg">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={captionUploadFlow
+        ? uploadsOriginalVideo
+          ? t('app.app.uploads.page.uploadVideoAndCaptionsToYouTube')
+          : t('app.app.uploads.page.uploadCaptionsToYouTube')
+        : t('app.app.uploads.page.youTubeUploadSettings')}
+      size="lg"
+    >
       <div className="space-y-4">
         {previewLoading ? (
           <div className="aspect-video w-full animate-pulse rounded-lg bg-surface-100 dark:bg-surface-800" />
@@ -252,7 +267,7 @@ function UploadSettingsModal({
           </div>
         ) : null}
 
-        {captionOnly ? null : (
+        {captionUploadFlow ? null : (
           <>
             <div className="rounded-lg border border-surface-200 bg-surface-50 p-3 text-sm text-surface-600 dark:border-surface-800 dark:bg-surface-900/40 dark:text-surface-300">
               <div className="flex items-start gap-2">
@@ -304,15 +319,19 @@ function UploadSettingsModal({
           </>
         )}
 
-        <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
-          <span className="text-xs text-surface-500 dark:text-surface-300">{t('app.app.uploads.page.language')}: {langName}</span>
-        </div>
+        {!captionUploadFlow && (
+          <div className="flex items-center gap-2 rounded-lg bg-surface-50 p-3 dark:bg-surface-800/50">
+            <span className="text-xs text-surface-500 dark:text-surface-300">{t('app.app.uploads.page.language')}: {langName}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-2 pt-2 sm:flex sm:justify-end">
-          <Button size="sm" onClick={onClose} className="w-full bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700 sm:w-auto">
-            {t('app.app.uploads.page.cancel')}
-          </Button>
-          <Button size="sm" onClick={onConfirm} disabled={isLoading || (!captionOnly && !settings.title.trim())} className="w-full sm:w-auto">
+          {!captionUploadFlow && (
+            <Button size="sm" onClick={onClose} className="w-full bg-surface-100 text-surface-700 hover:bg-surface-200 dark:bg-surface-800 dark:text-surface-300 dark:hover:bg-surface-700 sm:w-auto">
+              {t('app.app.uploads.page.cancel')}
+            </Button>
+          )}
+          <Button size="sm" onClick={onConfirm} disabled={isLoading || (!captionUploadFlow && !settings.title.trim())} className="w-full sm:w-auto">
             {isLoading ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -321,7 +340,11 @@ function UploadSettingsModal({
             ) : (
               <>
                 <Upload className="h-3.5 w-3.5" />
-                {captionOnly ? t('app.app.uploads.page.uploadCaptionsToYouTube') : t('app.app.uploads.page.upload')}
+                {captionUploadFlow
+                  ? uploadsOriginalVideo
+                    ? t('app.app.uploads.page.uploadVideoAndCaptionsToYouTube')
+                    : t('app.app.uploads.page.uploadCaptionsToYouTube')
+                  : t('app.app.uploads.page.upload')}
               </>
             )}
           </Button>
@@ -347,6 +370,8 @@ function UploadRow({ item, userId }: UploadRowProps) {
   const langName = (locale === 'ko' ? lang?.nativeName : lang?.name) || lang?.name || item.language_code
   const snapshot = resolveSnapshot(item, langName, t)
   const captionOnly = isExistingVideoCaptionUpload(snapshot)
+  const captionUploadFlow = isCaptionUploadFlow(snapshot)
+  const uploadsOriginalVideo = captionUploadFlow && !captionOnly
   const uploadKindLabel = snapshot.targetAssetKind === 'original_video'
     ? t('app.app.uploads.page.originalCaptionUpload')
     : t('app.app.uploads.page.dubbedVideoUpload')
@@ -430,10 +455,14 @@ function UploadRow({ item, userId }: UploadRowProps) {
       setState('uploading')
       const baseTags = snapshot.settings.tags
       let targetVideoId = snapshot.targetAssetKind === 'original_video'
-        ? snapshot.assets.originalYouTubeVideoId
+        ? snapshot.assets.originalYouTubeVideoId ?? videoId
         : null
       let uploadTitle = settings.title
-      let shouldPersistOriginalYouTubeUrl = false
+      let shouldPersistOriginalYouTubeUrl = Boolean(
+        snapshot.targetAssetKind === 'original_video' &&
+        targetVideoId &&
+        !snapshot.assets.originalYouTubeVideoId,
+      )
 
       if (!targetVideoId) {
         let videoUrl = snapshot.targetAssetKind === 'original_video'
@@ -471,6 +500,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
           const result = await doUpload(videoUrl)
           targetVideoId = result.videoId
           shouldPersistOriginalYouTubeUrl = isOriginalVideoUpload
+          if (isOriginalVideoUpload) setVideoId(result.videoId)
         } catch (err) {
           const msg = err instanceof Error ? err.message : ''
           const isFetchFailure = /VIDEO_FETCH_FAILED|fetch/i.test(msg)
@@ -482,10 +512,21 @@ function UploadRow({ item, userId }: UploadRowProps) {
           const result = await doUpload(fresh.video)
           targetVideoId = result.videoId
           shouldPersistOriginalYouTubeUrl = isOriginalVideoUpload
+          if (isOriginalVideoUpload) setVideoId(result.videoId)
         }
       }
 
       if (!targetVideoId) throw new Error(t('app.app.uploads.page.couldNotFindTheDubbedVideoDownloadLink'))
+
+      if (shouldPersistOriginalYouTubeUrl) {
+        await dbMutationStrict({
+          type: 'updateDubbingJobOriginalYouTubeUrl',
+          payload: {
+            jobId: item.job_id,
+            originalYouTubeUrl: `https://www.youtube.com/watch?v=${targetVideoId}`,
+          },
+        })
+      }
 
       if (
         !captionOnly &&
@@ -515,18 +556,8 @@ function UploadRow({ item, userId }: UploadRowProps) {
         }
       }
 
-      setVideoId(targetVideoId)
-      setState('done')
-
-      const privacyLabelKey = PRIVACY_OPTIONS.find((o) => o.value === settings.privacyStatus)?.labelKey
-      addToast({
-        type: 'success',
-        title: t('app.app.uploads.page.valueUploadComplete', { langName: langName }),
-        message: privacyLabelKey ? t(privacyLabelKey) : settings.privacyStatus,
-      })
-
-      const dbWrites = [
-        dbMutation({
+      await Promise.all([
+        dbMutationStrict({
           type: 'createYouTubeUpload',
           payload: {
             userId,
@@ -539,7 +570,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
             metadataJson,
           },
         }),
-        dbMutation({
+        dbMutationStrict({
           type: 'updateJobLanguageYouTube',
           payload: {
             jobId: item.job_id,
@@ -547,19 +578,18 @@ function UploadRow({ item, userId }: UploadRowProps) {
             youtubeVideoId: targetVideoId,
           },
         }),
-      ]
-      if (shouldPersistOriginalYouTubeUrl) {
-        dbWrites.push(
-          dbMutation({
-            type: 'updateDubbingJobOriginalYouTubeUrl',
-            payload: {
-              jobId: item.job_id,
-              originalYouTubeUrl: `https://www.youtube.com/watch?v=${targetVideoId}`,
-            },
-          }),
-        )
-      }
-      await Promise.all(dbWrites)
+      ])
+
+      setVideoId(targetVideoId)
+      setState('done')
+
+      const privacyLabelKey = PRIVACY_OPTIONS.find((o) => o.value === settings.privacyStatus)?.labelKey
+      addToast({
+        type: 'success',
+        title: t('app.app.uploads.page.valueUploadComplete', { langName: langName }),
+        message: privacyLabelKey ? t(privacyLabelKey) : settings.privacyStatus,
+      })
+
       queryClient.invalidateQueries({ queryKey: ['completed-languages'] })
     } catch (err) {
       setState('error')
@@ -569,7 +599,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
         message: err instanceof Error ? err.message : t('app.app.uploads.page.anUnknownErrorOccurred'),
       })
     }
-  }, [captionOnly, item, langName, snapshot, captionLanguage, captionTrackName, settings, userId, addToast, queryClient, refetchAssetsFromPerso, t])
+  }, [captionOnly, item, langName, snapshot, captionLanguage, captionTrackName, settings, userId, videoId, addToast, queryClient, refetchAssetsFromPerso, t])
 
   const isLoading = state === 'fetching' || state === 'uploading'
   const loadingLabel = state === 'fetching'
@@ -616,7 +646,7 @@ function UploadRow({ item, userId }: UploadRowProps) {
               {loadingLabel}
             </div>
           ) : (
-            <Button size="sm" onClick={handleOpenModal} disabled={state === 'error'} className="w-full whitespace-nowrap sm:w-auto">
+            <Button size="sm" onClick={handleOpenModal} disabled={isLoading} className="w-full whitespace-nowrap sm:w-auto">
               <Settings2 className="h-3.5 w-3.5" />
               {t('app.app.uploads.page.uploadToYouTube')}
             </Button>
@@ -634,7 +664,8 @@ function UploadRow({ item, userId }: UploadRowProps) {
         langName={langName}
         previewSource={previewSource}
         previewLoading={previewLoading}
-        captionOnly={captionOnly}
+        captionUploadFlow={captionUploadFlow}
+        uploadsOriginalVideo={uploadsOriginalVideo}
       />
     </>
   )

@@ -160,6 +160,7 @@ export const dubbingMessages = {
   "features.dubbing.components.steps.uploadStep.couldNotCompleteTheYouTubeUploadPleaseTry": { ko: "YouTube 업로드를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.", en: "Could not complete the YouTube upload. Please try again shortly." },
   "features.dubbing.components.steps.uploadStep.couldNotFindTheDubbedVideoDownloadLink": { ko: "더빙 영상 다운로드 링크를 찾을 수 없습니다.", en: "Could not find the dubbed video download link." },
   "features.dubbing.components.steps.uploadStep.couldNotFindTheDubbedVideoDownloadLink2": { ko: "더빙 영상 다운로드 링크를 찾을 수 없습니다.", en: "Could not find the dubbed video download link." },
+  "features.dubbing.components.steps.uploadStep.couldNotSaveTheUploadedOriginalVideoPleaseTry": { ko: "업로드된 원본 영상 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.", en: "Could not save the uploaded original video. Please try again shortly." },
   "features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry": { ko: "YouTube 업로드 예약에 실패했습니다. 잠시 후 다시 시도해 주세요.", en: "Could not schedule the YouTube upload. Please try again shortly." },
   "features.dubbing.components.steps.uploadStep.couldNotUpdateYouTubeTitleAndDescription": { ko: "YouTube 제목·설명 적용 실패", en: "Could not update YouTube title and description" },
   "features.dubbing.components.steps.uploadStep.done": { ko: "완료", en: "Done" },
