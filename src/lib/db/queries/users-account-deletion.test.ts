@@ -62,7 +62,7 @@ describe('user account deletion recovery queries', () => {
     expect(sql).not.toContain('DELETE FROM users')
     expect(sql).not.toContain('DELETE FROM dubbing_jobs')
     expect(mocks.tx.execute.mock.calls[0][0].args[0]).toBe('pending_deletion')
-    expect(mocks.tx.execute.mock.calls[0][0].args[3]).toMatch(/^withdrawal-requested\+[a-f0-9]{32}@withdrawal\.dubtube\.local$/)
+    expect(mocks.tx.execute.mock.calls[0][0].args[3]).toMatch(/^withdrawal-requested\+[a-f0-9]{32}@withdrawal\.sub2tube\.local$/)
     expect(mocks.tx.commit).toHaveBeenCalled()
   })
 

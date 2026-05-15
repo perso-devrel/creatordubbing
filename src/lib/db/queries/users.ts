@@ -8,7 +8,7 @@ import { decryptToken, encryptToken } from '@/lib/auth/token-crypto'
 const ACCOUNT_STATUS_ACTIVE = 'active'
 const ACCOUNT_STATUS_PENDING_DELETION = 'pending_deletion'
 const ACCOUNT_DELETION_DISPLAY_NAME = '회원탈퇴 요청'
-const ACCOUNT_DELETION_EMAIL_DOMAIN = 'withdrawal.dubtube.local'
+const ACCOUNT_DELETION_EMAIL_DOMAIN = 'withdrawal.sub2tube.local'
 const ACCOUNT_DELETION_RECOVERY_DAYS = 7
 const ACCOUNT_RETENTION_REASON = 'settlement_and_legal_retention'
 const ACCOUNT_RETENTION_YEARS = 5
