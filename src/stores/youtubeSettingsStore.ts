@@ -24,7 +24,7 @@ interface YouTubeSettingsState {
 const INITIAL_YOUTUBE_SETTINGS = {
   defaultPrivacy: 'private' as PrivacyStatus,
   defaultLanguage: 'ko',
-  defaultTags: ['Dubtube', 'AI더빙', 'dubbed'],
+  defaultTags: ['sub2tube', 'AI더빙', 'dubbed'],
 }
 
 /**
