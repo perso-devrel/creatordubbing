@@ -135,6 +135,14 @@ npm run test:e2e              # Playwright E2E
 npm run test:lighthouse:gate  # Lighthouse 성능 게이트
 ```
 
+### 브랜드 자산 재생성
+
+```bash
+npm run favicon:build         # public/logo.png → src/app/favicon.ico (16/32/48/64 PNG embedded)
+```
+
+새 로고가 들어오면 `public/logo.png` (120×120) 를 교체한 뒤 위 명령으로 favicon.ico를 다시 만든다. apple-icon / opengraph-image는 `src/app/apple-icon.tsx` / `opengraph-image.tsx` JSX에서 컬러를 직접 수정한다.
+
 ## 프로젝트 구조
 
 ```
