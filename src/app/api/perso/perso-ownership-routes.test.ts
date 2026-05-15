@@ -91,7 +91,7 @@ describe('Perso routes — resource ownership', () => {
       '/video-translator/api/v1/projects/spaces/3/translate',
       expect.objectContaining({
         body: expect.objectContaining({
-          title: 'Dubtube project 10',
+          title: 'sub2tube project 10',
           ttsModel: 'ELEVEN_V2',
           withLipSync: false,
         }),

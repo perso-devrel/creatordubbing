@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Dubtube YouTube 업로드 도우미",
+  "name": "sub2tube YouTube 업로드 도우미",
   "version": "0.1.0",
-  "description": "Dubtube에서 생성한 더빙 오디오를 YouTube Studio에 업로드합니다.",
+  "description": "sub2tube에서 생성한 더빙 오디오를 YouTube Studio에 업로드합니다.",
   "permissions": ["activeTab", "storage", "tabs"],
   "background": {
     "service_worker": "background.js",
@@ -16,7 +16,7 @@
     }
   ],
   "action": {
-    "default_title": "Dubtube YouTube 업로드 도우미",
+    "default_title": "sub2tube YouTube 업로드 도우미",
     "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -32,7 +32,7 @@
   "externally_connectable": {
     "matches": [
       "http://localhost/*",
-      "https://*.dubtube.com/*"
+      "https://*.sub2tube.com/*"
     ]
   }
 }

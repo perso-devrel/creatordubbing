@@ -47,7 +47,7 @@ const uploadSettings = {
     attachOriginalLink: false,
     title: 'Base title',
     description: 'Base description',
-    tags: ['dubtube'],
+    tags: ['sub2tube'],
     privacyStatus: 'private' as const,
     uploadCaptions: false,
     selfDeclaredMadeForKids: false,

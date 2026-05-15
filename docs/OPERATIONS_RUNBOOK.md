@@ -7,9 +7,10 @@
 Vercel Cron은 사용하지 않는다. 운영 background job은 `.github/workflows/upload-cron.yml`에서 GitHub Actions schedule로 실행한다.
 
 - 실행 주기: 5분마다, `2/5 * * * *`
-- 호출 endpoint:
+- 호출 endpoint (워크플로 한 번에 순차 호출):
   - `POST /api/cron/process-dubbing-jobs`
   - `POST /api/cron/process-uploads`
+  - `POST /api/cron/purge-deleted-accounts`
 - 보호 방식: `Authorization: Bearer <CRON_SECRET>`
 - GitHub repository variable: `PROD_BASE_URL=https://운영도메인`
 - GitHub repository secret: `CRON_SECRET`
@@ -43,6 +44,50 @@ GitHub Actions schedule은 무료로 대체 가능하지만 정확한 초 단위
 - pending/processing/done 큐가 있으면 새 큐를 만들지 않는다.
 - 실패한 큐는 같은 row를 pending으로 되살려 재시도한다.
 - 업로드 실패 시 `job_languages.youtube_upload_status = 'failed'`로 갱신한다.
+
+## 회원탈퇴 데이터 보존 정책
+
+회원탈퇴 흐름은 두 단계로 동작한다. 사용자 요청 시점에 즉시 soft-delete + 7일 복구창을 열고, 만료된 row는 cron이 정리한다.
+
+### 1단계: 탈퇴 요청 시점 (soft-delete)
+
+`DELETE /api/user/account` 가 `requestUserAccountDeletion(uid)` (`src/lib/db/queries/users.ts`) 을 호출한다.
+
+- `users` row에 `account_status='pending_deletion'`, `deletion_requested_at`, `deletion_restore_expires_at` (요청 시점 + 7일) 기록
+- 식별 가능 필드 즉시 익명화: `email = withdrawal-requested+<sha256(uid)>@withdrawal.sub2tube.local`, `display_name = '회원탈퇴 요청'`, `photo_url = NULL`
+- Google 토큰 (access/refresh) 즉시 NULL 처리
+- 모든 활성 세션(`app_sessions`) 즉시 revoke
+- 연결된 row에 `account_deletion_requested_at` 표시: `dubbing_jobs`, `job_languages`, `youtube_uploads`, `upload_queue`, `analytics_cache`, `perso_media_resources`, `payment_orders`, `credit_transactions`, `operational_events`
+
+복구창 안에서 다시 Google 로그인하면 `upsertUser` 가 `canRestorePendingDeletion` 을 거쳐 모든 marker를 클리어한다 (`account_status='active'` 복귀).
+
+### 2단계: 만료 후 cron purge
+
+`/api/cron/purge-deleted-accounts` 가 5분마다 실행되며 `purgeExpiredPendingDeletedAccounts({ limit })` 을 호출한다.
+
+- 기본 batch: 50, 쿼리스트링 `?limit=N` 으로 1~200 사이 지정 가능
+- 함수 max duration: 300초
+- `deletion_restore_expires_at < now()` 인 pending_deletion 사용자만 대상
+
+각 만료 사용자에 대해 `purgeExpiredDeletedAccount(tx, uid, personalDataErasedAt)` 가 수행:
+
+| 테이블 | 처리 |
+|--------|------|
+| `users` | HARD DELETE |
+| `app_sessions` | HARD DELETE |
+| `dubbing_jobs`, `job_languages`, `youtube_uploads`, `upload_queue`, `analytics_cache`, `perso_media_resources` | HARD DELETE |
+| `payment_orders`, `credit_transactions` | 익명화 후 RETAIN — `user_id = deleted:<sha256(uid)>`, raw_json/metadata_json 클리어, `retention_until = created_at + 5년`, `account_retention_reason='settlement_and_legal_retention'` |
+| `operational_events` | `user_id = NULL` 처리 후 RETAIN (감사 로그 보존) |
+
+### 보존 기간 근거
+
+- **7일 복구창**: UX — 사용자 실수/번복 대응
+- **5년 결제/크레딧 보존**: 한국 전자상거래법 (전자상거래등에서의 소비자보호에 관한 법률 제6조) 상 거래 기록 5년 보관 의무. 식별값 익명화 후 결제 사실관계만 남긴다.
+- **YouTube 영상 자체는 삭제하지 않음**: 사용자가 본인 채널에 올린 콘텐츠 소유권은 유지. DB의 연결 row만 삭제.
+
+### Google OAuth 토큰
+
+DB의 `google_access_token` / `google_refresh_token` 은 1단계에서 NULL 처리되지만, **Google 측 oauth2 revoke 호출은 현재 누락**되어 있다 (`disconnect-youtube` 라우트만 revoke 호출). 사용자가 Google 계정의 권한 화면에서 별도로 해제할 때까지 sub2tube는 권한 목록에 남는다. 추후 `requestUserAccountDeletion` 직전에 revoke 호출 추가 권장.
 
 ## Toss Payments
 

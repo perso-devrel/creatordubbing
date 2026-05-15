@@ -195,7 +195,7 @@ describe('requireAccessToken', () => {
   it('returns token from verified app session and encrypted DB token', async () => {
     vi.mocked(cookies).mockResolvedValueOnce({
       get: vi.fn((name: string) =>
-        name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+        name === 'sub2tube_session' ? { name, value: 'session-cookie' } : undefined,
       ),
     } as never)
     vi.mocked(verifySessionCookie).mockResolvedValueOnce('user-1')
@@ -210,7 +210,7 @@ describe('requireAccessToken', () => {
   it('passes force refresh through to the token loader', async () => {
     vi.mocked(cookies).mockResolvedValueOnce({
       get: vi.fn((name: string) =>
-        name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+        name === 'sub2tube_session' ? { name, value: 'session-cookie' } : undefined,
       ),
     } as never)
     vi.mocked(verifySessionCookie).mockResolvedValueOnce('user-1')
@@ -261,12 +261,12 @@ describe('withTokenRetry', () => {
     vi.mocked(cookies)
       .mockResolvedValueOnce({
         get: vi.fn((name: string) =>
-          name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+          name === 'sub2tube_session' ? { name, value: 'session-cookie' } : undefined,
         ),
       } as never)
       .mockResolvedValueOnce({
         get: vi.fn((name: string) =>
-          name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+          name === 'sub2tube_session' ? { name, value: 'session-cookie' } : undefined,
         ),
       } as never)
     vi.mocked(verifySessionCookie).mockResolvedValue('user-1')
@@ -294,7 +294,7 @@ describe('withTokenRetry', () => {
   it('does not retry quota errors as auth problems', async () => {
     vi.mocked(cookies).mockResolvedValueOnce({
       get: vi.fn((name: string) =>
-        name === 'dubtube_session' ? { name, value: 'session-cookie' } : undefined,
+        name === 'sub2tube_session' ? { name, value: 'session-cookie' } : undefined,
       ),
     } as never)
     vi.mocked(verifySessionCookie).mockResolvedValueOnce('user-1')

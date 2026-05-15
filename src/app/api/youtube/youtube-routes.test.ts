@@ -286,7 +286,7 @@ describe('/api/youtube/metadata', () => {
         sourceLang: 'ko',
         title: 'Original title',
         description: 'Original description',
-        tags: ['Dubtube', 'AI더빙'],
+        tags: ['sub2tube', 'AI더빙'],
         localizations: {
           en: { title: 'English title', description: 'English description' },
         },
@@ -301,7 +301,7 @@ describe('/api/youtube/metadata', () => {
       expect.objectContaining({
         accessToken: 'mock-token',
         videoId: 'yt-123',
-        tags: ['Dubtube', 'AI더빙'],
+        tags: ['sub2tube', 'AI더빙'],
         localizations: {
           en: { title: 'English title', description: 'English description' },
         },

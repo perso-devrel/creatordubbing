@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { SITE_NAME } from '@/lib/seo'
 
-export const alt = 'Dubtube - AI caption and dubbing tools for YouTube creators'
+export const alt = 'sub2tube - AI caption and dubbing tools for YouTube creators'
 
 export const size = {
   width: 1200,
@@ -35,47 +35,48 @@ export default function OpenGraphImage() {
             width: '100%',
           }}
         >
-          <div style={{ alignItems: 'center', display: 'flex', gap: 18 }}>
+          <div style={{ alignItems: 'center', display: 'flex', gap: 22 }}>
             <div
               style={{
                 alignItems: 'center',
-                background: '#0f1115',
-                borderRadius: 18,
+                background: 'linear-gradient(180deg, #FF8A4A 0%, #F2453D 100%)',
+                borderRadius: 22,
                 display: 'flex',
-                height: 72,
+                flexDirection: 'column',
+                gap: 8,
+                height: 96,
                 justifyContent: 'center',
-                width: 72,
+                width: 96,
               }}
             >
               <div
                 style={{
+                  alignItems: 'center',
                   background: '#ffffff',
-                  borderRadius: 10,
+                  borderRadius: '50%',
                   display: 'flex',
-                  flexDirection: 'column',
-                  height: 38,
+                  height: 42,
                   justifyContent: 'center',
-                  padding: '0 8px',
-                  position: 'relative',
-                  width: 46,
+                  width: 42,
                 }}
               >
                 <div
                   style={{
-                    background: '#ffffff',
-                    bottom: -5,
-                    height: 12,
-                    left: 10,
-                    position: 'absolute',
-                    transform: 'rotate(45deg)',
-                    width: 12,
+                    borderTop: '7px solid transparent',
+                    borderBottom: '7px solid transparent',
+                    borderLeft: '12px solid #F2453D',
+                    height: 0,
+                    marginLeft: 4,
+                    width: 0,
                   }}
                 />
-                <div style={{ background: '#14b8a6', borderRadius: 999, height: 5, marginBottom: 6, width: 28 }} />
-                <div style={{ background: '#f97316', borderRadius: 999, height: 5, width: 20 }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ background: '#ffffff', borderRadius: 999, height: 4, width: 46 }} />
+                <div style={{ background: '#ffffff', borderRadius: 999, height: 4, width: 34 }} />
               </div>
             </div>
-            <div style={{ color: '#0f1115', display: 'flex', fontSize: 42, fontWeight: 800 }}>
+            <div style={{ color: '#0f1115', display: 'flex', fontSize: 48, fontWeight: 800 }}>
               {SITE_NAME}
             </div>
           </div>

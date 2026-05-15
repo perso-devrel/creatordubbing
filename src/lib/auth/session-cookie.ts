@@ -1,4 +1,4 @@
-const SESSION_COOKIE = 'dubtube_session'
+const SESSION_COOKIE = 'sub2tube_session'
 const SEPARATOR = '.'
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7
 const enc = new TextEncoder()
@@ -21,7 +21,7 @@ function getSecret(): string {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('SESSION_SECRET env var is required in production')
   }
-  return 'dubtube-dev-secret-do-not-use-in-prod'
+  return 'sub2tube-dev-secret-do-not-use-in-prod'
 }
 
 async function importKey(secret: string): Promise<CryptoKey> {

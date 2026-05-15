@@ -32,11 +32,11 @@ describe('POST /api/auth/signout', () => {
     expect(body).toEqual({ ok: true, data: null })
   })
 
-  it('clears dubtube_session cookie', async () => {
+  it('clears sub2tube_session cookie', async () => {
     const res = await POST(req())
     const setCookies = res.headers.getSetCookie()
     const sessionCookie = setCookies.find((c: string) =>
-      c.startsWith('dubtube_session='),
+      c.startsWith('sub2tube_session='),
     )
     expect(sessionCookie).toBeDefined()
     expect(sessionCookie).toContain('Max-Age=0')
@@ -70,7 +70,7 @@ describe('POST /api/auth/signout', () => {
       exp: 9999999999,
       legacy: false,
     })
-    const res = await POST(req('dubtube_session=signed'))
+    const res = await POST(req('sub2tube_session=signed'))
     expect(res.status).toBe(200)
     expect(revokeUserSession).toHaveBeenCalledWith('sid-1')
   })

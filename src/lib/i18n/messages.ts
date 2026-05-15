@@ -285,8 +285,8 @@ const baseMessages = {
     en: 'Based on {language}',
   },
   'features.dubbing.components.steps.uploadSettingsStep.defaultDescription': {
-    ko: '{title} - Dubtube AI 더빙',
-    en: '{title} - Dubtube AI dubbing',
+    ko: '{title} - sub2tube AI 더빙',
+    en: '{title} - sub2tube AI dubbing',
   },
   'features.dubbing.components.steps.uploadStep.completedLanguageProgress': {
     ko: '{completed} / {total}개 언어 완료. ',

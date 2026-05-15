@@ -23,10 +23,20 @@ import { useAuthStore } from '@/stores/authStore'
 import { isValidVideoUrl, isValidYouTubeUrl } from '@/utils/validators'
 import { formatDuration } from '@/utils/formatters'
 import { getPersoFileUrl } from '@/lib/api-client'
+import { ytListCaptions } from '@/lib/api-client/youtube'
+import { fromBcp47 } from '@/utils/languages'
 import type { MyVideoItem } from '@/lib/youtube/types'
 
 export function VideoInputStep() {
-  const { videoMeta, setVideoSource, setVideoMeta, setUploadSettings, setIsShort, nextStep } = useDubbingStore()
+  const {
+    videoMeta,
+    setVideoSource,
+    setVideoMeta,
+    setUploadSettings,
+    setIsShort,
+    setExistingCaptionLanguages,
+    nextStep,
+  } = useDubbingStore()
   const { uploadLocalVideo, importVideoByUrl } = usePersoFlow()
   const locale = useAppLocale()
   const t = useLocaleText()
@@ -106,6 +116,8 @@ export function VideoInputStep() {
     setUrl(videoUrl)
     setLoading(true)
     setError(null)
+    // 다른 영상 다시 선택하는 케이스 — 이전 영상의 자막 목록을 흘리지 않도록 먼저 비운다.
+    setExistingCaptionLanguages([])
     try {
       setVideoSource({ type: 'channel', url: videoUrl, videoId })
       await importVideoByUrl(videoUrl)
@@ -121,6 +133,19 @@ export function VideoInputStep() {
         ...(video.title ? { title: video.title } : {}),
         ...(video.description ? { description: video.description } : {}),
       })
+
+      // 내 영상의 기존 자막 트랙을 가져와 LanguageSelectStep에서 이미 자막이 있는 언어를
+      // 비활성화한다. 실패해도 dubbing 흐름은 계속 진행 (자막 정보는 부가 정보).
+      try {
+        const captions = await ytListCaptions(videoId)
+        const persoCodes = captions
+          .map((c) => c.language?.trim())
+          .filter((lang): lang is string => Boolean(lang))
+          .map((lang) => fromBcp47(lang))
+        setExistingCaptionLanguages(persoCodes)
+      } catch (captionErr) {
+        console.warn('[sub2tube] Failed to list existing captions', captionErr)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('features.dubbing.components.steps.videoInputStep.failedToImportTheVideo'))
     } finally {
@@ -132,6 +157,8 @@ export function VideoInputStep() {
     if (!isValidVideoUrl(url)) return
     setLoading(true)
     setError(null)
+    // 외부 URL 입력은 내 영상이 아니라 기존 자막을 조회하지 않는다.
+    setExistingCaptionLanguages([])
     try {
       setVideoSource({ type: 'url', url })
       await importVideoByUrl(url)
@@ -146,6 +173,8 @@ export function VideoInputStep() {
     setLoading(true)
     setError(null)
     setUploadProgress(10)
+    // 신규 업로드라 기존 YouTube 자막이 존재할 수 없다.
+    setExistingCaptionLanguages([])
     try {
       setVideoSource({ type: 'upload', file })
       setUploadProgress(30)

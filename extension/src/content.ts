@@ -114,4 +114,4 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
   return false
 })
 
-console.log('[Dubtube] Content script loaded on YouTube Studio')
+console.log('[sub2tube] Content script loaded on YouTube Studio')

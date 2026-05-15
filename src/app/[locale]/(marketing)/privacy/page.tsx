@@ -133,11 +133,11 @@ export default async function PrivacyPolicyPage({ params }: LocaleMetadataProps)
       <Section title={t('legal.privacy.section.8.title')}>
         <p>
           {t('legal.privacy.section.8.beforeSession')}
-          <code>dubtube_session</code>
+          <code>sub2tube_session</code>
           {t('legal.privacy.section.8.session')}
-          <code>dubtube-theme</code>
+          <code>sub2tube-theme</code>
           {t('legal.privacy.section.8.theme')}
-          <code>dubtube-youtube-settings</code>
+          <code>sub2tube-youtube-settings</code>
           {t('legal.privacy.section.8.settings')}
         </p>
       </Section>

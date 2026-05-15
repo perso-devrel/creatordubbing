@@ -15,7 +15,7 @@ interface Props {
   autoTrigger?: boolean
 }
 
-const INSTALL_GUIDE_URL = 'https://github.com/perso-devrel/dubtube/blob/main/extension/README.md'
+const INSTALL_GUIDE_URL = 'https://github.com/perso-devrel/sub2tube/blob/main/extension/README.md'
 const POLL_INTERVAL = 3000
 
 type JobStatus = 'pending' | 'running' | 'done' | 'error'
@@ -102,7 +102,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
             const errorKey = `${job.jobId}:${job.error}`
             if (!loggedExtensionErrors.current.has(errorKey)) {
               loggedExtensionErrors.current.add(errorKey)
-              console.warn('[Dubtube] Extension upload error', {
+              console.warn('[sub2tube] Extension upload error', {
                 jobId: job.jobId,
                 languageCode: job.languageCode,
                 step: job.step,
@@ -166,7 +166,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
         }))
       } else {
         if (response.error) {
-          console.warn('[Dubtube] Extension upload request failed', response.error)
+          console.warn('[sub2tube] Extension upload request failed', response.error)
         }
         addToast({
           type: 'error',
@@ -175,7 +175,7 @@ export function YouTubeExtensionUpload({ videoId, completedLangs, getAudioUrl, a
         })
       }
     } catch (err) {
-      console.warn('[Dubtube] Extension connection failed', err)
+      console.warn('[sub2tube] Extension connection failed', err)
       addToast({
         type: 'error',
         title: t('features.dubbing.components.youTubeExtensionUpload.extensionConnectionFailed'),
