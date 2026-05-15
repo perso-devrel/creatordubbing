@@ -104,7 +104,7 @@ async function resolveSubmitTtsModel(
     if (err instanceof Error && err.message === unsupportedMessage) {
       throw err
     }
-    console.warn('[Dubtube] TTS model compatibility lookup failed; using broadest model', err)
+    console.warn('[sub2tube] TTS model compatibility lookup failed; using broadest model', err)
     return BROADEST_TTS_MODEL
   }
 }
@@ -167,7 +167,7 @@ async function buildYouTubeUploadSnapshotByLanguage(
 ): Promise<Record<string, string | null>> {
   const state = store.getState()
   const settings = state.uploadSettings
-  const baseTitle = settings.title.trim() || state.videoMeta?.title?.trim() || 'Dubtube video'
+  const baseTitle = settings.title.trim() || state.videoMeta?.title?.trim() || 'sub2tube video'
   const baseDescription = stripAiDisclosureFooter(settings.description || '')
   const sourceLanguage = settings.metadataLanguage || 'ko'
   const sourceType = state.videoSource?.type
@@ -196,7 +196,7 @@ async function buildYouTubeUploadSnapshotByLanguage(
         targetLangs: targetLanguages,
       })
     } catch (err) {
-      console.warn('[Dubtube] metadata snapshot translation failed; using source metadata fallback', err)
+      console.warn('[sub2tube] metadata snapshot translation failed; using source metadata fallback', err)
       translations = Object.fromEntries(
         targetLanguages.map((code) => [code, { title: baseTitle, description: baseDescription }]),
       )
@@ -538,7 +538,7 @@ export function usePersoFlow() {
         withLipSync: lipSyncEnabled,
         preferredSpeedType: 'GREEN',
         ttsModel,
-        title: videoMeta?.title?.trim() || `Dubtube project ${mediaSeq}`,
+        title: videoMeta?.title?.trim() || `sub2tube project ${mediaSeq}`,
       })
 
       const projectIds = result.startGenerateProjectIdList || []
