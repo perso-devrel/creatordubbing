@@ -9,6 +9,10 @@ export const captionBodySchema = z.object({
   replace: z.boolean().optional(),
 })
 
+export const captionListQuerySchema = z.object({
+  videoId: z.string().min(1),
+})
+
 export const analyticsQuerySchema = z.object({
   videoIds: z
     .string()

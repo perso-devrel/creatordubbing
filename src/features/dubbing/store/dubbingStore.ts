@@ -96,9 +96,16 @@ interface DubbingState {
   videoSource: VideoSource | null
   videoMeta: VideoMetadata | null
   originalVideoUrl: string | null
+  /**
+   * '내 영상' 모드에서 선택된 YouTube 영상에 이미 등록된 자막 언어 코드.
+   * Perso 코드 기준(예: 'en','ko','pt-BR' → 'en','ko','pt' 변환 후 저장).
+   * LanguageSelectStep에서 해당 언어는 비활성화한다.
+   */
+  existingCaptionLanguages: string[]
   setVideoSource: (source: VideoSource) => void
   setVideoMeta: (meta: VideoMetadata) => void
   setOriginalVideoUrl: (url: string) => void
+  setExistingCaptionLanguages: (codes: string[]) => void
 
   // Step 2: Language selection
   sourceLanguage: string
@@ -176,6 +183,7 @@ const initialState = {
   videoSource: null as VideoSource | null,
   videoMeta: null as VideoMetadata | null,
   originalVideoUrl: null as string | null,
+  existingCaptionLanguages: [] as string[],
   sourceLanguage: 'auto',
   selectedLanguages: [] as string[],
   lipSyncEnabled: false,
@@ -218,6 +226,8 @@ export const useDubbingStore = create<DubbingState>((set) => ({
   setVideoSource: (source) => set({ videoSource: source }),
   setVideoMeta: (meta) => set({ videoMeta: meta }),
   setOriginalVideoUrl: (url) => set({ originalVideoUrl: url }),
+  setExistingCaptionLanguages: (codes) =>
+    set({ existingCaptionLanguages: Array.from(new Set(codes)) }),
 
   setSourceLanguage: (code) =>
     set((s) => ({
