@@ -79,8 +79,8 @@ test('dubbing page renders and captures network sequence', async ({ page }) => {
   const consoleErrors: string[] = []
 
   await page.context().addCookies([
-    { name: 'dubtube_locale', value: 'ko', domain: 'localhost', path: '/' },
-    { name: 'dubtube_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
+    { name: 'sub2tube_locale', value: 'ko', domain: 'localhost', path: '/' },
+    { name: 'sub2tube_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
   ])
   await page.addInitScript(() => {
     localStorage.setItem(

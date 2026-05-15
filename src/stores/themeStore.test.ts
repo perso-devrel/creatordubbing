@@ -86,7 +86,7 @@ describe('themeStore', () => {
 
   it('onRehydrateStorage applies explicit dark class for legacy dark mode', async () => {
     document.documentElement.classList.remove('dark')
-    localStorage.setItem('dubtube-theme', JSON.stringify({ state: { mode: 'dark' }, version: 0 }))
+    localStorage.setItem('sub2tube-theme', JSON.stringify({ state: { mode: 'dark' }, version: 0 }))
     await useThemeStore.persist.rehydrate()
     expect(useThemeStore.getState().preference).toBe('dark')
     expect(document.documentElement.classList.contains('dark')).toBe(true)
@@ -95,7 +95,7 @@ describe('themeStore', () => {
   it('onRehydrateStorage resolves system preference from matchMedia', async () => {
     mockSystemTheme(true)
     document.documentElement.classList.remove('dark')
-    localStorage.setItem('dubtube-theme', JSON.stringify({ state: { preference: 'system', mode: 'light' }, version: 1 }))
+    localStorage.setItem('sub2tube-theme', JSON.stringify({ state: { preference: 'system', mode: 'light' }, version: 1 }))
     await useThemeStore.persist.rehydrate()
     expect(useThemeStore.getState().preference).toBe('system')
     expect(useThemeStore.getState().mode).toBe('dark')

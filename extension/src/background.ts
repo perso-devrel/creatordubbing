@@ -95,7 +95,7 @@ function waitForTabLoad(tabId: number, callback: () => void): void {
 
 const WEBAPP_URL_PATTERNS = [
   'http://localhost/*',
-  'https://*.dubtube.com/*',
+  'https://*.sub2tube.com/*',
 ]
 
 async function relayToWebApp(event: OutboundEvent): Promise<void> {

@@ -1,6 +1,6 @@
 import type { UploadMode } from './messages'
 
-const SETTINGS_KEY = 'dubtube_settings'
+const SETTINGS_KEY = 'sub2tube_settings'
 
 export interface Settings {
   uploadMode: UploadMode

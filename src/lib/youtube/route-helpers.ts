@@ -139,7 +139,7 @@ export async function requireAccessToken(
   opts: { forceRefresh?: boolean } = {},
 ): Promise<string> {
   const cookieStore = await cookies()
-  const sessionCookie = cookieStore.get('dubtube_session')?.value
+  const sessionCookie = cookieStore.get('sub2tube_session')?.value
 
   if (sessionCookie) {
     const uid = await verifySessionCookie(sessionCookie)
