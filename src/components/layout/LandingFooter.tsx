@@ -1,6 +1,6 @@
 'use client'
 
-import { Languages } from 'lucide-react'
+import Image from 'next/image'
 import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { useLocaleText } from '@/hooks/useLocaleText'
 
@@ -12,9 +12,14 @@ export function LandingFooter() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-600">
-              <Languages className="h-3.5 w-3.5 text-white" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="sub2tube"
+              width={28}
+              height={28}
+              className="rounded-md"
+              priority={false}
+            />
             <span className="font-bold text-surface-900 dark:text-surface-100">
               sub<span className="text-brand-600 dark:text-brand-400">2tube</span>
             </span>
