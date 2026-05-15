@@ -44,7 +44,7 @@ const queueItem = {
   videoUrl: 'https://cdn.perso.ai/video.mp4',
   title: 'Translated title',
   description: 'Translated description',
-  tags: 'dubtube,english',
+  tags: 'sub2tube,english',
   privacyStatus: 'private',
   language: 'en',
   isShort: false,
@@ -105,7 +105,7 @@ describe('processUploadQueue', () => {
       expect.objectContaining({
         accessToken: 'access-token',
         title: 'Translated title',
-        tags: ['dubtube', 'english'],
+        tags: ['sub2tube', 'english'],
         selfDeclaredMadeForKids: false,
         containsSyntheticMedia: true,
         localizations: { en: { title: 'Translated title', description: 'Translated description' } },

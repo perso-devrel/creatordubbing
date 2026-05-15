@@ -85,7 +85,7 @@ export async function ytUploadVideo(params: {
   })
   if (!putRes.ok) {
     const detail = await putRes.text().catch(() => '')
-    console.warn('[Dubtube] YouTube direct upload failed', {
+    console.warn('[sub2tube] YouTube direct upload failed', {
       status: putRes.status,
       detail,
     })

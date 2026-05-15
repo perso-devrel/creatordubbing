@@ -305,7 +305,7 @@ export function UploadStep() {
       setOriginalUploadState({ status: 'done', videoId: result.videoId })
       return result.videoId
     } catch (err) {
-      console.warn('[Dubtube] Original video upload failed', err)
+      console.warn('[sub2tube] Original video upload failed', err)
       const msg = err instanceof Error
         ? err.message
         : t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheOriginalVideoUploadPlease')
@@ -405,7 +405,7 @@ export function UploadStep() {
       }
 
     } catch (err) {
-      console.warn('[Dubtube] YouTube upload scheduling failed', err)
+      console.warn('[sub2tube] YouTube upload scheduling failed', err)
       const msg = t('features.dubbing.components.steps.uploadStep.couldNotScheduleTheYouTubeUploadPleaseTry')
       setYouTubeUploadState(langCode, { status: 'error', progress: 0, error: msg })
       addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.valueUploadSchedulingFailed', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }), message: msg })
@@ -477,7 +477,7 @@ export function UploadStep() {
         },
       })
     } catch (err) {
-      console.warn('[Dubtube] Could not record caption upload', err)
+      console.warn('[sub2tube] Could not record caption upload', err)
     }
   }, [
     dbJobId,
@@ -515,7 +515,7 @@ export function UploadStep() {
         await persistOriginalCaptionUpload(targetVideoId, langCode)
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'done' }))
       } catch (err) {
-        console.warn('[Dubtube] Caption upload failed', err)
+        console.warn('[sub2tube] Caption upload failed', err)
         setCaptionUploads((prev) => ({ ...prev, [langCode]: 'error' }))
         const msg = t('features.dubbing.components.steps.uploadStep.couldNotCompleteTheCaptionUploadPleaseTry')
         addToast({ type: 'error', title: t('features.dubbing.components.steps.uploadStep.valueCaptionUploadFailed', { getDisplayLanguageNameLangCode: getDisplayLanguageName(langCode) }), message: msg })
@@ -612,7 +612,7 @@ export function UploadStep() {
           }
         }
       } catch (err) {
-        console.warn('[Dubtube] Could not check YouTube upload status', err)
+        console.warn('[sub2tube] Could not check YouTube upload status', err)
       }
     }
 

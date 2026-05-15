@@ -43,7 +43,7 @@ extension/node_modules/
 # vercel
 .vercel
 
-# dubtube migration workspace (agent reports, scratch)
+# sub2tube migration workspace (agent reports, scratch)
 _workspace/
 
 # claude code (local settings, harness agents/skills, scratch logs)

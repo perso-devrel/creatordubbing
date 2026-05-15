@@ -16,7 +16,7 @@ export function LandingFooter() {
               <Languages className="h-3.5 w-3.5 text-white" />
             </div>
             <span className="font-bold text-surface-900 dark:text-surface-100">
-              Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
+              sub<span className="text-brand-600 dark:text-brand-400">2tube</span>
             </span>
           </div>
 
@@ -42,7 +42,7 @@ export function LandingFooter() {
           </nav>
 
           <p className="text-xs text-surface-500 dark:text-surface-400">
-            &copy; {new Date().getFullYear()} Dubtube. All rights reserved.
+            &copy; {new Date().getFullYear()} sub2tube. All rights reserved.
           </p>
         </div>
       </div>

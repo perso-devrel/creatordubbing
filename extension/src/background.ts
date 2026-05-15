@@ -75,7 +75,7 @@ async function handleUpload(
     job.status = 'error'
     job.error = err instanceof Error ? err.message : String(err)
     await saveJob(job)
-    console.debug('[Dubtube] Failed to start upload job', err)
+    console.debug('[sub2tube] Failed to start upload job', err)
     return { ok: false, error: USER_UPLOAD_FAILURE_MESSAGE }
   }
 }
@@ -126,7 +126,7 @@ chrome.runtime.onMessageExternal.addListener(
       handleUpload(message)
         .then(sendResponse)
         .catch((err) => {
-          console.debug('[Dubtube] Upload message handling failed', err)
+          console.debug('[sub2tube] Upload message handling failed', err)
           sendResponse({ ok: false, error: USER_UPLOAD_FAILURE_MESSAGE })
         })
       return true
@@ -173,5 +173,5 @@ chrome.runtime.onMessage.addListener(
 )
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[Dubtube] Extension installed')
+  console.log('[sub2tube] Extension installed')
 })

@@ -36,7 +36,7 @@ const readDefaultLanguage = (): string => {
   }
 }
 
-const FALLBACK_DEFAULT_TAGS = ['Dubtube', 'AI더빙', 'dubbed']
+const FALLBACK_DEFAULT_TAGS = ['sub2tube', 'AI더빙', 'dubbed']
 
 const readDefaultTags = (): string[] => {
   if (typeof window === 'undefined') return [...FALLBACK_DEFAULT_TAGS]

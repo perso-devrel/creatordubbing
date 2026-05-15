@@ -31,7 +31,7 @@ const DEFAULT_USER_PREFERENCES: Required<UserPreferences> = {
   metadataTargetLanguages: [...DEFAULT_METADATA_TARGET_LANGUAGES],
   defaultPrivacy: 'private',
   defaultLanguage: 'ko',
-  defaultTags: ['Dubtube', 'AI더빙', 'dubbed'],
+  defaultTags: ['sub2tube', 'AI더빙', 'dubbed'],
 }
 
 /** DB에서 읽은 raw JSON 문자열을 안전하게 파싱한다 — 깨졌거나 비어있으면 기본값 반환. */

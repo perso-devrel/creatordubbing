@@ -11,7 +11,7 @@ const SUPPORT_EMAIL = 'gyuwon05@gmail.com'
 const copy = {
   ko: {
     title: '지원 및 문의',
-    description: 'Dubtube 이용, 계정, YouTube 연결, 데이터 삭제와 관련된 문의 안내입니다.',
+    description: 'sub2tube 이용, 계정, YouTube 연결, 데이터 삭제와 관련된 문의 안내입니다.',
     heading: '지원 및 문의',
     intro:
       '서비스 이용 중 문제가 있거나 Google/YouTube 권한, 데이터 삭제, 결제, 업로드 상태 확인이 필요하면 아래 연락처로 문의해 주세요.',
@@ -26,7 +26,7 @@ const copy = {
     ],
     revokeTitle: 'Google/YouTube 권한 해제',
     revokeBody:
-      'YouTube 연결은 Dubtube 설정 화면에서 해제할 수 있고, Google 계정 권한 페이지에서도 직접 회수할 수 있습니다.',
+      'YouTube 연결은 sub2tube 설정 화면에서 해제할 수 있고, Google 계정 권한 페이지에서도 직접 회수할 수 있습니다.',
     deletionTitle: '데이터 삭제 요청',
     deletionBody:
       '계정 정보, OAuth 토큰, 작업 기록, 업로드 큐 기록 삭제를 요청할 수 있습니다. 결제·정산 관련 기록은 관련 법령상 필요한 기간 동안만 보관됩니다.',
@@ -37,7 +37,7 @@ const copy = {
   },
   en: {
     title: 'Support and Contact',
-    description: 'How to contact Dubtube about product support, accounts, YouTube access, and data deletion.',
+    description: 'How to contact sub2tube about product support, accounts, YouTube access, and data deletion.',
     heading: 'Support and Contact',
     intro:
       'If you need help with the Service, Google/YouTube permissions, data deletion, payments, or upload status, contact us at the email below.',
@@ -52,7 +52,7 @@ const copy = {
     ],
     revokeTitle: 'Revoke Google/YouTube access',
     revokeBody:
-      'You can disconnect YouTube from the Dubtube settings page or revoke access directly from your Google account permissions page.',
+      'You can disconnect YouTube from the sub2tube settings page or revoke access directly from your Google account permissions page.',
     deletionTitle: 'Data deletion requests',
     deletionBody:
       'You may request deletion of account information, OAuth tokens, job records, and upload queue records. Payment and settlement records are retained only for the period required by applicable law.',

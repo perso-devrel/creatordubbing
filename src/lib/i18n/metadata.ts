@@ -29,7 +29,7 @@ const sharedOpenGraphImage = {
   url: '/opengraph-image',
   width: 1200,
   height: 630,
-  alt: 'Dubtube - AI caption and dubbing tools for YouTube creators',
+  alt: 'sub2tube - AI caption and dubbing tools for YouTube creators',
 }
 
 const landingTitle = 'metadata.landing.title'
@@ -38,12 +38,12 @@ const landingDescription = 'metadata.landing.description'
 const marketingMetadata = {
   privacy: {
     title: 'lib.i18n.metadata.titlePrivacyPolicy',
-    description: 'lib.i18n.metadata.descriptionHowDubtubeHandlesPersonalDataYouTubeAPI',
+    description: 'lib.i18n.metadata.descriptionHowsub2tubeHandlesPersonalDataYouTubeAPI',
     path: '/privacy',
   },
   terms: {
     title: 'lib.i18n.metadata.titleTermsOfService',
-    description: 'lib.i18n.metadata.descriptionDubtubeTermsOfServiceIncludingYouTubeAPI',
+    description: 'lib.i18n.metadata.descriptionsub2tubeTermsOfServiceIncludingYouTubeAPI',
     path: '/terms',
   },
   support: {

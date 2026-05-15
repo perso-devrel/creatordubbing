@@ -159,7 +159,7 @@ function applyDescriptionFooter(item: DubbingJobLanguageWorkItem, description: s
 async function buildMetadata(item: DubbingJobLanguageWorkItem) {
   const settings = item.uploadSettings.uploadSettings
   const lang = getLanguageByCode(item.languageCode)
-  const baseTitle = settings.title.trim() || item.videoTitle || 'Dubtube video'
+  const baseTitle = settings.title.trim() || item.videoTitle || 'sub2tube video'
   const baseDescription = stripAiDisclosureFooter(settings.description || '')
   let translated = { title: baseTitle, description: baseDescription }
 

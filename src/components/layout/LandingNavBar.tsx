@@ -38,7 +38,7 @@ export function LandingNavBar() {
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
           <span className="hidden text-lg font-bold text-surface-900 dark:text-surface-100 min-[360px]:inline">
-            Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
+            sub<span className="text-brand-600 dark:text-brand-400">2tube</span>
           </span>
         </LocaleLink>
 

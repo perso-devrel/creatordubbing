@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const title = body.title?.trim() || `Dubtube project ${body.mediaSeq}`
+    const title = body.title?.trim() || `sub2tube project ${body.mediaSeq}`
     const customDictionaryBlobPath = body.customDictionaryBlobPath?.trim()
     const srtBlobPath = body.srtBlobPath?.trim()
     const persoBody = {
