@@ -35,6 +35,8 @@ export function LanguageSelectStep() {
     selectedLanguages,
     sourceLanguage,
     videoMeta,
+    videoSource,
+    existingCaptionLanguages,
     toggleLanguage,
     setSelectedLanguages,
     prevStep,
@@ -44,6 +46,12 @@ export function LanguageSelectStep() {
   const metadataTargetLanguages = useI18nStore((s) => s.metadataTargetLanguages)
   const locale = useAppLocale()
   const t = useLocaleText()
+
+  // 내 영상 모드에서만 기존 자막 검사를 적용 — 외부 URL/업로드는 무시.
+  const existingCaptionSet = useMemo(
+    () => (videoSource?.type === 'channel' ? new Set(existingCaptionLanguages) : new Set<string>()),
+    [videoSource?.type, existingCaptionLanguages],
+  )
 
   // Settings에서 고른 희망 언어를 첫 진입 시 기본값으로 채운다.
   // 사용자가 명시적으로 비웠을 때 다시 채우지 않도록 단 한 번만 적용.
@@ -55,11 +63,19 @@ export function LanguageSelectStep() {
       return
     }
     const defaults = getMetadataTargetLanguageCodes(metadataTargetPreset, metadataTargetLanguages)
-      .filter((code) => code !== sourceLanguage)
+      .filter((code) => code !== sourceLanguage && !existingCaptionSet.has(code))
     if (defaults.length === 0) return
     setSelectedLanguages(defaults)
     didInitializeRef.current = true
-  }, [metadataTargetPreset, metadataTargetLanguages, selectedLanguages.length, sourceLanguage, setSelectedLanguages])
+  }, [metadataTargetPreset, metadataTargetLanguages, selectedLanguages.length, sourceLanguage, existingCaptionSet, setSelectedLanguages])
+
+  // 영상이 바뀌어 기존 자막 언어가 갱신되면 이미 선택된 항목 중 충돌하는 것을 제거.
+  useEffect(() => {
+    if (existingCaptionSet.size === 0) return
+    if (selectedLanguages.length === 0) return
+    const filtered = selectedLanguages.filter((code) => !existingCaptionSet.has(code))
+    if (filtered.length !== selectedLanguages.length) setSelectedLanguages(filtered)
+  }, [existingCaptionSet, selectedLanguages, setSelectedLanguages])
 
   const [region, setRegion] = useState<RegionFilter>('popular')
   const [query, setQuery] = useState('')
@@ -166,6 +182,14 @@ export function LanguageSelectStep() {
         )}
       </div>
 
+      {existingCaptionSet.size > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/20 dark:text-amber-200">
+          {t('features.dubbing.components.steps.languageSelectStep.languagesWithExistingCaptionsDisabled', {
+            count: existingCaptionSet.size,
+          })}
+        </div>
+      )}
+
       {/* Language grid */}
       {filtered.length === 0 ? (
         <p className="py-8 text-center text-sm text-surface-500 dark:text-surface-300">
@@ -175,20 +199,35 @@ export function LanguageSelectStep() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           {filtered.map((lang) => {
             const isSelected = selectedLanguages.includes(lang.code)
+            const alreadyHasCaption = existingCaptionSet.has(lang.code)
             return (
               <button
                 key={lang.code}
-                onClick={() => toggleLanguage(lang.code)}
+                onClick={() => {
+                  if (alreadyHasCaption) return
+                  toggleLanguage(lang.code)
+                }}
+                disabled={alreadyHasCaption}
+                title={alreadyHasCaption
+                  ? t('features.dubbing.components.steps.languageSelectStep.captionAlreadyExistsForThisLanguage')
+                  : undefined}
                 className={cn(
-                  'relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all cursor-pointer',
-                  isSelected
-                    ? 'border-brand-600 bg-brand-50 shadow-sm dark:bg-brand-900/20'
-                    : 'border-surface-200 bg-white hover:border-surface-300 dark:border-surface-800 dark:bg-surface-900 dark:hover:border-surface-700',
+                  'relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all',
+                  alreadyHasCaption
+                    ? 'cursor-not-allowed border-surface-200 bg-surface-100 opacity-60 dark:border-surface-800 dark:bg-surface-800'
+                    : isSelected
+                      ? 'cursor-pointer border-brand-600 bg-brand-50 shadow-sm dark:bg-brand-900/20'
+                      : 'cursor-pointer border-surface-200 bg-white hover:border-surface-300 dark:border-surface-800 dark:bg-surface-900 dark:hover:border-surface-700',
                 )}
               >
-                {isSelected && (
+                {isSelected && !alreadyHasCaption && (
                   <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-600 text-white">
                     <Check className="h-3 w-3" />
+                  </div>
+                )}
+                {alreadyHasCaption && (
+                  <div className="absolute -right-1.5 -top-1.5 rounded-full bg-surface-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    {t('features.dubbing.components.steps.languageSelectStep.captionExistsBadge')}
                   </div>
                 )}
                 <span className="text-2xl">{lang.flag}</span>
