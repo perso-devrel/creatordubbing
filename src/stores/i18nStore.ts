@@ -34,7 +34,7 @@ export const useI18nStore = create<I18nState>()(
       }),
     }),
     {
-      name: 'dubtube-i18n',
+      name: 'sub2tube-i18n',
       partialize: (state) => ({
         appLocale: state.appLocale,
         metadataTargetPreset: state.metadataTargetPreset,
