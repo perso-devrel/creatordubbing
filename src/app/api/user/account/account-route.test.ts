@@ -48,13 +48,13 @@ describe('DELETE /api/user/account', () => {
       session: { uid: 'user-1', email: 'user@example.com' },
     })
 
-    const res = await DELETE(req('dubtube_session=signed'))
+    const res = await DELETE(req('sub2tube_session=signed'))
     expect(res.status).toBe(200)
     await expect(res.json()).resolves.toEqual({ ok: true, data: null })
     expect(mockRequestUserAccountDeletion).toHaveBeenCalledWith('user-1')
 
     const setCookies = res.headers.getSetCookie()
-    expect(setCookies.some((cookie) => cookie.startsWith('dubtube_session=') && cookie.includes('Max-Age=0'))).toBe(true)
+    expect(setCookies.some((cookie) => cookie.startsWith('sub2tube_session=') && cookie.includes('Max-Age=0'))).toBe(true)
     expect(setCookies.some((cookie) => cookie.startsWith('google_access_token=') && cookie.includes('Max-Age=0'))).toBe(true)
   })
 
@@ -65,7 +65,7 @@ describe('DELETE /api/user/account', () => {
     })
     mockRequestUserAccountDeletion.mockRejectedValueOnce(new Error('DB failed'))
 
-    const res = await DELETE(req('dubtube_session=signed'))
+    const res = await DELETE(req('sub2tube_session=signed'))
     expect(res.status).toBe(500)
     const body = await res.json()
     expect(body.ok).toBe(false)

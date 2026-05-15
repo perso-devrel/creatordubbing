@@ -42,7 +42,7 @@ describe('requireSession', () => {
   it('returns 401 when the app session cookie is invalid', async () => {
     vi.mocked(verifySessionCookiePayload).mockResolvedValueOnce(null)
 
-    const result = await requireSession(makeReq('dubtube_session=bad'))
+    const result = await requireSession(makeReq('sub2tube_session=bad'))
     expect(result.ok).toBe(false)
     if (!result.ok) {
       const body = await result.response.json()
@@ -59,7 +59,7 @@ describe('requireSession', () => {
     })
     vi.mocked(isUserSessionActive).mockResolvedValueOnce(false)
 
-    const result = await requireSession(makeReq('dubtube_session=signed'))
+    const result = await requireSession(makeReq('sub2tube_session=signed'))
     expect(result.ok).toBe(false)
     if (!result.ok) {
       expect(result.response.status).toBe(401)
@@ -77,7 +77,7 @@ describe('requireSession', () => {
     vi.mocked(getOrRefreshAccessToken).mockResolvedValueOnce('google-token')
     vi.mocked(getUser).mockResolvedValueOnce({ email: 'test@example.com' } as never)
 
-    const result = await requireSession(makeReq('dubtube_session=signed'))
+    const result = await requireSession(makeReq('sub2tube_session=signed'))
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.session).toEqual({ uid: 'user-1', email: 'test@example.com' })
@@ -95,7 +95,7 @@ describe('requireSession', () => {
     vi.mocked(getOrRefreshAccessToken).mockResolvedValueOnce(null)
     vi.mocked(getUser).mockResolvedValueOnce({ email: 'no-token@example.com' } as never)
 
-    const result = await requireSession(makeReq('dubtube_session=signed'))
+    const result = await requireSession(makeReq('sub2tube_session=signed'))
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.session).toEqual({ uid: 'user-2', email: 'no-token@example.com' })

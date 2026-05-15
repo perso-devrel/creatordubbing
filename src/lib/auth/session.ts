@@ -18,7 +18,7 @@ export async function requireSession(
   | { ok: true; session: Session }
   | { ok: false; response: Response }
 > {
-  const sessionCookie = req.cookies.get('dubtube_session')?.value
+  const sessionCookie = req.cookies.get('sub2tube_session')?.value
   if (sessionCookie) {
     const verified = await verifySessionCookiePayload(sessionCookie)
     if (verified) {

@@ -5,7 +5,7 @@ vi.mock('@/lib/db/queries', () => ({
 }))
 
 vi.mock('@/lib/auth/session-cookie', () => ({
-  SESSION_COOKIE: 'dubtube_session',
+  SESSION_COOKIE: 'sub2tube_session',
   verifySessionCookie: vi.fn(),
 }))
 
@@ -67,7 +67,7 @@ describe('POST /api/auth/sync', () => {
   it('returns 401 for an invalid session cookie', async () => {
     vi.mocked(verifySessionCookie).mockResolvedValueOnce(null)
 
-    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'dubtube_session=signed'))
+    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'sub2tube_session=signed'))
     expect(res.status).toBe(401)
     expect(getUser).not.toHaveBeenCalled()
   })
@@ -75,7 +75,7 @@ describe('POST /api/auth/sync', () => {
   it('returns 401 when session uid does not match the request user', async () => {
     vi.mocked(verifySessionCookie).mockResolvedValueOnce('other-user')
 
-    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'dubtube_session=signed'))
+    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'sub2tube_session=signed'))
     expect(res.status).toBe(401)
     expect(getUser).not.toHaveBeenCalled()
   })
@@ -84,7 +84,7 @@ describe('POST /api/auth/sync', () => {
     vi.mocked(verifySessionCookie).mockResolvedValueOnce('u1')
     vi.mocked(getUser).mockResolvedValueOnce(null as never)
 
-    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'dubtube_session=signed'))
+    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'sub2tube_session=signed'))
     expect(res.status).toBe(401)
   })
 
@@ -92,7 +92,7 @@ describe('POST /api/auth/sync', () => {
     vi.mocked(verifySessionCookie).mockResolvedValueOnce('u1')
     vi.mocked(getUser).mockResolvedValueOnce({ id: 'u1', email: 'a@b.com' } as never)
 
-    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'dubtube_session=signed'))
+    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'sub2tube_session=signed'))
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.ok).toBe(true)
@@ -104,7 +104,7 @@ describe('POST /api/auth/sync', () => {
     vi.mocked(getUser).mockResolvedValueOnce({ id: 'u1', email: 'a@b.com' } as never)
 
     const res = await POST(
-      makeReq({ uid: 'u1', email: 'a@b.com', accessToken: 'client-token' }, 'dubtube_session=signed'),
+      makeReq({ uid: 'u1', email: 'a@b.com', accessToken: 'client-token' }, 'sub2tube_session=signed'),
     )
     expect(res.status).toBe(200)
     expect(getUser).toHaveBeenCalledWith('u1')
@@ -114,7 +114,7 @@ describe('POST /api/auth/sync', () => {
     vi.mocked(verifySessionCookie).mockResolvedValueOnce('u1')
     vi.mocked(getUser).mockRejectedValueOnce(new Error('DB down'))
 
-    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'dubtube_session=signed'))
+    const res = await POST(makeReq({ uid: 'u1', email: 'a@b.com' }, 'sub2tube_session=signed'))
     expect(res.status).toBe(500)
     const data = await res.json()
     expect(data.ok).toBe(false)

@@ -6,7 +6,7 @@ vi.mock('@/lib/db/queries', () => ({
 }))
 
 vi.mock('@/lib/auth/session-cookie', () => ({
-  SESSION_COOKIE: 'dubtube_session',
+  SESSION_COOKIE: 'sub2tube_session',
   SESSION_TTL_SECONDS: 604800,
   createSessionCookie: vi.fn((uid: string) => ({
     cookie: `${uid}.fakesig`,
@@ -227,7 +227,7 @@ describe('POST /api/auth/callback', () => {
     expect(tokenRequestBody.get('redirect_uri')).toBe(CALLBACK_REDIRECT_URI)
 
     const setCookies = res.headers.getSetCookie()
-    expect(setCookies.find((c: string) => c.startsWith('dubtube_session='))).toBeDefined()
+    expect(setCookies.find((c: string) => c.startsWith('sub2tube_session='))).toBeDefined()
     expect(setCookies.find((c: string) => c.startsWith('google_access_token='))).toBeUndefined()
   })
 
