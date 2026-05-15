@@ -119,6 +119,19 @@ export async function ytUploadCaption(params: {
   return json(res)
 }
 
+export interface YouTubeCaptionTrack {
+  id: string
+  language: string
+  name: string
+}
+
+export async function ytListCaptions(videoId: string): Promise<YouTubeCaptionTrack[]> {
+  const qs = new URLSearchParams({ videoId }).toString()
+  const res = await fetch(`${YT}/caption?${qs}`, { cache: 'no-store' })
+  const data = await json<{ captions: YouTubeCaptionTrack[] }>(res)
+  return data.captions ?? []
+}
+
 export async function ytFetchChannelStats(): Promise<ChannelStats | null> {
   const res = await fetch(`${YT}/stats?channel=true`, { cache: 'no-store' })
   return json(res)
