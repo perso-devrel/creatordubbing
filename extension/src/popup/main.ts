@@ -115,7 +115,7 @@ async function init(): Promise<void> {
 }
 
 init().catch((err) => {
-  console.error('[Dubtube] Popup initialization failed', err)
+  console.error('[sub2tube] Popup initialization failed', err)
   statusEl.textContent = '상태를 불러오지 못했습니다.'
   statusEl.className = 'status warn'
   jobsContainer.innerHTML = '<p class="empty">업로드 기록을 불러오지 못했습니다.</p>'

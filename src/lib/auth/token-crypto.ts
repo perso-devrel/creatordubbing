@@ -9,7 +9,7 @@ function getEncryptionSecret() {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('TOKEN_ENCRYPTION_KEY is required in production')
   }
-  return process.env.SESSION_SECRET || 'dubtube-dev-token-secret-do-not-use-in-prod'
+  return process.env.SESSION_SECRET || 'sub2tube-dev-token-secret-do-not-use-in-prod'
 }
 
 function toBase64Url(bytes: Uint8Array) {

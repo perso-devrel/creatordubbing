@@ -17,8 +17,8 @@ const legalMessages = {
   'legal.terms.title': { ko: '서비스 약관', en: 'Terms of Service' },
   'legal.terms.section.1.title': { ko: '1. 약관의 동의', en: '1. Agreement to these Terms' },
   'legal.terms.section.1.beforePrivacy': {
-    ko: '본 약관은 Dubtube(“본 서비스”)의 이용 조건을 규정합니다. 본 서비스에 가입하거나 사용함으로써 사용자는 본 약관과 ',
-    en: 'These Terms govern your use of Dubtube (the “Service”). By signing in to or using the Service, you agree to these Terms and the ',
+    ko: '본 약관은 sub2tube(“본 서비스”)의 이용 조건을 규정합니다. 본 서비스에 가입하거나 사용함으로써 사용자는 본 약관과 ',
+    en: 'These Terms govern your use of sub2tube (the “Service”). By signing in to or using the Service, you agree to these Terms and the ',
   },
   'legal.terms.section.1.afterPrivacyBeforeYoutube': {
     ko: '에 동의한 것으로 간주됩니다. 또한 본 서비스는 YouTube API Services를 사용하므로, 사용자는 ',
@@ -27,8 +27,8 @@ const legalMessages = {
   'legal.terms.section.1.afterYoutube': { ko: '에도 함께 동의해야 합니다.', en: '.' },
   'legal.terms.section.2.title': { ko: '2. 서비스 개요', en: '2. Service Overview' },
   'legal.terms.section.2.body': {
-    ko: 'Dubtube는 YouTube 크리에이터가 자신의 영상을 다국어로 더빙하고, 결과물을 영상·자막·오디오 트랙 형태로 YouTube에 업로드할 수 있게 하는 웹 서비스입니다. 본 서비스는 다음 제3자 API를 사용합니다:',
-    en: 'Dubtube helps YouTube creators dub their own videos into multiple languages and upload resulting videos, captions, and audio tracks to YouTube. The Service uses the following third-party APIs:',
+    ko: 'sub2tube는 YouTube 크리에이터가 자신의 영상을 다국어로 더빙하고, 결과물을 영상·자막·오디오 트랙 형태로 YouTube에 업로드할 수 있게 하는 웹 서비스입니다. 본 서비스는 다음 제3자 API를 사용합니다:',
+    en: 'sub2tube helps YouTube creators dub their own videos into multiple languages and upload resulting videos, captions, and audio tracks to YouTube. The Service uses the following third-party APIs:',
   },
   'legal.terms.section.2.youtubeDataApi': {
     ko: '채널 확인, 영상 업로드, 자막 추가, 제목·설명 수정',
@@ -52,11 +52,11 @@ const legalMessages = {
     ko: '에 동의합니다. YouTube 데이터와 권한에 대해서는 다음 제한이 적용됩니다.',
     en: '. The following restrictions apply to YouTube data and permissions:',
   },
-  'legal.terms.section.5.item.1.beforeLink': { ko: '사용자는 언제든 ', en: 'You may revoke Dubtube’s access at any time from ' },
-  'legal.terms.section.5.item.1.afterLink': { ko: '에서 Dubtube의 권한을 회수할 수 있습니다.', en: '.' },
+  'legal.terms.section.5.item.1.beforeLink': { ko: '사용자는 언제든 ', en: 'You may revoke sub2tube’s access at any time from ' },
+  'legal.terms.section.5.item.1.afterLink': { ko: '에서 sub2tube의 권한을 회수할 수 있습니다.', en: '.' },
   'legal.terms.section.5.item.2': {
-    ko: 'Dubtube는 YouTube API Services로 받은 데이터를 광고, 외부 마케팅, 데이터 판매, AI 모델 학습 목적으로 사용하거나 제공하지 않습니다.',
-    en: 'Dubtube does not use or transfer YouTube API Services data for advertising, external marketing, data sale, or AI model training.',
+    ko: 'sub2tube는 YouTube API Services로 받은 데이터를 광고, 외부 마케팅, 데이터 판매, AI 모델 학습 목적으로 사용하거나 제공하지 않습니다.',
+    en: 'sub2tube does not use or transfer YouTube API Services data for advertising, external marketing, data sale, or AI model training.',
   },
   'legal.terms.section.5.item.3': {
     ko: 'YouTube 채널·영상 데이터는 사용자가 요청한 기능 제공, 업로드 안정성, 오류 진단에 필요한 범위와 기간 동안만 저장하거나 캐시합니다.',
@@ -68,10 +68,10 @@ const legalMessages = {
   'legal.terms.section.6.item.3': { ko: '서비스 장애로 처리가 실패한 작업은 확인 후 차감된 더빙 시간이 환원될 수 있습니다.', en: 'If a job fails due to a Service fault, deducted minutes may be restored after verification.' },
   'legal.terms.section.7.title': { ko: '7. 지적 재산권', en: '7. Intellectual Property' },
   'legal.terms.section.7.item.1': {
-    ko: '사용자가 업로드하거나 지정한 원본 영상과 Dubtube가 생성한 더빙 결과물의 권리는 사용자 또는 원권리자에게 귀속됩니다.',
+    ko: '사용자가 업로드하거나 지정한 원본 영상과 sub2tube가 생성한 더빙 결과물의 권리는 사용자 또는 원권리자에게 귀속됩니다.',
     en: 'Rights to source content provided by you and dubbing outputs generated from it remain with you or the original rights holder.',
   },
-  'legal.terms.section.7.item.2': { ko: 'Dubtube의 로고, UI, 코드, 서비스 구성 등 서비스 자체의 지적 재산권은 Dubtube에 귀속됩니다.', en: 'Dubtube owns the intellectual property in its logo, interface, code, and service structure.' },
+  'legal.terms.section.7.item.2': { ko: 'sub2tube의 로고, UI, 코드, 서비스 구성 등 서비스 자체의 지적 재산권은 sub2tube에 귀속됩니다.', en: 'sub2tube owns the intellectual property in its logo, interface, code, and service structure.' },
   'legal.terms.section.7.item.3': {
     ko: '음성 복제 또는 AI 음성 생성에 사용하는 음성은 사용자 본인 또는 사용자가 적법한 권한을 가진 음성이어야 합니다.',
     en: 'Any voice used for cloning or AI voice generation must be your own voice or a voice for which you have lawful permission.',
@@ -85,7 +85,7 @@ const legalMessages = {
   'legal.terms.section.8.item.2': { ko: '사용자가 제공하거나 업로드한 콘텐츠로 인한 저작권, 명예훼손, 초상권, 퍼블리시티권 분쟁', en: 'copyright, defamation, likeness, publicity, or other disputes arising from content provided by you;' },
   'legal.terms.section.8.item.3': { ko: 'AI 더빙, 번역, 자막 결과물의 정확성, 자연스러움, 적합성', en: 'accuracy, naturalness, or suitability of AI dubbing, translation, or captions;' },
   'legal.terms.section.8.item.4': { ko: '천재지변, 정전, 네트워크 장애 등 통제할 수 없는 사유로 인한 손해', en: 'events outside our reasonable control, including outages, disasters, or network failures.' },
-  'legal.terms.section.8.footer': { ko: '법령이 허용하는 범위에서 Dubtube의 책임은 사용자가 직전 12개월간 본 서비스에 지불한 금액을 한도로 합니다.', en: 'To the maximum extent permitted by law, Dubtube’s liability is limited to the amount you paid for the Service during the previous 12 months.' },
+  'legal.terms.section.8.footer': { ko: '법령이 허용하는 범위에서 sub2tube의 책임은 사용자가 직전 12개월간 본 서비스에 지불한 금액을 한도로 합니다.', en: 'To the maximum extent permitted by law, sub2tube’s liability is limited to the amount you paid for the Service during the previous 12 months.' },
   'legal.terms.section.9.title': { ko: '9. 서비스 변경 및 종료', en: '9. Service Changes and Termination' },
   'legal.terms.section.9.item.1': { ko: '본 서비스는 기능, 요금, 정책을 변경하거나 일부 기능을 종료할 수 있으며, 중요한 변경은 사전에 공지합니다.', en: 'We may change features, pricing, or policies, or discontinue features, with prior notice for material changes.' },
   'legal.terms.section.9.item.2': {
@@ -109,10 +109,10 @@ const legalMessages = {
   'legal.privacy.title': { ko: '개인정보처리방침', en: 'Privacy Policy' },
   'legal.privacy.section.1.title': { ko: '1. 개요', en: '1. Overview' },
   'legal.privacy.section.1.body.1': {
-    ko: 'Dubtube는 YouTube 크리에이터가 자신의 영상을 AI로 더빙하고 자막, 오디오, 제목, 설명을 YouTube에 반영할 수 있도록 돕는 서비스입니다. 본 방침은 Dubtube가 수집, 이용, 보관, 파기하는 개인정보와 YouTube API Services 데이터의 처리 방식을 설명합니다.',
-    en: 'Dubtube helps YouTube creators use AI to dub their own videos and apply captions, audio, titles, and descriptions to YouTube. This policy explains how Dubtube collects, uses, stores, and deletes personal information and YouTube API Services data.',
+    ko: 'sub2tube는 YouTube 크리에이터가 자신의 영상을 AI로 더빙하고 자막, 오디오, 제목, 설명을 YouTube에 반영할 수 있도록 돕는 서비스입니다. 본 방침은 sub2tube가 수집, 이용, 보관, 파기하는 개인정보와 YouTube API Services 데이터의 처리 방식을 설명합니다.',
+    en: 'sub2tube helps YouTube creators use AI to dub their own videos and apply captions, audio, titles, and descriptions to YouTube. This policy explains how sub2tube collects, uses, stores, and deletes personal information and YouTube API Services data.',
   },
-  'legal.privacy.section.1.beforeGooglePolicy': { ko: 'Dubtube는 ', en: 'Dubtube complies with the ' },
+  'legal.privacy.section.1.beforeGooglePolicy': { ko: 'sub2tube는 ', en: 'sub2tube complies with the ' },
   'legal.privacy.section.1.afterGooglePolicyBeforePrivacy': { ko: '와 ', en: ' and the ' },
   'legal.privacy.section.1.afterPrivacy': {
     ko: '을 준수하며, Google API Services User Data Policy의 Limited Use 요구사항을 포함해 적용합니다.',
@@ -137,11 +137,11 @@ const legalMessages = {
   'legal.privacy.section.3.item.3': { ko: '더빙 시간 차감, 결제 승인, 잔여량 표시, 환원 처리', en: 'to deduct minutes, confirm payments, show balances, and restore minutes when appropriate' },
   'legal.privacy.section.3.item.4': { ko: '로그인, 세션 유지, 보안 확인', en: 'to provide sign-in, session continuity, and security checks' },
   'legal.privacy.section.3.item.5': { ko: '서비스 안정성 모니터링, 오류 진단, 부정 사용 방지', en: 'to monitor reliability, diagnose errors, and prevent abuse' },
-  'legal.privacy.section.3.beforeStrong': { ko: 'Dubtube는 YouTube API Services를 통해 받은 사용자 데이터를 ', en: 'Dubtube does ' },
+  'legal.privacy.section.3.beforeStrong': { ko: 'sub2tube는 YouTube API Services를 통해 받은 사용자 데이터를 ', en: 'sub2tube does ' },
   'legal.privacy.section.3.strong': { ko: '광고, 외부 마케팅, 데이터 판매, AI 모델 학습 목적으로 사용하거나 전송하지 않으며', en: 'not use or transfer YouTube API Services user data for advertising, external marketing, data sale, or AI model training' },
   'legal.privacy.section.3.afterStrong': { ko: ', 사용자가 요청한 기능 제공에 필요한 범위에서만 처리합니다.', en: ', and processes it only to provide features requested by you.' },
   'legal.privacy.section.4.title': { ko: '4. 제3자 제공 및 처리 위탁', en: '4. Processors and Third Parties' },
-  'legal.privacy.section.4.body': { ko: 'Dubtube는 서비스 제공에 필요한 최소 범위에서 다음 처리자에게 데이터를 전달할 수 있습니다.', en: 'Dubtube may send limited data to the following processors only as necessary to provide the Service.' },
+  'legal.privacy.section.4.body': { ko: 'sub2tube는 서비스 제공에 필요한 최소 범위에서 다음 처리자에게 데이터를 전달할 수 있습니다.', en: 'sub2tube may send limited data to the following processors only as necessary to provide the Service.' },
   'legal.privacy.section.4.perso': {
     ko: 'AI 더빙, 음성 합성, 번역 처리. 사용자가 지정한 영상·오디오 데이터와 대상 언어 정보가 전달될 수 있습니다.',
     en: 'AI dubbing, voice synthesis, and translation. Selected video/audio data and target language information may be provided.',
@@ -166,7 +166,7 @@ const legalMessages = {
   'legal.privacy.section.6.item.2': { ko: '처리 정지 또는 동의 철회', en: 'restriction of processing or withdrawal of consent' },
   'legal.privacy.section.6.item.3.beforeLink': { ko: 'Google/YouTube 권한 회수: ', en: 'Google/YouTube permission revocation: ' },
   'legal.privacy.section.6.item.3.afterLink': { ko: '에서 직접 회수할 수 있습니다.', en: '' },
-  'legal.privacy.section.6.item.4': { ko: 'Dubtube 앱의 YouTube 설정 화면에서 YouTube 연결 해제', en: 'disconnect YouTube from the YouTube settings page in Dubtube' },
+  'legal.privacy.section.6.item.4': { ko: 'sub2tube 앱의 YouTube 설정 화면에서 YouTube 연결 해제', en: 'disconnect YouTube from the YouTube settings page in sub2tube' },
   'legal.privacy.section.6.footer': { ko: '요청은 연락처로 이메일을 보내주시면 영업일 기준 7일 이내에 처리하거나 진행 상황을 안내합니다.', en: 'Email requests will be processed, or we will provide a status update, within 7 business days.' },
   'legal.privacy.section.7.title': { ko: '7. 보안', en: '7. Security' },
   'legal.privacy.section.7.item.1': { ko: '모든 통신은 HTTPS로 암호화됩니다.', en: 'All communications are encrypted over HTTPS.' },
@@ -179,8 +179,8 @@ const legalMessages = {
   'legal.privacy.section.8.settings': { ko: ' (YouTube 업로드 기본 설정).', en: ' (YouTube upload defaults).' },
   'legal.privacy.section.9.title': { ko: '9. 미성년자 보호', en: '9. Children and Minors' },
   'legal.privacy.section.9.body': {
-    ko: 'Dubtube는 만 14세 미만 아동의 개인정보를 의도적으로 수집하지 않습니다. 미성년자가 서비스를 이용하는 경우 법정대리인의 동의가 필요합니다.',
-    en: 'Dubtube does not knowingly collect personal information from children under 14. Minors must have consent from a parent or legal guardian to use the Service.',
+    ko: 'sub2tube는 만 14세 미만 아동의 개인정보를 의도적으로 수집하지 않습니다. 미성년자가 서비스를 이용하는 경우 법정대리인의 동의가 필요합니다.',
+    en: 'sub2tube does not knowingly collect personal information from children under 14. Minors must have consent from a parent or legal guardian to use the Service.',
   },
   'legal.privacy.section.10.title': { ko: '10. 본 방침의 변경', en: '10. Changes to this Policy' },
   'legal.privacy.section.10.body': {

@@ -9,7 +9,7 @@ import {
 
 describe('session-cookie', () => {
   it('exports SESSION_COOKIE constant', () => {
-    expect(SESSION_COOKIE).toBe('dubtube_session')
+    expect(SESSION_COOKIE).toBe('sub2tube_session')
   })
 
   describe('signSessionCookie', () => {
@@ -78,7 +78,7 @@ describe('session-cookie', () => {
 
     it('accepts legacy uid.signature cookies used by existing Playwright helpers', async () => {
       const uid = 'legacy-user'
-      const secret = process.env.SESSION_SECRET || 'dubtube-dev-secret-do-not-use-in-prod'
+      const secret = process.env.SESSION_SECRET || 'sub2tube-dev-secret-do-not-use-in-prod'
       const sig = createHmac('sha256', secret)
         .update(uid)
         .digest('hex')

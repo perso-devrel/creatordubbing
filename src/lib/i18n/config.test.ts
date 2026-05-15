@@ -45,8 +45,8 @@ describe('i18n config', () => {
   })
 
   it('reads the app locale cookie from a cookie header string', () => {
-    expect(getLocaleFromCookieString('x=1; dubtube_locale=en; y=2')).toBe('en')
-    expect(getLocaleFromCookieString('dubtube_locale=ja')).toBeNull()
+    expect(getLocaleFromCookieString('x=1; sub2tube_locale=en; y=2')).toBe('en')
+    expect(getLocaleFromCookieString('sub2tube_locale=ja')).toBeNull()
     expect(getLocaleFromCookieString(null)).toBeNull()
   })
 

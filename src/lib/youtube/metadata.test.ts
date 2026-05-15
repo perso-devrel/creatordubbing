@@ -229,7 +229,7 @@ describe('youtube metadata', () => {
             title: '원문',
             description: '설명',
             categoryId: '22',
-            tags: ['keep', 'Dubtube'],
+            tags: ['keep', 'sub2tube'],
             defaultLanguage: 'ko',
           },
           localizations: {},
@@ -243,12 +243,12 @@ describe('youtube metadata', () => {
       sourceLang: 'ko',
       title: '원문',
       description: '설명',
-      tags: ['keep', 'Dubtube'],
+      tags: ['keep', 'sub2tube'],
       localizations: {},
     })
 
     const updateBody = JSON.parse(fetchMock.mock.calls[1][1].body as string)
-    expect(updateBody.snippet.tags).toEqual(['keep', 'Dubtube'])
-    expect(result.tags).toEqual(['keep', 'Dubtube'])
+    expect(updateBody.snippet.tags).toEqual(['keep', 'sub2tube'])
+    expect(result.tags).toEqual(['keep', 'sub2tube'])
   })
 })

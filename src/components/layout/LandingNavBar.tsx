@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Languages } from 'lucide-react'
+import Image from 'next/image'
 import { LocaleLink } from '@/components/i18n/LocaleLink'
 import { useAuthStore } from '@/stores/authStore'
 import { signInWithGoogle } from '@/lib/google-auth'
@@ -34,11 +34,16 @@ export function LandingNavBar() {
     <nav className="sticky top-0 z-50 border-b border-surface-200 bg-white/85 backdrop-blur-md dark:border-surface-800 dark:bg-surface-950/85">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
         <LocaleLink href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-600 shadow-sm shadow-brand-900/20">
-            <Languages className="h-4.5 w-4.5 text-white" />
-          </div>
+          <Image
+            src="/logo.png"
+            alt="sub2tube"
+            width={36}
+            height={36}
+            className="rounded-lg"
+            priority
+          />
           <span className="hidden text-lg font-semibold text-surface-900 dark:text-surface-100 min-[360px]:inline">
-            Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
+            sub<span className="text-brand-600 dark:text-brand-400">2tube</span>
           </span>
         </LocaleLink>
 

@@ -85,7 +85,7 @@ export async function ytUploadVideo(params: {
   })
   if (!putRes.ok) {
     const detail = await putRes.text().catch(() => '')
-    console.warn('[Dubtube] YouTube direct upload failed', {
+    console.warn('[sub2tube] YouTube direct upload failed', {
       status: putRes.status,
       detail,
     })
@@ -117,6 +117,19 @@ export async function ytUploadCaption(params: {
     body: JSON.stringify(params),
   })
   return json(res)
+}
+
+export interface YouTubeCaptionTrack {
+  id: string
+  language: string
+  name: string
+}
+
+export async function ytListCaptions(videoId: string): Promise<YouTubeCaptionTrack[]> {
+  const qs = new URLSearchParams({ videoId }).toString()
+  const res = await fetch(`${YT}/caption?${qs}`, { cache: 'no-store' })
+  const data = await json<{ captions: YouTubeCaptionTrack[] }>(res)
+  return data.captions ?? []
 }
 
 export async function ytFetchChannelStats(): Promise<ChannelStats | null> {

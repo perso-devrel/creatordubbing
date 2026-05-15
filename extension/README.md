@@ -1,6 +1,6 @@
-# Dubtube Chrome Extension
+# sub2tube Chrome Extension
 
-Dubtube에서 생성한 더빙 오디오를 YouTube Studio에 업로드하는 Chrome 확장 프로그램입니다. 기본 도움 모드는 파일 추가까지만 진행하고, 자동 모드는 파일 추가 후 게시까지 진행합니다.
+sub2tube에서 생성한 더빙 오디오를 YouTube Studio에 업로드하는 Chrome 확장 프로그램입니다. 기본 도움 모드는 파일 추가까지만 진행하고, 자동 모드는 파일 추가 후 게시까지 진행합니다.
 
 ## Requirements
 
@@ -75,8 +75,8 @@ extension/
 
 ## Debugging
 
-- Background service worker: `chrome://extensions`에서 Dubtube 확장 프로그램의 서비스 워커 링크를 엽니다.
-- Content script: YouTube Studio 탭의 DevTools Console에서 `[Dubtube]` 로그를 확인합니다.
+- Background service worker: `chrome://extensions`에서 sub2tube 확장 프로그램의 서비스 워커 링크를 엽니다.
+- Content script: YouTube Studio 탭의 DevTools Console에서 `[sub2tube]` 로그를 확인합니다.
 - Popup: 확장 프로그램 아이콘을 오른쪽 클릭한 뒤 팝업 검사를 선택합니다.
 
 웹앱 콘솔에서 연결 상태를 확인할 때는 확장 프로그램 ID를 넣어 아래 메시지를 보냅니다.

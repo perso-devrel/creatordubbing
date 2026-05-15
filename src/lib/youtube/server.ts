@@ -5,6 +5,7 @@ export {
   uploadVideoToYouTube,
   uploadCaptionToYouTube,
   initYouTubeResumableUpload,
+  listCaptionsForVideo,
 } from '@/lib/youtube/upload'
 export {
   fetchVideoStatistics,
