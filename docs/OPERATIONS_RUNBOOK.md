@@ -7,9 +7,10 @@
 Vercel Cron은 사용하지 않는다. 운영 background job은 `.github/workflows/upload-cron.yml`에서 GitHub Actions schedule로 실행한다.
 
 - 실행 주기: 5분마다, `2/5 * * * *`
-- 호출 endpoint:
+- 호출 endpoint (워크플로 한 번에 순차 호출):
   - `POST /api/cron/process-dubbing-jobs`
   - `POST /api/cron/process-uploads`
+  - `POST /api/cron/purge-deleted-accounts`
 - 보호 방식: `Authorization: Bearer <CRON_SECRET>`
 - GitHub repository variable: `PROD_BASE_URL=https://운영도메인`
 - GitHub repository secret: `CRON_SECRET`
