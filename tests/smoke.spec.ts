@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test'
 test.describe('smoke', () => {
   test('next landing responds', async ({ page }) => {
     await page.context().addCookies([
-      { name: 'dubtube_locale', value: 'ko', domain: 'localhost', path: '/' },
+      { name: 'sub2tube_locale', value: 'ko', domain: 'localhost', path: '/' },
     ])
     const res = await page.goto('http://localhost:3000/', { waitUntil: 'domcontentloaded' })
     expect(res?.status()).toBeLessThan(400)

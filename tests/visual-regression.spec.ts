@@ -24,7 +24,7 @@ const PAGES: Array<{ route: string; name: string; needsAuth: boolean }> = [
 ]
 
 // Port 5173 is occupied by another project (VoiceAlarm) on this dev machine.
-// Dubtube's Vite dev server moved to 5174.
+// sub2tube's Vite dev server moved to 5174.
 const VITE_BASE = process.env.VITE_BASE_URL ?? 'http://localhost:5174'
 const NEXT_BASE = process.env.NEXT_BASE_URL ?? 'http://localhost:3000'
 
@@ -33,7 +33,7 @@ fs.mkdirSync(SNAPSHOT_DIR, { recursive: true })
 
 async function injectMockAuth(page: Page) {
   await page.context().addCookies([
-    { name: 'dubtube_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
+    { name: 'sub2tube_session', value: signTestSessionCookie('test'), domain: 'localhost', path: '/' },
   ])
   await page.addInitScript(() => {
     try {
