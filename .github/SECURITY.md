@@ -1,7 +1,7 @@
 # 보안 정책 (Security Policy)
 
-> Dubtube 웹 애플리케이션의 보안 취약점 보고 절차를 정의합니다.
-> This document defines how to report security vulnerabilities for the Dubtube web application.
+> sub2tube 웹 애플리케이션의 보안 취약점 보고 절차를 정의합니다.
+> This document defines how to report security vulnerabilities for the sub2tube web application.
 
 ---
 
@@ -22,9 +22,9 @@
 
 1. GitHub의 **Private Vulnerability Reporting** 을 사용해 주세요.
    - Repository → **Security** 탭 → **Report a vulnerability** 버튼
-   - 또는 직접 링크: `https://github.com/perso-devrel/dubtube/security/advisories/new`
+   - 또는 직접 링크: `https://github.com/perso-devrel/sub2tube/security/advisories/new`
 2. GitHub 계정이 없거나 Private Reporting 에 접근할 수 없다면 아래 이메일로 연락 바랍니다.
-   - `security@dubtube.local`
+   - `gyuwon05@gmail.com`
    - PGP 공개키: 현재 미공개 (필요 시 보고자에게 별도 전달)
 
 ### 보고 시 포함해 주세요
@@ -46,11 +46,11 @@
 
 ### 범위 (Scope)
 
-이 정책은 **Dubtube 웹 애플리케이션 본체**에만 적용됩니다.
+이 정책은 **sub2tube 웹 애플리케이션 본체**에만 적용됩니다.
 
 **범위 내 (In-scope)**
-- 이 저장소(`perso-devrel/dubtube`)의 애플리케이션 코드
-- 배포된 Dubtube 웹 서비스의 엔드포인트 / UI
+- 이 저장소(`perso-devrel/sub2tube`)의 애플리케이션 코드
+- 배포된 sub2tube 웹 서비스의 엔드포인트 / UI
 - 저장소에 포함된 빌드·배포 스크립트 및 GitHub Actions 워크플로
 
 **범위 외 (Out-of-scope)** — 해당 벤더에 직접 신고해 주세요.
@@ -86,9 +86,9 @@ Security patches are applied only to the latest deployed version of the `main` b
 
 1. Use GitHub's **Private Vulnerability Reporting** feature:
    - Repository → **Security** tab → **Report a vulnerability**
-   - Direct link: `https://github.com/perso-devrel/dubtube/security/advisories/new`
+   - Direct link: `https://github.com/perso-devrel/sub2tube/security/advisories/new`
 2. If GitHub is not an option, email the security team:
-   - `security@dubtube.local`
+   - `gyuwon05@gmail.com`
    - PGP key: currently not published; will be shared on request.
 
 ### What to Include
@@ -110,11 +110,11 @@ Reporters are updated at each stage and may be credited in the GitHub Security A
 
 ### Scope
 
-This policy covers the **Dubtube web application only**.
+This policy covers the **sub2tube web application only**.
 
 **In-scope**
-- Application code in this repository (`perso-devrel/dubtube`)
-- Endpoints and UI of the deployed Dubtube web service
+- Application code in this repository (`perso-devrel/sub2tube`)
+- Endpoints and UI of the deployed sub2tube web service
 - Build, deployment scripts, and GitHub Actions workflows in this repo
 
 **Out-of-scope** — report to the respective vendor instead.

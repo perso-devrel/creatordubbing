@@ -25,7 +25,7 @@
 ### 채택 구조
 
 ```
-dubtube/
+sub2tube/
 ├── extension/           ← 신규
 │   ├── src/
 │   │   ├── background.ts

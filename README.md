@@ -1,4 +1,4 @@
-# Dubtube
+# sub2tube
 
 [🇰🇷 한국어](./README.md) | [🇺🇸 English](./docs/readme/README.en.md) | [🇯🇵 日本語](./docs/readme/README.ja.md) | [🇨🇳 中文](./docs/readme/README.zh.md)
 
@@ -84,8 +84,8 @@ graph TB
 ### 설치
 
 ```bash
-git clone https://github.com/perso-devrel/dubtube.git
-cd dubtube
+git clone https://github.com/perso-devrel/sub2tube.git
+cd sub2tube
 npm install
 ```
 
