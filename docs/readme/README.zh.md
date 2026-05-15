@@ -1,9 +1,9 @@
-# Dubtube
+# sub2tube
 
 [🇰🇷 한국어](../../README.md) | [🇺🇸 English](./README.en.md) | [🇯🇵 日本語](./README.ja.md) | [🇨🇳 中文](./README.zh.md)
 
 > **面向 YouTube 创作者的 AI 多语言配音与上传自动化平台。**
-> 上传一段视频，Dubtube 会将其配音为多种语言，连同字幕一起自动发布到 YouTube，并在同一面板中呈现观看数据分析。
+> 上传一段视频，sub2tube 会将其配音为多种语言，连同字幕一起自动发布到 YouTube，并在同一面板中呈现观看数据分析。
 
 基于 [Perso.ai](https://developers.perso.ai) API 构建。
 
@@ -47,8 +47,8 @@
 ### 安装
 
 ```bash
-git clone https://github.com/perso-devrel/dubtube.git
-cd dubtube
+git clone https://github.com/perso-devrel/sub2tube.git
+cd sub2tube
 npm install
 ```
 

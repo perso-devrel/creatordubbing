@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const DEV_SECRET = 'dubtube-dev-secret-do-not-use-in-prod'
+const DEV_SECRET = 'sub2tube-dev-secret-do-not-use-in-prod'
 
 function readEnvLocalSessionSecret(): string | null {
   const envPath = resolve(process.cwd(), '.env.local')

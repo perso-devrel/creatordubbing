@@ -219,12 +219,12 @@ export interface CaptionUploadInput {
 
 const YOUTUBE_DATA_BASE = 'https://www.googleapis.com/youtube/v3'
 
-interface CaptionListItem {
+export interface CaptionListItem {
   id: string
   snippet?: { language?: string; name?: string }
 }
 
-async function listCaptionsForVideo(
+export async function listCaptionsForVideo(
   accessToken: string,
   videoId: string,
 ): Promise<CaptionListItem[]> {

@@ -303,7 +303,7 @@ export function SubtitleScriptEditor({
         const primary = await getDownloadLinks(projectSeq, spaceSeq, 'dubbingVideo')
         rawUrl = primary.videoFile?.videoDownloadLink
       } catch (err) {
-        console.warn('[Dubtube] Dubbed preview target fetch failed', err)
+        console.warn('[sub2tube] Dubbed preview target fetch failed', err)
       }
       if (!rawUrl) {
         const fallback = await getDownloadLinks(projectSeq, spaceSeq, 'all')
@@ -313,7 +313,7 @@ export function SubtitleScriptEditor({
         setResolvedPreviewVideoUrl(rawUrl.startsWith('http') ? rawUrl : getPersoFileUrl(rawUrl))
       }
     } catch (err) {
-      console.warn('[Dubtube] Dubbed preview video fetch failed', err)
+      console.warn('[sub2tube] Dubbed preview video fetch failed', err)
     } finally {
       setPreviewVideoLoading(false)
     }

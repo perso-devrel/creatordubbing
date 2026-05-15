@@ -68,7 +68,7 @@ export const useThemeStore = create<ThemeState>()(
       },
     }),
     {
-      name: 'dubtube-theme',
+      name: 'sub2tube-theme',
       version: 1,
       skipHydration: true,
       migrate: (persistedState) => {
