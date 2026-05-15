@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og'
 import { SITE_NAME } from '@/lib/seo'
 
-export const alt = 'Dubtube - AI caption and dubbing tools for YouTube creators'
+export const alt = 'sub2tube - AI caption and dubbing tools for YouTube creators'
 
 export const size = {
   width: 1200,

@@ -85,7 +85,7 @@ export function Sidebar({ isOpsAdmin = false }: { isOpsAdmin?: boolean }) {
             <Languages className="h-4.5 w-4.5 text-white" />
           </div>
           <span className="text-lg font-bold text-surface-900 dark:text-surface-100">
-            Dub<span className="text-brand-600 dark:text-brand-400">tube</span>
+            sub<span className="text-brand-600 dark:text-brand-400">2tube</span>
           </span>
         </LocaleLink>
 
