@@ -32,7 +32,7 @@
   "externally_connectable": {
     "matches": [
       "http://localhost/*",
-      "https://*.dubtube.com/*"
+      "https://*.sub2tube.com/*"
     ]
   }
 }
