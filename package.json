@@ -7,6 +7,7 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "i18n:client-messages": "node scripts/generate-client-messages.mjs",
+    "favicon:build": "node scripts/build-favicon.mjs",
     "db:migrate": "node scripts/migrate.mjs",
     "analyze": "node -e \"process.env.ANALYZE='true';require('child_process').execSync('next build --webpack',{stdio:'inherit',env:process.env})\"",
     "start": "next start",
