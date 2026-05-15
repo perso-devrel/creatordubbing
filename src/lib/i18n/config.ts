@@ -4,8 +4,8 @@ export type AppLocale = (typeof APP_LOCALES)[number]
 
 export const DEFAULT_APP_LOCALE: AppLocale = 'ko'
 export const FALLBACK_APP_LOCALE: AppLocale = 'en'
-export const LOCALE_COOKIE = 'dubtube_locale'
-export const LOCALE_HEADER = 'x-dubtube-locale'
+export const LOCALE_COOKIE = 'sub2tube_locale'
+export const LOCALE_HEADER = 'x-sub2tube-locale'
 export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 export const APP_LOCALE_LABELS: Record<AppLocale, { label: string; nativeLabel: string }> = {
